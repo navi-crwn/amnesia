@@ -9,6 +9,8 @@ V="$(defaults read "$PWD/app/Info" CFBundleShortVersionString)"
 
 echo "1/7  Tidying old files..."
 rm -rf reset.sh clean_keychain.sh keep_apps.conf amnesia_app.py templates __pycache__ app/build/makeicon docs/vault.png
+# screenshot lama (v5.6) diganti hasil app/screenshots.sh
+[ -f docs/screens/en/home.png ] && rm -f docs/screens/menu.png docs/screens/home.png docs/screens/vault.png docs/screens/keep.png docs/screens/backup.png
 
 # Data pribadi, rahasia & catatan TIDAK ikut ke GitHub
 cat > .gitignore <<'IGN'
@@ -30,6 +32,8 @@ bin/
 !README.id.md
 !CHANGELOG.md
 !CHANGELOG.id.md
+!TERMS.md
+!TERMS.id.md
 IGN
 
 echo "2/7  Commit & push..."
@@ -46,21 +50,45 @@ echo "3/7  Repo description & topics..."
 gh repo edit --description "Your Mac forgets everything every time you log out, except the logins and files you choose to keep. A macOS menu bar app with an encrypted login vault and backups." \
   --add-topic macos --add-topic privacy --add-topic swiftui --add-topic menubar-app --add-topic encryption --add-topic backup >/dev/null
 
-echo "4/7  Packing the built app..."
+echo "4/7  Making the installer (.dmg)..."
 APP=""
 for d in /Applications "$HOME/Applications"; do [ -d "$d/Amnesia.app" ] && { APP="$d/Amnesia.app"; break; }; done
 [ -n "$APP" ] || { echo "Amnesia.app is not installed yet. Run first: bash ~/.amnesia/app/build.sh"; exit 1; }
-ZIP="$(mktemp -d)/Amnesia-v$V.zip"
-ditto -c -k --keepParent "$APP" "$ZIP"
+# .dmg: buka, lalu seret Amnesia ke folder Applications. Ada "READ ME FIRST" berisi peringatan.
+STAGE="$(mktemp -d)/Amnesia"; mkdir -p "$STAGE"
+ditto "$APP" "$STAGE/Amnesia.app"
+ln -s /Applications "$STAGE/Applications"
+cat > "$STAGE/READ ME FIRST.txt" <<TXT
+AMNESIA v$V - read this before you install
+
+1. Drag Amnesia into the Applications folder.
+2. The first time, macOS says it can't check the developer. Open
+   System Settings > Privacy & Security and click "Open Anyway".
+
+WARNING: Amnesia really deletes data. Once you turn it on, everything outside
+your Keep folder and Keep List is deleted at every logout, restart and shutdown.
+It does not go to the Trash and cannot be undone. Back up first.
+Full terms: https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.md
+
+Your data stays on your Mac. Amnesia has no servers, no tracking, no analytics.
+
+---
+PERINGATAN: Amnesia benar-benar menghapus data. Setelah aktif, semua di luar
+folder Keep dan Keep List dihapus setiap logout, restart dan shutdown, tidak
+masuk Trash dan tidak bisa dibatalkan. Backup dulu.
+Ketentuan lengkap: https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.id.md
+TXT
+PKG="$(mktemp -d)/Amnesia-v$V.dmg"
+hdiutil create -quiet -volname "Amnesia $V" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$PKG"
 NOTES="$(mktemp)"
 awk -v v="## v$V" '$0 ~ "^"v {on=1; next} on && /^## v/ {exit} on' CHANGELOG.md > "$NOTES"
 
 echo "5/7  Release v$V..."
 if gh release view "v$V" >/dev/null 2>&1; then
-  gh release upload "v$V" "$ZIP" --clobber
+  gh release upload "v$V" "$PKG" --clobber
   gh release edit "v$V" --notes-file "$NOTES" >/dev/null
 else
-  gh release create "v$V" "$ZIP" --title "Amnesia v$V" --notes-file "$NOTES" >/dev/null
+  gh release create "v$V" "$PKG" --title "Amnesia v$V" --notes-file "$NOTES" >/dev/null
 fi
 OWNER="$(gh api user -q .login)"; REPO="$(gh repo view --json name -q .name)"
 SITE="https://$OWNER.github.io/$REPO/"
@@ -72,7 +100,7 @@ gh api "repos/$OWNER/$REPO/pages" >/dev/null 2>&1 || \
 gh repo edit --homepage "$SITE" >/dev/null
 
 echo "7/7  Homebrew (brew install --cask $OWNER/tap/amnesia)..."
-SHA="$(shasum -a 256 "$ZIP" | cut -d' ' -f1)"
+SHA="$(shasum -a 256 "$PKG" | cut -d' ' -f1)"
 TAP="$(mktemp -d)/homebrew-tap"
 gh repo view "$OWNER/homebrew-tap" >/dev/null 2>&1 || \
   gh repo create homebrew-tap --public --description "Homebrew tap for Amnesia" >/dev/null
@@ -83,7 +111,7 @@ cask "amnesia" do
   version "$V"
   sha256 "$SHA"
 
-  url "https://github.com/$OWNER/$REPO/releases/download/v#{version}/Amnesia-v#{version}.zip"
+  url "https://github.com/$OWNER/$REPO/releases/download/v#{version}/Amnesia-v#{version}.dmg"
   name "Amnesia"
   desc "Wipes your Mac at every logout, except what you choose to keep"
   homepage "$SITE"
@@ -98,6 +126,8 @@ cask "amnesia" do
   end
 
   caveats <<~EOS
+    Amnesia really deletes data once you turn it on. Read the terms first:
+      https://github.com/$OWNER/$REPO/blob/main/TERMS.md
     Before uninstalling, open Amnesia and press Turn Off first.
   EOS
 end

@@ -5,6 +5,36 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.8 — 2026-10-06
+
+### Added
+- **Pick what stays, right after the tour.** When the welcome tour ends, a "What should stay?" page lists the apps on your Mac. The tour itself now only shows an example.
+- **See exactly what's kept.** Switch an app on and it unfolds: which data is kept (app data, sandbox data, shared data, settings), where it lives, and how big it is.
+- **No more locked apps.** Apps the Profile Vault handles (Chrome, Claude, WhatsApp…) can be switched on too, if you'd rather keep them whole instead of in the vault.
+- **Your own Keep folder.** Pick any folder, anywhere, with any name (even on an external drive): on the Keep List page, in Settings, or on the "What should stay?" page. Amnesia can move your files over from the old one. The wiper, the panic word and backups all follow the folder you picked (`KEEP_DIR` in settings.conf).
+- **"Read this first" page** in the tour: what Amnesia deletes, what happens if you forget a password, and that it's free software used at your own risk. You have to tick that you understand before you can continue, and before Turn On works.
+- **`TERMS.md` / `TERMS.id.md`**: the full terms & warning, linked from the README, the website, the app and the installer.
+- **Privacy note** on the welcome page and in Settings: no servers, no tracking, no analytics, nothing leaves your Mac unless you set up a backup.
+- **Full Disk Access, asked once.** The quick check shows whether Amnesia has it, with a button that opens the right Settings page. No more pop-ups for every folder.
+- **Connect a server without Terminal.** Type the server password once and press Connect. Amnesia makes an SSH key, installs it on the server, and tells you the exact folder where backups go. The password is never saved. If your key already works, no password is needed at all.
+- **Cloud login in a small window** inside the app (Apple's secure login sheet), instead of opening Chrome or your browser. It doesn't use your browser's cookies.
+- **Installer (.dmg)** for releases: open it and drag Amnesia to Applications. It also has a short "READ ME FIRST" with the warning. Homebrew installs the .dmg too.
+- **Automatic screenshots**: `app/screenshots.sh` takes every screen (tour, Keep setup, home, vault, Keep List, backup, what gets deleted, settings, dark mode, menu bar) in English and Indonesian, using demo data so nothing personal shows up.
+- Backups can include folders outside your home folder too (for example on another drive).
+
+### Changed
+- The welcome page sits higher, so the logo and text aren't pushed down.
+- **"What gets deleted" opens instantly.** The list is prepared in the background (20 seconds after the app starts, then every 30 minutes) and shown right away, with "Updated … ago" and a Refresh button. The saved list (`report.txt`) is deleted at every real wipe, so it never leaves a trace.
+- The wiper is a lot faster: checking the Keep List no longer starts extra programs for every folder.
+- At login, macOS now starts the cleaner through the Amnesia app itself, so the Full Disk Access you gave Amnesia also covers the wipe at logout. Existing setups are updated automatically on the next app launch.
+- The Desktop shortcut to the Keep folder follows its new name and place.
+- The README and website have the new screenshots (in both languages), the warning, the .dmg installer and new FAQ answers (privacy, Full Disk Access, backups without Terminal).
+- SSH server can be written as `user@host` (backups then go to `~/amnesia-backup` on the server) or `user@host:folder`.
+
+### Removed
+- The "Set Up SSH Key" button that opened Terminal (replaced by Connect).
+- The zip download (replaced by the .dmg).
+
 ## v5.7 — 2026-10-06
 
 ### Added

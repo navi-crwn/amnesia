@@ -62,6 +62,19 @@ try:
     v.create(PW, panic_word="deletesemua", panic_full=True); v.snapshot()
     expect_error(lambda: v.restore("deletesemua"), "DOOMSDAY")
     assert not os.path.exists(v.VAULT) and os.listdir(os.path.join(T, "Keep")) == []
+    # folder Keep custom (KEEP_DIR): panik mengosongkan folder itu, bukan ~/Keep
+    mk("Keep/aman.txt", "x"); mk("Documents/Barang Saya/rahasia.txt", "x")
+    with open(os.path.join(v.AMNESIA, "settings.conf"), "a") as f:
+        f.write("KEEP_DIR=~/Documents/Barang Saya\n")
+    v.create(PW, panic_word="deletesemua", panic_full=True); v.snapshot()
+    expect_error(lambda: v.restore("deletesemua"), "DOOMSDAY")
+    assert os.listdir(os.path.join(T, "Documents/Barang Saya")) == []
+    assert os.path.exists(os.path.join(T, "Keep/aman.txt"))
+    # KEEP_DIR berbahaya (home / ~/.amnesia) diabaikan
+    for bad in ("~/", "~/.amnesia", "/", "relatif"):
+        with open(os.path.join(v.AMNESIA, "settings.conf"), "a") as f:
+            f.write(f"KEEP_DIR={bad}\n")
+        assert v.keep_dir() == os.path.join(T, "Keep"), bad
     print("OK: all vault tests passed")
 finally:
     shutil.rmtree(T)

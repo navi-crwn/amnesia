@@ -6,7 +6,8 @@
 #   clean.sh logout|login|now [--dry-run]
 #   --dry-run  : hanya tampilkan apa yang AKAN dihapus, tidak menghapus apa pun
 #
-# Yang dilindungi: ~/Keep, ~/.amnesia, isi keep.conf, file sistem Apple.
+# Yang dilindungi: folder Keep (KEEP_DIR di settings.conf, default ~/Keep), ~/.amnesia,
+# isi keep.conf, file sistem Apple.
 # (Kompatibel bash 3.2 bawaan macOS.)
 # ============================================
 set -u
@@ -17,6 +18,12 @@ A="$H/.amnesia"
 # Bahasa pesan log (English / Indonesia), dipilih di Pengaturan app
 LANGX="$(grep '^LANG=' "$A/settings.conf" 2>/dev/null | tail -1 | cut -d= -f2)"
 t() { if [ "$LANGX" = id ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }
+# Folder Keep: bisa di mana saja dengan nama apa saja (Pengaturan app). "~/" = folder home.
+KD="$(grep '^KEEP_DIR=' "$A/settings.conf" 2>/dev/null | tail -1 | cut -d= -f2-)"
+case "$KD" in "~/"?*) KD="$H/${KD#\~/}" ;; /?*) ;; *) KD="$H/Keep" ;; esac
+KD="${KD%/}"
+case "$KD" in "$H"|"$H/.amnesia"|"$H/.amnesia/"*|"$H/.Trash"|"$H/.Trash/"*) KD="$H/Keep" ;; esac
+KREL=""; case "$KD" in "$H"/?*) KREL="${KD#"$H"/}" ;; esac      # kosong = di luar home (tidak pernah disentuh)
 MODE="now"; DRY=0
 for arg in "$@"; do
     case "$arg" in
@@ -42,7 +49,7 @@ fi
 
 # ---------- Daftar yang dilindungi ----------
 KEEP=(
-    "Keep" ".amnesia"
+    ".amnesia"
     # Sistem Apple (jangan disentuh)
     "Library/Application Support/com.apple.*"
     "Library/Application Support/Apple"
@@ -61,6 +68,8 @@ KC_KEEP=(
     "AppleIDClientIdentifier" "BluetoothGlobal" "BluetoothLE" "ProtectedCloudStorage"
     "TelephonyUtilities" "WiFiAnalytics" "MetadataKeychain" "iCloud"
 )
+# folder Keep (karakter * ? [ ] di namanya dibaca apa adanya, bukan pola)
+[ -n "$KREL" ] && KEEP+=("$(printf '%s' "$KREL" | sed 's/[][*?\\]/\\&/g')")
 KEEPF="$A/keep.conf"; [ -f "$KEEPF" ] || KEEPF="$A/keep.example.conf"   # keep.conf = milik pribadi (tidak di GitHub)
 if [ -f "$KEEPF" ]; then
     while IFS= read -r line || [ -n "$line" ]; do
@@ -82,12 +91,16 @@ kept() {
 }
 
 # ada pola keep DI DALAM path ini? -> masuk ke dalam, jangan hapus foldernya utuh
+# (tanpa program luar: dipanggil ribuan kali, jadi harus cepat)
 has_kept_inside() {
-    local p n pre
-    n=$(printf '%s' "$1" | tr -cd / | wc -c)
+    local p pre ps i s="${1//[!\/]/}"
+    local n=${#s}
     for p in "${KEEP[@]}"; do
-        pre=$(printf '%s' "$p" | cut -d/ -f1-$((n + 1)))
-        [ "$pre" != "$p" ] && [[ "$1" == $pre ]] && return 0
+        ps="${p//[!\/]/}"
+        [ ${#ps} -gt $n ] || continue          # pola harus lebih dalam dari path ini
+        pre="$p"
+        for ((i = ${#ps}; i > n; i--)); do pre="${pre%/*}"; done
+        [[ "$1" == $pre ]] && return 0
     done
     return 1
 }
@@ -207,11 +220,17 @@ killall cfprefsd 2>/dev/null          # supaya setting lama tidak ditulis ulang 
 dscacheutil -flushcache 2>/dev/null
 killall -HUP mDNSResponder 2>/dev/null
 fi
-mkdir -p "$H/Keep"
+# folder Keep dibuat lagi kalau belum ada (di luar home: hanya kalau drive/foldernya ada)
+{ [ -n "$KREL" ] || [ -d "${KD%/*}" ]; } && mkdir -p "$KD" 2>/dev/null
 for d in /Applications "$H/Applications"; do      # pintasan app di Desktop (bukan salinan)
     [ -d "$d/Amnesia.app" ] && { ln -sfn "$d/Amnesia.app" "$H/Desktop/Amnesia.app" 2>/dev/null; break; }
 done
-ln -sfn "$H/Keep" "$H/Desktop/Keep" 2>/dev/null
+# pintasan folder Keep di Desktop (kalau foldernya tidak di Desktop sendiri)
+KL="$H/Desktop/${KD##*/}"
+case "$KD" in "$H/Desktop"|"$H/Desktop/"*) ;; *)
+    [ -d "$KD" ] && { [ ! -e "$KL" ] || [ -L "$KL" ]; } && ln -sfn "$KD" "$KL" 2>/dev/null ;;
+esac
 
+rm -f "$A/report.txt"     # laporan "yang akan dihapus" berisi nama file: ikut dibuang
 # Log hanya waktu + jumlah, tanpa nama file (log juga jejak)
 echo "$(date '+%F %T') $MODE: $(t "$COUNT items wiped" "$COUNT item dibersihkan")" > "$A/clean.log"

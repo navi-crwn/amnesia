@@ -5,6 +5,7 @@
 #   backup.sh --restore-vault FILE      ambil Profile Vault dari file backup (untuk Mac baru)
 # Password backup selalu dibaca dari stdin (1 baris), tidak pernah lewat argumen.
 # Tujuan diatur di settings.conf: BACKUP_DEST = drive | ssh | rclone
+# BACKUP_FOLDERS: daftar dipisah koma. "@keep" = folder Keep, lainnya relatif ke home atau path lengkap.
 # ============================================
 set -uo pipefail
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -36,10 +37,16 @@ fi
 
 # ---------- Kumpulkan yang di-backup ----------
 cd "$H" || fail "$(t "home folder not found" "folder home tidak ada")"
+# folder Keep pilihan user (KEEP_DIR, default ~/Keep)
+KD="$(cfg KEEP_DIR)"
+case "$KD" in "~/"?*) KD="$H/${KD#\~/}" ;; /?*) ;; *) KD="$H/Keep" ;; esac
 items=()
 IFS=',' read -ra F <<< "$(cfg BACKUP_FOLDERS || true)"
-[ ${#F[@]} -gt 0 ] || F=(Keep)
-for f in "${F[@]}"; do [ -n "$f" ] && [ -e "$f" ] && items+=("$f"); done
+[ ${#F[@]} -gt 0 ] || F=(@keep)
+for f in "${F[@]}"; do
+    case "$f" in @keep) f="${KD%/}" ;; "~/"?*) f="${f#\~/}" ;; esac   # selain itu: relatif ke home, atau path lengkap
+    [ -n "$f" ] && [ -e "$f" ] && items+=("$f")
+done
 [ "$(cfg BACKUP_VAULT)" = 1 ] && [ -d .amnesia/vault ] && items+=(.amnesia/vault)
 [ ${#items[@]} -gt 0 ] || fail "$(t "nothing to back up" "tidak ada folder untuk di-backup")"
 
@@ -63,7 +70,7 @@ case "$DEST" in
         WHERE="$T" ;;
     ssh)
         R="$(cfg BACKUP_SSH)"; [ -n "$R" ] || fail "$(t "no server set up" "server belum diatur")"
-        HOST="${R%%:*}"; RPATH="${R#*:}"; [ "$RPATH" = "$R" ] && RPATH="amnesia-backup"
+        HOST="${R%%:*}"; RPATH="${R#*:}"; { [ "$RPATH" = "$R" ] || [ -z "$RPATH" ]; } && RPATH="amnesia-backup"
         SSHO=(-o BatchMode=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
         ssh "${SSHO[@]}" "$HOST" "mkdir -p -- $RPATH" || fail "$(t "can't connect to $HOST (check the SSH key)" "tidak bisa konek ke $HOST (cek kunci SSH)")"
         rsync -t --partial -e "ssh ${SSHO[*]}" "$OUT" "$HOST:$RPATH/" || fail "$(t "upload to $HOST failed" "upload ke $HOST gagal")"

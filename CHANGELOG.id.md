@@ -5,6 +5,36 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.8 — 2026-10-06
+
+### Ditambahkan
+- **Pilih yang disimpan, langsung setelah tur.** Begitu tur perkenalan selesai, halaman "Apa yang tetap disimpan?" menampilkan app yang ada di Mac kamu. Di dalam tur sekarang cuma contoh.
+- **Lihat persis apa yang disimpan.** Nyalakan sebuah app dan detailnya terbuka: data apa saja yang disimpan (data app, data sandbox, data bersama, setting), lokasinya, dan ukurannya.
+- **Tidak ada lagi app yang terkunci.** App yang diurus Profile Vault (Chrome, Claude, WhatsApp…) sekarang juga bisa dinyalakan, kalau kamu lebih suka menyimpannya utuh daripada lewat vault.
+- **Folder Keep milikmu sendiri.** Pilih folder apa saja, di mana saja, nama apa saja (bahkan di drive eksternal): di halaman Keep List, di Pengaturan, atau di halaman "Apa yang tetap disimpan?". Amnesia bisa memindahkan file dari folder lama. Pembersih, kata panik dan backup semuanya ikut folder pilihanmu (`KEEP_DIR` di settings.conf).
+- **Halaman "Baca ini dulu"** di tur: apa yang dihapus Amnesia, apa yang terjadi kalau lupa password, dan bahwa ini software gratis yang risikonya ada di kamu. Wajib dicentang sebelum bisa lanjut, dan sebelum tombol Aktifkan bisa dipakai.
+- **`TERMS.md` / `TERMS.id.md`**: ketentuan & peringatan lengkap, ditautkan dari README, website, app, dan installer.
+- **Catatan privasi** di halaman sambutan dan Pengaturan: tanpa server, tanpa pelacakan, tanpa pengumpulan data, tidak ada yang keluar dari Mac kecuali kamu atur backup.
+- **Akses Disk Penuh, cukup sekali.** Cek kesiapan menunjukkan apakah Amnesia sudah punya izinnya, dengan tombol yang langsung membuka halaman Pengaturan yang tepat. Tidak ada lagi pop-up per folder.
+- **Hubungkan server tanpa Terminal.** Ketik password server sekali lalu tekan Hubungkan. Amnesia membuat kunci SSH, memasangnya di server, dan memberi tahu folder persis tujuan backup. Password tidak pernah disimpan. Kalau kunci kamu sudah jalan, tidak perlu password sama sekali.
+- **Login cloud di jendela kecil** di dalam app (jendela login aman milik Apple), bukan membuka Chrome atau browser kamu. Tidak memakai cookie browser.
+- **Installer (.dmg)** untuk rilis: buka, lalu seret Amnesia ke Applications. Di dalamnya ada "READ ME FIRST" berisi peringatan singkat. Homebrew juga memasang dari .dmg.
+- **Screenshot otomatis**: `app/screenshots.sh` memotret semua layar (tur, atur Keep, home, vault, Keep List, backup, yang akan dihapus, pengaturan, mode gelap, menu bar) dalam English dan Indonesia, pakai data contoh jadi tidak ada data pribadi yang terfoto.
+- Backup juga bisa menyertakan folder di luar folder home (misalnya di drive lain).
+
+### Diubah
+- Halaman sambutan posisinya lebih naik, logo dan teks tidak terdorong ke bawah lagi.
+- **"Yang akan dihapus" langsung terbuka.** Daftarnya disiapkan di background (20 detik setelah app jalan, lalu tiap 30 menit) dan langsung tampil, lengkap dengan "Diperbarui … lalu" dan tombol Muat ulang. Daftar yang tersimpan (`report.txt`) ikut dihapus setiap pembersihan sungguhan, jadi tidak meninggalkan jejak.
+- Pembersih jauh lebih cepat: pengecekan Keep List tidak lagi menjalankan program tambahan untuk setiap folder.
+- Saat login, macOS sekarang menjalankan pembersih lewat app Amnesia, jadi izin Akses Disk Penuh milik Amnesia juga berlaku untuk pembersihan saat logout. Pengaturan lama diperbarui otomatis saat app dibuka berikutnya.
+- Pintasan folder Keep di Desktop ikut nama dan lokasi barunya.
+- README dan website memakai screenshot baru (dua bahasa), peringatan, installer .dmg, dan jawaban FAQ baru (privasi, Akses Disk Penuh, backup tanpa Terminal).
+- Server SSH bisa ditulis `user@alamat` (backup masuk ke `~/amnesia-backup` di server) atau `user@alamat:folder`.
+
+### Dihapus
+- Tombol "Siapkan Kunci SSH" yang membuka Terminal (diganti Hubungkan).
+- Download zip (diganti .dmg).
+
 ## v5.7 — 2026-10-06
 
 ### Ditambahkan

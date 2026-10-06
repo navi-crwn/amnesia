@@ -11,8 +11,12 @@
   <a href="https://navi-crwn.github.io/amnesia-mac/">Website</a> ·
   <a href="#install">Install</a> ·
   <a href="#faq">FAQ</a> ·
-  <a href="CHANGELOG.md">Changelog</a>
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="TERMS.md">Terms</a>
 </p>
+
+> [!WARNING]
+> **Amnesia really deletes data.** Once you turn it on, everything outside your Keep folder and Keep List is deleted at every logout, restart and shutdown. It doesn't go to the Trash and can't be undone. Please read the short [terms & warning](TERMS.md) before you install.
 
 ---
 
@@ -30,16 +34,31 @@ The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, 
 <p align="center"><img src="docs/features.png" alt="Amnesia features" width="100%"></p>
 
 <p align="center">
-  <img src="docs/screens/home.png" alt="Home" width="32%">
-  <img src="docs/screens/vault.png" alt="Profile Vault" width="32%">
-  <img src="docs/screens/backup.png" alt="Backup" width="32%">
+  <img src="docs/screens/en/home.png" alt="Home" width="32%">
+  <img src="docs/screens/en/keep-setup.png" alt="Pick what stays" width="32%">
+  <img src="docs/screens/en/backup.png" alt="Backup" width="32%">
 </p>
+
+<details>
+<summary><b>More screenshots</b></summary>
+<p align="center">
+  <img src="docs/screens/en/tour-welcome.png" alt="Welcome tour" width="32%">
+  <img src="docs/screens/en/tour-terms.png" alt="Read this first" width="32%">
+  <img src="docs/screens/en/tour-check.png" alt="Quick check" width="32%">
+  <img src="docs/screens/en/vault.png" alt="Profile Vault" width="32%">
+  <img src="docs/screens/en/keep.png" alt="Keep List" width="32%">
+  <img src="docs/screens/en/preview.png" alt="What gets deleted" width="32%">
+  <img src="docs/screens/en/settings.png" alt="Settings" width="32%">
+  <img src="docs/screens/en/home-dark.png" alt="Dark mode" width="32%">
+  <img src="docs/screens/en/menu.png" alt="Menu bar" width="32%">
+</p>
+</details>
 
 ## What gets wiped, what stays?
 
 | 🗑️ Wiped at every logout | ✅ Stays safe |
 |---|---|
-| Browser history & cookies | Everything in **`~/Keep`** (put your important files here) |
+| Browser history & cookies | Everything in your **Keep folder** (`~/Keep` by default; put it anywhere, call it anything) |
 | Desktop, Downloads, Documents, Pictures | Logins saved in the **Profile Vault** |
 | Caches, logs, Terminal history | Everything on the **Keep List** (VPN, SSH keys, Terminal settings, etc.) |
 | Data from apps you didn't pick | Apps in `/Applications` and Homebrew |
@@ -56,16 +75,18 @@ bash ~/.amnesia/clean.sh logout --dry-run
 - **🔐 Profile Vault.** Your Chrome logins (Gmail, WhatsApp Web, Telegram Web), Claude, WhatsApp, and coding tools like Claude Code, OpenCode, Gemini CLI and GitHub CLI go into an encrypted safe (AES-256). One password brings them back.
 - **⏏️ Save & Log Out.** One click: your logins are saved to the vault first, then the Mac logs out. If saving fails, the logout is cancelled, so nothing gets lost.
 - **⏸️ Pause 1 Session.** Need to skip the wipe just once? Hit Pause. After one logout and login, Amnesia turns itself back on.
-- **📌 Keep List.** Pick the folders and apps that should never be wiped, right from the app.
+- **📌 Keep List.** Pick the folders and apps that should never be wiped, right from the app. Switch an app on and you see exactly what's kept (app data, settings, sizes).
+- **🗂️ Your own Keep folder.** Files in it are never wiped. Put it anywhere (even on an external drive) and give it any name.
 - **💾 Backup anywhere.** Your chosen folders get locked into one `.7z` file (AES-256) and sent to:
   - a **USB drive / SSD** that's plugged in,
-  - **your own server / VPS** over SSH + rsync,
-  - the **cloud**: Google Drive, Dropbox, OneDrive, Box or pCloud. Just log in in your browser, no Terminal. (S3, WebDAV and 40+ more work through rclone.)
+  - **your own server / VPS** over SSH + rsync. Type the server password once, Amnesia sets up the key. No Terminal.
+  - the **cloud**: Google Drive, Dropbox, OneDrive, Box or pCloud. You log in in a small login window, no Terminal and no Chrome needed. (S3, WebDAV and 40+ more work through rclone.)
 - **⏰ Scheduled backups.** Daily or weekly, running on their own while the Amnesia icon is in the menu bar.
 - **🚚 Move to a new Mac.** Take all your logins with you: the Keychain keys go into the vault, the vault goes into a backup, and you restore it on the new Mac.
 - **👋 Welcome tour.** The first time you open it, Amnesia shows you around, checks that everything's ready, finds your apps and asks which ones should keep their data.
 - **🔥 Panic button.** Get the vault password wrong 3 times, or type your *panic word*, and the vault is destroyed on the spot.
-- **👀 Check before logout.** Logging out or restarting from the Apple menu? Amnesia holds on for a second and shows what's about to be deleted. You decide: continue or cancel.
+- **👀 Check before logout.** Logging out or restarting from the Apple menu? Amnesia holds on for a second and shows what's about to be deleted. You decide: continue or cancel. The list is prepared in the background, so it opens right away.
+- **🏠 Offline & private.** No servers, no accounts, no tracking, no analytics. Nothing leaves your Mac unless you set up a backup yourself.
 - **📸 Auto snapshot.** Forgot to press Save & Log Out? Your logins still get saved to the vault on a normal logout.
 - **🔔 Notifications.** After login, Amnesia tells you the Mac is clean and reminds you to restore your profiles.
 - **⚙️ Settings.** Turn any of the above on or off.
@@ -74,7 +95,9 @@ bash ~/.amnesia/clean.sh logout --dry-run
 
 ## Install
 
-**You need:** macOS 15 or newer. Everything else is inside the app (7-Zip included). The welcome tour helps you install Apple's free Command Line Tools if they're missing.
+**You need:** macOS 15 or newer. Everything else is inside the app (7-Zip included). The welcome tour helps you install Apple's free Command Line Tools if they're missing, and asks once for **Full Disk Access** (so macOS doesn't ask about every folder).
+
+**Before anything else:** read the [terms & warning](TERMS.md). The app also asks you to tick that you've read it.
 
 **Option 1: Homebrew** (easiest, and updates come with `brew upgrade`)
 
@@ -82,9 +105,9 @@ bash ~/.amnesia/clean.sh logout --dry-run
 brew install --cask navi-crwn/tap/amnesia
 ```
 
-**Option 2: Download**
+**Option 2: Installer (.dmg)**
 
-1. Grab `Amnesia-vX.zip` from [Releases](../../releases/latest), unzip it, and drag **Amnesia** into **Applications**.
+1. Grab `Amnesia-vX.dmg` from [Releases](../../releases/latest), open it, and drag **Amnesia** onto the **Applications** folder. The `READ ME FIRST` file in there has the short warning.
 2. The app isn't signed by Apple (yet), so macOS blocks it the first time. Open it once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
    Or in Terminal: `xattr -dr com.apple.quarantine /Applications/Amnesia.app`
 
@@ -103,7 +126,7 @@ The welcome tour walks you through this, but here's the short version:
 
 1. **Create the vault.** Open *Profile Vault*, pick a password (at least 12 characters), then press *Create Vault*. This password **can't be recovered** if you forget it, so keep it somewhere safe.
 2. **Save your logins.** Log in to Chrome, WhatsApp and your other apps like normal, then press *Snapshot*.
-3. **Protect your files.** Move anything important into the `~/Keep` folder.
+3. **Protect your files.** Move anything important into your Keep folder (`~/Keep`, or wherever you put it).
 4. **Double-check.** Open Settings (⚙️) → **See what would be deleted now**, and make sure nothing important is on the list.
 5. **Turn it on.** Press *Turn On*. From the next logout on, your Mac always starts clean.
 
@@ -121,11 +144,14 @@ That's fine. Amnesia holds on for a moment to show you what will be deleted, the
 Then nobody can open the vault, including you. Delete it, make a new one, and log back in to your apps.
 
 **Does my data get sent to the internet?**
-No, unless you choose a server or cloud backup yourself. Even then, only the locked `.7z` file is sent, and the server can't read what's inside. Your vault and your personal Keep List never go to GitHub either.
+No. Amnesia has no servers, no accounts, no tracking and no analytics, so there's nothing to send. The only exception is a backup to a server or cloud that **you** set up, and even then only the locked `.7z` file goes, straight from your Mac to the place you picked. Your vault and your personal Keep List never go to GitHub either.
+
+**Why does it want Full Disk Access?**
+To clean your Desktop, Documents and Downloads, macOS would otherwise ask permission folder by folder (and it can't ask during a logout). Allow it once in **System Settings → Privacy & Security → Full Disk Access** and you're done. The wiping at logout runs through the app too, so the same permission covers it.
 
 **What do I need for online backups?**
-- *SSH server:* type `user@host:folder`, press **Set Up SSH Key** once (you'll type the server password one time), then **Test Connection**.
-- *Cloud:* pick Google Drive, Dropbox, OneDrive, Box or pCloud, press **Connect**, log in in your browser, done. No Terminal needed, and Amnesia installs rclone for you (needs Homebrew).
+- *SSH server:* type `user@host` or `user@host:folder`, type the server password **once**, press **Connect**. Amnesia makes an SSH key and installs it on the server for you, no Terminal. The password isn't saved; from then on backups log in with the key. Already have a key that works? Leave the password empty. Without a folder, backups go to `~/amnesia-backup` on the server (the app shows the full path after connecting).
+- *Cloud:* pick Google Drive, Dropbox, OneDrive, Box or pCloud, press **Connect**, log in in the small login window, done. It doesn't use Chrome or your browser's cookies. Amnesia installs rclone for you (needs Homebrew).
 
 Heads up: every backup is uploaded in full (not just what changed), because the file is encrypted. Old backups aren't deleted automatically, so clean them up at the destination now and then.
 
@@ -150,10 +176,10 @@ Press *Turn Off* in the app. Your Mac stops being wiped until you turn it back o
 | `vault.py` | Profile Vault: RSA-4096 key + 7-Zip AES-256. |
 | `backup.sh` | Encrypted backups to a USB drive, an SSH server, or the cloud (rclone). |
 | `keep.example.conf` | Example Keep List. `build.sh` copies it to `keep.conf` on first install. |
-| `app/` | The SwiftUI app, the icon, and the build/release scripts. |
+| `app/` | The SwiftUI app, the icon, and the build/release scripts. `app/screenshots.sh` makes all the screenshots with demo data. |
 | `docs/` | Images, screenshots and the website (GitHub Pages). |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Automatic tests in a fake home folder, safe to run anytime. |
 
 ---
 
-<p align="center">MIT License · Made for personal use. Use it wisely: Amnesia really does delete your data.</p>
+<p align="center">MIT License · <a href="TERMS.md">Terms & warning</a> · Use it wisely: Amnesia really does delete your data.</p>

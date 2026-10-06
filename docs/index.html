@@ -65,6 +65,9 @@ h2{font-size:clamp(28px,4vw,40px);margin:0 0 10px;font-weight:800;letter-spacing
 .step:before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--indigo));color:#fff;font-weight:800}
 .gallery{display:flex;gap:18px;overflow-x:auto;padding-bottom:12px;scroll-snap-type:x mandatory}
 .gallery img{height:460px;border-radius:18px;box-shadow:var(--shadow);scroll-snap-align:start}
+.warn{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.07);margin-bottom:18px}
+.warn h3{margin-top:0}
+.warn p{color:var(--muted)}
 details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 20px;margin-bottom:12px}
 summary{font-weight:700;cursor:pointer}
 details p{color:var(--muted);margin:10px 0 0}
@@ -115,8 +118,8 @@ html[lang=id] [data-id]{display:revert}
         <p class="small"><span data-en>Free & open source · macOS 15+ · Apple Silicon & Intel</span><span data-id>Gratis & open source · macOS 15+ · Apple Silicon & Intel</span></p>
       </div>
       <div class="shot">
-        <img src="screens/home.png" alt="Amnesia main window">
-        <img class="float" src="screens/menu.png" alt="Amnesia menu bar panel">
+        <img data-shot="home" data-dark="home-dark" src="screens/en/home.png" alt="Amnesia main window">
+        <img class="float" data-shot="menu" src="screens/en/menu.png" alt="Amnesia menu bar panel">
       </div>
     </div>
   </div>
@@ -161,7 +164,7 @@ html[lang=id] [data-id]{display:revert}
         <li><span data-en>Caches, logs, Terminal history</span><span data-id>Cache, log, riwayat Terminal</span></li>
         <li><span data-en>Data from apps you didn't pick</span><span data-id>Data app yang tidak kamu pilih</span></li></ul></div>
       <div class="card"><h3>✅ <span data-en>Stays safe</span><span data-id>Tetap aman</span></h3><ul>
-        <li><span data-en>Everything in ~/Keep</span><span data-id>Semua isi ~/Keep</span></li>
+        <li><span data-en>Everything in your Keep folder (any place, any name)</span><span data-id>Semua isi folder Keep kamu (di mana saja, nama apa saja)</span></li>
         <li><span data-en>Logins in the Profile Vault</span><span data-id>Login di Profile Vault</span></li>
         <li><span data-en>Apps on your Keep List (VPN, SSH keys…)</span><span data-id>App di Keep List (VPN, kunci SSH…)</span></li>
         <li><span data-en>Your installed apps</span><span data-id>App yang terpasang</span></li></ul></div>
@@ -174,11 +177,16 @@ html[lang=id] [data-id]{display:revert}
     <h2><span data-en>Take a look</span><span data-id>Lihat tampilannya</span></h2>
     <p class="sub"><span data-en>A native Mac app that lives in your menu bar. English and Bahasa Indonesia.</span><span data-id>App Mac asli yang tinggal di menu bar. Bahasa Inggris dan Indonesia.</span></p>
     <div class="gallery">
-      <img src="screens/home.png" alt="Home" loading="lazy">
-      <img src="screens/vault.png" alt="Profile Vault" loading="lazy">
-      <img src="screens/backup.png" alt="Backup" loading="lazy">
-      <img src="screens/keep.png" alt="Keep List" loading="lazy">
-      <img src="screens/menu.png" alt="Menu bar" loading="lazy">
+      <img data-shot="tour-welcome" src="screens/en/tour-welcome.png" alt="Welcome tour" loading="lazy">
+      <img data-shot="tour-terms" src="screens/en/tour-terms.png" alt="Read this first" loading="lazy">
+      <img data-shot="keep-setup" src="screens/en/keep-setup.png" alt="Pick what stays" loading="lazy">
+      <img data-shot="home" src="screens/en/home.png" alt="Home" loading="lazy">
+      <img data-shot="vault" src="screens/en/vault.png" alt="Profile Vault" loading="lazy">
+      <img data-shot="keep" src="screens/en/keep.png" alt="Keep List" loading="lazy">
+      <img data-shot="backup" src="screens/en/backup.png" alt="Backup" loading="lazy">
+      <img data-shot="preview" src="screens/en/preview.png" alt="What gets deleted" loading="lazy">
+      <img data-shot="settings" src="screens/en/settings.png" alt="Settings" loading="lazy">
+      <img data-shot="home-dark" src="screens/en/home-dark.png" alt="Dark mode" loading="lazy">
     </div>
   </div>
 </section>
@@ -186,12 +194,17 @@ html[lang=id] [data-id]{display:revert}
 <section id="install">
   <div class="wrap">
     <h2><span data-en>Install</span><span data-id>Cara pasang</span></h2>
+    <div class="card warn">
+      <h3>⚠️ <span data-en>Read this before you install</span><span data-id>Baca ini sebelum memasang</span></h3>
+      <p><span data-en>Amnesia really deletes data. Once you turn it on, everything outside your Keep folder and Keep List is deleted at every logout, restart and shutdown. It doesn't go to the Trash and can't be undone. Forget the vault password and nobody can open it. Amnesia is free software, provided as is, and you use it at your own risk.</span><span data-id>Amnesia benar-benar menghapus data. Setelah aktif, semua di luar folder Keep dan Keep List dihapus setiap logout, restart dan shutdown. Tidak masuk Trash dan tidak bisa dibatalkan. Lupa password vault, tidak ada yang bisa membukanya. Amnesia adalah software gratis, diberikan apa adanya, dan risiko pemakaian ada di kamu.</span></p>
+      <p><a href="https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.md"><span data-en>Read the full terms →</span></a><a href="https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.id.md"><span data-id>Baca ketentuan lengkap →</span></a></p>
+    </div>
     <div class="split">
       <div class="card"><h3>Homebrew</h3>
         <div class="code"><code>brew install --cask navi-crwn/tap/amnesia</code><button class="copy" onclick="copyCmd(this)">Copy</button></div>
         <p class="small"><span data-en>Updates come with brew upgrade.</span><span data-id>Update cukup dengan brew upgrade.</span></p></div>
-      <div class="card"><h3><span data-en>Download</span><span data-id>Download</span></h3>
-        <p><span data-en>Get the zip from <a href="https://github.com/navi-crwn/amnesia-mac/releases/latest">Releases</a>, unzip, and drag Amnesia to Applications. The app isn't signed by Apple yet, so the first time: System Settings → Privacy & Security → <b>Open Anyway</b>.</span><span data-id>Ambil zip dari <a href="https://github.com/navi-crwn/amnesia-mac/releases/latest">Releases</a>, unzip, lalu seret Amnesia ke Applications. App ini belum ditandatangani Apple, jadi pertama kali: System Settings → Privacy & Security → <b>Open Anyway</b>.</span></p></div>
+      <div class="card"><h3><span data-en>Installer (.dmg)</span><span data-id>Installer (.dmg)</span></h3>
+        <p><span data-en>Get the .dmg from <a href="https://github.com/navi-crwn/amnesia-mac/releases/latest">Releases</a>, open it, and drag Amnesia onto Applications. The app isn't signed by Apple yet, so the first time: System Settings → Privacy & Security → <b>Open Anyway</b>.</span><span data-id>Ambil .dmg dari <a href="https://github.com/navi-crwn/amnesia-mac/releases/latest">Releases</a>, buka, lalu seret Amnesia ke Applications. App ini belum ditandatangani Apple, jadi pertama kali: System Settings → Privacy & Security → <b>Open Anyway</b>.</span></p></div>
     </div>
   </div>
 </section>
@@ -199,7 +212,9 @@ html[lang=id] [data-id]{display:revert}
 <section id="faq">
   <div class="wrap">
     <h2>FAQ</h2>
-    <details><summary><span data-en>Is my data sent anywhere?</span><span data-id>Apakah data saya dikirim ke mana-mana?</span></summary><p><span data-en>No. Everything runs on your Mac. Only if you pick a server or cloud backup does a locked .7z file leave your Mac, and nobody can read it without your password.</span><span data-id>Tidak. Semua jalan di Mac kamu. Hanya kalau kamu pilih backup ke server atau cloud, file .7z terkunci keluar dari Mac, dan tidak ada yang bisa membacanya tanpa password kamu.</span></p></details>
+    <details><summary><span data-en>Is my data sent anywhere?</span><span data-id>Apakah data saya dikirim ke mana-mana?</span></summary><p><span data-en>No. Amnesia has no servers, no accounts, no tracking and no analytics. Everything runs on your Mac. Only if you set up a server or cloud backup does a locked .7z file leave your Mac, straight to the place you picked, and nobody can read it without your password.</span><span data-id>Tidak. Amnesia tidak punya server, tidak pakai akun, tidak melacak dan tidak mengumpulkan data. Semua jalan di Mac kamu. Hanya kalau kamu atur backup ke server atau cloud, file .7z terkunci keluar dari Mac, langsung ke tempat yang kamu pilih, dan tidak ada yang bisa membacanya tanpa password kamu.</span></p></details>
+    <details><summary><span data-en>Why does it ask for Full Disk Access?</span><span data-id>Kenapa minta Akses Disk Penuh?</span></summary><p><span data-en>So macOS doesn't ask about every folder (Desktop, Documents, Downloads…), and so the wipe at logout can actually reach them. You allow it once.</span><span data-id>Supaya macOS tidak tanya per folder (Desktop, Documents, Downloads…), dan supaya pembersihan saat logout benar-benar bisa menjangkaunya. Cukup izinkan sekali.</span></p></details>
+    <details><summary><span data-en>Do I need Terminal or Chrome to set up backups?</span><span data-id>Perlu Terminal atau Chrome untuk atur backup?</span></summary><p><span data-en>No. For a server, type its password once and Amnesia installs an SSH key. For Google Drive, Dropbox, OneDrive, Box or pCloud, you log in in a small login window inside the app.</span><span data-id>Tidak. Untuk server, ketik password-nya sekali dan Amnesia memasang kunci SSH. Untuk Google Drive, Dropbox, OneDrive, Box atau pCloud, kamu login di jendela kecil di dalam app.</span></p></details>
     <details><summary><span data-en>What if I forget the vault password?</span><span data-id>Kalau lupa password vault?</span></summary><p><span data-en>Then nobody can open it, including you. Make a new vault and log in to your apps again.</span><span data-id>Tidak ada yang bisa membukanya, termasuk kamu. Buat vault baru dan login ulang ke app kamu.</span></p></details>
     <details><summary><span data-en>Can I try it without deleting anything?</span><span data-id>Bisa coba tanpa menghapus apa-apa?</span></summary><p><span data-en>Yes. Amnesia stays off until you press Turn On. Settings → "See what would be deleted now" shows the full list first.</span><span data-id>Bisa. Amnesia tetap mati sampai kamu tekan Aktifkan. Pengaturan → "Lihat yang akan dihapus sekarang" menampilkan daftarnya dulu.</span></p></details>
     <details><summary><span data-en>Can I move to a new Mac?</span><span data-id>Bisa pindah ke Mac baru?</span></summary><p><span data-en>Yes. Prepare Move saves your Keychain keys to the vault, a backup carries it over, and Restore Keys puts them back on the new Mac.</span><span data-id>Bisa. Siapkan Pindah Mac menyimpan kunci Keychain ke vault, backup membawanya, lalu Pulihkan Kunci memasangnya di Mac baru.</span></p></details>
@@ -208,7 +223,7 @@ html[lang=id] [data-id]{display:revert}
 
 <footer>
   <div class="wrap">
-    <p><a href="https://github.com/navi-crwn/amnesia-mac">GitHub</a> · <a href="https://github.com/navi-crwn/amnesia-mac/blob/main/CHANGELOG.md">Changelog</a> · MIT License</p>
+    <p><a href="https://github.com/navi-crwn/amnesia-mac">GitHub</a> · <a href="https://github.com/navi-crwn/amnesia-mac/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.md">Terms</a> · MIT License</p>
     <p><span data-en>Made for personal use. Use it wisely: Amnesia really does delete your data.</span><span data-id>Dibuat untuk pemakaian pribadi. Pakai dengan bijak: Amnesia benar-benar menghapus data.</span></p>
   </div>
 </footer>
@@ -219,6 +234,12 @@ function setLang(l){
   document.getElementById('l-en').classList.toggle('on', l === 'en');
   document.getElementById('l-id').classList.toggle('on', l === 'id');
   try { localStorage.setItem('lang', l); } catch (e) {}
+  // screenshot ikut bahasa (dan mode gelap untuk gambar utama)
+  const dark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+  document.querySelectorAll('img[data-shot]').forEach(img => {
+    const name = (dark && img.dataset.dark) || img.dataset.shot;
+    img.src = 'screens/' + l + '/' + name + '.png';
+  });
 }
 function copyCmd(b){
   const t = b.parentElement.querySelector('code').textContent;

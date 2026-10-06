@@ -1,14 +1,17 @@
-// Amnesia v5.7 — app Mac asli (SwiftUI): jendela utama + ikon status di menu bar.
+// Amnesia v5.8 — app Mac asli (SwiftUI): jendela utama + ikon status di menu bar.
 // Dibuild oleh build.sh (swiftc dari Command Line Tools, tanpa Xcode).
 // Logika berat tetap di ~/.amnesia: clean.sh, agent.sh, vault.py (dipanggil lewat Process).
 import AppKit
+import AuthenticationServices
 import Security
 import SwiftUI
 
 // MARK: - Lokasi file
 
 enum P {
-    static let home = NSHomeDirectory()
+    /// AMNESIA_HOME = home palsu (dipakai mode screenshot & tes). Normalnya folder home kamu.
+    static let home = ProcessInfo.processInfo.environment["AMNESIA_HOME"] ?? NSHomeDirectory()
+    static let realHome = NSHomeDirectory()
     static let a = home + "/.amnesia"
     static let label = "com.amnesia.agent"
     static let plist = home + "/Library/LaunchAgents/com.amnesia.agent.plist"
@@ -22,6 +25,7 @@ enum P {
     static let backupSh = a + "/backup.sh"
     static let backupLog = a + "/backup.log"
     static let backupOk = a + "/backup.ok"
+    static let report = a + "/report.txt"
     static let sevenz = "/opt/homebrew/bin/7zz"
     static let launchctl = "/bin/launchctl"
     static let domain = "gui/\(getuid())"
@@ -64,16 +68,20 @@ final class DataBox: @unchecked Sendable { var data = Data() }
 
 /// Jalankan program. Password dikirim lewat stdin, tidak pernah lewat argumen.
 @discardableResult
-func sh(_ exe: String, _ args: [String], input: String? = nil, cwd: String? = nil, timeout: Double? = nil) -> Out {
+func sh(_ exe: String, _ args: [String], input: String? = nil, cwd: String? = nil, timeout: Double? = nil,
+        env: [String: String] = [:], onStart: (@Sendable (Process) -> Void)? = nil,
+        onErr: (@Sendable (String) -> Void)? = nil) -> Out {
     let p = Process()
     p.executableURL = URL(fileURLWithPath: exe)
     p.arguments = args
+    if !env.isEmpty { p.environment = ProcessInfo.processInfo.environment.merging(env) { _, n in n } }
     if let cwd = cwd { p.currentDirectoryURL = URL(fileURLWithPath: cwd) }
     let o = Pipe(), e = Pipe(), i = Pipe()
     p.standardOutput = o
     p.standardError = e
     p.standardInput = i
     do { try p.run() } catch { return Out(code: -1, out: "", err: error.localizedDescription) }
+    onStart?(p)
     if let t = timeout {
         DispatchQueue.global().asyncAfter(deadline: .now() + t) { if p.isRunning { p.terminate() } }
     }
@@ -84,7 +92,13 @@ func sh(_ exe: String, _ args: [String], input: String? = nil, cwd: String? = ni
     let g = DispatchGroup()
     g.enter()
     DispatchQueue.global().async {
-        errBox.data = e.fileHandleForReading.readDataToEndOfFile()
+        let h = e.fileHandleForReading
+        while true {                       // dibaca per potong, supaya onErr bisa melihat output secara langsung
+            let d = h.availableData
+            if d.isEmpty { break }
+            errBox.data.append(d)
+            onErr?(String(decoding: errBox.data, as: UTF8.self))
+        }
         g.leave()
     }
     let od = o.fileHandleForReading.readDataToEndOfFile()
@@ -153,6 +167,19 @@ enum Engine {
             || sh("/usr/bin/xcode-select", ["-p"]).code == 0
     }
 
+    /// Full Disk Access: 1 izin untuk semua folder (Desktop, Documents, Downloads, Safari, dll.).
+    /// Dicek dengan membuka file yang hanya bisa dibaca kalau izin itu sudah ada.
+    static var hasFullDisk: Bool {
+        guard let h = FileHandle(forReadingAtPath: P.realHome + "/Library/Application Support/com.apple.TCC/TCC.db")
+        else { return false }
+        try? h.close()
+        return true
+    }
+
+    static func openFullDiskSettings() {
+        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!)
+    }
+
     /// Pasang/perbarui script di ~/.amnesia dari dalam app (sekali per versi).
     /// keep.conf, settings.conf dan vault tidak pernah ditimpa. Folder hasil git clone (developer) tidak disentuh.
     static func install() {
@@ -178,6 +205,65 @@ enum Engine {
     }
 }
 
+// MARK: - Agent (dijalankan launchd saat login)
+
+enum Agent {
+    /// App yang dibuka dari Downloads (macOS "App Translocation") punya path sementara: pakai yang di Applications.
+    static var program: [String] {
+        let fallback = "/Applications/Amnesia.app/Contents/MacOS/Amnesia"
+        guard let exe = Bundle.main.executablePath, !exe.contains("/AppTranslocation/"),
+              exe.hasPrefix("/Applications/") || exe.hasPrefix(P.realHome + "/Applications/") else { return [fallback, "--agent"] }
+        return [exe, "--agent"]
+    }
+
+    /// LaunchAgent menjalankan app ini dengan --agent, lalu app menjalankan agent.sh sebagai "anaknya".
+    /// Dengan begitu izin Full Disk Access milik Amnesia ikut berlaku untuk pembersihan saat logout.
+    static func writePlist() -> String? {
+        let dict: [String: Any] = [
+            "Label": P.label,
+            "ProgramArguments": program,
+            "RunAtLoad": true,
+            "ExitTimeOut": 300,      // waktu untuk snapshot otomatis + pembersihan
+        ]
+        do {
+            try FileManager.default.createDirectory(atPath: (P.plist as NSString).deletingLastPathComponent,
+                                                    withIntermediateDirectories: true)
+            let data = try PropertyListSerialization.data(fromPropertyList: dict, format: .xml, options: 0)
+            try data.write(to: URL(fileURLWithPath: P.plist), options: .atomic)
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
+    /// Plist versi lama (bash langsung) atau app yang dipindah: perbarui. Berlaku mulai login berikutnya.
+    static func migrate() {
+        guard let d = NSDictionary(contentsOfFile: P.plist),
+              (d["ProgramArguments"] as? [String]) != program else { return }
+        _ = writePlist()
+    }
+
+    /// Mode --agent: jalankan agent.sh, teruskan sinyal logout (TERM) ke sana, tunggu sampai selesai.
+    static func run() -> Never {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/bin/bash")
+        p.arguments = [P.a + "/agent.sh"]
+        do { try p.run() } catch { exit(1) }
+        // sinyal diabaikan SETELAH agent.sh jalan (kalau sebelumnya, trap di bash tidak berfungsi)
+        var sources: [DispatchSourceSignal] = []
+        for sig in [SIGTERM, SIGINT, SIGHUP] {
+            signal(sig, SIG_IGN)
+            let src = DispatchSource.makeSignalSource(signal: sig, queue: .global())
+            src.setEventHandler { if p.isRunning { kill(p.processIdentifier, sig) } }
+            src.resume()
+            sources.append(src)
+        }
+        p.waitUntilExit()
+        withExtendedLifetime(sources) {}
+        exit(p.terminationStatus)
+    }
+}
+
 // MARK: - Deteksi app yang terpasang (untuk memilih yang di-keep)
 
 struct FoundApp: Identifiable {
@@ -188,10 +274,32 @@ struct FoundApp: Identifiable {
     var id: String { name }
 }
 
-/// App yang login-nya sudah diurus Profile Vault.
+/// App yang login-nya sudah diurus Profile Vault (tetap bisa dipilih untuk di-keep utuh).
 let vaultApps = ["Google Chrome", "Claude", "WhatsApp", "Windows App", "Antigravity"]
 /// App yang disarankan untuk di-keep (VPN & password manager): settingnya tidak rahasia dan repot diatur ulang.
 let suggestWords = ["vpn", "tailscale", "nord", "surfshark", "proton", "mullvad", "1password", "bitwarden"]
+
+/// Nama yang mudah dibaca untuk 1 path data app.
+func pathKind(_ p: String) -> (icon: String, label: String) {
+    if p.hasPrefix("Library/Application Support/") { return ("folder.fill", T("App data", "Data app")) }
+    if p.hasPrefix("Library/Containers/") { return ("shippingbox.fill", T("App data (sandbox)", "Data app (sandbox)")) }
+    if p.hasPrefix("Library/Group Containers/") { return ("square.stack.3d.up.fill", T("Shared data", "Data bersama")) }
+    if p.hasPrefix("Library/Preferences/") { return ("slider.horizontal.3", T("Settings", "Setting")) }
+    return ("doc.fill", T("Files", "File"))
+}
+
+/// Ukuran folder yang mudah dibaca, mis. "120 MB" (pakai du, cepat).
+func folderSize(_ rel: String) -> String {
+    let base = P.home + "/" + rel.replacingOccurrences(of: "*", with: "")
+    let paths = rel.hasSuffix("*")
+        ? (((try? FileManager.default.contentsOfDirectory(atPath: (base as NSString).deletingLastPathComponent)) ?? [])
+            .filter { $0.hasPrefix((base as NSString).lastPathComponent) }
+            .map { ((base as NSString).deletingLastPathComponent as NSString).appendingPathComponent($0) })
+        : [base]
+    let out = sh("/usr/bin/du", ["-sk"] + paths, timeout: 20).out
+    let kb = out.split(separator: "\n").compactMap { Int($0.split(separator: "\t").first ?? "") }.reduce(0, +)
+    return ByteCountFormatter.string(fromByteCount: Int64(kb) * 1024, countStyle: .file)
+}
 
 func keepMatches(_ path: String, _ entries: [String]) -> Bool {
     entries.contains { fnmatch($0, path, 0) == 0 || path.hasPrefix($0 + "/") }
@@ -228,18 +336,18 @@ func scanApps() -> [FoundApp] {
 func defaultPicks(_ apps: [FoundApp]) -> Set<String> {
     let kept = Keep.entries()
     return Set(apps.filter { a in
-        !a.inVault && (a.paths.allSatisfy { keepMatches($0, kept) }
-                       || suggestWords.contains { a.name.lowercased().contains($0) })
+        a.paths.allSatisfy { keepMatches($0, kept) }
+            || (!a.inVault && suggestWords.contains { a.name.lowercased().contains($0) })
     }.map(\.name))
 }
 
 /// Tambah app yang dipilih ke Keep List; app yang dimatikan dihapus (hanya baris yang persis miliknya).
 func applyPicks(_ apps: [FoundApp], _ picked: Set<String>) {
     let kept = Keep.entries()
-    for a in apps where !a.inVault && !picked.contains(a.name) {
+    for a in apps where !picked.contains(a.name) {
         for p in a.paths where kept.contains(p) { Keep.remove(p) }
     }
-    let add = apps.filter { picked.contains($0.name) && !$0.inVault }.flatMap(\.paths).filter { !keepMatches($0, kept) }
+    let add = apps.filter { picked.contains($0.name) }.flatMap(\.paths).filter { !keepMatches($0, kept) }
     if !add.isEmpty { Keep.add(add) }
 }
 
@@ -285,6 +393,52 @@ enum Keep {
     }
 }
 
+// MARK: - Folder Keep (bisa di mana saja, nama apa saja). settings.conf: KEEP_DIR=~/Keep | /path/lengkap
+
+enum KeepDir {
+    static var raw: String {
+        let r = Config.get("KEEP_DIR", "~/Keep")
+        return r.hasPrefix("~/") || r.hasPrefix("/") ? r : "~/Keep"
+    }
+    static var path: String { raw.hasPrefix("~/") ? P.home + "/" + String(raw.dropFirst(2)) : raw }
+    /// Untuk ditampilkan: ~/Keep, ~/Documents/Penting, /Volumes/SSD/Keep
+    static var shown: String { raw }
+    static var name: String { (path as NSString).lastPathComponent }
+
+    /// Folder yang tidak boleh dijadikan folder Keep. Hasil: pesan error, atau nil kalau boleh.
+    static func problem(_ p: String) -> String? {
+        let h = P.home
+        let bad = ["/", "/Users", "/Volumes", "/Applications", "/System", "/Library", "/private", h, h + "/Library",
+                   h + "/Desktop", h + "/Documents", h + "/Downloads"]
+        if bad.contains(p) || p.hasPrefix(h + "/.amnesia") || p.hasPrefix(h + "/.Trash") || p.split(separator: "/").count < 2 {
+            return T("Pick or create a folder of its own, not a whole system or home folder.",
+                     "Pilih atau buat folder tersendiri, bukan folder sistem atau folder home utuh.")
+        }
+        return nil
+    }
+
+    /// Simpan lokasi baru. Isi folder lama bisa dipindahkan ke yang baru.
+    static func set(_ newPath: String, moveFiles: Bool) {
+        let fm = FileManager.default
+        let old = path
+        try? fm.createDirectory(atPath: newPath, withIntermediateDirectories: true)
+        if moveFiles && old != newPath {
+            for f in (try? fm.contentsOfDirectory(atPath: old)) ?? [] where !fm.fileExists(atPath: newPath + "/" + f) {
+                try? fm.moveItem(atPath: old + "/" + f, toPath: newPath + "/" + f)
+            }
+        }
+        // pintasan di Desktop ikut diganti
+        let oldLink = P.home + "/Desktop/" + (old as NSString).lastPathComponent
+        if (try? fm.destinationOfSymbolicLink(atPath: oldLink)) == old { try? fm.removeItem(atPath: oldLink) }
+        let stored = newPath.hasPrefix(P.home + "/") ? "~/" + String(newPath.dropFirst(P.home.count + 1)) : newPath
+        Config.set("KEEP_DIR", stored)
+        let link = P.home + "/Desktop/" + (newPath as NSString).lastPathComponent
+        if !newPath.hasPrefix(P.home + "/Desktop") && !fm.fileExists(atPath: link) {
+            try? fm.createSymbolicLink(atPath: link, withDestinationPath: newPath)
+        }
+    }
+}
+
 // MARK: - Pengaturan (~/.amnesia/settings.conf, juga dibaca agent.sh). Default semua AKTIF.
 
 enum Config {
@@ -320,10 +474,26 @@ struct DryGroup: Identifiable {
     var id: String { name }
 }
 
+/// Jalankan clean.sh --dry-run dan simpan hasilnya di report.txt (dihapus lagi saat pembersihan sungguhan).
 func dryRun() -> [DryGroup] {
     let r = sh("/bin/bash", [P.a + "/clean.sh", "logout", "--dry-run"])
+    if FileManager.default.createFile(atPath: P.report, contents: Data(r.out.utf8), attributes: [.posixPermissions: 0o600]) == false {
+        try? r.out.write(toFile: P.report, atomically: true, encoding: .utf8)
+    }
+    return parseDry(r.out)
+}
+
+/// Laporan terakhir yang tersimpan (langsung tampil, tanpa menunggu).
+func cachedReport() -> (groups: [DryGroup], time: Date)? {
+    guard let t = try? String(contentsOfFile: P.report, encoding: .utf8),
+          let d = (try? FileManager.default.attributesOfItem(atPath: P.report))?[.modificationDate] as? Date
+    else { return nil }
+    return (parseDry(t), d)
+}
+
+func parseDry(_ text: String) -> [DryGroup] {
     var groups: [String: [String]] = [:]
-    for line in r.out.split(separator: "\n").map(String.init) {
+    for line in text.split(separator: "\n").map(String.init) {
         let parts = line.split(separator: " ", maxSplits: 1)
         guard parts.count == 2 else { continue }
         let kind = String(parts[0])
@@ -452,7 +622,49 @@ func rcloneRemotes() -> [String] {
     return sh(r, ["listremotes"], timeout: 20).out.split(separator: "\n").map { String($0.dropLast()) }
 }
 
-/// Hubungkan cloud tanpa Terminal: pasang rclone kalau perlu, buka login di browser, lalu cek koneksinya.
+/// Jendela login kecil milik macOS (ASWebAuthenticationSession), bukan Chrome/browser kamu.
+/// Diizinkan oleh Google & yang lain, dan tidak memakai cookie browser (sesi sekali pakai).
+@MainActor
+final class WebLogin: NSObject, ASWebAuthenticationPresentationContextProviding {
+    static let shared = WebLogin()
+    private var session: ASWebAuthenticationSession?
+    private var done = false
+
+    nonisolated func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        MainActor.assumeIsolated {
+            NSApp.windows.first { $0.isVisible && $0.canBecomeKey } ?? NSApp.keyWindow ?? NSWindow()
+        }
+    }
+
+    /// onCancel: dipanggil kalau kamu menutup jendelanya sebelum selesai.
+    func open(_ url: URL, onCancel: @escaping @MainActor () -> Void) {
+        close()
+        done = false
+        // callback "amnesia-login" tidak pernah dipanggil: rclone menerima kodenya sendiri di 127.0.0.1,
+        // lalu jendela ini ditutup oleh app begitu rclone selesai.
+        let s = ASWebAuthenticationSession(url: url, callbackURLScheme: "amnesia-login") { [weak self] _, _ in
+            Task { @MainActor in
+                guard let self, !self.done else { return }
+                self.session = nil
+                onCancel()
+            }
+        }
+        s.presentationContextProvider = self
+        s.prefersEphemeralWebBrowserSession = true
+        session = s
+        if !s.start() { NSWorkspace.shared.open(url) }   // cadangan: browser biasa
+    }
+
+    func close() {
+        done = true
+        session?.cancel()
+        session = nil
+    }
+}
+
+final class ProcBox: @unchecked Sendable { var p: Process?; var opened = false }
+
+/// Hubungkan cloud tanpa Terminal: pasang rclone kalau perlu, buka login di jendela kecil, lalu cek koneksinya.
 /// Hasil: pesan error, atau nil kalau berhasil. Token tidak pernah ditampilkan.
 func connectCloud(_ p: CloudProvider, remote: String) -> String? {
     var rc = rcloneBin()
@@ -467,12 +679,92 @@ func connectCloud(_ p: CloudProvider, remote: String) -> String? {
     }
     guard let r = rc else { return T("Couldn't install rclone.", "Gagal memasang rclone.") }
     if rcloneRemotes().contains(remote) { sh(r, ["config", "delete", remote]) }   // login ulang = token baru
-    let c = sh(r, ["config", "create", remote, p.id], timeout: 300)
+    // rclone tidak membuka browser sendiri; link login-nya dibuka di jendela kecil Amnesia
+    let box = ProcBox()
+    let c = sh(r, ["config", "create", remote, p.id, "--auth-no-open-browser"], timeout: 300,
+               onStart: { box.p = $0 },
+               onErr: { text in
+                   guard !box.opened,
+                         let m = text.range(of: #"http://127\.0\.0\.1:53682/auth\?state=[A-Za-z0-9_-]+"#, options: .regularExpression),
+                         let url = URL(string: String(text[m])) else { return }
+                   box.opened = true
+                   Task { @MainActor in
+                       WebLogin.shared.open(url) { if box.p?.isRunning == true { box.p?.terminate() } }
+                   }
+               })
+    Task { @MainActor in WebLogin.shared.close() }
     guard c.code == 0, sh(r, ["lsd", remote + ":"], timeout: 60).code == 0 else {
         return T("\(p.name) isn't connected. Try again and finish the login in your browser.",
                  "\(p.name) belum terhubung. Coba lagi dan selesaikan login di browser.")
     }
     return nil
+}
+
+/// Format server yang aman dipakai: user@host atau user@host:folder (tanpa spasi & karakter aneh).
+func validServer(_ s: String) -> Bool {
+    s.range(of: #"^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+(:[A-Za-z0-9._/~-]*)?$"#, options: .regularExpression) != nil
+}
+
+/// Hubungkan server SSH tanpa Terminal. Kalau kunci SSH belum diterima server, password dipakai SEKALI
+/// untuk memasang kunci (lewat SSH_ASKPASS, file sementara 0600 yang langsung dihapus). Password tidak disimpan.
+/// Hasil: (berhasil, pesan). Pesan sukses menyebut folder lengkap tujuan backup di server.
+func connectSSH(_ server: String, password: String) -> (ok: Bool, msg: String) {
+    let parts = server.split(separator: ":", maxSplits: 1).map(String.init)
+    let host = parts.first ?? ""
+    let rpath = parts.count > 1 && !parts[1].isEmpty ? parts[1] : "amnesia-backup"
+    let base = ["-o", "ConnectTimeout=15", "-o", "StrictHostKeyChecking=accept-new"]
+    let fm = FileManager.default
+    let key = P.home + "/.ssh/id_ed25519"
+    func whereIs() -> Out {
+        sh("/usr/bin/ssh", base + ["-o", "BatchMode=yes", host, "mkdir -p -- \(rpath) && cd -- \(rpath) && pwd"], timeout: 40)
+    }
+    var w = whereIs()
+    if w.code != 0 {
+        if w.err.contains("Could not resolve") || w.err.contains("timed out") || w.err.contains("refused") {
+            return (false, T("Can't reach \(host). Check the address and your internet.",
+                             "\(host) tidak bisa dihubungi. Cek alamat dan internet kamu.") + "\n\n" + String(w.err.suffix(200)))
+        }
+        guard !password.isEmpty else {
+            return (false, T("This server doesn't know Amnesia's key yet. Type the server password once, then press Connect.",
+                             "Server ini belum kenal kunci Amnesia. Ketik password server sekali, lalu tekan Hubungkan."))
+        }
+        if !fm.fileExists(atPath: key) {
+            try? fm.createDirectory(atPath: P.home + "/.ssh", withIntermediateDirectories: true,
+                                    attributes: [.posixPermissions: 0o700])
+            let g = sh("/usr/bin/ssh-keygen", ["-t", "ed25519", "-N", "", "-q", "-f", key, "-C", "amnesia"])
+            guard g.code == 0 else { return (false, T("Couldn't make an SSH key: ", "Gagal membuat kunci SSH: ") + g.err) }
+        }
+        guard let pub = try? String(contentsOfFile: key + ".pub", encoding: .utf8) else {
+            return (false, T("Couldn't read ~/.ssh/id_ed25519.pub", "Tidak bisa membaca ~/.ssh/id_ed25519.pub"))
+        }
+        let dir = NSTemporaryDirectory() + "amnesia-ssh-" + UUID().uuidString
+        try? fm.createDirectory(atPath: dir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        defer { try? fm.removeItem(atPath: dir) }
+        let pwFile = dir + "/pw", ask = dir + "/askpass"
+        fm.createFile(atPath: pwFile, contents: Data(password.utf8), attributes: [.posixPermissions: 0o600])
+        fm.createFile(atPath: ask, contents: Data("#!/bin/sh\ncat \(shq(pwFile))\n".utf8), attributes: [.posixPermissions: 0o700])
+        // kunci publik lewat stdin; dipasang hanya kalau belum ada
+        let install = "umask 077; mkdir -p ~/.ssh && k=$(cat) && touch ~/.ssh/authorized_keys && "
+            + "{ grep -qxF \"$k\" ~/.ssh/authorized_keys || printf '%s\\n' \"$k\" >> ~/.ssh/authorized_keys; }"
+        let r = sh("/usr/bin/ssh", base + ["-o", "NumberOfPasswordPrompts=1", "-o", "PubkeyAuthentication=no",
+                                           "-o", "PreferredAuthentications=keyboard-interactive,password", host, install],
+                   input: pub, timeout: 60, env: ["SSH_ASKPASS": ask, "SSH_ASKPASS_REQUIRE": "force", "DISPLAY": ":0"])
+        guard r.code == 0 else {
+            return (false, r.err.contains("Permission denied")
+                    ? T("Wrong password, or this server doesn't allow password logins.",
+                        "Password salah, atau server ini tidak mengizinkan login pakai password.")
+                    : String(r.err.suffix(300)))
+        }
+        w = whereIs()
+        guard w.code == 0 else {
+            return (false, T("The key is installed, but logging in with it failed: ", "Kunci sudah dipasang, tapi login pakai kunci gagal: ")
+                    + String(w.err.suffix(200)))
+        }
+    }
+    if !keepMatches(".ssh/id_ed25519", Keep.entries()) { Keep.add([".ssh"]) }   // kunci tidak ikut terhapus saat logout
+    let path = w.out.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n").last ?? rpath
+    return (true, T("Connected to \(host), no password needed from now on.\n\nBackups go to this folder on the server:\n\(path)",
+                    "Terhubung ke \(host), mulai sekarang tanpa password.\n\nBackup masuk ke folder ini di server:\n\(path)"))
 }
 
 /// Jalankan backup.sh; password lewat stdin. Hasil: (berhasil, pesan).
@@ -501,18 +793,6 @@ func fileAge(_ path: String) -> Double {
 
 /// Kutip aman untuk shell: 'abc' -> 'abc', it's -> 'it'\''s'
 func shq(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'" }
-
-/// Buka Terminal dengan perintah siap jalan (untuk setup yang butuh browser / ketik password).
-func openTerminal(_ title: String, _ lines: [String]) {
-    let path = NSTemporaryDirectory() + "amnesia-setup.command"
-    let text = "#!/bin/bash\nexport PATH=\"/opt/homebrew/bin:$PATH\"\nclear\necho \"== Amnesia: \(title) ==\"\n"
-        + lines.joined(separator: "\n")
-        + "\necho\necho \"" + T("Done. Go back to Amnesia, then close this window.",
-                                "Selesai. Kembali ke Amnesia, lalu tutup jendela ini.") + "\"\n"
-    try? text.write(toFile: path, atomically: true, encoding: .utf8)
-    chmod(path, 0o700)
-    NSWorkspace.shared.open(URL(fileURLWithPath: path))
-}
 
 // MARK: - Dialog
 
@@ -600,14 +880,30 @@ final class Model: ObservableObject {
     @Published var lastClean = ""
     @Published var vault: VaultReply?
     @Published var busy: String?
+    /// Laporan "yang akan dihapus": disiapkan di background, jadi halaman Preview langsung tampil.
+    @Published var report: [DryGroup]?
+    @Published var reportTime: Date?
+    @Published var reportBusy = false
+    private var reportTimer: Timer?
     private var timer: Timer?
     private var backupTimer: Timer?
     private var backupRunning = false
 
     init() {
         Engine.install()
+        if let c = cachedReport() { report = c.groups; reportTime = c.time }
+        if Shots.on { state = .active; refreshVault(); return }    // mode screenshot: tanpa timer & backup
+        Agent.migrate()
         refresh()
         refreshVault()
+        // laporan: 20 detik setelah app jalan, lalu tiap 30 menit
+        reportTimer = Timer.scheduledTimer(withTimeInterval: 1800, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.updateReport() }
+        }
+        Task {
+            try? await Task.sleep(nanoseconds: 20_000_000_000)
+            self.updateReport()
+        }
         timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
         }
@@ -646,7 +942,18 @@ final class Model: ObservableObject {
         }) { _ in self.backupRunning = false }
     }
 
+    func updateReport() {
+        guard !reportBusy else { return }
+        reportBusy = true
+        quiet({ dryRun() }) { g in
+            self.report = g
+            self.reportTime = Date()
+            self.reportBusy = false
+        }
+    }
+
     func refresh() {
+        if Shots.on { return }
         let fm = FileManager.default
         let on = fm.fileExists(atPath: P.plist)
             && sh(P.launchctl, ["print", "\(P.domain)/\(P.label)"]).code == 0
@@ -731,22 +1038,29 @@ final class Model: ObservableObject {
                           ok: T("Turn Off", "Matikan"), danger: true) else { return }
             deactivate()
         } else {
+            guard Config.get("TERMS") == "1" else {
+                info(T("Read this first", "Baca ini dulu"),
+                     T("Before turning Amnesia on, please read the warning in the welcome tour and tick that you understand.",
+                       "Sebelum mengaktifkan Amnesia, baca dulu peringatan di tur perkenalan dan centang bahwa kamu paham."))
+                showTour()
+                return
+            }
             guard confirm(T("Turn on Amnesia?", "Aktifkan Amnesia?"),
-                          T("From the next logout on, everything outside the Keep List and the ~/Keep folder will be "
+                          T("From the next logout on, everything outside the Keep List and your Keep folder (\(KeepDir.shown)) will be "
                             + "DELETED at logout/restart/shutdown, then checked again at login.\n\n"
-                            + "Move important files to ~/Keep first. This session is safe until you log out.",
-                            "Mulai logout berikutnya, semua data di luar Keep List dan folder ~/Keep akan DIHAPUS "
+                            + "Move important files to \(KeepDir.shown) first. This session is safe until you log out.",
+                            "Mulai logout berikutnya, semua data di luar Keep List dan folder Keep (\(KeepDir.shown)) akan DIHAPUS "
                             + "saat logout/restart/shutdown, lalu dicek ulang saat login.\n\n"
-                            + "Pindahkan file penting ke ~/Keep dulu. Sesi sekarang aman sampai kamu logout."),
+                            + "Pindahkan file penting ke \(KeepDir.shown) dulu. Sesi sekarang aman sampai kamu logout."),
                           ok: T("Turn On", "Aktifkan"), danger: true) else { return }
             if let err = activate() {
                 info(T("Could not turn on", "Gagal mengaktifkan"), err, error: true)
             } else {
                 info(T("Amnesia is ON", "Amnesia AKTIF"),
                      T("This session will be wiped at logout/restart/shutdown, then checked again at login.\n"
-                       + "The ~/Keep folder stays safe.",
+                       + "Your Keep folder (\(KeepDir.shown)) stays safe.",
                        "Sesi ini dibersihkan saat logout/restart/shutdown, lalu dicek ulang saat login.\n"
-                       + "Folder ~/Keep tetap aman."))
+                       + "Folder Keep (\(KeepDir.shown)) tetap aman."))
             }
         }
         refresh()
@@ -759,19 +1073,8 @@ final class Model: ObservableObject {
         sh(P.launchctl, ["bootout", "\(P.domain)/\(P.label)"])
         sh(P.launchctl, ["bootout", "\(P.domain)/\(P.oldLabel)"])
         try? fm.removeItem(atPath: P.oldPlist)
-        let dict: [String: Any] = [
-            "Label": P.label,
-            "ProgramArguments": ["/bin/bash", P.a + "/agent.sh"],
-            "RunAtLoad": true,
-            "ExitTimeOut": 300,      // waktu untuk snapshot otomatis + pembersihan
-        ]
-        do {
-            try fm.createDirectory(atPath: (P.plist as NSString).deletingLastPathComponent,
-                                   withIntermediateDirectories: true)
-            let data = try PropertyListSerialization.data(fromPropertyList: dict, format: .xml, options: 0)
-            try data.write(to: URL(fileURLWithPath: P.plist))
-        } catch {
-            return T("Could not write the LaunchAgent: ", "Tidak bisa menulis LaunchAgent: ") + error.localizedDescription
+        if let e = Agent.writePlist() {
+            return T("Could not write the LaunchAgent: ", "Tidak bisa menulis LaunchAgent: ") + e
         }
         fm.createFile(atPath: P.a + "/.just_activated", contents: nil)   // jangan hapus sesi yang sedang dipakai
         if sh(P.launchctl, ["bootstrap", P.domain, P.plist]).code != 0 {
@@ -1220,7 +1523,7 @@ struct VaultView: View {
             Field(label: T("Panic word (optional)", "Kata panik (opsional)"), text: $panic)
             Note(text: T("Typing this word in the password box deletes the vault completely, right away.",
                          "Kalau kata ini diketik di kolom password, vault langsung dihapus total."))
-            Toggle(T("The panic word also empties ~/Keep", "Kata panik juga mengosongkan ~/Keep"), isOn: Binding(get: { panicFull && !panic.isEmpty }, set: { panicFull = $0 }))
+            Toggle(T("The panic word also empties the Keep folder", "Kata panik juga mengosongkan folder Keep"), isOn: Binding(get: { panicFull && !panic.isEmpty }, set: { panicFull = $0 }))
                 .font(.system(size: 12)).disabled(panic.isEmpty)
         }
         Button { create() } label: { Label(T("Create Vault", "Buat Vault"), systemImage: "lock.fill") }
@@ -1331,7 +1634,7 @@ struct VaultView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Field(label: T("Vault password", "Password vault"), text: $pw)
             Field(label: T("New panic word", "Kata panik baru"), text: $newPanic)
-            Toggle(T("Also empty ~/Keep", "Juga kosongkan ~/Keep"), isOn: $newPanicFull).font(.system(size: 12)).disabled(newPanic.isEmpty)
+            Toggle(T("Also empty the Keep folder", "Juga kosongkan folder Keep"), isOn: $newPanicFull).font(.system(size: 12)).disabled(newPanic.isEmpty)
             HStack {
                 Button(T("Cancel", "Batal")) { showPanic = false }.keyboardShortcut(.cancelAction)
                 Spacer()
@@ -1496,9 +1799,10 @@ struct KeepView: View {
     var body: some View {
         VStack(spacing: 14) {
             PageHeader(title: "Keep List", icon: "pin.fill", colors: Pal.keep, back: back)
-            Note(text: T("Everything here is NOT wiped at logout. The ~/Keep and ~/.amnesia folders are always safe.",
-                         "Yang ada di sini TIDAK dihapus saat logout. Folder ~/Keep dan ~/.amnesia selalu aman."))
+            Note(text: T("Everything here is NOT wiped at logout. Your Keep folder and ~/.amnesia are always safe.",
+                         "Yang ada di sini TIDAK dihapus saat logout. Folder Keep kamu dan ~/.amnesia selalu aman."))
                 .frame(maxWidth: .infinity, alignment: .leading)
+            KeepFolderCard()
             ScrollView {
                 LazyVStack(spacing: 8) {
                     ForEach(entries, id: \.self) { e in row(e) }
@@ -1595,40 +1899,149 @@ struct KeepAddSheet: View {
     }
 }
 
+// MARK: - Folder Keep (lokasi & nama bebas)
+
+/// Pilih folder Keep baru lewat Finder. Isi folder lama boleh ikut dipindah.
+@MainActor
+func chooseKeepDir() -> Bool {
+    let panel = NSOpenPanel()
+    panel.canChooseDirectories = true
+    panel.canChooseFiles = false
+    panel.canCreateDirectories = true
+    panel.allowsMultipleSelection = false
+    panel.prompt = T("Use as Keep folder", "Pakai jadi folder Keep")
+    panel.message = T("Pick (or create) the folder that should never be wiped. Any place, any name.",
+                      "Pilih (atau buat) folder yang tidak pernah dihapus. Di mana saja, nama apa saja.")
+    panel.directoryURL = URL(fileURLWithPath: (KeepDir.path as NSString).deletingLastPathComponent)
+    NSApp.activate(ignoringOtherApps: true)
+    guard panel.runModal() == .OK, let url = panel.url else { return false }
+    let new = url.standardizedFileURL.path
+    if new == KeepDir.path { return false }
+    if let err = KeepDir.problem(new) { info(T("Keep folder", "Folder Keep"), err, error: true); return false }
+    let oldFiles = ((try? FileManager.default.contentsOfDirectory(atPath: KeepDir.path)) ?? []).filter { $0 != ".DS_Store" }
+    var move = false
+    if !oldFiles.isEmpty {
+        move = confirm(T("Move your files too?", "Pindahkan file kamu juga?"),
+                       T("\(KeepDir.shown) has \(oldFiles.count) items. Move them to the new folder?\n\n"
+                         + "If you don't, they stay where they are.",
+                         "\(KeepDir.shown) berisi \(oldFiles.count) item. Pindahkan ke folder baru?\n\n"
+                         + "Kalau tidak, file tetap di tempat lama."),
+                       ok: T("Move", "Pindahkan"))
+    }
+    KeepDir.set(new, moveFiles: move)
+    return true
+}
+
+struct KeepFolderCard: View {
+    @State private var shown = KeepDir.shown
+
+    var body: some View {
+        Card {
+            HStack(spacing: 12) {
+                IconBadge(icon: "tray.full.fill", colors: Pal.keep, size: 36)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(T("Keep folder", "Folder Keep")).font(.system(size: 14, weight: .semibold))
+                    Text(shown).font(.system(size: 12, design: .monospaced)).foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.middle)
+                }
+                Spacer(minLength: 8)
+                Button { NSWorkspace.shared.open(URL(fileURLWithPath: KeepDir.path)) } label: { Image(systemName: "folder") }
+                    .help(T("Show in Finder", "Buka di Finder"))
+                Button(T("Change…", "Ganti…")) { if chooseKeepDir() { shown = KeepDir.shown } }
+            }
+            Text(T("Files in here are never wiped. Put it anywhere and call it anything, even on an external drive.",
+                   "File di sini tidak pernah dihapus. Taruh di mana saja dan beri nama apa saja, bahkan di drive eksternal."))
+                .font(.system(size: 11)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .onAppear { shown = KeepDir.shown }
+    }
+}
+
 // MARK: - Pilih app yang di-keep
 
 struct AppPickList: View {
     let apps: [FoundApp]
     @Binding var picked: Set<String>
+    @State private var sizes: [String: String] = [:]
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 6) {
-                ForEach(apps) { a in
-                    HStack(spacing: 10) {
-                        Image(nsImage: a.icon).resizable().frame(width: 30, height: 30)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(a.name).font(.system(size: 13, weight: .semibold))
-                            Text(a.inVault ? T("Logins saved in the Profile Vault", "Login disimpan di Profile Vault")
-                                 : picked.contains(a.name) ? T("Kept: data & settings stay", "Disimpan: data & setting tetap ada")
-                                 : T("Wiped at logout", "Dihapus saat logout"))
-                                .font(.system(size: 11)).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        if a.inVault {
-                            Image(systemName: "lock.fill").foregroundStyle(.indigo)
-                        } else {
-                            Toggle("", isOn: Binding(get: { picked.contains(a.name) },
-                                                     set: { on in if on { picked.insert(a.name) } else { picked.remove(a.name) } }))
-                                .toggleStyle(.switch).labelsHidden().controlSize(.small)
-                        }
-                    }
-                    .padding(8)
-                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.regularMaterial))
-                }
+                ForEach(apps) { a in row(a) }
             }
         }
         .scrollIndicators(.never)
+    }
+
+    private func subtitle(_ a: FoundApp, _ on: Bool) -> String {
+        switch (a.inVault, on) {
+        case (true, true): return T("Kept whole, not encrypted", "Disimpan utuh, tidak dienkripsi")
+        case (true, false): return T("Logins go in the Profile Vault (encrypted)", "Login masuk Profile Vault (terenkripsi)")
+        case (false, true): return T("Kept: data & settings stay", "Disimpan: data & setting tetap ada")
+        default: return T("Wiped at logout", "Dihapus saat logout")
+        }
+    }
+
+    private func row(_ a: FoundApp) -> some View {
+        let on = picked.contains(a.name)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Image(nsImage: a.icon).resizable().frame(width: 30, height: 30)
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack(spacing: 5) {
+                        Text(a.name).font(.system(size: 13, weight: .semibold))
+                        if a.inVault {
+                            Image(systemName: "lock.rectangle.stack.fill").font(.system(size: 10)).foregroundStyle(.indigo)
+                                .help(T("The Profile Vault can save this app's logins", "Profile Vault bisa menyimpan login app ini"))
+                        }
+                    }
+                    Text(subtitle(a, on)).font(.system(size: 11)).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Toggle("", isOn: Binding(get: { on }, set: { v in
+                    withAnimation(.easeInOut(duration: 0.15)) { if v { _ = picked.insert(a.name) } else { _ = picked.remove(a.name) } }
+                }))
+                .toggleStyle(.switch).labelsHidden().controlSize(.small)
+            }
+            if on { details(a) }
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.regularMaterial))
+    }
+
+    /// Apa saja yang disimpan dari app ini: jenis data, lokasinya, dan ukurannya.
+    private func details(_ a: FoundApp) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            ForEach(a.paths, id: \.self) { p in
+                let k = pathKind(p)
+                HStack(spacing: 8) {
+                    Image(systemName: k.icon).font(.system(size: 10)).foregroundStyle(.teal).frame(width: 14)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(k.label).font(.system(size: 11, weight: .semibold))
+                        Text("~/" + p).font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+                            .lineLimit(1).truncationMode(.middle)
+                    }
+                    Spacer(minLength: 6)
+                    Text(sizes[p] ?? "…").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+                }
+                .onAppear {
+                    guard sizes[p] == nil else { return }
+                    DispatchQueue.global(qos: .utility).async {
+                        let s = folderSize(p)
+                        Task { @MainActor in sizes[p] = s }
+                    }
+                }
+            }
+            if a.inVault {
+                Note(text: T("You don't need the vault for this app now: its data simply stays.",
+                             "App ini tidak perlu vault lagi: datanya langsung tetap ada."),
+                     icon: "info.circle.fill", color: .secondary)
+            }
+        }
+        .padding(.leading, 40)
+        .padding(.trailing, 4)
+        .transition(.opacity)
     }
 }
 
@@ -1646,9 +2059,9 @@ struct AppPickerSheet: View {
                 .font(.system(size: 12)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if let a = apps {
-                AppPickList(apps: a, picked: $picked).frame(height: 360)
+                AppPickList(apps: a, picked: $picked).frame(height: 400)
             } else {
-                ProgressView().frame(maxWidth: .infinity, minHeight: 360)
+                ProgressView().frame(maxWidth: .infinity, minHeight: 400)
             }
             HStack {
                 Button(T("Cancel", "Batal")) { dismiss() }.keyboardShortcut(.cancelAction)
@@ -1663,7 +2076,7 @@ struct AppPickerSheet: View {
             }
         }
         .padding(20)
-        .frame(width: 460)
+        .frame(width: 480)
         .onAppear {
             let a = scanApps()
             apps = a
@@ -1672,25 +2085,90 @@ struct AppPickerSheet: View {
     }
 }
 
+// MARK: - Atur Keep List (langsung setelah tur)
+
+struct KeepSetupView: View {
+    @EnvironmentObject var m: Model
+    let back: () -> Void
+    @State private var apps: [FoundApp]?
+    @State private var picked = Set<String>()
+
+    var body: some View {
+        VStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(T("What should stay?", "Apa yang tetap disimpan?")).font(.system(size: 26, weight: .heavy, design: .rounded))
+                Text(T("These apps are on your Mac. Switch on the ones that should keep their data; we already "
+                       + "switched on VPNs and password managers. Switch one on to see exactly what's kept.",
+                       "Ini app yang ada di Mac kamu. Nyalakan yang datanya mau disimpan; VPN dan password manager "
+                       + "sudah dinyalakan. Nyalakan satu untuk lihat apa saja yang disimpan."))
+                    .font(.system(size: 13)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            KeepFolderCard()
+            if let a = apps {
+                AppPickList(apps: a, picked: $picked)
+            } else {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            HStack(spacing: 10) {
+                Button { back() } label: { Text(T("Back", "Kembali")) }
+                    .buttonStyle(Pill(colors: Pal.gray))
+                Button {
+                    if let a = apps { applyPicks(a, picked) }
+                    m.finishOnboarding()
+                } label: { Text(T("Save & Start", "Simpan & Mulai")) }
+                .buttonStyle(Pill(colors: Pal.keep))
+                .keyboardShortcut(.defaultAction)
+                .disabled(apps == nil)
+            }
+            Text(T("You can change this anytime on the Keep List page.", "Bisa diubah kapan saja di halaman Keep List."))
+                .font(.system(size: 11)).foregroundStyle(.secondary)
+        }
+        .onAppear {
+            guard apps == nil else { return }
+            DispatchQueue.global(qos: .userInitiated).async {
+                let a = scanApps()
+                let p = defaultPicks(a)
+                Task { @MainActor in apps = a; picked = p }
+            }
+        }
+    }
+}
+
 // MARK: - Tur perkenalan (pertama kali dibuka)
 
 struct OnboardingView: View {
     @EnvironmentObject var m: Model
-    @State private var step = 0
-    @State private var apps: [FoundApp]?
-    @State private var picked = Set<String>()
+    @State private var step: Int
+    @State private var keepSetup = false
     @State private var recheck = 0
-    private let last = 5
+    @State private var accepted = Config.get("TERMS") == "1"
+    private let last = 6
+
+    init(step: Int = 0, keepSetup: Bool = false) {
+        _step = State(initialValue: step)
+        _keepSetup = State(initialValue: keepSetup)
+    }
 
     var body: some View {
+        if keepSetup {
+            KeepSetupView(back: { keepSetup = false })
+        } else {
+            tour
+        }
+    }
+
+    private var tour: some View {
         VStack(spacing: 16) {
             Group {
                 switch step {
                 case 0: welcome
-                case 1: features
-                case 2: setup
-                case 3: appsPage
-                case 4: vaultPage
+                case 1: terms
+                case 2: features
+                case 3: setup
+                case 4: appsExample
+                case 5: vaultPage
                 default: routine
                 }
             }
@@ -1708,18 +2186,18 @@ struct OnboardingView: View {
                         .buttonStyle(Pill(colors: Pal.gray))
                 }
                 Button { next() } label: {
-                    Text(step == last ? T("Let's go", "Ayo mulai") : T("Next", "Lanjut"))
+                    Text(step == last ? T("Pick my apps", "Pilih app saya") : T("Next", "Lanjut"))
                 }
                 .buttonStyle(Pill(colors: Pal.vault))
                 .keyboardShortcut(.defaultAction)
+                .disabled(step == 1 && !accepted)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: step)
     }
 
     private func next() {
-        if step == 3, let a = apps { applyPicks(a, picked) }
-        if step == last { m.finishOnboarding() } else { step += 1 }
+        if step == last { keepSetup = true } else { step += 1 }
     }
 
     private func title(_ t: String, _ sub: String) -> some View {
@@ -1745,9 +2223,8 @@ struct OnboardingView: View {
 
     // 1. Sambutan + bahasa
     private var welcome: some View {
-        VStack(spacing: 18) {
-            Spacer(minLength: 10)
-            Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 120, height: 120)
+        VStack(spacing: 16) {
+            Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 104, height: 104)
             Text(T("Welcome to Amnesia", "Selamat datang di Amnesia"))
                 .font(.system(size: 28, weight: .heavy, design: .rounded))
             Text(T("Your Mac forgets everything every time you log out, except the stuff you choose to keep. "
@@ -1766,10 +2243,47 @@ struct OnboardingView: View {
                     .labelsHidden().frame(width: 170)
                 }
             }
+            PrivacyNote()
         }
     }
 
-    // 2. Cara kerja
+    // 2. Baca dulu (wajib dicentang)
+    private var terms: some View {
+        VStack(spacing: 14) {
+            title(T("Read this first", "Baca ini dulu"),
+                  T("Amnesia really deletes data. Please read before you continue.",
+                    "Amnesia benar-benar menghapus data. Tolong baca sebelum lanjut."))
+            Card {
+                item("exclamationmark.triangle.fill", Pal.danger, T("It deletes for real", "Benar-benar menghapus"),
+                     T("Once it's on, files outside the Keep folder and the Keep List are deleted at every logout, "
+                       + "restart and shutdown. They don't go to the Trash and can't be undone.",
+                       "Setelah aktif, file di luar folder Keep dan Keep List dihapus setiap logout, restart dan "
+                       + "shutdown. Tidak masuk Trash dan tidak bisa dibatalkan."))
+                item("key.fill", Pal.pause, T("Forget the password, lose the vault", "Lupa password, vault hilang"),
+                     T("Nobody can open the Profile Vault without its password, including us.",
+                       "Profile Vault tidak bisa dibuka tanpa password-nya, termasuk oleh kami."))
+                item("checkmark.shield.fill", Pal.keep, T("Check before you turn it on", "Cek dulu sebelum mengaktifkan"),
+                     T("Back up your files first and use \"What would be deleted\" to see the list.",
+                       "Backup file kamu dulu dan pakai \"Lihat yang akan dihapus\" untuk melihat daftarnya."))
+                item("doc.text.fill", Pal.gray, T("Free software, no warranty", "Software gratis, tanpa garansi"),
+                     T("Amnesia is MIT licensed and comes as-is. You use it at your own risk.",
+                       "Amnesia berlisensi MIT dan diberikan apa adanya. Risiko pemakaian ada di kamu."))
+            }
+            Toggle(T("I've read this and understand that Amnesia deletes data.",
+                     "Saya sudah membaca dan paham bahwa Amnesia menghapus data."), isOn: Binding(get: { accepted }, set: { v in
+                accepted = v
+                Config.set("TERMS", v ? "1" : "0")
+            }))
+            .toggleStyle(.checkbox).font(.system(size: 12, weight: .semibold))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button { NSWorkspace.shared.open(URL(string: termsURL)!) } label: {
+                Label(T("Read the full terms", "Baca ketentuan lengkap"), systemImage: "arrow.up.right.square")
+            }
+            .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(.indigo)
+        }
+    }
+
+    // 3. Cara kerja
     private var features: some View {
         VStack(spacing: 16) {
             title(T("How it works", "Cara kerjanya"), T("Four things to know.", "Cukup tahu 4 hal ini."))
@@ -1777,9 +2291,9 @@ struct OnboardingView: View {
                 item("sparkles", Pal.on, T("Wiped at logout", "Dihapus saat logout"),
                      T("Browser history, downloads, caches, app data: gone when you log out, restart or shut down.",
                        "Riwayat browser, download, cache, data app: hilang saat logout, restart, atau shutdown."))
-                item("pin.fill", Pal.keep, T("Keep List & ~/Keep", "Keep List & ~/Keep"),
-                     T("Apps and folders you pick stay. Files inside the ~/Keep folder always stay.",
-                       "App dan folder pilihanmu tetap ada. File di folder ~/Keep selalu aman."))
+                item("pin.fill", Pal.keep, T("Keep List & Keep folder", "Keep List & folder Keep"),
+                     T("Apps and folders you pick stay. Files inside your Keep folder always stay.",
+                       "App dan folder pilihanmu tetap ada. File di folder Keep kamu selalu aman."))
                 item("lock.rectangle.stack.fill", Pal.vault, "Profile Vault",
                      T("Your logins go into an encrypted safe. One password brings them back.",
                        "Login kamu masuk ke brankas terenkripsi. 1 password untuk mengembalikan semuanya."))
@@ -1790,10 +2304,10 @@ struct OnboardingView: View {
         }
     }
 
-    // 3. Cek kesiapan
+    // 4. Cek kesiapan
     private var setup: some View {
         let _ = recheck
-        return VStack(spacing: 16) {
+        return VStack(spacing: 14) {
             title(T("Quick check", "Cek dulu"), T("Amnesia needs these to run.", "Amnesia butuh ini supaya bisa jalan."))
             Card {
                 status(Engine.ready, T("Amnesia engine", "Mesin Amnesia"),
@@ -1802,12 +2316,23 @@ struct OnboardingView: View {
                        T("Locks your vault and backups (AES-256).", "Mengunci vault dan backup (AES-256)."))
                 status(Engine.hasPython, T("Apple Command Line Tools", "Apple Command Line Tools"),
                        T("Free tools from Apple. The Profile Vault needs them.", "Alat gratis dari Apple, dibutuhkan Profile Vault."))
+                status(Engine.hasFullDisk, T("Full Disk Access", "Akses Disk Penuh"),
+                       T("Allow once, and macOS stops asking about every folder.",
+                         "Izinkan sekali, macOS tidak akan tanya lagi per folder."))
             }
             if !Engine.hasPython {
                 Button { _ = sh("/usr/bin/xcode-select", ["--install"]) } label: {
                     Label(T("Install Command Line Tools", "Pasang Command Line Tools"), systemImage: "arrow.down.circle.fill")
                 }
                 .buttonStyle(Pill(colors: Pal.logout))
+            }
+            if !Engine.hasFullDisk {
+                Button { Engine.openFullDiskSettings() } label: {
+                    Label(T("Allow Full Disk Access", "Izinkan Akses Disk Penuh"), systemImage: "lock.open.fill")
+                }
+                .buttonStyle(Pill(colors: Pal.vault))
+                Note(text: T("Switch on Amnesia in the list. Still red after that? Quit and reopen Amnesia.",
+                             "Nyalakan Amnesia di daftar itu. Masih merah? Tutup lalu buka lagi Amnesia."))
             }
             if Engine.sevenz == nil {
                 Note(text: T("7-Zip is missing. Run in Terminal: brew install sevenzip",
@@ -1831,30 +2356,62 @@ struct OnboardingView: View {
         }
     }
 
-    // 4. Pilih app
-    private var appsPage: some View {
-        VStack(spacing: 12) {
-            title(T("What should stay?", "Apa yang tetap disimpan?"),
-                  T("We found these apps. Switch on the ones that should keep their data (VPNs are on already). "
-                    + "Apps with a lock are handled by the Profile Vault.",
-                    "Ini app yang ketemu di Mac kamu. Nyalakan yang datanya mau disimpan (VPN sudah dinyalakan). "
-                    + "App bergembok diurus oleh Profile Vault."))
-            if let a = apps {
-                AppPickList(apps: a, picked: $picked)
-            } else {
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+    // 5. Contoh memilih app (yang asli muncul setelah tur)
+    private var appsExample: some View {
+        VStack(spacing: 14) {
+            title(T("You choose what stays", "Kamu yang pilih apa yang tetap ada"),
+                  T("Right after this tour, Amnesia lists the apps on your Mac. It looks like this:",
+                    "Setelah tur ini, Amnesia menampilkan app yang ada di Mac kamu. Bentuknya seperti ini:"))
+            VStack(spacing: 6) {
+                exampleRow("shield.lefthalf.filled", Pal.logout, "My VPN", on: true,
+                           T("Kept: data & settings stay", "Disimpan: data & setting tetap ada"),
+                           [(T("App data", "Data app"), "~/Library/Application Support/MyVPN", "12 MB"),
+                            (T("Settings", "Setting"), "~/Library/Preferences/com.myvpn*", "4 KB")])
+                exampleRow("globe", Pal.vault, T("Web browser", "Browser"), on: false,
+                           T("Logins go in the Profile Vault (encrypted)", "Login masuk Profile Vault (terenkripsi)"), [])
+                exampleRow("gamecontroller.fill", Pal.backup, T("Some game", "Game"), on: false,
+                           T("Wiped at logout", "Dihapus saat logout"), [])
             }
-        }
-        .onAppear {
-            if apps == nil {
-                let a = scanApps()
-                apps = a
-                picked = defaultPicks(a)
-            }
+            .allowsHitTesting(false)
+            Note(text: T("Switch an app on to see exactly what gets kept and how big it is. Also, you pick where "
+                         + "your Keep folder lives and what it's called.",
+                         "Nyalakan sebuah app untuk lihat apa saja yang disimpan dan seberapa besar. Kamu juga bisa "
+                         + "pilih lokasi dan nama folder Keep."),
+                 icon: "hand.point.up.left.fill", color: .secondary)
         }
     }
 
-    // 5. Profile Vault
+    private func exampleRow(_ icon: String, _ colors: [Color], _ name: String, on: Bool, _ sub: String,
+                            _ detail: [(String, String, String)]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                IconBadge(icon: icon, colors: colors, size: 30)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(name).font(.system(size: 13, weight: .semibold))
+                    Text(sub).font(.system(size: 11)).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Toggle("", isOn: .constant(on)).toggleStyle(.switch).labelsHidden().controlSize(.small)
+            }
+            ForEach(0..<detail.count, id: \.self) { i in
+                let d = detail[i]
+                HStack(spacing: 8) {
+                    Image(systemName: "folder.fill").font(.system(size: 10)).foregroundStyle(.teal).frame(width: 14)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(d.0).font(.system(size: 11, weight: .semibold))
+                        Text(d.1).font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text(d.2).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+                }
+                .padding(.leading, 40)
+            }
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.regularMaterial))
+    }
+
+    // 6. Profile Vault
     private var vaultPage: some View {
         VStack(spacing: 16) {
             title("Profile Vault", T("So you don't have to log in again every day.",
@@ -1875,20 +2432,20 @@ struct OnboardingView: View {
         }
     }
 
-    // 6. Cara pakai sehari-hari
+    // 7. Cara pakai sehari-hari
     private var routine: some View {
         VStack(spacing: 16) {
             title(T("Your daily routine", "Rutinitas harian"), T("Use it like this and you'll never lose a thing.",
                                                                  "Pakai seperti ini dan tidak ada yang hilang."))
             Card {
-                item("tray.full.fill", Pal.keep, T("Put important files in ~/Keep", "Taruh file penting di ~/Keep"),
+                item("tray.full.fill", Pal.keep, T("Put important files in your Keep folder", "Taruh file penting di folder Keep"),
                      T("Anything outside it can disappear.", "Yang di luar folder itu bisa hilang."))
                 item("rectangle.portrait.and.arrow.right", Pal.logout, T("Done? Save & Log Out", "Selesai? Simpan & Logout"),
                      T("Saves your logins, then logs out.", "Simpan login dulu, baru logout."))
                 item("arrow.counterclockwise", Pal.vault, T("Back? Restore Profiles", "Kembali? Restore Profil"),
                      T("Open Profile Vault, type your password, done.", "Buka Profile Vault, ketik password, selesai."))
                 item("eye.fill", Pal.pause, T("Not sure? Check first", "Ragu? Cek dulu"),
-                     T("Settings → See what would be deleted now.", "Pengaturan → Lihat yang akan dihapus sekarang."))
+                     T("Settings → See what would be deleted.", "Pengaturan → Lihat yang akan dihapus."))
             }
             Note(text: T("Amnesia stays OFF until you press Turn On. Take your time.",
                          "Amnesia tetap MATI sampai kamu tekan Aktifkan. Santai saja."),
@@ -1896,6 +2453,22 @@ struct OnboardingView: View {
         }
     }
 }
+
+/// "Data kamu tetap di Mac ini": tidak ada server, tidak ada pelacakan.
+struct PrivacyNote: View {
+    var body: some View {
+        Label(T("Everything stays on this Mac. Amnesia has no servers, no tracking and no analytics. "
+                + "Nothing is sent anywhere unless you set up a backup yourself.",
+                "Semua tetap di Mac ini. Amnesia tidak punya server, tidak melacak, tidak mengumpulkan data. "
+                + "Tidak ada yang dikirim ke mana pun, kecuali kamu sendiri yang mengatur backup."),
+              systemImage: "hand.raised.fill")
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+let termsURL = "https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.md"
 
 // MARK: - Backup
 
@@ -1907,9 +2480,9 @@ struct BackupView: View {
     @State private var drive = Config.get("BACKUP_DRIVE")
     @State private var server = Config.get("BACKUP_SSH")
     @State private var cloud = Config.get("BACKUP_RCLONE", "gdrive:Amnesia")
-    @State private var folders = Set(Config.get("BACKUP_FOLDERS", "Keep").split(separator: ",").map(String.init))
-    @State private var extra = Config.get("BACKUP_FOLDERS", "Keep").split(separator: ",").map(String.init)
-        .filter { !BackupView.defaults.contains($0) }
+    @State private var folders = Set(BackupView.saved)
+    @State private var extra = BackupView.saved.filter { !BackupView.defaults.contains($0) }
+    @State private var sshPw = ""
     @State private var provider = cloudProviders.first(where: { $0.id == Config.get("BACKUP_CLOUD", "drive") }) ?? cloudProviders[0]
     @State private var connected: [String] = []
     @State private var withVault = Config.get("BACKUP_VAULT") == "1"
@@ -1918,7 +2491,15 @@ struct BackupView: View {
     @State private var pw = ""
     @State private var pw2 = ""
     @State private var status = lastBackupStatus()
-    static let defaults = ["Keep", "Documents", "Desktop", "Downloads", "Pictures", "Music", "Movies"]
+    static let defaults = ["@keep", "Documents", "Desktop", "Downloads", "Pictures", "Music", "Movies"]
+    /// "@keep" = folder Keep (di mana pun letaknya). "Keep" dari versi lama juga berarti folder Keep.
+    static var saved: [String] {
+        Config.get("BACKUP_FOLDERS", "@keep").split(separator: ",").map { $0 == "Keep" ? "@keep" : String($0) }
+    }
+
+    private func label(_ f: String) -> String {
+        f == "@keep" ? T("Keep folder (\(KeepDir.name))", "Folder Keep (\(KeepDir.name))") : f
+    }
     private var all: [String] { BackupView.defaults + extra }
     private var remote: String { String(cloud.split(separator: ":", maxSplits: 1).first ?? "") }
 
@@ -1955,7 +2536,7 @@ struct BackupView: View {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading,
                               spacing: 8) {
                         ForEach(all, id: \.self) { f in
-                            Toggle(f, isOn: Binding(get: { folders.contains(f) },
+                            Toggle(label(f), isOn: Binding(get: { folders.contains(f) },
                                                     set: { on in if on { folders.insert(f) } else { folders.remove(f) } }))
                                 .toggleStyle(.checkbox)
                         }
@@ -2032,17 +2613,17 @@ struct BackupView: View {
     @ViewBuilder private var sshBox: some View {
         Field(label: T("Server (user@host:folder), e.g. user@remoteserv.er:backup",
                        "Server (user@alamat:folder), mis. user@remoteserv.er:backup"), text: $server, secure: false)
-        Note(text: T("Sent with SSH + rsync, logging in with an SSH key (no password). Don't have one? "
-                     + "Press Set Up SSH Key, just once.",
-                     "Dikirim lewat SSH + rsync, login pakai kunci SSH (tanpa password). Belum punya? "
-                     + "Tekan Siapkan Kunci SSH sekali saja."))
-        HStack(spacing: 10) {
-            Button { testSSH() } label: { Label(T("Test Connection", "Tes Koneksi"), systemImage: "bolt.horizontal.fill") }
-                .buttonStyle(Pill(colors: Pal.logout))
-            Button { setupSSH() } label: { Label(T("Set Up SSH Key", "Siapkan Kunci SSH"), systemImage: "key.fill") }
-                .buttonStyle(Pill(colors: Pal.vault))
-        }
-        .disabled(host.isEmpty)
+        Field(label: T("Server password (only the first time, never saved)",
+                       "Password server (hanya pertama kali, tidak disimpan)"), text: $sshPw)
+        Button { connectServer() } label: { Label(T("Connect", "Hubungkan"), systemImage: "bolt.horizontal.fill") }
+            .buttonStyle(Pill(colors: Pal.logout))
+            .disabled(host.isEmpty)
+        Note(text: T("No Terminal needed. Amnesia makes an SSH key and installs it on the server with your password, "
+                     + "once. After that, backups log in with the key. No folder after the colon? Backups go to "
+                     + "amnesia-backup in your home folder on the server.",
+                     "Tanpa Terminal. Amnesia membuat kunci SSH dan memasangnya di server pakai password kamu, "
+                     + "sekali saja. Sesudah itu backup login pakai kunci. Tidak ada folder setelah titik dua? "
+                     + "Backup masuk ke amnesia-backup di folder home server."))
     }
 
     @ViewBuilder private var cloudBox: some View {
@@ -2061,9 +2642,9 @@ struct BackupView: View {
                   systemImage: "icloud.and.arrow.up.fill")
         }
         .buttonStyle(Pill(colors: Pal.logout))
-        Note(text: T("Just log in in your browser, no Terminal needed. S3, WebDAV, SFTP and 40+ more work too: "
+        Note(text: T("Just log in in a small login window, no Terminal or Chrome needed. S3, WebDAV, SFTP and 40+ more work too: "
                      + "set them up with rclone config, then type the remote name above.",
-                     "Cukup login di browser, tanpa Terminal. S3, WebDAV, SFTP dan 40+ layanan lain juga bisa: "
+                     "Cukup login di jendela kecil, tanpa Terminal atau Chrome. S3, WebDAV, SFTP dan 40+ layanan lain juga bisa: "
                      + "atur lewat rclone config, lalu ketik nama remote-nya di atas."))
     }
 
@@ -2076,13 +2657,14 @@ struct BackupView: View {
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK else { return }
         for url in panel.urls {
-            let path = url.path
-            guard path.hasPrefix(P.home + "/"), !path.contains(",") else {
-                info("Backup", T("Pick a folder inside your home folder (and without a comma in its name).",
-                                 "Pilih folder di dalam folder home kamu (dan tanpa koma di namanya)."), error: true)
+            let path = url.standardizedFileURL.path
+            guard !path.contains(","), path != P.home, path != "/" else {
+                info("Backup", T("Pick a folder without a comma in its name (and not your whole home folder).",
+                                 "Pilih folder tanpa koma di namanya (dan bukan seluruh folder home)."), error: true)
                 continue
             }
-            let rel = String(path.dropFirst(P.home.count + 1))
+            // di dalam home: disimpan relatif; di luar home (mis. drive lain): path lengkap
+            let rel = path.hasPrefix(P.home + "/") ? String(path.dropFirst(P.home.count + 1)) : path
             if !all.contains(rel) { extra.append(rel) }
             folders.insert(rel)
         }
@@ -2100,8 +2682,9 @@ struct BackupView: View {
         let sel = all.filter { folders.contains($0) }
         guard !sel.isEmpty || withVault else { info("Backup", T("Pick at least 1 folder.", "Pilih minimal 1 folder."), error: true); return false }
         if !pw.isEmpty && pw != pw2 { info("Backup", T("The passwords don't match.", "Password tidak cocok."), error: true); return false }
-        if dest == "ssh" && !server.contains("@") {
-            info("Backup", T("Type the server as user@host:folder.", "Isi server dengan format user@alamat:folder."), error: true); return false
+        if dest == "ssh" && !validServer(server) {
+            info("Backup", T("Type the server as user@host or user@host:folder (no spaces).",
+                             "Isi server dengan format user@alamat atau user@alamat:folder (tanpa spasi)."), error: true); return false
         }
         if dest == "rclone" && !cloud.contains(":") {
             info("Backup", T("Type the cloud destination as remote:folder, e.g. gdrive:Amnesia.",
@@ -2157,29 +2740,23 @@ struct BackupView: View {
         }
     }
 
-    private func testSSH() {
-        let h = host
-        m.background(T("Connecting to \(h)…", "Menghubungi \(h)…"), {
-            sh("/usr/bin/ssh", ["-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
-                                "-o", "StrictHostKeyChecking=accept-new", h, "echo amnesia-ok"])
-        }) { r in
-            if r.out.contains("amnesia-ok") {
-                info(T("Connected", "Koneksi berhasil"), T("\(h) is ready for backups.", "\(h) bisa dipakai untuk backup."))
+    private func connectServer() {
+        let srv = server.trimmingCharacters(in: .whitespaces), pw = sshPw
+        guard validServer(srv) else {
+            info("Backup", T("Type the server as user@host or user@host:folder (no spaces).",
+                             "Isi server dengan format user@alamat atau user@alamat:folder (tanpa spasi)."), error: true)
+            return
+        }
+        server = srv
+        m.background(T("Connecting to \(host)…", "Menghubungi \(host)…"), { connectSSH(srv, password: pw) }) { r in
+            sshPw = ""
+            if r.ok {
+                Config.set("BACKUP_SSH", srv)
+                info(T("Connected", "Terhubung"), r.msg)
             } else {
-                info(T("Couldn't connect", "Koneksi gagal"), String(r.err.suffix(300))
-                     + T("\n\nCheck the server address, then press Set Up SSH Key.",
-                         "\n\nCek alamat server, lalu tekan Siapkan Kunci SSH."), error: true)
+                info(T("Couldn't connect", "Koneksi gagal"), r.msg, error: true)
             }
         }
-    }
-
-    private func setupSSH() {
-        openTerminal(T("SSH key for backups", "Kunci SSH untuk backup"), [
-            "[ -f ~/.ssh/id_ed25519 ] || ssh-keygen -t ed25519 -N \"\" -f ~/.ssh/id_ed25519",
-            "echo \"" + T("Type the server password ONCE (to install the key):",
-                          "Masukkan password server SEKALI (untuk memasang kunci):") + "\"",
-            "ssh-copy-id -i ~/.ssh/id_ed25519.pub \(shq(host))",
-        ])
     }
 
     /// Cek remote rclone yang sudah terhubung (diam-diam).
@@ -2191,8 +2768,8 @@ struct BackupView: View {
         let p = provider
         if remote.isEmpty { cloud = p.remote + ":Amnesia" }
         let name = remote
-        m.background(T("Log in to \(p.name) in your browser…\n(Amnesia waits up to 5 minutes)",
-                       "Login ke \(p.name) di browser…\n(Amnesia menunggu sampai 5 menit)"),
+        m.background(T("Log in to \(p.name) in the login window…\n(Amnesia waits up to 5 minutes)",
+                       "Login ke \(p.name) di jendela login…\n(Amnesia menunggu sampai 5 menit)"),
                      { connectCloud(p, remote: name) }) { err in
             if let e = err {
                 info(p.name, e, error: true)
@@ -2239,10 +2816,20 @@ struct SettingsView: View {
                     Label(T("See what would be deleted now", "Lihat yang akan dihapus sekarang"), systemImage: "list.bullet.rectangle")
                 }
                 .buttonStyle(Pill(colors: Pal.backup))
+                KeepFolderCard()
+                if !Engine.hasFullDisk {
+                    Card {
+                        Note(text: T("Give Amnesia Full Disk Access once, so macOS stops asking about every folder.",
+                                     "Beri Amnesia Akses Disk Penuh sekali, supaya macOS tidak tanya per folder."),
+                             icon: "lock.open.fill", color: .orange)
+                        Button(T("Open Privacy Settings", "Buka Pengaturan Privasi")) { Engine.openFullDiskSettings() }
+                    }
+                }
                 Button { m.showTour() } label: {
                     Label(T("Show the welcome tour again", "Tampilkan tur perkenalan lagi"), systemImage: "sparkles")
                 }
                 .buttonStyle(Pill(colors: Pal.vault))
+                PrivacyNote().padding(.horizontal, 4)
             }
         }
         .scrollIndicators(.never)
@@ -2292,7 +2879,15 @@ struct SettingsView: View {
 struct PreviewView: View {
     @EnvironmentObject var m: Model
     let back: () -> Void
-    @State private var groups: [DryGroup]?
+    private var groups: [DryGroup]? { m.report }
+
+    private var updated: String {
+        if m.reportBusy { return T("Updating…", "Memperbarui…") }
+        guard let d = m.reportTime else { return "" }
+        let f = RelativeDateTimeFormatter()
+        f.locale = Locale(identifier: Lang.current == .id ? "id" : "en")
+        return T("Updated ", "Diperbarui ") + f.localizedString(for: d, relativeTo: Date())
+    }
 
     private var total: Int { (groups ?? []).reduce(0) { $0 + $1.items.count } }
 
@@ -2301,10 +2896,10 @@ struct PreviewView: View {
             PageHeader(title: T("What Gets Deleted", "Yang Akan Dihapus"), icon: "eye.fill", colors: Pal.logout, back: { cancel() })
             if let a = m.pending {
                 Card {
-                    Note(text: T("\(a.title) is on hold so you can check first. ~/Keep, the Keep List and the "
-                                 + "Profile Vault stay safe.",
-                                 "\(a.title) ditahan sebentar supaya kamu bisa cek dulu. Isi ~/Keep, Keep List "
-                                 + "dan Profile Vault tetap aman."), icon: "hand.raised.fill", color: .orange)
+                    Note(text: T("\(a.title) is on hold so you can check first. Your Keep folder (\(KeepDir.shown)), "
+                                 + "the Keep List and the Profile Vault stay safe.",
+                                 "\(a.title) ditahan sebentar supaya kamu bisa cek dulu. Folder Keep (\(KeepDir.shown)), "
+                                 + "Keep List dan Profile Vault tetap aman."), icon: "hand.raised.fill", color: .orange)
                 }
             }
             if let g = groups {
@@ -2312,6 +2907,13 @@ struct PreviewView: View {
                     Text(T("\(total) items", "\(total) item")).font(.system(size: 20, weight: .bold, design: .rounded))
                     Spacer()
                     Text(T("\(g.count) groups · click for details", "\(g.count) kelompok · klik untuk detail")).font(.system(size: 11)).foregroundStyle(.secondary)
+                }
+                HStack(spacing: 6) {
+                    if m.reportBusy { ProgressView().controlSize(.mini) }
+                    Text(updated).font(.system(size: 11)).foregroundStyle(.secondary)
+                    Spacer()
+                    Button { m.updateReport() } label: { Label(T("Refresh", "Muat ulang"), systemImage: "arrow.clockwise") }
+                        .buttonStyle(.plain).font(.system(size: 11, weight: .semibold)).disabled(m.reportBusy)
                 }
                 ScrollView {
                     LazyVStack(spacing: 8) {
@@ -2362,9 +2964,9 @@ struct PreviewView: View {
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.regularMaterial))
     }
 
+    /// Laporan lama langsung tampil; yang baru disiapkan di background.
     private func load() {
-        groups = nil
-        m.quiet({ dryRun() }) { g in groups = g }
+        if !Shots.on { m.updateReport() }
     }
 
     private func cancel() {
@@ -2523,6 +3125,127 @@ struct MenuIcon: View {
     }
 }
 
+// MARK: - Screenshot otomatis (untuk README & website)
+// app/screenshots.sh menjalankan:  AMNESIA_HOME=<home palsu> Amnesia --shots <folder>
+// Semua data dari home palsu (contoh), jadi data pribadimu tidak ikut terfoto. Tidak ada yang dihapus.
+
+@MainActor
+enum Shots {
+    static let on = CommandLine.arguments.contains("--shots")
+    static var dir: String {
+        let a = CommandLine.arguments
+        if let i = a.firstIndex(of: "--shots"), i + 1 < a.count { return a[i + 1] }
+        return P.realHome + "/Desktop/amnesia-shots"
+    }
+
+    static func wait(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
+
+    static func run() async {
+        let m = Model.shared
+        m.onboarded = true
+        await wait(3)
+        for lang in Lang.allCases {
+            m.lang = lang
+            await wait(2.5)
+            let log = (try? String(contentsOfFile: P.cleanLog, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            m.lastClean = T("Last: ", "Terakhir: ") + log
+            let out = dir + "/" + lang.rawValue
+            try? FileManager.default.createDirectory(atPath: out, withIntermediateDirectories: true)
+            await shot(Shell { OnboardingView(step: 0) }, out + "/tour-welcome.png")
+            await shot(Shell { OnboardingView(step: 1) }, out + "/tour-terms.png")
+            await shot(Shell { OnboardingView(step: 3) }, out + "/tour-check.png")
+            await shot(Shell { OnboardingView(step: 4) }, out + "/tour-apps.png")
+            await shot(Shell { OnboardingView(keepSetup: true) }, out + "/keep-setup.png", settle: 4)
+            let pages: [(Page, String)] = [(.home, "home"), (.vault, "vault"), (.keep, "keep"), (.backup, "backup"),
+                                           (.settings, "settings")]
+            for (page, name) in pages {
+                m.page = page
+                await shot(MainView(), out + "/\(name).png")
+            }
+            m.report = dryRun()
+            m.reportTime = Date()
+            m.page = .preview
+            await shot(MainView(), out + "/preview.png")
+            m.page = .home
+            await shot(MainView(), out + "/home-dark.png", dark: true)
+            await shot(MenuPanel().background(Color(nsColor: .windowBackgroundColor)), out + "/menu.png", window: false)
+        }
+        exit(0)
+    }
+
+    /// Bungkus seperti jendela utama (latar + jarak tepi yang sama).
+    struct Shell<C: View>: View {
+        let content: C
+        init(@ViewBuilder _ c: () -> C) { content = c() }
+        var body: some View {
+            ZStack {
+                Backdrop()
+                content.padding(.horizontal, 24).padding(.top, 34).padding(.bottom, 20)
+            }
+            .frame(width: 480, height: 690)
+        }
+    }
+
+    static func shot<V: View>(_ v: V, _ path: String, dark: Bool = false, settle: Double = 1.5, window: Bool = true) async {
+        let host = NSHostingView(rootView: v.environmentObject(Model.shared))
+        let size = host.fittingSize
+        host.frame = NSRect(origin: .zero, size: size)
+        let w = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        w.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        w.contentView = host
+        w.setFrameOrigin(NSPoint(x: -30000, y: -30000))     // di luar layar
+        w.orderFrontRegardless()
+        await wait(settle)
+        host.layoutSubtreeIfNeeded()
+        guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return }
+        host.cacheDisplay(in: host.bounds, to: rep)
+        w.orderOut(nil)
+        if let png = framed(rep, points: size, radius: window ? 12 : 10, dots: window) {
+            try? png.write(to: URL(fileURLWithPath: path))
+        }
+    }
+
+    /// Sudut membulat, bayangan lembut, dan (untuk jendela) 3 tombol bulat di kiri atas.
+    static func framed(_ rep: NSBitmapImageRep, points: NSSize, radius: CGFloat, dots: Bool) -> Data? {
+        let s = CGFloat(rep.pixelsWide) / max(points.width, 1)
+        let w = CGFloat(rep.pixelsWide), h = CGFloat(rep.pixelsHigh), pad = 36 * s
+        guard let out = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(w + pad * 2), pixelsHigh: Int(h + pad * 2),
+                                         bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                         colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+              let ctx = NSGraphicsContext(bitmapImageRep: out) else { return nil }
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = ctx
+        let rect = NSRect(x: pad, y: pad, width: w, height: h)
+        let shape = NSBezierPath(roundedRect: rect, xRadius: radius * s, yRadius: radius * s)
+        NSGraphicsContext.saveGraphicsState()
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.30)
+        shadow.shadowBlurRadius = 22 * s
+        shadow.shadowOffset = NSSize(width: 0, height: -8 * s)
+        shadow.set()
+        NSColor.windowBackgroundColor.setFill()
+        shape.fill()
+        NSGraphicsContext.restoreGraphicsState()
+        NSGraphicsContext.saveGraphicsState()
+        shape.addClip()
+        rep.draw(in: rect)
+        NSGraphicsContext.restoreGraphicsState()
+        NSColor.black.withAlphaComponent(0.12).setStroke()
+        shape.lineWidth = 1 * s
+        shape.stroke()
+        if dots {
+            for (i, c) in [0xFF5F57, 0xFEBC2E, 0x28C840].enumerated() {
+                NSColor(red: CGFloat(c >> 16 & 255) / 255, green: CGFloat(c >> 8 & 255) / 255,
+                        blue: CGFloat(c & 255) / 255, alpha: 1).setFill()
+                NSBezierPath(ovalIn: NSRect(x: pad + (14 + CGFloat(i) * 20) * s, y: pad + h - 26 * s,
+                                            width: 12 * s, height: 12 * s)).fill()
+            }
+        }
+        NSGraphicsContext.restoreGraphicsState()
+        return out.representation(using: .png, properties: [:])
+    }
+}
+
 // MARK: - App
 
 @MainActor
@@ -2534,6 +3257,7 @@ enum Opener {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     // Hanya boleh jalan 1x: kalau sudah ada Amnesia lain yang jalan, pakai yang itu lalu keluar.
     func applicationWillFinishLaunching(_ notification: Notification) {
+        if Shots.on { return }
         let me = ProcessInfo.processInfo.processIdentifier
         let others = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
             .filter { $0.processIdentifier != me }
@@ -2542,6 +3266,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
         }
         exit(0)
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        if Shots.on { Task { await Shots.run() } }
     }
 
     // Logout/restart/shutdown dari menu Apple → tahan dulu & tampilkan yang akan dihapus (kalau diaktifkan).
@@ -2582,6 +3310,7 @@ struct AmnesiaApp: App {
     private let background = CommandLine.arguments.contains("--background")
 
     init() {
+        if CommandLine.arguments.contains("--agent") { Agent.run() }   // dijalankan launchd, tanpa jendela
         signal(SIGPIPE, SIG_IGN)   // program yang ditutup lebih cepat tidak boleh membuat app crash
     }
 
@@ -2591,9 +3320,9 @@ struct AmnesiaApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
-        .defaultLaunchBehavior(background ? .suppressed : .presented)
+        .defaultLaunchBehavior(background || Shots.on ? .suppressed : .presented)
 
-        MenuBarExtra {
+        MenuBarExtra(isInserted: .constant(!Shots.on)) {
             MenuPanel().environmentObject(model)
         } label: {
             MenuIcon(state: model.state)

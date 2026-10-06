@@ -51,4 +51,20 @@ AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" login  >/dev/null 2>&1; here "Desk
 gone ".amnesia/pause_once"
 AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1; gone "Desktop/b.txt"
 
+# folder Keep custom: di dalam Documents, nama dengan spasi & kurung siku
+printf 'KEEP_DIR=~/Documents/Barang [Saya]\n' > "$T/.amnesia/settings.conf"
+mk "Documents/Barang [Saya]/file.txt"; mk "Documents/lain.txt"; mk "Keep/lama.txt"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+here "Documents/Barang [Saya]/file.txt"; gone "Documents/lain.txt"; here "Desktop/Barang [Saya]"
+here "Keep/lama.txt"   # folder di root home (selain Desktop dkk.) memang tidak pernah dihapus
+# di luar home: tidak disentuh, dan home tetap bersih
+mkdir -p "$T/luar"; printf 'KEEP_DIR=%s\n' "$T/luar/Simpan" > "$T/.amnesia/settings.conf"
+mk "Desktop/c.txt"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+gone "Desktop/c.txt"; here "luar/Simpan"; here "Desktop/Simpan"
+# KEEP_DIR berbahaya (home sendiri) -> kembali ke ~/Keep, tidak menyelamatkan seluruh home
+printf 'KEEP_DIR=~/\n' > "$T/.amnesia/settings.conf"; mk "Downloads/d.txt"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+gone "Downloads/d.txt"; here "Keep"
+
 [ $fail = 0 ] && echo "OK: all clean.sh tests passed" || exit 1

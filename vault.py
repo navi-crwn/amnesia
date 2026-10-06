@@ -73,6 +73,30 @@ def _lang():
         return "en"
 
 
+def _setting(key, default=""):
+    try:
+        with open(os.path.join(AMNESIA, "settings.conf")) as f:
+            vals = [l.rstrip("\n")[len(key) + 1:] for l in f if l.startswith(key + "=")]
+        return vals[-1] if vals else default
+    except OSError:
+        return default
+
+
+def keep_dir():
+    """Folder Keep pilihan user (KEEP_DIR, default ~/Keep). '~/' = folder home."""
+    d = _setting("KEEP_DIR", "~/Keep")
+    if d.startswith("~/"):
+        d = os.path.join(HOME, d[2:])
+    if not os.path.isabs(d):
+        d = os.path.join(HOME, "Keep")
+    d = os.path.normpath(d)
+    # jangan pernah mengosongkan home, ~/.amnesia, atau folder sistem
+    bad = {os.path.normpath(HOME), os.path.normpath(AMNESIA), "/", "/Users", "/Volumes", "/Applications"}
+    if d in bad or d.startswith(os.path.normpath(AMNESIA) + os.sep) or d.count(os.sep) < 2:
+        d = os.path.join(HOME, "Keep")
+    return d
+
+
 def T(en, id_):
     """Pesan sesuai bahasa di Pengaturan (LANG=en|id)."""
     return id_ if _lang() == "id" else en
@@ -183,7 +207,7 @@ def set_panic(word, full=False):
 # ---------------- snapshot (tanpa password) ----------------
 def quit_apps(names):
     """Tutup app dengan sopan dulu (data tersimpan), baru paksa. Mencegah profil corrupt."""
-    if not shutil.which("osascript"):        # bukan macOS (tes)
+    if not shutil.which("osascript") or os.environ.get("AMNESIA_HOME"):   # bukan macOS / home palsu (tes, screenshot)
         return
     gui = [APPS[n]["quit"] for n in names if APPS[n]["quit"]]
     if not gui:
@@ -226,12 +250,12 @@ def snapshot(names=None):
 
 # ---------------- buka & restore (butuh password) ----------------
 def doomsday(full=False, reason=""):
-    """Hapus seluruh vault. full=True juga mengosongkan ~/Keep."""
+    """Hapus seluruh vault. full=True juga mengosongkan folder Keep."""
     shutil.rmtree(VAULT, ignore_errors=True)
     # ponytail: tanpa overwrite 3x — di SSD/APFS itu tidak menjamin apa pun;
     # isi vault terenkripsi, jadi tanpa password datanya tetap tidak terbaca.
     if full:
-        keep = os.path.join(HOME, "Keep")
+        keep = keep_dir()
         for x in os.listdir(keep) if os.path.isdir(keep) else []:
             p = os.path.join(keep, x)
             if os.path.isdir(p) and not os.path.islink(p):
