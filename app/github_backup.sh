@@ -21,6 +21,8 @@ __pycache__/
 app/build/
 .DS_Store
 keep.conf
+settings.conf
+backup.ok
 *.md
 !README.md
 !CHANGELOG.md
@@ -30,7 +32,7 @@ echo "2/5  Commit & push..."
 [ -d .git ] || git init -q -b main
 git config user.name >/dev/null || git config user.name "$(gh api user -q .login)"
 git config user.email >/dev/null || git config user.email "$(gh api user -q .id)+$(gh api user -q .login)@users.noreply.github.com"
-git rm -r -q --cached --ignore-unmatch keep.conf AMNESIA_SPEK.md PROFILE_VAULT_SPEK.md reset.sh clean_keychain.sh keep_apps.conf amnesia_app.py templates __pycache__ >/dev/null
+git rm -r -q --cached --ignore-unmatch keep.conf settings.conf backup.ok AMNESIA_SPEK.md PROFILE_VAULT_SPEK.md reset.sh clean_keychain.sh keep_apps.conf amnesia_app.py templates __pycache__ >/dev/null
 git add -A
 git commit -q -m "Amnesia v$V - $(date '+%F %H:%M')" || echo "     tidak ada perubahan baru"
 if git remote get-url origin >/dev/null 2>&1; then git push -q -u origin main

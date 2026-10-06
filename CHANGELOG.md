@@ -3,6 +3,48 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.5 — 2026-10-06
+
+### Ditambahkan
+- **Backup online.** Halaman Backup sekarang punya 3 tujuan:
+  - **Flashdisk / SSD**: drive yang tercolok otomatis terdeteksi (tombol ↻ untuk cari ulang).
+  - **Server SSH**: kirim ke server/VPS sendiri lewat SSH + rsync (`user@alamat:folder`). Ada tombol **Tes Koneksi** dan **Siapkan Kunci SSH** (membuat kunci `~/.ssh/id_ed25519` lalu memasangnya ke server lewat Terminal).
+  - **Cloud**: Google Drive, Dropbox, OneDrive, S3 lewat rclone. Tombol **Hubungkan Google Drive** memasang rclone (kalau belum ada) dan membuka login Google di browser.
+- **Backup terjadwal**: Mati / Harian / Mingguan. Dicek 2 menit setelah app jalan lalu tiap 10 menit. Kalau tujuannya flashdisk, backup menunggu sampai flashdisk tercolok. Kalau gagal, dicoba lagi 1 jam kemudian. Hasilnya muncul sebagai notifikasi.
+- **Simpan password backup di Keychain** (pilihan, wajib untuk backup terjadwal). Disimpan sebagai item `Amnesia Backup`.
+- **Sertakan Profile Vault** di backup, untuk pindah Mac.
+- **Pindah Mac** (di halaman Profile Vault):
+  - **Siapkan Pindah Mac**: menyimpan kunci Keychain "… Safe Storage" (Chrome, Claude, WhatsApp, dll.) ke vault, terenkripsi seperti snapshot.
+  - **Ambil Vault dari Backup** (muncul kalau vault belum ada): pilih file backup `.7z`, isi password backup, vault dipulihkan.
+  - **Pulihkan Kunci**: memasang kunci tadi ke Keychain Mac baru, pakai password vault. Hanya jalan kalau tombolnya ditekan, tidak pernah otomatis.
+- Status backup terakhir (berhasil/gagal) tampil di atas halaman Backup.
+- `backup.sh` (mesin backup, dipakai app) dan `test_backup.sh` (tes otomatis di home palsu).
+- `vault.py`: perintah `exportkeys` dan `importkeys`; `status` sekarang juga melaporkan kunci yang tersimpan.
+
+### Diubah
+- Pengaturan backup (tujuan, folder, jadwal) sekarang disimpan di `settings.conf`, jadi tidak perlu diisi ulang setiap kali.
+- Keep List: tambah `keychain:Amnesia Backup` (password backup terjadwal) dan `.config/rclone` (login cloud) supaya tidak ikut terhapus saat logout. Ditambahkan otomatis oleh `add_keep.sh`.
+- Kartu Backup di halaman utama: "Ke flashdisk, server atau cloud".
+- `test_clean.sh` juga mengecek `.config/rclone` tetap aman.
+
+### Catatan
+- File backup terenkripsi dikirim utuh setiap kali (bukan hanya bagian yang berubah).
+- Backup lama tidak dihapus otomatis.
+- Setelah app di-build ulang, macOS bisa bertanya sekali lagi apakah Amnesia boleh membaca password backup di Keychain. Klik *Always Allow*.
+
+## v5.4 — 2026-10-06
+
+### Ditambahkan
+- **Halaman Pengaturan** (ikon ⚙️ di kanan atas). Setiap fitur baru di bawah bisa dinyalakan atau dimatikan di sini, dan semuanya aktif secara bawaan.
+- **Snapshot otomatis saat logout.** Logout, restart atau shutdown lewat menu Apple sekarang tetap menyimpan login ke vault sebelum Mac dibersihkan. Snapshot dilewati kalau vault belum dibuat, Amnesia sedang dijeda, atau baru saja ada snapshot (≤10 menit, misalnya dari tombol Simpan & Logout).
+- **Notifikasi setelah login**: "Mac sudah bersih. Klik ikon Amnesia di menu bar untuk restore profil."
+- **Cek dulu sebelum logout.** Saat logout, restart atau shutdown lewat menu Apple, Amnesia menahan sebentar dan menampilkan daftar yang akan dihapus, dikelompokkan (Desktop, Downloads, Keychain, dll.). Pilih **Lanjut** atau **Batal**.
+- Tombol **"Lihat yang akan dihapus sekarang"** di Pengaturan: dry-run tanpa Terminal.
+
+### Diubah
+- Batas waktu pembersihan saat logout dinaikkan dari 120 menjadi 300 detik, supaya snapshot otomatis sempat selesai. Berlaku setelah Amnesia diaktifkan (atau dimatikan lalu diaktifkan lagi).
+- Tombol Simpan & Logout tidak ikut ditahan oleh fitur "Cek dulu".
+
 ## v5.3 — 2026-10-06
 
 ### Ditambahkan

@@ -18,4 +18,7 @@ add "keychain:gh:*"
 add "keychain:gemini"
 add "keychain:*.XAUTH"            # password profil VPN
 add ".gitconfig"
+# v5.5: password backup terjadwal & login rclone (Google Drive, dll.)
+add "keychain:Amnesia Backup"
+add ".config/rclone"
 echo "Keep List diperbarui."

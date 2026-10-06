@@ -41,6 +41,17 @@ try:
     assert open(os.path.join(T, ".claude.json")).read() == "token-claude-code"
     assert open(os.path.join(T, "Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite")).read() == "chat-wa"
     assert not os.path.exists(os.path.join(T, "Library/Application Support/Google/Chrome/Default/Cache"))
+    # Pindah Mac: kunci Keychain palsu
+    store = {("Chrome Safe Storage", "Chrome"): "kunci-chrome", ("Claude Safe Storage", "Claude Key"): "kunci-claude"}
+    v._keychain_secrets = lambda: [{"svc": s, "acct": a, "secret": k} for (s, a), k in store.items()]
+    v._keychain_set = lambda s, a, k: store.__setitem__((s, a), k)
+    expect_error(lambda: v.import_keys(PW), "belum berisi kunci")
+    assert v.export_keys() == ["Chrome", "Claude"] and v.keys_info()["apps"] == ["Chrome", "Claude"]
+    assert b"kunci-chrome" not in open(v.F_KEYS, "rb").read()
+    store.clear()                                   # Mac baru: Keychain kosong
+    expect_error(lambda: v.import_keys("salah-salah-salah"), "Sisa percobaan: 2")
+    assert v.import_keys(PW) == ["Chrome", "Claude"] and v.attempts() == 0
+    assert store[("Chrome Safe Storage", "Chrome")] == "kunci-chrome"
     # 3x salah -> doomsday
     for left in (2, 1):
         expect_error(lambda: v.check_password("salah-salah-salah"), f"Sisa percobaan: {left}")

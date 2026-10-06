@@ -9,7 +9,7 @@ Cara kerja kunci (supaya "Simpan & Logout" tidak perlu ketik password):
 - Restore: password membuka kunci privat -> kunci acak -> profil.
 Password tidak pernah disimpan, dan dikirim ke 7zz lewat stdin (tidak terlihat di `ps`).
 """
-import glob, hashlib, json, os, secrets, shutil, subprocess, time
+import glob, hashlib, json, os, re, secrets, shutil, subprocess, time
 
 HOME = os.environ.get("AMNESIA_HOME", os.path.expanduser("~"))
 AMNESIA = os.path.join(HOME, ".amnesia")
@@ -54,6 +54,9 @@ F_PRIV = os.path.join(VAULT, "private.7z")
 F_SNAP = os.path.join(VAULT, "profiles.7z")
 F_SNAPKEY = os.path.join(VAULT, "profiles.key")
 F_MANIFEST = os.path.join(VAULT, "manifest.json")
+F_KEYS = os.path.join(VAULT, "keys.7z")          # kunci Keychain "... Safe Storage" (untuk Pindah Mac)
+F_KEYSKEY = os.path.join(VAULT, "keys.key")
+SECURITY = "/usr/bin/security"
 F_ATTEMPTS = os.path.join(VAULT, "attempts.json")
 F_PANIC = os.path.join(VAULT, "panic.json")
 F_LOG = os.path.join(AMNESIA, "doomsday.log")
@@ -223,8 +226,9 @@ def doomsday(full=False, reason=""):
         f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} doomsday ({reason}){' + Keep' if full else ''}\n")
 
 
-def _unlock(password):
-    """Kembalikan kunci acak profil. Menangani kata panik & hitungan salah."""
+def _unlock(password, keyfile=None):
+    """Kembalikan kunci acak (default: kunci profil). Menangani kata panik & hitungan salah."""
+    keyfile = keyfile or F_SNAPKEY
     if not exists():
         raise VaultError("Vault belum dibuat.")
     panic = _read_json(F_PANIC, None)
@@ -244,10 +248,10 @@ def _unlock(password):
             _write_json(F_ATTEMPTS, {"failed": failed})
             raise VaultError(f"Password salah. Sisa percobaan: {MAX_ATTEMPTS - failed}")
         _write_json(F_ATTEMPTS, {"failed": 0})
-        if not os.path.exists(F_SNAPKEY):
+        if not os.path.exists(keyfile):
             return None
         out = subprocess.run([OPENSSL, "pkeyutl", "-decrypt", "-inkey", os.path.join(tmp, "private.pem"),
-                              "-pkeyopt", "rsa_padding_mode:oaep", "-in", F_SNAPKEY],
+                              "-pkeyopt", "rsa_padding_mode:oaep", "-in", keyfile],
                              check=True, capture_output=True)
         return out.stdout.decode()
     finally:
@@ -278,6 +282,94 @@ def restore(password):
     return names
 
 
+# ---------------- Pindah Mac: kunci Keychain ----------------
+# Chrome, Claude, WhatsApp, dll. mengenkripsi login dengan kunci "<App> Safe Storage" di Keychain.
+# Di Mac yang sama kunci itu tetap ada (keychain: di keep list). Di Mac BARU kunci itu tidak ada,
+# jadi profil hasil restore tidak bisa membaca login. exportkeys menyimpan kunci itu di vault.
+def _keychain_secrets():
+    """[{svc, acct, secret}] untuk semua item 'Safe Storage'. macOS bisa minta 'Always Allow' per item."""
+    dump = subprocess.run([SECURITY, "dump-keychain"], capture_output=True, text=True).stdout
+    items, seen = [], set()
+    for block in dump.split("keychain: ")[1:]:
+        if 'class: "genp"' not in block:
+            continue
+        svc = re.search(r'"svce"<blob>="([^"]*)"', block)
+        acct = re.search(r'"acct"<blob>="([^"]*)"', block)
+        if not svc or not svc.group(1).endswith(" Safe Storage"):
+            continue
+        key = (svc.group(1), acct.group(1) if acct else "")
+        if key in seen:
+            continue
+        seen.add(key)
+        r = subprocess.run([SECURITY, "find-generic-password", "-s", key[0], "-a", key[1], "-w"],
+                           capture_output=True, text=True)
+        if r.returncode == 0:
+            items.append({"svc": key[0], "acct": key[1], "secret": r.stdout.rstrip("\n")})
+    return items
+
+
+def _keychain_set(svc, acct, secret):
+    # ponytail: secret lewat argumen -w terlihat sesaat di daftar proses; 'security' tidak punya input
+    # stdin untuk ini. Risiko kecil karena hanya jalan saat user menekan "Pulihkan Kunci".
+    r = subprocess.run([SECURITY, "add-generic-password", "-U", "-s", svc, "-a", acct, "-w", secret],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        raise VaultError(f"Gagal menyimpan kunci {svc}: {r.stderr.strip()[-200:]}")
+
+
+def keys_info():
+    return _read_json(os.path.join(VAULT, "keys_info.json"), None) if os.path.exists(F_KEYS) else None
+
+
+def export_keys():
+    """Simpan kunci Safe Storage ke vault. Tidak butuh password (pakai public key)."""
+    if not exists():
+        raise VaultError("Vault belum dibuat.")
+    items = _keychain_secrets()
+    if not items:
+        raise VaultError("Tidak ada kunci 'Safe Storage' yang bisa dibaca dari Keychain.")
+    tmp = _new_tmp()
+    try:
+        src = os.path.join(tmp, "keys.json")
+        _write_json(src, items)
+        key = secrets.token_hex(32)
+        new = F_KEYS + ".new"
+        if os.path.exists(new):
+            os.remove(new)
+        r = _7z(["a", "-t7z", "-mhe=on", "-p", new, "keys.json"], key, cwd=tmp)
+        if r.returncode != 0:
+            raise VaultError("Gagal menyimpan kunci:\n" + r.stderr[-300:])
+        subprocess.run([OPENSSL, "pkeyutl", "-encrypt", "-pubin", "-inkey", F_PUB,
+                        "-pkeyopt", "rsa_padding_mode:oaep", "-out", F_KEYSKEY + ".new"],
+                       input=key.encode(), check=True, capture_output=True)
+        os.replace(new, F_KEYS)
+        os.replace(F_KEYSKEY + ".new", F_KEYSKEY)
+    finally:
+        _clean_tmp()
+    names = sorted({i["svc"].removesuffix(" Safe Storage") for i in items})
+    _write_json(os.path.join(VAULT, "keys_info.json"), {"apps": names, "time": time.strftime("%Y-%m-%d %H:%M")})
+    return names
+
+
+def import_keys(password):
+    """Pasang kembali kunci Safe Storage dari vault ke Keychain Mac ini."""
+    key = _unlock(password, F_KEYSKEY)
+    if not key or not os.path.exists(F_KEYS):
+        raise VaultError("Vault ini belum berisi kunci. Jalankan 'Siapkan Pindah Mac' di Mac lama dulu.")
+    tmp = _new_tmp()
+    try:
+        r = _7z(["x", "-y", f"-o{tmp}", F_KEYS], key)
+        if r.returncode != 0:
+            raise VaultError("Gagal membuka kunci:\n" + r.stderr[-300:])
+        items = _read_json(os.path.join(tmp, "keys.json"), [])
+    finally:
+        _clean_tmp()
+    quit_apps([n for n in APPS if APPS[n]["quit"]])
+    for i in items:
+        _keychain_set(i["svc"], i["acct"], i["secret"])
+    return sorted({i["svc"].removesuffix(" Safe Storage") for i in items})
+
+
 def change_panic(password, word, full=False):
     _unlock(password)
     if word == password:
@@ -298,7 +390,7 @@ def _cli(argv, stdin):
     out = {}
     if cmd == "status":
         out = {"exists": exists(), "manifest": manifest() or None, "attempts": attempts(),
-               "max": MAX_ATTEMPTS, "min": MIN_PASSWORD, "apps": installed_apps()}
+               "max": MAX_ATTEMPTS, "min": MIN_PASSWORD, "apps": installed_apps(), "keys": keys_info()}
     elif cmd == "create":
         pw, panic = line(), line()
         create(pw, panic, full)
@@ -309,6 +401,10 @@ def _cli(argv, stdin):
     elif cmd == "panic":
         pw, word = line(), line()
         change_panic(pw, word, full)
+    elif cmd == "exportkeys":
+        out = {"apps": export_keys()}
+    elif cmd == "importkeys":
+        out = {"apps": import_keys(line())}
     elif cmd == "delete":
         doomsday(False, "dihapus manual")
     elif cmd == "logout":
