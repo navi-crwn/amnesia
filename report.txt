@@ -601,8 +601,6 @@ HAPUS  ~/Library/Containers/com.microsoft.rdc.macos
 HAPUS  ~/Library/Containers/com.microsoft.rdc.macos.qlx
 HAPUS  ~/Library/Containers/io.macfuse.app.fsmodule.macfuse
 HAPUS  ~/Library/Containers/io.macfuse.app.fsmodule.macfuse-local
-HAPUS  ~/Library/Containers/io.tailscale.ipn.macsys.login-item-helper
-HAPUS  ~/Library/Containers/io.tailscale.ipn.macsys.share-extension
 HAPUS  ~/Library/Containers/net.whatsapp.WhatsApp
 HAPUS  ~/Library/Containers/net.whatsapp.WhatsApp.Intents
 HAPUS  ~/Library/Containers/net.whatsapp.WhatsApp.ServiceExtension
@@ -722,7 +720,6 @@ HAPUS  ~/.kimi-webbridge
 HAPUS  ~/.kimi-work
 HAPUS  ~/.local/share
 HAPUS  ~/.local/state
-HAPUS  ~/.mitmproxy
 HAPUS  ~/.npm
 HAPUS  ~/.vscode
 HAPUS  ~/.vscode-shared
@@ -762,7 +759,6 @@ HAPUS  ~/Library/Preferences/corespotlightd.plist
 HAPUS  ~/Library/Preferences/diagnostics_agent.plist
 HAPUS  ~/Library/Preferences/familycircled.plist
 HAPUS  ~/Library/Preferences/group.com.nordvpn.macos.firebase.plist
-HAPUS  ~/Library/Preferences/io.tailscale.ipn.macsys.plist
 HAPUS  ~/Library/Preferences/no_backup
 HAPUS  ~/Library/Preferences/org.cups.PrintingPrefs.plist
 HAPUS  ~/Library/Preferences/org.filezilla-project.filezilla.plist
@@ -913,4 +909,4 @@ HAPUS  ~/.Trash/tour-check.png
 HAPUS  ~/.Trash/tour-terms.png
 HAPUS  ~/.Trash/tour-welcome.png
 HAPUS  ~/.Trash/vault.png
---- dry-run (logout): 915 items would be deleted. Nothing was deleted. ---
+--- dry-run (logout): 911 items would be deleted. Nothing was deleted. ---

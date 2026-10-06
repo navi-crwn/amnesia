@@ -5,6 +5,15 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.12 — 2026-10-07
+
+### Fixed
+- **Backup to Dropbox jumped to 100% right away** and then sat at 100% until it was done, with a speed that started very high and slowly dropped. rclone fills a 48 MB piece of the file before sending it to Dropbox, and counted that piece as "sent" as soon as it was filled. Amnesia now uses 8 MB pieces for Dropbox, so the progress bar follows the real upload. OneDrive and other clouds are unchanged.
+- **The server speed test showed a number that was far too high** (for example "10000 KB/s" on a connection that really does about 750 KB/s). It took the time to open the connection away from the send time, and when those two were close, almost nothing was left. Now it sends 1 MB and then 5 MB and only looks at the extra time the bigger one needs, so the connection time drops out on its own. If that difference is too small to trust, it uses the whole time instead, which gives a lower number, never a too-high one.
+
+### Changed
+- **The privacy note in the welcome tour and in Settings is bigger** ("Everything stays on this Mac…"), so it's easier to read.
+
 ## v5.11 — 2026-10-07
 
 ### Fixed

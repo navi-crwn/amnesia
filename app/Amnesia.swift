@@ -1204,23 +1204,27 @@ func connectSSH(_ server: String, port: Int = 22, password: String, forgetOldKey
                          + "Pilih folder di home server saja, mis. \(host):backup. Amnesia tidak pernah memakai sudo."), false)
     }
     let path = w.out.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n").last ?? rpath
-    // tes kecepatan upload: kirim 2 MB acak (tidak disimpan di server). Waktu membuka koneksi SSH diukur terpisah
-    // lalu dikurangkan, supaya angkanya tidak terlalu rendah. Tetap perkiraan kasar: koneksi biasanya makin cepat.
-    let tc = Date()
-    _ = sh("/usr/bin/ssh", base + ["-o", "BatchMode=yes", host, "true"], timeout: 60)
-    let overhead = Date().timeIntervalSince(tc)
-    let t0 = Date()
-    let sp = sh("/bin/sh", ["-c", "head -c 2000000 /dev/urandom | /usr/bin/ssh \"$@\" 'cat > /dev/null'", "sh"]
-                + base + ["-o", "BatchMode=yes", host], timeout: 120)
-    let secs = max(Date().timeIntervalSince(t0) - overhead, 0.2)
+    // tes kecepatan upload: kirim 1 MB lalu 5 MB acak (tidak disimpan di server). Selisih waktunya = waktu untuk
+    // 4 MB tambahan, jadi waktu membuka koneksi SSH (bisa beberapa detik) tidak ikut terhitung. Kalau selisihnya
+    // terlalu kecil untuk dipercaya, pakai waktu total 5 MB (angkanya jadi lebih rendah, bukan terlalu tinggi).
+    func send(_ n: Int) -> Double? {
+        let t0 = Date()
+        let r = sh("/bin/sh", ["-c", "head -c \(n) /dev/urandom | /usr/bin/ssh \"$@\" 'cat > /dev/null'", "sh"]
+                   + base + ["-o", "BatchMode=yes", host], timeout: 120)
+        return r.code == 0 ? Date().timeIntervalSince(t0) : nil
+    }
+    var bps: Double? = nil
+    if let small = send(1_000_000), let big = send(5_000_000) {
+        let d = big - small
+        bps = d >= 0.5 ? 4_000_000 / d : 5_000_000 / max(big, 0.5)
+    }
     var speed = ""
-    if sp.code == 0 {
-        let bps = 2_000_000 / secs
+    if let bps {
         let kb = Int(bps / 1000), mbit = String(format: "%.1f", bps * 8 / 1_000_000)
         speed = T("\n\nUpload speed: about \(kb) KB/s (\(mbit) Mbps), a rough estimate. A 100 MB backup takes about "
-                  + "\(durationText(100_000_000 / bps)), often less: the connection usually speeds up during a real backup.",
+                  + "\(durationText(100_000_000 / bps)), sometimes less: the connection often speeds up during a real backup.",
                   "\n\nKecepatan upload: sekitar \(kb) KB/s (\(mbit) Mbps), perkiraan kasar. Backup 100 MB butuh sekitar "
-                  + "\(durationText(100_000_000 / bps)), sering lebih cepat: koneksi biasanya makin kencang saat backup sungguhan.")
+                  + "\(durationText(100_000_000 / bps)), kadang lebih cepat: koneksi sering makin kencang saat backup sungguhan.")
     }
     return (true, T("Connected to \(host), no password needed from now on.\n\nBackups go to this folder on the server "
                     + "(tested, it can be written to):\n\(path)",
@@ -3828,7 +3832,7 @@ struct PrivacyNote: View {
                 "Semua tetap di Mac ini. Amnesia tidak punya server, tidak melacak, tidak mengumpulkan data. "
                 + "Tidak ada yang dikirim ke mana pun, kecuali kamu sendiri yang mengatur backup."),
               systemImage: "hand.raised.fill")
-            .font(.system(size: 11, weight: .medium))
+            .font(.system(size: 13.5, weight: .medium))
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
     }

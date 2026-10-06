@@ -183,8 +183,14 @@ case "$DEST" in
     rclone)
         R="$(cfg BACKUP_RCLONE)"; [ -n "$R" ] || fail "$(t "no cloud set up" "cloud belum diatur")"
         command -v rclone >/dev/null || fail "$(t "rclone is not installed" "rclone belum terpasang") (brew install rclone)"
+        # Dropbox: rclone menampung file per potongan 48 MB sebelum dikirim, dan potongan yang baru ditampung sudah
+        # dihitung "terkirim". Akibatnya progress langsung 100% padahal upload baru mulai. Potongan 8 MB membuat
+        # progress mengikuti upload yang sebenarnya. Cloud lain (OneDrive, dll.) tidak diubah.
+        RX=()
+        [ "$(rclone listremotes --long 2>/dev/null | awk -v r="${R%%:*}:" '$1 == r { print $2 }')" = dropbox ] \
+            && RX=(--dropbox-chunk-size 8M)
         # batas waktu: koneksi yang diam 2 menit dianggap gagal, dicoba ulang maksimal 2x
-        ( rclone copy "$OUT" "$R" --stats 1s --stats-one-line --stats-log-level NOTICE \
+        ( rclone copy "$OUT" "$R" --stats 1s --stats-one-line --stats-log-level NOTICE ${RX[@]+"${RX[@]}"} \
               --contimeout 30s --timeout 2m --retries 2 --low-level-retries 3 2>&1 >/dev/null | pctrclone
           echo "${PIPESTATUS[0]}" >"$TMP/rc" ) &
         wait $!
