@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amnesia for Mac</title>
+<meta name="description" content="Your Mac forgets everything every time you log out, except the logins and files you choose to keep. Free and open source.">
+<meta property="og:title" content="Amnesia for Mac">
+<meta property="og:description" content="Your Mac forgets everything every time you log out, except what you choose.">
+<meta property="og:image" content="banner.png">
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:rgba(15,23,42,.08);
+  --cyan:#22d3ee; --pink:#ec4899; --indigo:#6366f1; --green:#10b981; --orange:#f97316;
+  --shadow:0 10px 30px rgba(15,23,42,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0b1020; --card:#141a2e; --text:#e5e7eb; --muted:#94a3b8; --line:rgba(255,255,255,.08); --shadow:0 10px 30px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;overflow-x:hidden}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.45;z-index:0;pointer-events:none}
+header{position:relative;overflow:hidden;padding:22px 0 80px}
+nav{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:1}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;text-decoration:none}
+.brand img{width:36px;height:36px}
+.nav-r{display:flex;gap:8px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:7px 14px;font:600 13px Inter,sans-serif;cursor:pointer;text-decoration:none}
+.chip.on{background:var(--indigo);color:#fff;border-color:transparent}
+.hero>*,.split>*,.grid>*,.steps>*{min-width:0}
+.hero{position:relative;z-index:1;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;margin-top:56px}
+h1{font-size:clamp(38px,6vw,64px);line-height:1.05;margin:0 0 18px;font-weight:900;letter-spacing:-.02em}
+h1 span{background:linear-gradient(90deg,var(--cyan),var(--indigo),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:19px;color:var(--muted);margin:0 0 28px;max-width:540px}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 22px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px}
+.btn.main{background:linear-gradient(90deg,var(--indigo),var(--pink));color:#fff;box-shadow:0 10px 24px rgba(99,102,241,.35)}
+.btn.ghost{background:var(--card);border:1px solid var(--line)}
+.code{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:500 14px ui-monospace,SFMono-Regular,Menlo,monospace;max-width:100%;overflow-x:auto}
+.code code{white-space:nowrap}
+.copy{margin-left:auto;border:0;background:var(--indigo);color:#fff;border-radius:8px;padding:6px 10px;font:600 12px Inter,sans-serif;cursor:pointer;flex-shrink:0}
+.small{font-size:13px;color:var(--muted);margin-top:10px}
+.shot{position:relative;display:flex;justify-content:center}
+.shot img{width:100%;max-width:360px;border-radius:22px;box-shadow:var(--shadow)}
+.shot .float{position:absolute;width:52%;max-width:200px;right:-6px;bottom:-30px;border-radius:16px}
+section{padding:70px 0}
+h2{font-size:clamp(28px,4vw,40px);margin:0 0 10px;font-weight:800;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0 0 34px;font-size:17px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
+.card h3{margin:14px 0 6px;font-size:18px}
+.card p{margin:0;color:var(--muted);font-size:15px}
+.ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:22px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.split .card li{margin:6px 0;color:var(--muted)}
+.split .card h3{margin-top:0}
+.steps{counter-reset:s;display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.step{position:relative}
+.step:before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--indigo));color:#fff;font-weight:800}
+.gallery{display:flex;gap:18px;overflow-x:auto;padding-bottom:12px;scroll-snap-type:x mandatory}
+.gallery img{height:460px;border-radius:18px;box-shadow:var(--shadow);scroll-snap-align:start}
+details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 20px;margin-bottom:12px}
+summary{font-weight:700;cursor:pointer}
+details p{color:var(--muted);margin:10px 0 0}
+footer{padding:40px 0 60px;color:var(--muted);font-size:14px;text-align:center}
+[data-id]{display:none}
+html[lang=id] [data-en]{display:none}
+html[lang=id] [data-id]{display:revert}
+@media (max-width:860px){
+  .hero{grid-template-columns:1fr;margin-top:36px}
+  .shot .float{display:none}
+  .grid,.steps{grid-template-columns:1fr 1fr}
+  .split{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .grid,.steps{grid-template-columns:1fr}
+  .gallery img{height:380px}
+  .code{font-size:12px}
+  .btn{width:100%;justify-content:center}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="blob" style="width:420px;height:420px;background:var(--cyan);left:-140px;top:-120px"></div>
+  <div class="blob" style="width:380px;height:380px;background:var(--pink);right:-120px;top:120px"></div>
+  <div class="blob" style="width:420px;height:420px;background:var(--indigo);left:30%;top:360px;opacity:.3"></div>
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="#"><img src="logo.png" alt="">Amnesia</a>
+      <div class="nav-r">
+        <button class="chip on" id="l-en" onclick="setLang('en')">EN</button>
+        <button class="chip" id="l-id" onclick="setLang('id')">ID</button>
+        <a class="chip" href="https://github.com/navi-crwn/amnesia-mac">GitHub</a>
+      </div>
+    </nav>
+    <div class="hero">
+      <div>
+        <h1><span data-en>Your Mac forgets everything.</span><span data-id>Mac kamu lupa semuanya.</span></h1>
+        <p class="lead">
+          <span data-en>Every time you log out, Amnesia wipes your history, downloads and app data. Your logins, and the files you choose, stay safe in an encrypted vault.</span>
+          <span data-id>Setiap kali kamu logout, Amnesia menghapus riwayat, download dan data app. Login kamu, dan file yang kamu pilih, tetap aman di brankas terenkripsi.</span>
+        </p>
+        <div class="cta">
+          <a class="btn main" href="https://github.com/navi-crwn/amnesia-mac/releases/latest">⬇ <span data-en>Download for Mac</span><span data-id>Download untuk Mac</span></a>
+          <a class="btn ghost" href="#how"><span data-en>How it works</span><span data-id>Cara kerjanya</span></a>
+        </div>
+        <div class="code"><code>brew install --cask navi-crwn/tap/amnesia</code><button class="copy" onclick="copyCmd(this)">Copy</button></div>
+        <p class="small"><span data-en>Free & open source · macOS 15+ · Apple Silicon & Intel</span><span data-id>Gratis & open source · macOS 15+ · Apple Silicon & Intel</span></p>
+      </div>
+      <div class="shot">
+        <img src="screens/home.png" alt="Amnesia main window">
+        <img class="float" src="screens/menu.png" alt="Amnesia menu bar panel">
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <h2><span data-en>Clean every day. Nothing lost.</span><span data-id>Bersih setiap hari. Tidak ada yang hilang.</span></h2>
+    <p class="sub"><span data-en>Everything you need to start fresh, without logging in again 20 times.</span><span data-id>Semua yang kamu butuhkan untuk mulai bersih, tanpa login ulang 20 kali.</span></p>
+    <div class="grid">
+      <div class="card"><div class="ic" style="background:#d1fae5">🛡️</div><h3><span data-en>Auto wipe</span><span data-id>Bersih otomatis</span></h3><p><span data-en>Runs before logout, restart and shutdown, then checks again at login.</span><span data-id>Jalan sebelum logout, restart dan shutdown, lalu dicek ulang saat login.</span></p></div>
+      <div class="card"><div class="ic" style="background:#e0e7ff">🔐</div><h3>Profile Vault</h3><p><span data-en>Chrome, WhatsApp, Claude and your coding tools, locked with AES-256. One password brings them back.</span><span data-id>Chrome, WhatsApp, Claude dan alat coding, dikunci AES-256. 1 password untuk mengembalikan semuanya.</span></p></div>
+      <div class="card"><div class="ic" style="background:#dbeafe">⏏️</div><h3><span data-en>Save & Log Out</span><span data-id>Simpan & Logout</span></h3><p><span data-en>One click saves your logins, then logs out. If saving fails, the logout is cancelled.</span><span data-id>1 klik simpan login, lalu logout. Kalau gagal menyimpan, logout dibatalkan.</span></p></div>
+      <div class="card"><div class="ic" style="background:#ccfbf1">📌</div><h3><span data-en>Pick what stays</span><span data-id>Pilih yang tetap ada</span></h3><p><span data-en>Amnesia finds your apps and lets you switch on the ones to keep. VPNs are suggested for you.</span><span data-id>Amnesia mendeteksi app kamu, tinggal nyalakan yang mau disimpan. VPN sudah disarankan.</span></p></div>
+      <div class="card"><div class="ic" style="background:#fce7f3">💾</div><h3><span data-en>Backup anywhere</span><span data-id>Backup ke mana saja</span></h3><p><span data-en>USB drive, your own server over SSH, or Google Drive, Dropbox, OneDrive, Box and pCloud. Daily or weekly.</span><span data-id>Flashdisk, server sendiri lewat SSH, atau Google Drive, Dropbox, OneDrive, Box dan pCloud. Harian atau mingguan.</span></p></div>
+      <div class="card"><div class="ic" style="background:#ffedd5">🔥</div><h3><span data-en>Panic word</span><span data-id>Kata panik</span></h3><p><span data-en>Type it, or get the password wrong 3 times, and the vault is gone for good.</span><span data-id>Ketik kata itu, atau salah password 3x, dan vault musnah selamanya.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2><span data-en>How it works</span><span data-id>Cara kerjanya</span></h2>
+    <p class="sub"><span data-en>Your day with Amnesia, in four steps.</span><span data-id>Hari kamu bersama Amnesia, dalam 4 langkah.</span></p>
+    <div class="steps">
+      <div class="card step"><h3><span data-en>Log in</span><span data-id>Login</span></h3><p><span data-en>Your Mac starts clean. Open Profile Vault, type your password.</span><span data-id>Mac mulai bersih. Buka Profile Vault, ketik password.</span></p></div>
+      <div class="card step"><h3><span data-en>Work</span><span data-id>Kerja</span></h3><p><span data-en>All your logins are back. Keep important files in ~/Keep.</span><span data-id>Semua login kembali. Simpan file penting di ~/Keep.</span></p></div>
+      <div class="card step"><h3><span data-en>Save & Log Out</span><span data-id>Simpan & Logout</span></h3><p><span data-en>Your logins go back into the vault.</span><span data-id>Login kamu masuk lagi ke vault.</span></p></div>
+      <div class="card step"><h3><span data-en>Forgotten</span><span data-id>Terlupakan</span></h3><p><span data-en>Everything else is wiped. No traces left.</span><span data-id>Sisanya dihapus. Tanpa jejak.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span data-en>What gets wiped, what stays</span><span data-id>Apa yang dihapus, apa yang aman</span></h2>
+    <p class="sub"><span data-en>You can always check the list first, nothing is deleted until you turn Amnesia on.</span><span data-id>Kamu selalu bisa cek daftarnya dulu, tidak ada yang dihapus sampai Amnesia kamu aktifkan.</span></p>
+    <div class="split">
+      <div class="card"><h3>🗑️ <span data-en>Wiped at logout</span><span data-id>Dihapus saat logout</span></h3><ul>
+        <li><span data-en>Browser history & cookies</span><span data-id>Riwayat & cookie browser</span></li>
+        <li>Desktop, Downloads, Documents, Pictures</li>
+        <li><span data-en>Caches, logs, Terminal history</span><span data-id>Cache, log, riwayat Terminal</span></li>
+        <li><span data-en>Data from apps you didn't pick</span><span data-id>Data app yang tidak kamu pilih</span></li></ul></div>
+      <div class="card"><h3>✅ <span data-en>Stays safe</span><span data-id>Tetap aman</span></h3><ul>
+        <li><span data-en>Everything in ~/Keep</span><span data-id>Semua isi ~/Keep</span></li>
+        <li><span data-en>Logins in the Profile Vault</span><span data-id>Login di Profile Vault</span></li>
+        <li><span data-en>Apps on your Keep List (VPN, SSH keys…)</span><span data-id>App di Keep List (VPN, kunci SSH…)</span></li>
+        <li><span data-en>Your installed apps</span><span data-id>App yang terpasang</span></li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section id="screens">
+  <div class="wrap">
+    <h2><span data-en>Take a look</span><span data-id>Lihat tampilannya</span></h2>
+    <p class="sub"><span data-en>A native Mac app that lives in your menu bar. English and Bahasa Indonesia.</span><span data-id>App Mac asli yang tinggal di menu bar. Bahasa Inggris dan Indonesia.</span></p>
+    <div class="gallery">
+      <img src="screens/home.png" alt="Home" loading="lazy">
+      <img src="screens/vault.png" alt="Profile Vault" loading="lazy">
+      <img src="screens/backup.png" alt="Backup" loading="lazy">
+      <img src="screens/keep.png" alt="Keep List" loading="lazy">
+      <img src="screens/menu.png" alt="Menu bar" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2><span data-en>Install</span><span data-id>Cara pasang</span></h2>
+    <div class="split">
+      <div class="card"><h3>Homebrew</h3>
+        <div class="code"><code>brew install --cask navi-crwn/tap/amnesia</code><button class="copy" onclick="copyCmd(this)">Copy</button></div>
+        <p class="small"><span data-en>Updates come with brew upgrade.</span><span data-id>Update cukup dengan brew upgrade.</span></p></div>
+      <div class="card"><h3><span data-en>Download</span><span data-id>Download</span></h3>
+        <p><span data-en>Get the zip from <a href="https://github.com/navi-crwn/amnesia-mac/releases/latest">Releases</a>, unzip, and drag Amnesia to Applications. The app isn't signed by Apple yet, so the first time: System Settings → Privacy & Security → <b>Open Anyway</b>.</span><span data-id>Ambil zip dari <a href="https://github.com/navi-crwn/amnesia-mac/releases/latest">Releases</a>, unzip, lalu seret Amnesia ke Applications. App ini belum ditandatangani Apple, jadi pertama kali: System Settings → Privacy & Security → <b>Open Anyway</b>.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <h2>FAQ</h2>
+    <details><summary><span data-en>Is my data sent anywhere?</span><span data-id>Apakah data saya dikirim ke mana-mana?</span></summary><p><span data-en>No. Everything runs on your Mac. Only if you pick a server or cloud backup does a locked .7z file leave your Mac, and nobody can read it without your password.</span><span data-id>Tidak. Semua jalan di Mac kamu. Hanya kalau kamu pilih backup ke server atau cloud, file .7z terkunci keluar dari Mac, dan tidak ada yang bisa membacanya tanpa password kamu.</span></p></details>
+    <details><summary><span data-en>What if I forget the vault password?</span><span data-id>Kalau lupa password vault?</span></summary><p><span data-en>Then nobody can open it, including you. Make a new vault and log in to your apps again.</span><span data-id>Tidak ada yang bisa membukanya, termasuk kamu. Buat vault baru dan login ulang ke app kamu.</span></p></details>
+    <details><summary><span data-en>Can I try it without deleting anything?</span><span data-id>Bisa coba tanpa menghapus apa-apa?</span></summary><p><span data-en>Yes. Amnesia stays off until you press Turn On. Settings → "See what would be deleted now" shows the full list first.</span><span data-id>Bisa. Amnesia tetap mati sampai kamu tekan Aktifkan. Pengaturan → "Lihat yang akan dihapus sekarang" menampilkan daftarnya dulu.</span></p></details>
+    <details><summary><span data-en>Can I move to a new Mac?</span><span data-id>Bisa pindah ke Mac baru?</span></summary><p><span data-en>Yes. Prepare Move saves your Keychain keys to the vault, a backup carries it over, and Restore Keys puts them back on the new Mac.</span><span data-id>Bisa. Siapkan Pindah Mac menyimpan kunci Keychain ke vault, backup membawanya, lalu Pulihkan Kunci memasangnya di Mac baru.</span></p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><a href="https://github.com/navi-crwn/amnesia-mac">GitHub</a> · <a href="https://github.com/navi-crwn/amnesia-mac/blob/main/CHANGELOG.md">Changelog</a> · MIT License</p>
+    <p><span data-en>Made for personal use. Use it wisely: Amnesia really does delete your data.</span><span data-id>Dibuat untuk pemakaian pribadi. Pakai dengan bijak: Amnesia benar-benar menghapus data.</span></p>
+  </div>
+</footer>
+
+<script>
+function setLang(l){
+  document.documentElement.lang = l;
+  document.getElementById('l-en').classList.toggle('on', l === 'en');
+  document.getElementById('l-id').classList.toggle('on', l === 'id');
+  try { localStorage.setItem('lang', l); } catch (e) {}
+}
+function copyCmd(b){
+  const t = b.parentElement.querySelector('code').textContent;
+  navigator.clipboard.writeText(t).then(() => { b.textContent = '✓'; setTimeout(() => b.textContent = 'Copy', 1500); });
+}
+let saved = null;
+try { saved = localStorage.getItem('lang'); } catch (e) {}
+setLang(saved || ((navigator.language || '').startsWith('id') ? 'id' : 'en'));
+</script>
+</body>
+</html>

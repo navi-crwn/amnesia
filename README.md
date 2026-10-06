@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="../../releases/latest"><b>⬇️ Download the app</b></a> ·
+  <a href="https://navi-crwn.github.io/amnesia-mac/">Website</a> ·
   <a href="#install">Install</a> ·
   <a href="#faq">FAQ</a> ·
   <a href="CHANGELOG.md">Changelog</a>
@@ -27,6 +28,12 @@ The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, 
 - like a Mac that starts clean and light every day.
 
 <p align="center"><img src="docs/features.png" alt="Amnesia features" width="100%"></p>
+
+<p align="center">
+  <img src="docs/screens/home.png" alt="Home" width="32%">
+  <img src="docs/screens/vault.png" alt="Profile Vault" width="32%">
+  <img src="docs/screens/backup.png" alt="Backup" width="32%">
+</p>
 
 ## What gets wiped, what stays?
 
@@ -53,9 +60,10 @@ bash ~/.amnesia/clean.sh logout --dry-run
 - **💾 Backup anywhere.** Your chosen folders get locked into one `.7z` file (AES-256) and sent to:
   - a **USB drive / SSD** that's plugged in,
   - **your own server / VPS** over SSH + rsync,
-  - the **cloud** (Google Drive, Dropbox, OneDrive, S3) with rclone.
+  - the **cloud**: Google Drive, Dropbox, OneDrive, Box or pCloud. Just log in in your browser, no Terminal. (S3, WebDAV and 40+ more work through rclone.)
 - **⏰ Scheduled backups.** Daily or weekly, running on their own while the Amnesia icon is in the menu bar.
 - **🚚 Move to a new Mac.** Take all your logins with you: the Keychain keys go into the vault, the vault goes into a backup, and you restore it on the new Mac.
+- **👋 Welcome tour.** The first time you open it, Amnesia shows you around, checks that everything's ready, finds your apps and asks which ones should keep their data.
 - **🔥 Panic button.** Get the vault password wrong 3 times, or type your *panic word*, and the vault is destroyed on the spot.
 - **👀 Check before logout.** Logging out or restarting from the Apple menu? Amnesia holds on for a second and shows what's about to be deleted. You decide: continue or cancel.
 - **📸 Auto snapshot.** Forgot to press Save & Log Out? Your logins still get saved to the vault on a normal logout.
@@ -66,19 +74,32 @@ bash ~/.amnesia/clean.sh logout --dry-run
 
 ## Install
 
-**You need:** macOS 15 or newer, [Homebrew](https://brew.sh), and the Command Line Tools (free, install with `xcode-select --install`).
+**You need:** macOS 15 or newer. Everything else is inside the app (7-Zip included). The welcome tour helps you install Apple's free Command Line Tools if they're missing.
 
-Open **Terminal** and paste:
+**Option 1: Homebrew** (easiest, and updates come with `brew upgrade`)
 
 ```bash
-brew install sevenzip python      # + rclone if you want cloud backups
+brew install --cask navi-crwn/tap/amnesia
+```
+
+**Option 2: Download**
+
+1. Grab `Amnesia-vX.zip` from [Releases](../../releases/latest), unzip it, and drag **Amnesia** into **Applications**.
+2. The app isn't signed by Apple (yet), so macOS blocks it the first time. Open it once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
+   Or in Terminal: `xattr -dr com.apple.quarantine /Applications/Amnesia.app`
+
+**Option 3: Build it yourself** (needs the Command Line Tools)
+
+```bash
 git clone https://github.com/navi-crwn/amnesia-mac.git ~/.amnesia
 bash ~/.amnesia/app/build.sh
 ```
 
-Amnesia opens by itself and shows up in Launchpad.
+**Uninstalling:** press *Turn Off* in the app first, then delete the app. Your vault and settings live in `~/.amnesia`.
 
 ## First-time setup
+
+The welcome tour walks you through this, but here's the short version:
 
 1. **Create the vault.** Open *Profile Vault*, pick a password (at least 12 characters), then press *Create Vault*. This password **can't be recovered** if you forget it, so keep it somewhere safe.
 2. **Save your logins.** Log in to Chrome, WhatsApp and your other apps like normal, then press *Snapshot*.
@@ -104,7 +125,7 @@ No, unless you choose a server or cloud backup yourself. Even then, only the loc
 
 **What do I need for online backups?**
 - *SSH server:* type `user@host:folder`, press **Set Up SSH Key** once (you'll type the server password one time), then **Test Connection**.
-- *Google Drive:* press **Connect Google Drive**, log in in your browser, done. The default destination is `gdrive:Amnesia`.
+- *Cloud:* pick Google Drive, Dropbox, OneDrive, Box or pCloud, press **Connect**, log in in your browser, done. No Terminal needed, and Amnesia installs rclone for you (needs Homebrew).
 
 Heads up: every backup is uploaded in full (not just what changed), because the file is encrypted. Old backups aren't deleted automatically, so clean them up at the destination now and then.
 
@@ -129,9 +150,10 @@ Press *Turn Off* in the app. Your Mac stops being wiped until you turn it back o
 | `vault.py` | Profile Vault: RSA-4096 key + 7-Zip AES-256. |
 | `backup.sh` | Encrypted backups to a USB drive, an SSH server, or the cloud (rclone). |
 | `keep.example.conf` | Example Keep List. `build.sh` copies it to `keep.conf` on first install. |
-| `app/` | The SwiftUI app, the icon, and the build/backup scripts. |
+| `app/` | The SwiftUI app, the icon, and the build/release scripts. |
+| `docs/` | Images, screenshots and the website (GitHub Pages). |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Automatic tests in a fake home folder, safe to run anytime. |
 
 ---
 
-<p align="center">Made for personal use. Use it wisely: Amnesia really does delete your data.</p>
+<p align="center">MIT License · Made for personal use. Use it wisely: Amnesia really does delete your data.</p>

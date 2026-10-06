@@ -9,7 +9,10 @@
 set -uo pipefail
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 H="${AMNESIA_HOME:-$HOME}"; A="$H/.amnesia"; CONF="$A/settings.conf"
-SEVENZ="${AMNESIA_7Z:-/opt/homebrew/bin/7zz}"; VOLUMES="${AMNESIA_VOLUMES:-/Volumes}"
+SEVENZ="${AMNESIA_7Z:-}"   # 7-Zip bawaan app dulu, lalu Homebrew
+if [ -z "$SEVENZ" ]; then
+    for SEVENZ in "$A/bin/7zz" /opt/homebrew/bin/7zz /usr/local/bin/7zz; do [ -x "$SEVENZ" ] && break; done
+fi; VOLUMES="${AMNESIA_VOLUMES:-/Volumes}"
 AUTO=0; [ "${1:-}" = "--auto" ] && AUTO=1
 
 cfg() { grep "^$1=" "$CONF" 2>/dev/null | tail -1 | cut -d= -f2-; }

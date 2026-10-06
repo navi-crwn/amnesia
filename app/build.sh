@@ -13,6 +13,21 @@ echo "1/4  Compile app..."
 swiftc -swift-version 5 -O -parse-as-library -target "$ARCH-apple-macos15.0" Amnesia.swift -o "$APP/Contents/MacOS/Amnesia"
 cp Info.plist "$APP/Contents/Info.plist"
 
+# Mesin Amnesia ikut di dalam app, jadi app dari GitHub Releases langsung bisa dipakai
+R="$APP/Contents/Resources"; mkdir -p "$R/engine" "$R/bin"
+cp ../clean.sh ../agent.sh ../vault.py ../backup.sh ../keep.example.conf "$R/engine/"
+echo "     getting 7-Zip..."
+SZ="$B/7zip"; mkdir -p "$SZ"
+if curl -fsSL https://github.com/ip7z/7zip/releases/download/24.09/7z2409-mac.tar.xz -o "$SZ/7z.tar.xz" \
+   && tar -xf "$SZ/7z.tar.xz" -C "$SZ" 7zz License.txt; then
+  cp "$SZ/7zz" "$R/bin/7zz"; cp "$SZ/License.txt" "$R/bin/7-Zip-License.txt"
+elif [ -x /opt/homebrew/bin/7zz ]; then
+  cp /opt/homebrew/bin/7zz "$R/bin/7zz"
+else
+  echo "     (no 7-Zip bundled: install it with  brew install sevenzip)"
+fi
+[ -f "$R/bin/7zz" ] && codesign --force -s - "$R/bin/7zz"
+
 echo "2/4  Drawing the icon..."
 swiftc -O makeicon.swift -o "$B/makeicon"
 "$B/makeicon" "$B/icon.png"

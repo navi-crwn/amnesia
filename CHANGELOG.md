@@ -5,6 +5,38 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.7 — 2026-10-06
+
+### Added
+- **Ready to use straight from GitHub.** The app now carries everything it needs: the Amnesia scripts and 7-Zip (official build, with its license). On first launch it sets itself up in `~/.amnesia`. Your Keep List, settings and vault are never overwritten.
+- **Welcome tour** the first time you open the app:
+  1. Hello + pick your language.
+  2. How it works, in 4 short points.
+  3. Quick check: engine, 7-Zip and Apple's Command Line Tools, with an install button if they're missing.
+  4. **Your apps**: Amnesia finds the apps on your Mac and you switch on the ones that should keep their data. VPNs and password managers are switched on for you. Apps the Profile Vault handles show a lock.
+  5. Profile Vault in 3 steps.
+  6. Your daily routine.
+  You can run the tour again from Settings.
+- **Pick Apps** button on the Keep List page (same app picker as the tour).
+- **Backup: add any folder** inside your home folder, not just the 7 standard ones.
+- **More clouds, no Terminal**: Google Drive, Dropbox, OneDrive, Box and pCloud. Pick one, press Connect, log in in your browser. Amnesia installs rclone if needed and checks the connection. The login token is never shown on screen.
+- Shows when your cloud is already connected, with a Reconnect button.
+- **Website** (GitHub Pages, `docs/index.html`): English + Indonesian, light + dark mode, works on phones.
+- **Homebrew**: `brew install --cask navi-crwn/tap/amnesia`. `github_backup.sh` creates and updates the `homebrew-tap` repo with every release.
+- **MIT License** (`LICENSE`).
+- Real screenshots in the README and on the website.
+
+### Changed
+- The app shows up in **Cmd-Tab** and the Dock while its window is open, and goes back to just the menu bar icon when you close it.
+- SSH example is now `user@remoteserv.er:backup`.
+- The tagline on the home screen no longer gets cut off.
+- `vault.py` and `backup.sh` use the 7-Zip bundled in the app first, then Homebrew's.
+- `build.sh` puts the scripts and 7-Zip inside the app.
+- README: 3 ways to install (Homebrew, download, build it yourself), how to get past the "unidentified developer" warning, and how to uninstall safely.
+
+### Security
+- If you connected Google Drive with v5.6, its token was printed in the Terminal window. If you shared a screenshot of it, revoke rclone at https://myaccount.google.com/connections and connect again.
+
 ## v5.6 — 2026-10-06
 
 ### Added

@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="../../releases/latest"><b>⬇️ Download app</b></a> ·
+  <a href="https://navi-crwn.github.io/amnesia-mac/">Website</a> ·
   <a href="#cara-pasang">Cara pasang</a> ·
   <a href="#pertanyaan-umum">FAQ</a> ·
   <a href="CHANGELOG.id.md">Changelog</a>
@@ -27,6 +28,12 @@ Masalahnya, kalau semua hilang, kamu harus login ulang Gmail, WhatsApp, Telegram
 - ingin Mac tetap ringan dan bersih setiap hari.
 
 <p align="center"><img src="docs/fitur.png" alt="Fitur Amnesia" width="100%"></p>
+
+<p align="center">
+  <img src="docs/screens/home.png" alt="Home" width="32%">
+  <img src="docs/screens/vault.png" alt="Profile Vault" width="32%">
+  <img src="docs/screens/backup.png" alt="Backup" width="32%">
+</p>
 
 ## Apa yang dihapus, apa yang aman?
 
@@ -53,9 +60,10 @@ bash ~/.amnesia/clean.sh logout --dry-run
 - **💾 Backup ke mana saja.** Folder pilihan dikunci jadi 1 file `.7z` (AES-256), lalu dikirim ke:
   - **Flashdisk / SSD** yang tercolok,
   - **Server sendiri / VPS** lewat SSH + rsync,
-  - **Cloud** (Google Drive, Dropbox, OneDrive, S3) lewat rclone.
+  - **Cloud**: Google Drive, Dropbox, OneDrive, Box atau pCloud. Cukup login di browser, tanpa Terminal. (S3, WebDAV dan 40+ lainnya lewat rclone.)
 - **⏰ Backup terjadwal.** Harian atau mingguan, jalan sendiri selama ikon Amnesia ada di menu bar.
 - **🚚 Pindah Mac.** Bawa semua login ke Mac baru: kunci Keychain ikut disimpan ke vault, vault ikut ke backup, lalu dipulihkan di Mac baru.
+- **👋 Tur perkenalan.** Saat pertama dibuka, Amnesia mengajak kamu keliling, cek semua sudah siap, mendeteksi app kamu, lalu tanya mana yang datanya mau disimpan.
 - **🔥 Tombol darurat.** Kalau password vault salah 3x, atau kamu mengetik *kata panik* yang sudah kamu atur, vault langsung dimusnahkan.
 - **👀 Cek dulu sebelum logout.** Logout atau restart lewat menu Apple ditahan sebentar, lalu kamu lihat dulu apa saja yang akan dihapus. Lanjut atau batal, kamu yang pilih.
 - **📸 Snapshot otomatis.** Lupa menekan Simpan & Logout? Login kamu tetap disimpan ke vault saat logout biasa.
@@ -64,23 +72,34 @@ bash ~/.amnesia/clean.sh logout --dry-run
 - **🌐 2 bahasa.** English atau Bahasa Indonesia, tinggal pilih di Pengaturan.
 - **🟢 Ikon di menu bar.** Status Amnesia selalu terlihat di pojok kanan atas: hijau aktif, oranye jeda, merah mati.
 
-<p align="center"><img src="docs/vault.png" alt="Profile Vault" width="340"></p>
-
 ## Cara pasang
 
-**Yang dibutuhkan:** macOS 15 atau lebih baru, [Homebrew](https://brew.sh), dan Command Line Tools (gratis, pasang dengan `xcode-select --install`).
+**Yang dibutuhkan:** macOS 15 atau lebih baru. Sisanya sudah ada di dalam app (termasuk 7-Zip). Kalau Command Line Tools Apple (gratis) belum ada, tur perkenalan bantu memasangnya.
 
-Buka **Terminal**, lalu tempel:
+**Cara 1: Homebrew** (paling gampang, update cukup `brew upgrade`)
 
 ```bash
-brew install sevenzip python      # + rclone kalau mau backup ke cloud
+brew install --cask navi-crwn/tap/amnesia
+```
+
+**Cara 2: Download**
+
+1. Ambil `Amnesia-vX.zip` dari [Releases](../../releases/latest), unzip, lalu seret **Amnesia** ke **Applications**.
+2. App ini belum ditandatangani Apple, jadi macOS memblokirnya pertama kali. Buka sekali, lalu ke **System Settings → Privacy & Security** dan klik **Open Anyway**.
+   Atau lewat Terminal: `xattr -dr com.apple.quarantine /Applications/Amnesia.app`
+
+**Cara 3: Build sendiri** (butuh Command Line Tools)
+
+```bash
 git clone https://github.com/navi-crwn/amnesia-mac.git ~/.amnesia
 bash ~/.amnesia/app/build.sh
 ```
 
-Amnesia akan terbuka sendiri dan muncul di Launchpad.
+**Mau uninstall:** tekan *Matikan* di app dulu, baru hapus app-nya. Vault dan setting kamu ada di `~/.amnesia`.
 
 ## Cara pakai pertama kali
+
+Tur perkenalan akan memandu kamu, tapi singkatnya begini:
 
 1. **Buat vault.** Buka *Profile Vault*, isi password (minimal 12 karakter), lalu tekan *Buat Vault*. Password ini **tidak bisa dipulihkan** kalau lupa, jadi simpan baik-baik.
 2. **Simpan login.** Login ke Chrome, WhatsApp, dan app lain seperti biasa, lalu tekan *Snapshot*.
@@ -106,7 +125,7 @@ Tidak, kecuali kamu sendiri memilih backup ke server atau cloud. Yang dikirim ha
 
 **Backup online, apa yang perlu disiapkan?**
 - *Server SSH:* isi `user@alamat:folder`, tekan **Siapkan Kunci SSH** sekali (ketik password server 1x), lalu **Tes Koneksi**.
-- *Google Drive:* tekan **Hubungkan Google Drive**, login di browser, selesai. Tujuan bawaan: `gdrive:Amnesia`.
+- *Cloud:* pilih Google Drive, Dropbox, OneDrive, Box atau pCloud, tekan **Hubungkan**, login di browser, selesai. Tanpa Terminal, dan Amnesia memasang rclone sendiri (butuh Homebrew).
 
 Catatan jujur: setiap backup dikirim utuh (bukan hanya bagian yang berubah), karena filenya terenkripsi. Backup lama tidak dihapus otomatis, jadi sesekali bersihkan sendiri di tujuan.
 
@@ -131,9 +150,10 @@ Tekan *Matikan* di app. Mac berhenti dibersihkan sampai kamu aktifkan lagi.
 | `vault.py` | Profile Vault: kunci RSA-4096 + 7-Zip AES-256. |
 | `backup.sh` | Backup terenkripsi ke flashdisk, server SSH, atau cloud (rclone). |
 | `keep.example.conf` | Contoh Keep List. `build.sh` menyalinnya jadi `keep.conf` saat pertama dipasang. |
-| `app/` | Kode app SwiftUI, ikon, dan script build/backup. |
+| `app/` | Kode app SwiftUI, ikon, dan script build/rilis. |
+| `docs/` | Gambar, screenshot, dan website (GitHub Pages). |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Tes otomatis di "home palsu", aman dijalankan kapan saja. |
 
 ---
 
-<p align="center">Dibuat untuk pemakaian pribadi. Pakai dengan bijak: Amnesia benar-benar menghapus data.</p>
+<p align="center">Lisensi MIT · Dibuat untuk pemakaian pribadi. Pakai dengan bijak: Amnesia benar-benar menghapus data.</p>

@@ -9,6 +9,8 @@ app/build/
 keep.conf
 settings.conf
 backup.ok
+bin/
+.engine_version
 *.md
 !README.md
 !README.id.md

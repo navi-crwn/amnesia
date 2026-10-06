@@ -15,7 +15,10 @@ HOME = os.environ.get("AMNESIA_HOME", os.path.expanduser("~"))
 AMNESIA = os.path.join(HOME, ".amnesia")
 VAULT = os.path.join(AMNESIA, "vault")
 TMP = os.path.join(VAULT, ".tmp")
-SEVENZ = os.environ.get("AMNESIA_7Z", "/opt/homebrew/bin/7zz")
+# 7-Zip: bawaan app (~/.amnesia/bin/7zz), kalau tidak ada pakai Homebrew
+SEVENZ = os.environ.get("AMNESIA_7Z") or next(
+    (p for p in (os.path.join(AMNESIA, "bin", "7zz"), "/opt/homebrew/bin/7zz", "/usr/local/bin/7zz")
+     if os.path.exists(p)), "/opt/homebrew/bin/7zz")
 OPENSSL = os.environ.get("AMNESIA_OPENSSL", "/usr/bin/openssl")
 MAX_ATTEMPTS = 3
 MIN_PASSWORD = 12

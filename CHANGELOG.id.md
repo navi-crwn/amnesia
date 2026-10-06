@@ -5,6 +5,38 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.7 — 2026-10-06
+
+### Ditambahkan
+- **Langsung siap pakai dari GitHub.** App sekarang membawa semua yang dibutuhkan: script Amnesia dan 7-Zip (versi resmi, dengan lisensinya). Saat pertama dibuka, app menyiapkan dirinya di `~/.amnesia`. Keep List, setting dan vault kamu tidak pernah ditimpa.
+- **Tur perkenalan** saat app pertama kali dibuka:
+  1. Sambutan + pilih bahasa.
+  2. Cara kerja, 4 poin singkat.
+  3. Cek kesiapan: mesin, 7-Zip dan Command Line Tools Apple, ada tombol pasang kalau belum ada.
+  4. **App kamu**: Amnesia mendeteksi app di Mac, kamu tinggal nyalakan yang datanya mau disimpan. VPN dan password manager sudah dinyalakan. App yang diurus Profile Vault diberi gembok.
+  5. Profile Vault dalam 3 langkah.
+  6. Rutinitas harian.
+  Tur bisa dibuka lagi dari Pengaturan.
+- Tombol **Pilih App** di halaman Keep List (pemilih app yang sama dengan tur).
+- **Backup: tambah folder apa saja** di dalam folder home, bukan cuma 7 folder standar.
+- **Lebih banyak cloud, tanpa Terminal**: Google Drive, Dropbox, OneDrive, Box dan pCloud. Pilih, tekan Hubungkan, login di browser. Amnesia memasang rclone kalau perlu dan mengecek koneksinya. Token login tidak pernah ditampilkan.
+- Tampil keterangan kalau cloud sudah terhubung, plus tombol Hubungkan ulang.
+- **Website** (GitHub Pages, `docs/index.html`): English + Indonesia, mode terang + gelap, rapi di HP.
+- **Homebrew**: `brew install --cask navi-crwn/tap/amnesia`. `github_backup.sh` membuat dan meng-update repo `homebrew-tap` setiap rilis.
+- **Lisensi MIT** (`LICENSE`).
+- Screenshot asli di README dan website.
+
+### Diubah
+- App muncul di **Cmd-Tab** dan Dock selama jendelanya terbuka, lalu kembali jadi ikon menu bar saja saat ditutup.
+- Contoh SSH sekarang `user@remoteserv.er:backup`.
+- Tagline di halaman utama tidak terpotong lagi.
+- `vault.py` dan `backup.sh` memakai 7-Zip bawaan app dulu, baru Homebrew.
+- `build.sh` memasukkan script dan 7-Zip ke dalam app.
+- README: 3 cara pasang (Homebrew, download, build sendiri), cara melewati peringatan "developer tidak dikenal", dan cara uninstall yang aman.
+
+### Keamanan
+- Kalau kamu menghubungkan Google Drive di v5.6, tokennya tampil di jendela Terminal. Kalau screenshot-nya sempat dibagikan, cabut akses rclone di https://myaccount.google.com/connections lalu hubungkan ulang.
+
 ## v5.6 — 2026-10-06
 
 ### Ditambahkan
