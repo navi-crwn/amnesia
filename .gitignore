@@ -11,4 +11,6 @@ settings.conf
 backup.ok
 *.md
 !README.md
+!README.id.md
 !CHANGELOG.md
+!CHANGELOG.id.md

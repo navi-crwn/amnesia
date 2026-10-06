@@ -23,14 +23,14 @@ mk ".homebrew/bin/brew"; mk ".local/bin/tool"; mk ".local/share/opencode/auth.js
 mk "Public/Drop Box/.keep"; mk ".Trash/old.txt"
 
 AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" now --dry-run > "$T/dry.txt"
-[ -f "$T/Desktop/rahasia.txt" ] || { echo "GAGAL: dry-run menghapus file"; exit 1; }
-grep -q "rahasia.txt" "$T/dry.txt" || { echo "GAGAL: dry-run tidak menampilkan Desktop"; exit 1; }
+[ -f "$T/Desktop/rahasia.txt" ] || { echo "FAILED: dry-run deleted a file"; exit 1; }
+grep -q "rahasia.txt" "$T/dry.txt" || { echo "FAILED: dry-run did not list Desktop"; exit 1; }
 
 AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" now >/dev/null 2>&1
 
 fail=0
-gone() { [ ! -e "$T/$1" ] || { echo "GAGAL: masih ada  $1"; fail=1; }; }
-here() { [ -e "$T/$1" ] || { echo "GAGAL: terhapus   $1"; fail=1; }; }
+gone() { [ ! -e "$T/$1" ] || { echo "FAILED: still there  $1"; fail=1; }; }
+here() { [ -e "$T/$1" ] || { echo "FAILED: deleted      $1"; fail=1; }; }
 gone "Desktop/rahasia.txt"; gone "Downloads/a b.zip"
 gone "Library/Application Support/Google"; gone "Library/Containers/com.whatsapp"
 gone "Library/Application Support/com.apple.sharedfilelist"
@@ -51,4 +51,4 @@ AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" login  >/dev/null 2>&1; here "Desk
 gone ".amnesia/pause_once"
 AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1; gone "Desktop/b.txt"
 
-[ $fail = 0 ] && echo "OK: semua tes clean.sh lulus" || exit 1
+[ $fail = 0 ] && echo "OK: all clean.sh tests passed" || exit 1

@@ -1,119 +1,137 @@
 # Changelog
 
-Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
-Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
+**English** · [Bahasa Indonesia](CHANGELOG.id.md)
+
+Every change to Amnesia is written down here, newest first.
+You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
+
+## v5.6 — 2026-10-06
+
+### Added
+- **Two languages.** English is now the main language, and Bahasa Indonesia is still there. Pick one in Settings → Language. On a fresh install Amnesia follows your Mac's language.
+- Everything follows the language you pick: the app, the login notification, vault and backup messages, and the "Last wiped" line.
+- `README.id.md` and `CHANGELOG.id.md`: the Indonesian versions of these pages. The English ones are the main pages on GitHub.
+- New English images for GitHub (`docs/banner.png`, `docs/features.png`). The Indonesian ones are `docs/banner.id.png` and `docs/fitur.png`.
+
+### Changed
+- README rewritten in English, same relaxed style.
+- GitHub repo description is in English now, plus a `backup` topic.
+- Terminal messages from `build.sh`, `github_backup.sh`, `add_keep.sh` and the tests are in English.
+- `keep.example.conf` comments are in English.
+- Error messages from scripts now start with `FAILED:` (was `GAGAL:`).
+- The "Backup & Panic" feature card mentions server and cloud backups.
 
 ## v5.5 — 2026-10-06
 
-### Ditambahkan
-- **Backup online.** Halaman Backup sekarang punya 3 tujuan:
-  - **Flashdisk / SSD**: drive yang tercolok otomatis terdeteksi (tombol ↻ untuk cari ulang).
-  - **Server SSH**: kirim ke server/VPS sendiri lewat SSH + rsync (`user@alamat:folder`). Ada tombol **Tes Koneksi** dan **Siapkan Kunci SSH** (membuat kunci `~/.ssh/id_ed25519` lalu memasangnya ke server lewat Terminal).
-  - **Cloud**: Google Drive, Dropbox, OneDrive, S3 lewat rclone. Tombol **Hubungkan Google Drive** memasang rclone (kalau belum ada) dan membuka login Google di browser.
-- **Backup terjadwal**: Mati / Harian / Mingguan. Dicek 2 menit setelah app jalan lalu tiap 10 menit. Kalau tujuannya flashdisk, backup menunggu sampai flashdisk tercolok. Kalau gagal, dicoba lagi 1 jam kemudian. Hasilnya muncul sebagai notifikasi.
-- **Simpan password backup di Keychain** (pilihan, wajib untuk backup terjadwal). Disimpan sebagai item `Amnesia Backup`.
-- **Sertakan Profile Vault** di backup, untuk pindah Mac.
-- **Pindah Mac** (di halaman Profile Vault):
-  - **Siapkan Pindah Mac**: menyimpan kunci Keychain "… Safe Storage" (Chrome, Claude, WhatsApp, dll.) ke vault, terenkripsi seperti snapshot.
-  - **Ambil Vault dari Backup** (muncul kalau vault belum ada): pilih file backup `.7z`, isi password backup, vault dipulihkan.
-  - **Pulihkan Kunci**: memasang kunci tadi ke Keychain Mac baru, pakai password vault. Hanya jalan kalau tombolnya ditekan, tidak pernah otomatis.
-- Status backup terakhir (berhasil/gagal) tampil di atas halaman Backup.
-- `backup.sh` (mesin backup, dipakai app) dan `test_backup.sh` (tes otomatis di home palsu).
-- `vault.py`: perintah `exportkeys` dan `importkeys`; `status` sekarang juga melaporkan kunci yang tersimpan.
+### Added
+- **Online backup.** The Backup page has 3 destinations:
+  - **USB drive / SSD**: plugged-in drives are found automatically (↻ to look again).
+  - **SSH server**: send to your own server/VPS with SSH + rsync (`user@host:folder`). Comes with **Test Connection** and **Set Up SSH Key** buttons (makes `~/.ssh/id_ed25519` and installs it on the server through Terminal).
+  - **Cloud**: Google Drive, Dropbox, OneDrive, S3 through rclone. The **Connect Google Drive** button installs rclone (if needed) and opens the Google login in your browser.
+- **Scheduled backups**: Off / Daily / Weekly. Checked 2 minutes after the app starts, then every 10 minutes. For a USB drive, the backup waits until the drive is plugged in. If it fails, it tries again an hour later. You get a notification with the result.
+- **Save the backup password in Keychain** (optional, needed for scheduled backups). Saved as the `Amnesia Backup` item.
+- **Include Profile Vault** in backups, for moving to a new Mac.
+- **Move to a new Mac** (on the Profile Vault page):
+  - **Prepare Move**: saves the "… Safe Storage" Keychain keys (Chrome, Claude, WhatsApp, etc.) into the vault, encrypted like a snapshot.
+  - **Get Vault from Backup** (shows up when there's no vault yet): pick a `.7z` backup, type the backup password, and the vault is restored.
+  - **Restore Keys**: puts those keys into the new Mac's Keychain, using the vault password. Only runs when you press the button, never on its own.
+- The last backup result (done/failed) shows at the top of the Backup page.
+- `backup.sh` (the backup engine the app uses) and `test_backup.sh` (automatic tests in a fake home folder).
+- `vault.py`: `exportkeys` and `importkeys` commands; `status` also reports the saved keys.
 
-### Diubah
-- Pengaturan backup (tujuan, folder, jadwal) sekarang disimpan di `settings.conf`, jadi tidak perlu diisi ulang setiap kali.
-- Keep List: tambah `keychain:Amnesia Backup` (password backup terjadwal) dan `.config/rclone` (login cloud) supaya tidak ikut terhapus saat logout. Ditambahkan otomatis oleh `add_keep.sh`.
-- Kartu Backup di halaman utama: "Ke flashdisk, server atau cloud".
-- `test_clean.sh` juga mengecek `.config/rclone` tetap aman.
+### Changed
+- Backup settings (destination, folders, schedule) are saved in `settings.conf`, so you don't have to fill them in every time.
+- Keep List: added `keychain:Amnesia Backup` (scheduled backup password) and `.config/rclone` (cloud login) so they survive logout. `add_keep.sh` adds them for you.
+- The Backup card on the home screen says "To a USB drive, server or cloud".
+- `test_clean.sh` also checks that `.config/rclone` stays safe.
 
-### Catatan
-- File backup terenkripsi dikirim utuh setiap kali (bukan hanya bagian yang berubah).
-- Backup lama tidak dihapus otomatis.
-- Setelah app di-build ulang, macOS bisa bertanya sekali lagi apakah Amnesia boleh membaca password backup di Keychain. Klik *Always Allow*.
+### Notes
+- Encrypted backup files are uploaded in full every time (not just the changes).
+- Old backups aren't deleted automatically.
+- After rebuilding the app, macOS may ask once more whether Amnesia can read the backup password in Keychain. Click *Always Allow*.
 
 ## v5.4 — 2026-10-06
 
-### Ditambahkan
-- **Halaman Pengaturan** (ikon ⚙️ di kanan atas). Setiap fitur baru di bawah bisa dinyalakan atau dimatikan di sini, dan semuanya aktif secara bawaan.
-- **Snapshot otomatis saat logout.** Logout, restart atau shutdown lewat menu Apple sekarang tetap menyimpan login ke vault sebelum Mac dibersihkan. Snapshot dilewati kalau vault belum dibuat, Amnesia sedang dijeda, atau baru saja ada snapshot (≤10 menit, misalnya dari tombol Simpan & Logout).
-- **Notifikasi setelah login**: "Mac sudah bersih. Klik ikon Amnesia di menu bar untuk restore profil."
-- **Cek dulu sebelum logout.** Saat logout, restart atau shutdown lewat menu Apple, Amnesia menahan sebentar dan menampilkan daftar yang akan dihapus, dikelompokkan (Desktop, Downloads, Keychain, dll.). Pilih **Lanjut** atau **Batal**.
-- Tombol **"Lihat yang akan dihapus sekarang"** di Pengaturan: dry-run tanpa Terminal.
+### Added
+- **Settings page** (⚙️ icon, top right). Every new feature below can be switched on or off here, and they're all on by default.
+- **Auto snapshot at logout.** Logging out, restarting or shutting down from the Apple menu still saves your logins to the vault before the Mac gets wiped. Skipped if there's no vault, Amnesia is paused, or there was a snapshot in the last 10 minutes (e.g. from Save & Log Out).
+- **Notification after login**: "Your Mac is clean. Click the Amnesia icon in the menu bar to restore your profiles."
+- **Check before logout.** When you log out, restart or shut down from the Apple menu, Amnesia holds on and shows what will be deleted, grouped (Desktop, Downloads, Keychain, etc.). Pick **Continue** or **Cancel**.
+- **"See what would be deleted now"** button in Settings: a dry run without Terminal.
 
-### Diubah
-- Batas waktu pembersihan saat logout dinaikkan dari 120 menjadi 300 detik, supaya snapshot otomatis sempat selesai. Berlaku setelah Amnesia diaktifkan (atau dimatikan lalu diaktifkan lagi).
-- Tombol Simpan & Logout tidak ikut ditahan oleh fitur "Cek dulu".
+### Changed
+- Cleanup time limit at logout raised from 120 to 300 seconds, so the auto snapshot has time to finish. Applies after turning Amnesia on (or off and on again).
+- The Save & Log Out button isn't held back by "Check before logout".
 
 ## v5.3 — 2026-10-06
 
-### Ditambahkan
-- `app/make_public.sh`: membuat repo **public** baru `amnesia-mac` dengan riwayat bersih. Repo private lama tidak dihapus dan tidak diubah.
-- `keep.example.conf`: contoh Keep List untuk pemakai baru. `build.sh` menyalinnya jadi `keep.conf` kalau belum ada.
+### Added
+- `app/make_public.sh`: creates a new **public** repo `amnesia-mac` with a clean history. The old private repo isn't deleted or changed.
+- `keep.example.conf`: an example Keep List for new users. `build.sh` copies it to `keep.conf` if there isn't one.
 
-### Diubah
-- README ditulis ulang dengan bahasa yang lebih santai dan jelas: apa itu Amnesia, apa yang dihapus vs aman, cara pakai pertama kali, dan FAQ.
-- Deskripsi repo GitHub dibuat lebih jelas.
-- `keep.conf` pribadi (berisi daftar app dan catatan server) tidak lagi ikut ke GitHub.
-- `test_clean.sh` memakai `keep.example.conf`, jadi tes juga jalan di hasil clone orang lain.
+### Changed
+- README rewritten to be more relaxed and clear: what Amnesia is, what gets wiped vs. what stays, first-time setup, and an FAQ.
+- Clearer GitHub repo description.
+- Your personal `keep.conf` (with your app list and server notes) no longer goes to GitHub.
+- `test_clean.sh` uses `keep.example.conf`, so the tests work on anyone's clone.
 
-### Diperbaiki
-- Gambar fitur di README: ikon di setiap kartu sebelumnya kosong, sekarang ada ikonnya.
+### Fixed
+- The feature image in the README had empty icons on every card. Now they have icons.
 
 ## v5.2 — 2026-10-06
 
-### Ditambahkan
-- Halaman GitHub baru: README lengkap dengan banner, gambar fitur, cara kerja, instalasi, dan batasan.
-- `CHANGELOG.md` (file ini). Setiap pengerjaan berikutnya wajib menambah catatan di sini.
-- App jadi diunggah ke **GitHub Releases** (`Amnesia-v5.2.zip`) oleh `app/github_backup.sh`.
-- Keep List: kunci Keychain `gemini` (login Gemini CLI), `*.XAUTH` (password profil VPN), dan `.gitconfig` (setting git).
+### Added
+- New GitHub page: full README with a banner, feature image, how it works, install steps and limits.
+- `CHANGELOG.md` (this file). Every future change gets a note here.
+- The built app is uploaded to **GitHub Releases** (`Amnesia-v5.2.zip`) by `app/github_backup.sh`.
+- Keep List: Keychain items `gemini` (Gemini CLI login), `*.XAUTH` (VPN profile passwords), and `.gitconfig` (git settings).
 
-### Diubah
-- `app/github_backup.sh` sekarang sekaligus: merapikan file, update deskripsi dan topik repo, commit, push, dan membuat release.
+### Changed
+- `app/github_backup.sh` now does it all at once: tidies files, updates the repo description and topics, commits, pushes and makes a release.
 
-### Dihapus
-- Script lama yang sudah tidak dipakai: `reset.sh`, `clean_keychain.sh`, `keep_apps.conf`, `amnesia_app.py` (app Tk), folder `templates/`.
-- File catatan spek (`AMNESIA_SPEK.md`, `PROFILE_VAULT_SPEK.md`) tidak lagi ikut ke GitHub. File-nya tetap ada di Mac.
+### Removed
+- Old scripts nobody used anymore: `reset.sh`, `clean_keychain.sh`, `keep_apps.conf`, `amnesia_app.py` (the Tk app), the `templates/` folder.
+- Spec notes (`AMNESIA_SPEK.md`, `PROFILE_VAULT_SPEK.md`) no longer go to GitHub. They're still on the Mac.
 
 ## v5.1 — 2026-10-06
 
-### Ditambahkan
-- App hanya bisa berjalan **1x**. Membuka Amnesia lagi akan memunculkan jendela yang sudah ada.
-- Nomor versi tampil di samping judul "Amnesia" dan di bawah panel menu bar.
-- Backup kode ke GitHub (repo private) lewat `app/github_backup.sh`.
-- Profile Vault menyimpan juga: Claude Code, CodeBuddy, Gemini CLI, Kimi, GitHub CLI, Antigravity, WhatsApp, dan Windows App.
-- Keep List: `.zshrc`, `.zprofile`, `.mitmproxy`, Shottr, Tailscale, dan kunci Keychain Claude Code & GitHub CLI (`app/add_keep.sh`, hanya menambah, tidak menimpa).
+### Added
+- The app can only run **once**. Opening Amnesia again brings up the window that's already open.
+- The version number shows next to the "Amnesia" title and at the bottom of the menu bar panel.
+- Code backup to GitHub (private repo) with `app/github_backup.sh`.
+- The Profile Vault also keeps: Claude Code, CodeBuddy, Gemini CLI, Kimi, GitHub CLI, Antigravity, WhatsApp and Windows App.
+- Keep List: `.zshrc`, `.zprofile`, `.mitmproxy`, Shottr, Tailscale, and the Claude Code & GitHub CLI Keychain items (`app/add_keep.sh` only adds, never overwrites).
 
-### Diubah
-- App dipasang di `/Applications` (muncul di Launchpad). Desktop hanya berisi pintasan, bukan salinan.
-- Build otomatis menghapus semua salinan Amnesia lama (penyebab 2 ikon di menu bar).
-- Panel menu bar didesain ulang: kartu status berwarna, info snapshot & Keep List, dan 4 tombol warna-warni.
+### Changed
+- The app is installed in `/Applications` (so it shows in Launchpad). The Desktop only has a shortcut, not a copy.
+- The build removes every old Amnesia copy (that's what caused 2 icons in the menu bar).
+- Menu bar panel redesigned: colored status card, snapshot & Keep List info, and 4 colorful buttons.
 
-### Diperbaiki
-- Teks "Tutup App (pembersihan tetap jalan)" yang terpotong.
-- Centang "Kata panik juga mengosongkan ~/Keep" tampil aktif padahal kata panik kosong.
+### Fixed
+- The "Quit App (cleaning keeps running)" text got cut off.
+- The "Panic word also empties ~/Keep" checkbox looked ticked even with no panic word.
 
 ## v5.0 — 2026-10-06
 
-### Ditambahkan
-- App baru **SwiftUI** (asli Mac) menggantikan app Tk: tampilan warna-warni, ikon status di menu bar, berjalan di background.
-- Logo baru: perisai dengan lubang kunci dan titik-titik memudar.
-- Tombol Aktifkan sekarang minta konfirmasi dulu.
+### Added
+- New **SwiftUI** app (native Mac) replacing the Tk app: colorful look, status icon in the menu bar, runs in the background.
+- New logo: a shield with a keyhole and fading dots.
+- The Turn On button asks you to confirm first.
 
-### Diperbaiki
-- Mengaktifkan ulang Amnesia bisa memicu pembersihan di tengah sesi (urutan LaunchAgent).
-- Profile Vault "tidak merespons" saat vault belum pernah dibuat.
-- Folder sistem Apple (`group.com.apple.*`) muncul di daftar Tambah Keep List.
+### Fixed
+- Turning Amnesia on again could trigger a cleanup in the middle of a session (LaunchAgent order).
+- Profile Vault said "not responding" when no vault had been made yet.
+- Apple system folders (`group.com.apple.*`) showed up in the Add to Keep List list.
 
 ## v4.0 — 2026-10-06
 
-### Ditambahkan
-- Pembersihan **sebelum** logout/restart/shutdown, plus cek ulang saat login (`agent.sh` + `clean.sh`).
-- **Profile Vault** (`vault.py`): snapshot & restore profil terenkripsi, 3x salah password = vault musnah, kata panik.
-- Mode `--dry-run` untuk melihat apa yang akan dihapus.
-- Keep List fleksibel (`keep.conf`) dengan pola `*` dan item Keychain.
-- Tes otomatis: `test_clean.sh` dan `test_vault.py`.
+### Added
+- Cleaning **before** logout/restart/shutdown, plus a re-check at login (`agent.sh` + `clean.sh`).
+- **Profile Vault** (`vault.py`): encrypted profile snapshots & restore, 3 wrong passwords = vault destroyed, panic word.
+- `--dry-run` mode to see what would be deleted.
+- Flexible Keep List (`keep.conf`) with `*` patterns and Keychain items.
+- Automatic tests: `test_clean.sh` and `test_vault.py`.
 
-### Diperbaiki
-- Jendela app kosong (Tk 8.5 bawaan macOS) dengan memakai Python Homebrew.
-- Jeda hanya berlaku untuk 1 sesi, lalu aktif lagi otomatis.
+### Fixed
+- Empty app window (macOS's built-in Tk 8.5), fixed by using Homebrew Python.
+- Pause only lasts 1 session, then turns back on by itself.

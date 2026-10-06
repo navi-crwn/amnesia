@@ -3,7 +3,7 @@
 # Jalankan:  bash ~/.amnesia/app/build.sh
 set -euo pipefail
 cd "$(dirname "$0")"
-command -v swiftc >/dev/null || { echo "Command Line Tools belum ada. Jalankan: xcode-select --install"; exit 1; }
+command -v swiftc >/dev/null || { echo "Command Line Tools are missing. Run: xcode-select --install"; exit 1; }
 
 B="$PWD/build"; APP="$B/Amnesia.app"; ARCH="$(uname -m)"
 rm -rf "$B"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$B/AppIcon.iconset"
@@ -13,7 +13,7 @@ echo "1/4  Compile app..."
 swiftc -swift-version 5 -O -parse-as-library -target "$ARCH-apple-macos15.0" Amnesia.swift -o "$APP/Contents/MacOS/Amnesia"
 cp Info.plist "$APP/Contents/Info.plist"
 
-echo "2/4  Gambar ikon..."
+echo "2/4  Drawing the icon..."
 swiftc -O makeicon.swift -o "$B/makeicon"
 "$B/makeicon" "$B/icon.png"
 for s in 16 32 128 256 512; do
@@ -22,10 +22,10 @@ for s in 16 32 128 256 512; do
 done
 iconutil -c icns "$B/AppIcon.iconset" -o "$APP/Contents/Resources/AppIcon.icns"
 
-echo "3/4  Tanda tangan lokal..."
+echo "3/4  Signing locally..."
 codesign --force --deep -s - "$APP"
 
-echo "4/4  Bersihkan Amnesia lama & pasang yang baru..."
+echo "4/4  Removing old Amnesia copies & installing the new one..."
 pkill -f amnesia_app.py 2>/dev/null || true     # app lama (Tk)
 pkill -x Amnesia 2>/dev/null || true            # semua Amnesia yang sedang jalan
 pkill -x amnesia 2>/dev/null || true
@@ -36,7 +36,7 @@ sleep 1
 } | sort -u | while read -r old; do
   case "$old" in "$B"/*|"") continue ;; esac
   [ -e "$old" ] || [ -L "$old" ] || continue
-  echo "     hapus: $old"
+  echo "     removed: $old"
   rm -rf "$old"
 done
 rmdir ../templates 2>/dev/null || true
@@ -46,4 +46,4 @@ DEST=/Applications                               # tampil di Launchpad
 cp -R "$APP" "$DEST/"
 ln -sfn "$DEST/Amnesia.app" "$HOME/Desktop/Amnesia.app"   # pintasan di Desktop
 open "$DEST/Amnesia.app"
-echo "SELESAI: Amnesia v$(defaults read "$DEST/Amnesia.app/Contents/Info" CFBundleShortVersionString) terpasang di $DEST"
+echo "DONE: Amnesia v$(defaults read "$DEST/Amnesia.app/Contents/Info" CFBundleShortVersionString) installed in $DEST"

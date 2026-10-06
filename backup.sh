@@ -13,31 +13,32 @@ SEVENZ="${AMNESIA_7Z:-/opt/homebrew/bin/7zz}"; VOLUMES="${AMNESIA_VOLUMES:-/Volu
 AUTO=0; [ "${1:-}" = "--auto" ] && AUTO=1
 
 cfg() { grep "^$1=" "$CONF" 2>/dev/null | tail -1 | cut -d= -f2-; }
+t() { if [ "$(cfg LANG)" = id ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }   # English / Indonesia
 notify() { [ "$AUTO" = 1 ] && osascript -e "display notification \"$1\" with title \"Amnesia Backup\"" 2>/dev/null; true; }
-fail() { echo "$(date '+%F %T') GAGAL: $*" > "$A/backup.log"; notify "Backup gagal: $*"; echo "GAGAL: $*" >&2; exit 1; }
+fail() { echo "$(date '+%F %T') FAILED: $*" > "$A/backup.log"; notify "$(t "Backup failed" "Backup gagal"): $*"; echo "FAILED: $*" >&2; exit 1; }
 
 IFS= read -r PW || true
-[ -n "$PW" ] || fail "password backup kosong"
-[ -x "$SEVENZ" ] || fail "7zz tidak ditemukan (brew install sevenzip)"
+[ -n "$PW" ] || fail "$(t "backup password is empty" "password backup kosong")"
+[ -x "$SEVENZ" ] || fail "$(t "7zz not found" "7zz tidak ditemukan") (brew install sevenzip)"
 
 # ---------- Ambil vault dari file backup (Mac baru) ----------
 if [ "${1:-}" = "--restore-vault" ]; then
-    FILE="${2:-}"; [ -f "$FILE" ] || { echo "GAGAL: file backup tidak ditemukan" >&2; exit 1; }
-    [ -f "$A/vault/private.7z" ] && { echo "GAGAL: vault sudah ada di Mac ini. Hapus dulu kalau mau diganti." >&2; exit 1; }
+    FILE="${2:-}"; [ -f "$FILE" ] || { echo "FAILED: $(t "backup file not found" "file backup tidak ditemukan")" >&2; exit 1; }
+    [ -f "$A/vault/private.7z" ] && { echo "FAILED: $(t "this Mac already has a vault. Delete it first if you want to replace it." "vault sudah ada di Mac ini. Hapus dulu kalau mau diganti.")" >&2; exit 1; }
     out="$(printf '%s\n' "$PW" | "$SEVENZ" x -y -bso0 -bsp0 -o"$H" "$FILE" ".amnesia/vault/*" -r 2>&1)"
-    [ -f "$A/vault/private.7z" ] || { echo "GAGAL: password salah, atau backup ini tidak berisi Profile Vault. $out" | tail -c 300 >&2; exit 1; }
-    echo "OK: vault dipulihkan"
+    [ -f "$A/vault/private.7z" ] || { echo "FAILED: $(t "wrong password, or this backup has no Profile Vault." "password salah, atau backup ini tidak berisi Profile Vault.") $out" | tail -c 300 >&2; exit 1; }
+    echo "OK: $(t "vault restored" "vault dipulihkan")"
     exit 0
 fi
 
 # ---------- Kumpulkan yang di-backup ----------
-cd "$H" || fail "folder home tidak ada"
+cd "$H" || fail "$(t "home folder not found" "folder home tidak ada")"
 items=()
 IFS=',' read -ra F <<< "$(cfg BACKUP_FOLDERS || true)"
 [ ${#F[@]} -gt 0 ] || F=(Keep)
 for f in "${F[@]}"; do [ -n "$f" ] && [ -e "$f" ] && items+=("$f"); done
 [ "$(cfg BACKUP_VAULT)" = 1 ] && [ -d .amnesia/vault ] && items+=(.amnesia/vault)
-[ ${#items[@]} -gt 0 ] || fail "tidak ada folder untuk di-backup"
+[ ${#items[@]} -gt 0 ] || fail "$(t "nothing to back up" "tidak ada folder untuk di-backup")"
 
 NAME="amnesia_backup_$(date +%Y%m%d_%H%M).7z"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
@@ -45,7 +46,7 @@ OUT="$TMP/$NAME"
 printf '%s\n%s\n' "$PW" "$PW" | "$SEVENZ" a -t7z -m0=lzma2 -mx=5 -mhe=on -p -bso0 -bsp0 "$OUT" "${items[@]}" \
     '-xr!node_modules' '-xr!.DS_Store' '-xr!.tmp' >/dev/null 2>"$TMP/err"
 rc=$?
-{ [ $rc -le 1 ] && [ -f "$OUT" ]; } || fail "7zz gagal (kode $rc) $(tail -c 200 "$TMP/err")"
+{ [ $rc -le 1 ] && [ -f "$OUT" ]; } || fail "$(t "7zz failed" "7zz gagal") ($rc) $(tail -c 200 "$TMP/err")"
 SHA="$(shasum -a 256 "$OUT" 2>/dev/null || sha256sum "$OUT")"; SHA="${SHA%% *}"
 SIZE="$(du -m "$OUT" | cut -f1)"
 
@@ -54,26 +55,27 @@ DEST="$(cfg BACKUP_DEST)"; DEST="${DEST:-drive}"
 case "$DEST" in
     drive)
         D="$(cfg BACKUP_DRIVE)"; T="$VOLUMES/$D"
-        { [ -n "$D" ] && [ -d "$T" ] && [ -w "$T" ]; } || fail "drive \"$D\" tidak terpasang"
-        cp "$OUT" "$T/" || fail "gagal menyalin ke $D"
+        { [ -n "$D" ] && [ -d "$T" ] && [ -w "$T" ]; } || fail "$(t "drive \"$D\" is not plugged in" "drive \"$D\" tidak terpasang")"
+        cp "$OUT" "$T/" || fail "$(t "couldn't copy to $D" "gagal menyalin ke $D")"
         WHERE="$T" ;;
     ssh)
-        R="$(cfg BACKUP_SSH)"; [ -n "$R" ] || fail "server belum diatur"
+        R="$(cfg BACKUP_SSH)"; [ -n "$R" ] || fail "$(t "no server set up" "server belum diatur")"
         HOST="${R%%:*}"; RPATH="${R#*:}"; [ "$RPATH" = "$R" ] && RPATH="amnesia-backup"
         SSHO=(-o BatchMode=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
-        ssh "${SSHO[@]}" "$HOST" "mkdir -p -- $RPATH" || fail "tidak bisa konek ke $HOST (cek kunci SSH)"
-        rsync -t --partial -e "ssh ${SSHO[*]}" "$OUT" "$HOST:$RPATH/" || fail "upload ke $HOST gagal"
+        ssh "${SSHO[@]}" "$HOST" "mkdir -p -- $RPATH" || fail "$(t "can't connect to $HOST (check the SSH key)" "tidak bisa konek ke $HOST (cek kunci SSH)")"
+        rsync -t --partial -e "ssh ${SSHO[*]}" "$OUT" "$HOST:$RPATH/" || fail "$(t "upload to $HOST failed" "upload ke $HOST gagal")"
         WHERE="$HOST:$RPATH" ;;
     rclone)
-        R="$(cfg BACKUP_RCLONE)"; [ -n "$R" ] || fail "cloud belum diatur"
-        command -v rclone >/dev/null || fail "rclone belum terpasang (brew install rclone)"
-        rclone copy "$OUT" "$R" || fail "upload ke $R gagal"
+        R="$(cfg BACKUP_RCLONE)"; [ -n "$R" ] || fail "$(t "no cloud set up" "cloud belum diatur")"
+        command -v rclone >/dev/null || fail "$(t "rclone is not installed" "rclone belum terpasang") (brew install rclone)"
+        rclone copy "$OUT" "$R" || fail "$(t "upload to $R failed" "upload ke $R gagal")"
         WHERE="$R" ;;
-    *) fail "tujuan backup tidak dikenal: $DEST" ;;
+    *) fail "$(t "unknown backup destination" "tujuan backup tidak dikenal"): $DEST" ;;
 esac
 
 echo "$SHA  $WHERE/$NAME" >> "$A/backup_checksums.txt"
-echo "$(date '+%F %T') OK: $NAME (${SIZE} MB) ke $WHERE" > "$A/backup.log"
+TO="$(t to ke)"
+echo "$(date '+%F %T') OK: $NAME (${SIZE} MB) $TO $WHERE" > "$A/backup.log"
 touch "$A/backup.ok"                                  # dipakai app untuk jadwal backup
-notify "Backup selesai: ${SIZE} MB ke $WHERE"
-echo "OK: $NAME (${SIZE} MB) ke $WHERE"
+notify "$(t "Backup done" "Backup selesai"): ${SIZE} MB $TO $WHERE"
+echo "OK: $NAME (${SIZE} MB) $TO $WHERE"

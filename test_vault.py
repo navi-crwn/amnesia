@@ -15,7 +15,7 @@ def mk(rel, text):
 def expect_error(fn, text):
     try: fn()
     except v.VaultError as e: assert text in str(e), str(e); return
-    raise AssertionError("harusnya error: " + text)
+    raise AssertionError("expected an error: " + text)
 
 try:
     PW = "password-panjang-123"
@@ -25,7 +25,7 @@ try:
     mk(".local/share/opencode/auth.json", "token-opencode")
     mk(".claude.json", "token-claude-code")
     mk("Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite", "chat-wa")
-    expect_error(lambda: v.create("pendek"), "minimal")
+    expect_error(lambda: v.create("pendek"), "at least")
     v.create(PW, panic_word="deletesemua")
     assert v.snapshot() == ["Chrome", "Claude", "OpenCode", "Claude Code", "WhatsApp"]
     # vault tidak boleh berisi teks asli
@@ -34,7 +34,7 @@ try:
     # simulasi amnesia: data hilang
     shutil.rmtree(os.path.join(T, "Library")); shutil.rmtree(os.path.join(T, ".local")); os.remove(os.path.join(T, ".claude.json"))
     # salah 1x, lalu benar -> counter reset
-    expect_error(lambda: v.restore("salah-salah-salah"), "Sisa percobaan: 2")
+    expect_error(lambda: v.restore("salah-salah-salah"), "Tries left: 2")
     assert v.restore(PW) == ["Chrome", "Claude", "OpenCode", "Claude Code", "WhatsApp"] and v.attempts() == 0
     assert open(os.path.join(T, "Library/Application Support/Google/Chrome/Default/Cookies")).read() == "login-gmail"
     assert open(os.path.join(T, ".local/share/opencode/auth.json")).read() == "token-opencode"
@@ -45,16 +45,16 @@ try:
     store = {("Chrome Safe Storage", "Chrome"): "kunci-chrome", ("Claude Safe Storage", "Claude Key"): "kunci-claude"}
     v._keychain_secrets = lambda: [{"svc": s, "acct": a, "secret": k} for (s, a), k in store.items()]
     v._keychain_set = lambda s, a, k: store.__setitem__((s, a), k)
-    expect_error(lambda: v.import_keys(PW), "belum berisi kunci")
+    expect_error(lambda: v.import_keys(PW), "has no keys yet")
     assert v.export_keys() == ["Chrome", "Claude"] and v.keys_info()["apps"] == ["Chrome", "Claude"]
     assert b"kunci-chrome" not in open(v.F_KEYS, "rb").read()
     store.clear()                                   # Mac baru: Keychain kosong
-    expect_error(lambda: v.import_keys("salah-salah-salah"), "Sisa percobaan: 2")
+    expect_error(lambda: v.import_keys("salah-salah-salah"), "Tries left: 2")
     assert v.import_keys(PW) == ["Chrome", "Claude"] and v.attempts() == 0
     assert store[("Chrome Safe Storage", "Chrome")] == "kunci-chrome"
     # 3x salah -> doomsday
     for left in (2, 1):
-        expect_error(lambda: v.check_password("salah-salah-salah"), f"Sisa percobaan: {left}")
+        expect_error(lambda: v.check_password("salah-salah-salah"), f"Tries left: {left}")
     expect_error(lambda: v.check_password("salah-salah-salah"), "DOOMSDAY")
     assert not os.path.exists(v.VAULT)
     # kata panik -> doomsday langsung (+ Keep jika full)
@@ -62,6 +62,6 @@ try:
     v.create(PW, panic_word="deletesemua", panic_full=True); v.snapshot()
     expect_error(lambda: v.restore("deletesemua"), "DOOMSDAY")
     assert not os.path.exists(v.VAULT) and os.listdir(os.path.join(T, "Keep")) == []
-    print("OK: semua tes vault lulus")
+    print("OK: all vault tests passed")
 finally:
     shutil.rmtree(T)

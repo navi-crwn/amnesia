@@ -3,11 +3,11 @@
 # Aman dijalankan berulang kali.   bash ~/.amnesia/app/github_backup.sh
 set -euo pipefail
 cd "$HOME/.amnesia"
-command -v gh >/dev/null || { echo "gh belum ada. Jalankan: brew install gh"; exit 1; }
+command -v gh >/dev/null || { echo "gh is missing. Run: brew install gh"; exit 1; }
 gh auth status >/dev/null 2>&1 || gh auth login --web --git-protocol https
 V="$(defaults read "$PWD/app/Info" CFBundleShortVersionString)"
 
-echo "1/5  Rapikan file lama..."
+echo "1/5  Tidying old files..."
 rm -rf reset.sh clean_keychain.sh keep_apps.conf amnesia_app.py templates __pycache__ app/build/makeicon
 
 # Data pribadi, rahasia & catatan TIDAK ikut ke GitHub
@@ -25,7 +25,9 @@ settings.conf
 backup.ok
 *.md
 !README.md
+!README.id.md
 !CHANGELOG.md
+!CHANGELOG.id.md
 IGN
 
 echo "2/5  Commit & push..."
@@ -34,18 +36,18 @@ git config user.name >/dev/null || git config user.name "$(gh api user -q .login
 git config user.email >/dev/null || git config user.email "$(gh api user -q .id)+$(gh api user -q .login)@users.noreply.github.com"
 git rm -r -q --cached --ignore-unmatch keep.conf settings.conf backup.ok AMNESIA_SPEK.md PROFILE_VAULT_SPEK.md reset.sh clean_keychain.sh keep_apps.conf amnesia_app.py templates __pycache__ >/dev/null
 git add -A
-git commit -q -m "Amnesia v$V - $(date '+%F %H:%M')" || echo "     tidak ada perubahan baru"
+git commit -q -m "Amnesia v$V - $(date '+%F %H:%M')" || echo "     nothing new to commit"
 if git remote get-url origin >/dev/null 2>&1; then git push -q -u origin main
 else gh repo create amnesia --private --source=. --push; fi
 
-echo "3/5  Deskripsi & topik repo..."
-gh repo edit --description "Bikin Mac kamu lupa semua jejak setiap logout, tapi login dan file pilihanmu tetap aman. App menu bar macOS dengan brankas login terenkripsi." \
-  --add-topic macos --add-topic privacy --add-topic swiftui --add-topic menubar-app --add-topic encryption >/dev/null
+echo "3/5  Repo description & topics..."
+gh repo edit --description "Your Mac forgets everything every time you log out, except the logins and files you choose to keep. A macOS menu bar app with an encrypted login vault and backups." \
+  --add-topic macos --add-topic privacy --add-topic swiftui --add-topic menubar-app --add-topic encryption --add-topic backup >/dev/null
 
-echo "4/5  Siapkan app jadi..."
+echo "4/5  Packing the built app..."
 APP=""
 for d in /Applications "$HOME/Applications"; do [ -d "$d/Amnesia.app" ] && { APP="$d/Amnesia.app"; break; }; done
-[ -n "$APP" ] || { echo "Amnesia.app belum terpasang. Jalankan dulu: bash ~/.amnesia/app/build.sh"; exit 1; }
+[ -n "$APP" ] || { echo "Amnesia.app is not installed yet. Run first: bash ~/.amnesia/app/build.sh"; exit 1; }
 ZIP="$(mktemp -d)/Amnesia-v$V.zip"
 ditto -c -k --keepParent "$APP" "$ZIP"
 NOTES="$(mktemp)"
@@ -58,4 +60,4 @@ if gh release view "v$V" >/dev/null 2>&1; then
 else
   gh release create "v$V" "$ZIP" --title "Amnesia v$V" --notes-file "$NOTES" >/dev/null
 fi
-echo "BERES: $(gh repo view --json url -q .url)  (release v$V)"
+echo "DONE: $(gh repo view --json url -q .url)  (release v$V)"

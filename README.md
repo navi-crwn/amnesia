@@ -1,136 +1,137 @@
+<p align="center"><b>English</b> · <a href="README.id.md">Bahasa Indonesia</a></p>
+
 <p align="center"><img src="docs/banner.png" alt="Amnesia" width="100%"></p>
 
 <p align="center">
-  <b>Setiap kali kamu logout, Mac kamu lupa semuanya.<br>Kecuali yang memang kamu mau simpan.</b>
+  <b>Every time you log out, your Mac forgets everything.<br>Except the stuff you actually want to keep.</b>
 </p>
 
 <p align="center">
-  <a href="../../releases/latest"><b>⬇️ Download app</b></a> ·
-  <a href="#cara-pasang">Cara pasang</a> ·
-  <a href="#pertanyaan-umum">FAQ</a> ·
+  <a href="../../releases/latest"><b>⬇️ Download the app</b></a> ·
+  <a href="#install">Install</a> ·
+  <a href="#faq">FAQ</a> ·
   <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 ---
 
-## Apa itu Amnesia?
+## What is Amnesia?
 
-Bayangkan Mac kamu seperti meja kerja. Setiap selesai kerja, Amnesia **membereskan mejanya sampai bersih**: riwayat browser, cookie, file download, cache, riwayat Terminal, semuanya hilang. Besok kamu mulai lagi dari meja yang rapi, tanpa jejak kemarin.
+Think of your Mac as a desk. When you're done for the day, Amnesia **clears the desk**: browser history, cookies, downloads, caches, Terminal history, all gone. Tomorrow you start fresh, with nothing left over from yesterday.
 
-Masalahnya, kalau semua hilang, kamu harus login ulang Gmail, WhatsApp, Telegram, dan lain-lain setiap hari. Itu bisa makan 15–20 menit. Karena itu Amnesia punya **Profile Vault**: brankas terkunci yang menyimpan login-login kamu. Habis login ke Mac, cukup ketik **1 password**, dan semua login kembali seperti semula.
+The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, Telegram and the rest every single day. That's 15–20 minutes of your life. So Amnesia comes with a **Profile Vault**, a locked safe for your logins. After you log in to your Mac, type **one password** and all your logins are back.
 
-**Cocok untuk kamu yang:**
-- memakai Mac bersama orang lain, atau di tempat umum,
-- tidak mau ada jejak kerja yang tertinggal,
-- ingin Mac tetap ringan dan bersih setiap hari.
+**Good for you if you:**
+- share your Mac, or use it in public places,
+- don't want any trace of your work left behind,
+- like a Mac that starts clean and light every day.
 
-<p align="center"><img src="docs/fitur.png" alt="Fitur Amnesia" width="100%"></p>
+<p align="center"><img src="docs/features.png" alt="Amnesia features" width="100%"></p>
 
-## Apa yang dihapus, apa yang aman?
+## What gets wiped, what stays?
 
-| 🗑️ Dihapus setiap logout | ✅ Tetap aman |
+| 🗑️ Wiped at every logout | ✅ Stays safe |
 |---|---|
-| Riwayat & cookie browser | Isi folder **`~/Keep`** (taruh file pentingmu di sini) |
-| Isi Desktop, Downloads, Documents, Pictures | Login yang disimpan di **Profile Vault** |
-| Cache, log, riwayat Terminal | Semua yang ada di **Keep List** (VPN, kunci SSH, setting Terminal, dll.) |
-| Data app yang tidak kamu pilih | App yang terpasang di `/Applications` dan Homebrew |
+| Browser history & cookies | Everything in **`~/Keep`** (put your important files here) |
+| Desktop, Downloads, Documents, Pictures | Logins saved in the **Profile Vault** |
+| Caches, logs, Terminal history | Everything on the **Keep List** (VPN, SSH keys, Terminal settings, etc.) |
+| Data from apps you didn't pick | Apps in `/Applications` and Homebrew |
 
-Mau tahu persis apa yang akan dihapus **tanpa menghapus apa pun**? Jalankan:
+Want to see exactly what would go, **without deleting anything**? In the app, open Settings (⚙️) → **See what would be deleted now**. Or in Terminal:
 
 ```bash
 bash ~/.amnesia/clean.sh logout --dry-run
 ```
 
-## Fitur
+## Features
 
-- **🛡️ Bersih otomatis.** Pembersihan berjalan **sebelum** Mac logout, restart, atau shutdown. Saat login berikutnya Amnesia mengecek ulang, jadi kalau ada yang terlewat, ikut dibersihkan.
-- **🔐 Profile Vault.** Login Chrome (Gmail, WhatsApp Web, Telegram Web), Claude, WhatsApp, dan alat coding seperti Claude Code, OpenCode, Gemini CLI, GitHub CLI disimpan dalam brankas terenkripsi (AES-256). Untuk memulihkan, cukup 1 password.
-- **⏏️ Simpan & Logout.** 1 klik: login kamu disimpan dulu ke vault, baru Mac logout. Kalau penyimpanannya gagal, logout dibatalkan, jadi tidak ada yang hilang.
-- **⏸️ Jeda 1 Sesi.** Butuh Mac tidak dibersihkan sekali saja? Tekan Jeda. Setelah 1x logout dan login, Amnesia aktif lagi sendiri.
-- **📌 Keep List.** Pilih folder atau app yang tidak boleh ikut dihapus, langsung dari app.
-- **💾 Backup ke mana saja.** Folder pilihan dikunci jadi 1 file `.7z` (AES-256), lalu dikirim ke:
-  - **Flashdisk / SSD** yang tercolok,
-  - **Server sendiri / VPS** lewat SSH + rsync,
-  - **Cloud** (Google Drive, Dropbox, OneDrive, S3) lewat rclone.
-- **⏰ Backup terjadwal.** Harian atau mingguan, jalan sendiri selama ikon Amnesia ada di menu bar.
-- **🚚 Pindah Mac.** Bawa semua login ke Mac baru: kunci Keychain ikut disimpan ke vault, vault ikut ke backup, lalu dipulihkan di Mac baru.
-- **🔥 Tombol darurat.** Kalau password vault salah 3x, atau kamu mengetik *kata panik* yang sudah kamu atur, vault langsung dimusnahkan.
-- **👀 Cek dulu sebelum logout.** Logout atau restart lewat menu Apple ditahan sebentar, lalu kamu lihat dulu apa saja yang akan dihapus. Lanjut atau batal, kamu yang pilih.
-- **📸 Snapshot otomatis.** Lupa menekan Simpan & Logout? Login kamu tetap disimpan ke vault saat logout biasa.
-- **🔔 Notifikasi.** Setelah login, Amnesia memberi tahu bahwa Mac sudah bersih dan mengingatkan untuk restore profil.
-- **⚙️ Pengaturan.** Semua fitur di atas bisa dinyalakan atau dimatikan sesukamu.
-- **🟢 Ikon di menu bar.** Status Amnesia selalu terlihat di pojok kanan atas: hijau aktif, oranye jeda, merah mati.
+- **🛡️ Auto wipe.** Cleaning runs **before** your Mac logs out, restarts or shuts down. At the next login Amnesia checks again, so anything that slipped through gets cleaned too.
+- **🔐 Profile Vault.** Your Chrome logins (Gmail, WhatsApp Web, Telegram Web), Claude, WhatsApp, and coding tools like Claude Code, OpenCode, Gemini CLI and GitHub CLI go into an encrypted safe (AES-256). One password brings them back.
+- **⏏️ Save & Log Out.** One click: your logins are saved to the vault first, then the Mac logs out. If saving fails, the logout is cancelled, so nothing gets lost.
+- **⏸️ Pause 1 Session.** Need to skip the wipe just once? Hit Pause. After one logout and login, Amnesia turns itself back on.
+- **📌 Keep List.** Pick the folders and apps that should never be wiped, right from the app.
+- **💾 Backup anywhere.** Your chosen folders get locked into one `.7z` file (AES-256) and sent to:
+  - a **USB drive / SSD** that's plugged in,
+  - **your own server / VPS** over SSH + rsync,
+  - the **cloud** (Google Drive, Dropbox, OneDrive, S3) with rclone.
+- **⏰ Scheduled backups.** Daily or weekly, running on their own while the Amnesia icon is in the menu bar.
+- **🚚 Move to a new Mac.** Take all your logins with you: the Keychain keys go into the vault, the vault goes into a backup, and you restore it on the new Mac.
+- **🔥 Panic button.** Get the vault password wrong 3 times, or type your *panic word*, and the vault is destroyed on the spot.
+- **👀 Check before logout.** Logging out or restarting from the Apple menu? Amnesia holds on for a second and shows what's about to be deleted. You decide: continue or cancel.
+- **📸 Auto snapshot.** Forgot to press Save & Log Out? Your logins still get saved to the vault on a normal logout.
+- **🔔 Notifications.** After login, Amnesia tells you the Mac is clean and reminds you to restore your profiles.
+- **⚙️ Settings.** Turn any of the above on or off.
+- **🌐 Two languages.** English or Bahasa Indonesia, pick one in Settings.
+- **🟢 Menu bar icon.** You can always see Amnesia's status in the top right: green is on, orange is paused, red is off.
 
-<p align="center"><img src="docs/vault.png" alt="Profile Vault" width="340"></p>
+## Install
 
-## Cara pasang
+**You need:** macOS 15 or newer, [Homebrew](https://brew.sh), and the Command Line Tools (free, install with `xcode-select --install`).
 
-**Yang dibutuhkan:** macOS 15 atau lebih baru, [Homebrew](https://brew.sh), dan Command Line Tools (gratis, pasang dengan `xcode-select --install`).
-
-Buka **Terminal**, lalu tempel:
+Open **Terminal** and paste:
 
 ```bash
-brew install sevenzip python      # + rclone kalau mau backup ke cloud
+brew install sevenzip python      # + rclone if you want cloud backups
 git clone https://github.com/navi-crwn/amnesia-mac.git ~/.amnesia
 bash ~/.amnesia/app/build.sh
 ```
 
-Amnesia akan terbuka sendiri dan muncul di Launchpad.
+Amnesia opens by itself and shows up in Launchpad.
 
-## Cara pakai pertama kali
+## First-time setup
 
-1. **Buat vault.** Buka *Profile Vault*, isi password (minimal 12 karakter), lalu tekan *Buat Vault*. Password ini **tidak bisa dipulihkan** kalau lupa, jadi simpan baik-baik.
-2. **Simpan login.** Login ke Chrome, WhatsApp, dan app lain seperti biasa, lalu tekan *Snapshot*.
-3. **Amankan file.** Pindahkan file yang penting ke folder `~/Keep`.
-4. **Cek dulu.** Buka Pengaturan (⚙️) → **Lihat yang akan dihapus sekarang**, pastikan tidak ada yang penting di daftar.
-5. **Aktifkan.** Tekan *Aktifkan*. Mulai logout berikutnya, Mac kamu akan selalu bersih.
+1. **Create the vault.** Open *Profile Vault*, pick a password (at least 12 characters), then press *Create Vault*. This password **can't be recovered** if you forget it, so keep it somewhere safe.
+2. **Save your logins.** Log in to Chrome, WhatsApp and your other apps like normal, then press *Snapshot*.
+3. **Protect your files.** Move anything important into the `~/Keep` folder.
+4. **Double-check.** Open Settings (⚙️) → **See what would be deleted now**, and make sure nothing important is on the list.
+5. **Turn it on.** Press *Turn On*. From the next logout on, your Mac always starts clean.
 
-**Sehari-hari:** logout lewat tombol **Simpan & Logout**. Saat login lagi, buka Profile Vault dan tekan **Restore Profil**.
+**Day to day:** log out with **Save & Log Out**. When you log back in, open Profile Vault and press **Restore Profiles**.
 
-## Pertanyaan umum
+## FAQ
 
-**Apa bedanya Keep List dan Profile Vault?**
-Keep List untuk hal yang tidak rahasia dan boleh tetap ada (misalnya setting VPN). Profile Vault untuk login dan data pribadi: disimpan terkunci, dan baru bisa dibuka dengan password.
+**What's the difference between the Keep List and the Profile Vault?**
+The Keep List is for stuff that isn't secret and can just stay (like VPN settings). The Profile Vault is for logins and personal data: it's locked, and only opens with your password.
 
-**Kalau saya logout lewat menu Apple, bagaimana?**
-Aman. Amnesia menahan sebentar untuk menunjukkan apa yang akan dihapus, lalu menyimpan login kamu ke vault secara otomatis sebelum membersihkan. Kedua fitur ini bisa dimatikan di Pengaturan.
+**What if I log out from the Apple menu?**
+That's fine. Amnesia holds on for a moment to show you what will be deleted, then saves your logins to the vault before cleaning up. You can turn both of these off in Settings.
 
-**Kalau lupa password vault?**
-Vault tidak bisa dibuka siapa pun, termasuk kamu. Hapus vault, buat yang baru, lalu login ulang ke app-app kamu.
+**What if I forget the vault password?**
+Then nobody can open the vault, including you. Delete it, make a new one, and log back in to your apps.
 
-**Apakah data saya dikirim ke internet?**
-Tidak, kecuali kamu sendiri memilih backup ke server atau cloud. Yang dikirim hanya file `.7z` yang sudah terkunci; servernya tidak bisa membaca isinya. Vault dan Keep List pribadi kamu juga tidak ikut ke GitHub.
+**Does my data get sent to the internet?**
+No, unless you choose a server or cloud backup yourself. Even then, only the locked `.7z` file is sent, and the server can't read what's inside. Your vault and your personal Keep List never go to GitHub either.
 
-**Backup online, apa yang perlu disiapkan?**
-- *Server SSH:* isi `user@alamat:folder`, tekan **Siapkan Kunci SSH** sekali (ketik password server 1x), lalu **Tes Koneksi**.
-- *Google Drive:* tekan **Hubungkan Google Drive**, login di browser, selesai. Tujuan bawaan: `gdrive:Amnesia`.
+**What do I need for online backups?**
+- *SSH server:* type `user@host:folder`, press **Set Up SSH Key** once (you'll type the server password one time), then **Test Connection**.
+- *Google Drive:* press **Connect Google Drive**, log in in your browser, done. The default destination is `gdrive:Amnesia`.
 
-Catatan jujur: setiap backup dikirim utuh (bukan hanya bagian yang berubah), karena filenya terenkripsi. Backup lama tidak dihapus otomatis, jadi sesekali bersihkan sendiri di tujuan.
+Heads up: every backup is uploaded in full (not just what changed), because the file is encrypted. Old backups aren't deleted automatically, so clean them up at the destination now and then.
 
-**Cara membuka file backup?**
-Pakai app seperti Keka, atau Terminal: `7zz x amnesia_backup_xxx.7z`, lalu ketik password backup.
+**How do I open a backup file?**
+Use an app like Keka, or Terminal: `7zz x amnesia_backup_xxx.7z`, then type your backup password.
 
-**Pindah ke Mac baru, langkahnya?**
-1. Di Mac lama: Profile Vault → **Siapkan Pindah Mac** (klik *Always Allow* di dialog macOS).
-2. Backup dengan **Sertakan Profile Vault** dicentang.
-3. Di Mac baru: pasang Amnesia, buka Profile Vault → **Ambil Vault dari Backup**.
-4. **Restore Profil**, lalu **Pulihkan Kunci**. Chrome, Claude, dan WhatsApp terbuka dengan login lama.
+**Moving to a new Mac, what are the steps?**
+1. On the old Mac: Profile Vault → **Prepare Move** (click *Always Allow* in the macOS popups).
+2. Back up with **Include Profile Vault** ticked.
+3. On the new Mac: install Amnesia, open Profile Vault → **Get Vault from Backup**.
+4. Press **Restore Profiles**, then **Restore Keys**. Chrome, Claude and WhatsApp open with your old logins.
 
-**Bagaimana mematikannya?**
-Tekan *Matikan* di app. Mac berhenti dibersihkan sampai kamu aktifkan lagi.
+**How do I turn it off?**
+Press *Turn Off* in the app. Your Mac stops being wiped until you turn it back on.
 
-## Untuk yang penasaran (teknis)
+## Under the hood
 
-| File | Fungsinya |
+| File | What it does |
 |---|---|
-| `clean.sh` | Penghapus utama. Membaca `keep.conf` (Keep List milikmu). |
-| `agent.sh` | Dijalankan macOS saat login, lalu "berjaga" untuk membersihkan saat logout. |
-| `vault.py` | Profile Vault: kunci RSA-4096 + 7-Zip AES-256. |
-| `backup.sh` | Backup terenkripsi ke flashdisk, server SSH, atau cloud (rclone). |
-| `keep.example.conf` | Contoh Keep List. `build.sh` menyalinnya jadi `keep.conf` saat pertama dipasang. |
-| `app/` | Kode app SwiftUI, ikon, dan script build/backup. |
-| `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Tes otomatis di "home palsu", aman dijalankan kapan saja. |
+| `clean.sh` | The main wiper. Reads `keep.conf` (your Keep List). |
+| `agent.sh` | Started by macOS at login, then waits to clean up at logout. |
+| `vault.py` | Profile Vault: RSA-4096 key + 7-Zip AES-256. |
+| `backup.sh` | Encrypted backups to a USB drive, an SSH server, or the cloud (rclone). |
+| `keep.example.conf` | Example Keep List. `build.sh` copies it to `keep.conf` on first install. |
+| `app/` | The SwiftUI app, the icon, and the build/backup scripts. |
+| `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Automatic tests in a fake home folder, safe to run anytime. |
 
 ---
 
-<p align="center">Dibuat untuk pemakaian pribadi. Pakai dengan bijak: Amnesia benar-benar menghapus data.</p>
+<p align="center">Made for personal use. Use it wisely: Amnesia really does delete your data.</p>

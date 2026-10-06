@@ -62,6 +62,19 @@ F_PANIC = os.path.join(VAULT, "panic.json")
 F_LOG = os.path.join(AMNESIA, "doomsday.log")
 
 
+def _lang():
+    try:
+        with open(os.path.join(AMNESIA, "settings.conf")) as f:
+            return [l.strip()[5:] for l in f if l.startswith("LANG=")][-1]
+    except (OSError, IndexError):
+        return "en"
+
+
+def T(en, id_):
+    """Pesan sesuai bahasa di Pengaturan (LANG=en|id)."""
+    return id_ if _lang() == "id" else en
+
+
 class VaultError(Exception):
     pass
 
@@ -130,11 +143,11 @@ def installed_apps():
 # ---------------- buat vault ----------------
 def create(password, panic_word="", panic_full=False):
     if len(password) < MIN_PASSWORD:
-        raise VaultError(f"Password minimal {MIN_PASSWORD} karakter.")
+        raise VaultError(T(f"The password needs at least {MIN_PASSWORD} characters.", f"Password minimal {MIN_PASSWORD} karakter."))
     if panic_word and panic_word == password:
-        raise VaultError("Kata panik tidak boleh sama dengan password.")
+        raise VaultError(T("The panic word can't be the same as the password.", "Kata panik tidak boleh sama dengan password."))
     if not os.path.exists(SEVENZ):
-        raise VaultError(f"7zz tidak ditemukan di {SEVENZ}. Jalankan: brew install sevenzip")
+        raise VaultError(T(f"7zz not found at {SEVENZ}. Run: brew install sevenzip", f"7zz tidak ditemukan di {SEVENZ}. Jalankan: brew install sevenzip"))
     os.makedirs(VAULT, mode=0o700, exist_ok=True)
     tmp = _new_tmp()
     try:
@@ -148,7 +161,7 @@ def create(password, panic_word="", panic_full=False):
             os.remove(F_PRIV)
         r = _7z(["a", "-t7z", "-mhe=on", "-p", F_PRIV, "private.pem"], password, cwd=tmp)
         if r.returncode != 0:
-            raise VaultError("Gagal mengunci kunci privat:\n" + r.stderr[-300:])
+            raise VaultError(T("Couldn't lock the private key:\n", "Gagal mengunci kunci privat:\n") + r.stderr[-300:])
     finally:
         _clean_tmp()
     _write_json(F_ATTEMPTS, {"failed": 0})
@@ -183,11 +196,11 @@ def quit_apps(names):
 def snapshot(names=None):
     """Simpan profil app ke vault. Tidak butuh password."""
     if not exists():
-        raise VaultError("Vault belum dibuat.")
+        raise VaultError(T("No vault yet.", "Vault belum dibuat."))
     names = names or installed_apps()
     paths = [p for n in names for p in app_paths(n)]
     if not paths:
-        raise VaultError("Tidak ada data app yang bisa di-snapshot.")
+        raise VaultError(T("There is no app data to snapshot.", "Tidak ada data app yang bisa di-snapshot."))
     quit_apps(names)
     key = secrets.token_hex(32)
     new_snap, new_key = F_SNAP + ".new", F_SNAPKEY + ".new"
@@ -197,7 +210,7 @@ def snapshot(names=None):
     args = ["a", "-t7z", "-mx=3", "-mhe=on", "-p", new_snap] + paths + [f"-xr!{x}" for x in EXCLUDE]
     r = _7z(args, key, cwd=HOME)
     if r.returncode not in (0, 1):          # 1 = warning (mis. file terkunci), arsip tetap jadi
-        raise VaultError("Snapshot gagal:\n" + r.stderr[-300:])
+        raise VaultError(T("Snapshot failed:\n", "Snapshot gagal:\n") + r.stderr[-300:])
     subprocess.run([OPENSSL, "pkeyutl", "-encrypt", "-pubin", "-inkey", F_PUB,
                     "-pkeyopt", "rsa_padding_mode:oaep", "-out", new_key],
                    input=key.encode(), check=True, capture_output=True)
@@ -230,7 +243,7 @@ def _unlock(password, keyfile=None):
     """Kembalikan kunci acak (default: kunci profil). Menangani kata panik & hitungan salah."""
     keyfile = keyfile or F_SNAPKEY
     if not exists():
-        raise VaultError("Vault belum dibuat.")
+        raise VaultError(T("No vault yet.", "Vault belum dibuat."))
     panic = _read_json(F_PANIC, None)
     if panic and secrets.compare_digest(_hash(password, panic["salt"]), panic["hash"]):
         doomsday(panic.get("full", False), "kata panik")
@@ -240,13 +253,13 @@ def _unlock(password, keyfile=None):
         r = _7z(["x", "-y", f"-o{tmp}", F_PRIV], password)
         if r.returncode != 0:
             if "password" not in (r.stdout + r.stderr).lower():
-                raise VaultError("Vault tidak bisa dibuka (bukan karena password):\n" + r.stderr[-300:])
+                raise VaultError(T("The vault can't be opened (not a password problem):\n", "Vault tidak bisa dibuka (bukan karena password):\n") + r.stderr[-300:])
             failed = attempts() + 1
             if failed >= MAX_ATTEMPTS:
                 doomsday(False, f"{failed}x password salah")
                 raise VaultError("DOOMSDAY")
             _write_json(F_ATTEMPTS, {"failed": failed})
-            raise VaultError(f"Password salah. Sisa percobaan: {MAX_ATTEMPTS - failed}")
+            raise VaultError(T(f"Wrong password. Tries left: {MAX_ATTEMPTS - failed}", f"Password salah. Sisa percobaan: {MAX_ATTEMPTS - failed}"))
         _write_json(F_ATTEMPTS, {"failed": 0})
         if not os.path.exists(keyfile):
             return None
@@ -266,7 +279,7 @@ def restore(password):
     """Kembalikan semua profil dari snapshot. Data app saat ini diganti."""
     key = _unlock(password)
     if not key or not os.path.exists(F_SNAP):
-        raise VaultError("Belum ada snapshot. Buat snapshot dulu.")
+        raise VaultError(T("No snapshot yet. Make one first.", "Belum ada snapshot. Buat snapshot dulu."))
     names = manifest().get("apps", list(APPS))
     quit_apps(names)
     for n in names:
@@ -278,7 +291,7 @@ def restore(password):
                 os.remove(full)
     r = _7z(["x", "-y", f"-o{HOME}", F_SNAP], key)
     if r.returncode != 0:
-        raise VaultError("Restore gagal:\n" + r.stderr[-300:])
+        raise VaultError(T("Restore failed:\n", "Restore gagal:\n") + r.stderr[-300:])
     return names
 
 
@@ -314,7 +327,7 @@ def _keychain_set(svc, acct, secret):
     r = subprocess.run([SECURITY, "add-generic-password", "-U", "-s", svc, "-a", acct, "-w", secret],
                        capture_output=True, text=True)
     if r.returncode != 0:
-        raise VaultError(f"Gagal menyimpan kunci {svc}: {r.stderr.strip()[-200:]}")
+        raise VaultError(T(f"Couldn't save the {svc} key: ", f"Gagal menyimpan kunci {svc}: ") + r.stderr.strip()[-200:])
 
 
 def keys_info():
@@ -324,10 +337,10 @@ def keys_info():
 def export_keys():
     """Simpan kunci Safe Storage ke vault. Tidak butuh password (pakai public key)."""
     if not exists():
-        raise VaultError("Vault belum dibuat.")
+        raise VaultError(T("No vault yet.", "Vault belum dibuat."))
     items = _keychain_secrets()
     if not items:
-        raise VaultError("Tidak ada kunci 'Safe Storage' yang bisa dibaca dari Keychain.")
+        raise VaultError(T("No 'Safe Storage' keys could be read from the Keychain.", "Tidak ada kunci 'Safe Storage' yang bisa dibaca dari Keychain."))
     tmp = _new_tmp()
     try:
         src = os.path.join(tmp, "keys.json")
@@ -338,7 +351,7 @@ def export_keys():
             os.remove(new)
         r = _7z(["a", "-t7z", "-mhe=on", "-p", new, "keys.json"], key, cwd=tmp)
         if r.returncode != 0:
-            raise VaultError("Gagal menyimpan kunci:\n" + r.stderr[-300:])
+            raise VaultError(T("Couldn't save the keys:\n", "Gagal menyimpan kunci:\n") + r.stderr[-300:])
         subprocess.run([OPENSSL, "pkeyutl", "-encrypt", "-pubin", "-inkey", F_PUB,
                         "-pkeyopt", "rsa_padding_mode:oaep", "-out", F_KEYSKEY + ".new"],
                        input=key.encode(), check=True, capture_output=True)
@@ -355,12 +368,12 @@ def import_keys(password):
     """Pasang kembali kunci Safe Storage dari vault ke Keychain Mac ini."""
     key = _unlock(password, F_KEYSKEY)
     if not key or not os.path.exists(F_KEYS):
-        raise VaultError("Vault ini belum berisi kunci. Jalankan 'Siapkan Pindah Mac' di Mac lama dulu.")
+        raise VaultError(T("This vault has no keys yet. Run 'Prepare Move' on the old Mac first.", "Vault ini belum berisi kunci. Jalankan 'Siapkan Pindah Mac' di Mac lama dulu."))
     tmp = _new_tmp()
     try:
         r = _7z(["x", "-y", f"-o{tmp}", F_KEYS], key)
         if r.returncode != 0:
-            raise VaultError("Gagal membuka kunci:\n" + r.stderr[-300:])
+            raise VaultError(T("Couldn't open the keys:\n", "Gagal membuka kunci:\n") + r.stderr[-300:])
         items = _read_json(os.path.join(tmp, "keys.json"), [])
     finally:
         _clean_tmp()
@@ -373,7 +386,7 @@ def import_keys(password):
 def change_panic(password, word, full=False):
     _unlock(password)
     if word == password:
-        raise VaultError("Kata panik tidak boleh sama dengan password.")
+        raise VaultError(T("The panic word can't be the same as the password.", "Kata panik tidak boleh sama dengan password."))
     set_panic(word, full)
 
 
@@ -410,7 +423,7 @@ def _cli(argv, stdin):
     elif cmd == "logout":
         logout()
     else:
-        raise VaultError(f"Perintah tidak dikenal: {cmd}")
+        raise VaultError(T(f"Unknown command: {cmd}", f"Perintah tidak dikenal: {cmd}"))
     return out
 
 

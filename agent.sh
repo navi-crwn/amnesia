@@ -33,7 +33,12 @@ else
     # buka app Amnesia di menu bar (tanpa jendela)
     open -g -b com.amnesia.controlpanel --args --background 2>/dev/null
     if setting NOTIFY; then
-        osascript -e 'display notification "Mac sudah bersih. Klik ikon Amnesia di menu bar untuk restore profil." with title "Amnesia" sound name "Glass"' 2>/dev/null
+        if grep -qx "LANG=id" "$A/settings.conf" 2>/dev/null; then
+            MSG="Mac sudah bersih. Klik ikon Amnesia di menu bar untuk restore profil."
+        else
+            MSG="Your Mac is clean. Click the Amnesia icon in the menu bar to restore your profiles."
+        fi
+        osascript -e "display notification \"$MSG\" with title \"Amnesia\" sound name \"Glass\"" 2>/dev/null
     fi
 fi
 

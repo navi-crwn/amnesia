@@ -14,6 +14,9 @@ shopt -s nullglob dotglob
 
 H="${AMNESIA_HOME:-$HOME}"   # AMNESIA_HOME hanya untuk tes
 A="$H/.amnesia"
+# Bahasa pesan log (English / Indonesia), dipilih di Pengaturan app
+LANGX="$(grep '^LANG=' "$A/settings.conf" 2>/dev/null | tail -1 | cut -d= -f2)"
+t() { if [ "$LANGX" = id ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }
 MODE="now"; DRY=0
 for arg in "$@"; do
     case "$arg" in
@@ -29,10 +32,10 @@ COUNT=0
 if [ "$DRY" = 0 ] && [ -f "$A/pause_once" ]; then
     if [ "$MODE" = "login" ]; then
         rm -f "$A/pause_once"
-        echo "$(date '+%F %T') login: dijeda (penanda dihapus)" > "$A/clean.log"
+        echo "$(date '+%F %T') login: $(t "paused (marker removed)" "dijeda (penanda dihapus)")" > "$A/clean.log"
         exit 0
     elif [ "$MODE" = "logout" ]; then
-        echo "$(date '+%F %T') logout: dijeda" > "$A/clean.log"
+        echo "$(date '+%F %T') logout: $(t paused dijeda)" > "$A/clean.log"
         exit 0
     fi
 fi
@@ -194,7 +197,7 @@ for d in Desktop Downloads Documents Pictures Movies Music Public .Trash; do
 done
 
 if [ "$DRY" = 1 ]; then
-    echo "--- dry-run ($MODE): $COUNT item akan dihapus. Tidak ada yang dihapus. ---"
+    echo "--- dry-run ($MODE): $(t "$COUNT items would be deleted. Nothing was deleted." "$COUNT item akan dihapus. Tidak ada yang dihapus.") ---"
     exit 0
 fi
 
@@ -211,4 +214,4 @@ done
 ln -sfn "$H/Keep" "$H/Desktop/Keep" 2>/dev/null
 
 # Log hanya waktu + jumlah, tanpa nama file (log juga jejak)
-echo "$(date '+%F %T') $MODE: $COUNT item dibersihkan" > "$A/clean.log"
+echo "$(date '+%F %T') $MODE: $(t "$COUNT items wiped" "$COUNT item dibersihkan")" > "$A/clean.log"
