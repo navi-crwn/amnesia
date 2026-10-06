@@ -72,7 +72,18 @@ case "$DEST" in
         R="$(cfg BACKUP_SSH)"; [ -n "$R" ] || fail "$(t "no server set up" "server belum diatur")"
         HOST="${R%%:*}"; RPATH="${R#*:}"; { [ "$RPATH" = "$R" ] || [ -z "$RPATH" ]; } && RPATH="amnesia-backup"
         SSHO=(-o BatchMode=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
-        ssh "${SSHO[@]}" "$HOST" "mkdir -p -- $RPATH" || fail "$(t "can't connect to $HOST (check the SSH key)" "tidak bisa konek ke $HOST (cek kunci SSH)")"
+        if ! ssh "${SSHO[@]}" "$HOST" "mkdir -p -- $RPATH" 2>"$TMP/ssh"; then
+            # pesan yang bisa dipahami, sesuai penyebabnya
+            if grep -q "IDENTIFICATION HAS CHANGED\|Host key verification failed" "$TMP/ssh"; then
+                fail "$(t "$HOST looks different (server reinstalled?). Open Backup and press Connect again." "$HOST terlihat berbeda (server diinstal ulang?). Buka Backup lalu tekan Hubungkan lagi.")"
+            elif grep -q "Permission denied" "$TMP/ssh"; then
+                fail "$(t "$HOST refused the key. Open Backup and press Connect again." "$HOST menolak kunci. Buka Backup lalu tekan Hubungkan lagi.")"
+            elif grep -qi "timed out\|No route\|Could not resolve\|Connection refused" "$TMP/ssh"; then
+                fail "$(t "$HOST can't be reached (offline or server down). Will try again later." "$HOST tidak bisa dihubungi (offline atau server mati). Nanti dicoba lagi.")"
+            else
+                fail "$(t "can't connect to $HOST" "tidak bisa konek ke $HOST"): $(tail -c 150 "$TMP/ssh")"
+            fi
+        fi
         rsync -t --partial -e "ssh ${SSHO[*]}" "$OUT" "$HOST:$RPATH/" || fail "$(t "upload to $HOST failed" "upload ke $HOST gagal")"
         WHERE="$HOST:$RPATH" ;;
     rclone)

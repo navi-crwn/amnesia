@@ -131,20 +131,34 @@ struct VaultReply: Decodable {
     let min: Int?
     let apps: [String]?
     let keys: KeysInfo?
+    let skip: [String]?
 
     static func fail(_ msg: String) -> VaultReply {
         VaultReply(ok: false, error: msg, exists: nil, manifest: nil, attempts: nil, max: nil, min: nil, apps: nil,
-                   keys: nil)
+                   keys: nil, skip: nil)
     }
 }
 
-func vaultCall(_ args: [String], input: String = "") -> VaultReply {
-    let r = sh(P.python, [P.vaultPy] + args, input: input)
+/// progress: dipanggil dengan 0…1 setiap vault.py menulis baris "PROGRESS <persen> <langkah>".
+func vaultCall(_ args: [String], input: String = "",
+               progress: (@Sendable (Double) -> Void)? = nil) -> VaultReply {
+    let onErr: (@Sendable (String) -> Void)? = progress.map { cb in
+        { @Sendable text in
+            // cukup lihat bagian akhir: baris PROGRESS terakhir
+            let tail = text.suffix(400).split(separator: "\n").reversed()
+            if let line = tail.first(where: { $0.hasPrefix("PROGRESS ") }),
+               let n = Double(line.split(separator: " ").dropFirst().first ?? "") {
+                cb(min(max(n / 100, 0), 1))
+            }
+        }
+    }
+    let r = sh(P.python, [P.vaultPy] + args, input: input, onErr: onErr)
     let last = r.out.split(separator: "\n").last.map(String.init) ?? ""
     do {
         return try JSONDecoder().decode(VaultReply.self, from: Data(last.utf8))
     } catch {
-        let detail = r.err.isEmpty ? "\(error)" : r.err
+        let clean = r.err.split(separator: "\n").filter { !$0.hasPrefix("PROGRESS ") }.joined(separator: "\n")
+        let detail = clean.isEmpty ? "\(error)" : clean
         return .fail(T("vault.py is not responding.\n", "vault.py tidak merespons.\n") + String(detail.suffix(300)))
     }
 }
@@ -152,7 +166,7 @@ func vaultCall(_ args: [String], input: String = "") -> VaultReply {
 // MARK: - Mesin Amnesia (script di dalam app → ~/.amnesia)
 
 enum Engine {
-    static let files = ["clean.sh", "agent.sh", "vault.py", "backup.sh", "keep.example.conf"]
+    static let files = ["clean.sh", "agent.sh", "vault.py", "backup.sh", "uninstall.sh", "keep.example.conf"]
 
     static var sevenz: String? {
         [P.a + "/bin/7zz", "/opt/homebrew/bin/7zz", "/usr/local/bin/7zz"]
@@ -178,6 +192,16 @@ enum Engine {
 
     static func openFullDiskSettings() {
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!)
+    }
+
+    /// Tutup lalu buka lagi Amnesia (izin Full Disk Access baru berlaku setelah app dibuka ulang).
+    @MainActor static func relaunch() {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/bin/sh")
+        p.arguments = ["-c", "sleep 1.5; /usr/bin/open \"$0\"", Bundle.main.bundlePath]
+        try? p.run()
+        Model.shared.allowQuit = true
+        NSApp.terminate(nil)
     }
 
     /// Pasang/perbarui script di ~/.amnesia dari dalam app (sekali per versi).
@@ -708,9 +732,16 @@ func validServer(_ s: String) -> Bool {
 /// Hubungkan server SSH tanpa Terminal. Kalau kunci SSH belum diterima server, password dipakai SEKALI
 /// untuk memasang kunci (lewat SSH_ASKPASS, file sementara 0600 yang langsung dihapus). Password tidak disimpan.
 /// Hasil: (berhasil, pesan). Pesan sukses menyebut folder lengkap tujuan backup di server.
-func connectSSH(_ server: String, password: String) -> (ok: Bool, msg: String) {
+/// forgetOldKey: hapus catatan kunci server lama (setelah user setuju, misalnya server diinstal ulang).
+/// hostChanged = true kalau kunci server berbeda dari yang dulu; app lalu bertanya dulu ke user.
+func connectSSH(_ server: String, password: String, forgetOldKey: Bool = false)
+    -> (ok: Bool, msg: String, hostChanged: Bool) {
     let parts = server.split(separator: ":", maxSplits: 1).map(String.init)
     let host = parts.first ?? ""
+    if forgetOldKey {
+        let name = host.split(separator: "@").last.map(String.init) ?? host
+        sh("/usr/bin/ssh-keygen", ["-R", name])
+    }
     let rpath = parts.count > 1 && !parts[1].isEmpty ? parts[1] : "amnesia-backup"
     let base = ["-o", "ConnectTimeout=15", "-o", "StrictHostKeyChecking=accept-new"]
     let fm = FileManager.default
@@ -719,23 +750,29 @@ func connectSSH(_ server: String, password: String) -> (ok: Bool, msg: String) {
         sh("/usr/bin/ssh", base + ["-o", "BatchMode=yes", host, "mkdir -p -- \(rpath) && cd -- \(rpath) && pwd"], timeout: 40)
     }
     var w = whereIs()
+    if w.code != 0 && (w.err.contains("IDENTIFICATION HAS CHANGED") || w.err.contains("Host key verification failed")) {
+        return (false, T("\(host) has a different identity than before. That's normal if the server was reinstalled. "
+                         + "If not, someone may be pretending to be your server.",
+                         "Identitas \(host) berbeda dari sebelumnya. Wajar kalau server baru diinstal ulang. "
+                         + "Kalau tidak, bisa jadi ada pihak lain yang menyamar jadi server kamu."), true)
+    }
     if w.code != 0 {
         if w.err.contains("Could not resolve") || w.err.contains("timed out") || w.err.contains("refused") {
             return (false, T("Can't reach \(host). Check the address and your internet.",
-                             "\(host) tidak bisa dihubungi. Cek alamat dan internet kamu.") + "\n\n" + String(w.err.suffix(200)))
+                             "\(host) tidak bisa dihubungi. Cek alamat dan internet kamu.") + "\n\n" + String(w.err.suffix(200)), false)
         }
         guard !password.isEmpty else {
             return (false, T("This server doesn't know Amnesia's key yet. Type the server password once, then press Connect.",
-                             "Server ini belum kenal kunci Amnesia. Ketik password server sekali, lalu tekan Hubungkan."))
+                             "Server ini belum kenal kunci Amnesia. Ketik password server sekali, lalu tekan Hubungkan."), false)
         }
         if !fm.fileExists(atPath: key) {
             try? fm.createDirectory(atPath: P.home + "/.ssh", withIntermediateDirectories: true,
                                     attributes: [.posixPermissions: 0o700])
             let g = sh("/usr/bin/ssh-keygen", ["-t", "ed25519", "-N", "", "-q", "-f", key, "-C", "amnesia"])
-            guard g.code == 0 else { return (false, T("Couldn't make an SSH key: ", "Gagal membuat kunci SSH: ") + g.err) }
+            guard g.code == 0 else { return (false, T("Couldn't make an SSH key: ", "Gagal membuat kunci SSH: ") + g.err, false) }
         }
         guard let pub = try? String(contentsOfFile: key + ".pub", encoding: .utf8) else {
-            return (false, T("Couldn't read ~/.ssh/id_ed25519.pub", "Tidak bisa membaca ~/.ssh/id_ed25519.pub"))
+            return (false, T("Couldn't read ~/.ssh/id_ed25519.pub", "Tidak bisa membaca ~/.ssh/id_ed25519.pub"), false)
         }
         let dir = NSTemporaryDirectory() + "amnesia-ssh-" + UUID().uuidString
         try? fm.createDirectory(atPath: dir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
@@ -753,18 +790,18 @@ func connectSSH(_ server: String, password: String) -> (ok: Bool, msg: String) {
             return (false, r.err.contains("Permission denied")
                     ? T("Wrong password, or this server doesn't allow password logins.",
                         "Password salah, atau server ini tidak mengizinkan login pakai password.")
-                    : String(r.err.suffix(300)))
+                    : String(r.err.suffix(300)), false)
         }
         w = whereIs()
         guard w.code == 0 else {
             return (false, T("The key is installed, but logging in with it failed: ", "Kunci sudah dipasang, tapi login pakai kunci gagal: ")
-                    + String(w.err.suffix(200)))
+                    + String(w.err.suffix(200)), false)
         }
     }
     if !keepMatches(".ssh/id_ed25519", Keep.entries()) { Keep.add([".ssh"]) }   // kunci tidak ikut terhapus saat logout
     let path = w.out.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n").last ?? rpath
     return (true, T("Connected to \(host), no password needed from now on.\n\nBackups go to this folder on the server:\n\(path)",
-                    "Terhubung ke \(host), mulai sekarang tanpa password.\n\nBackup masuk ke folder ini di server:\n\(path)"))
+                    "Terhubung ke \(host), mulai sekarang tanpa password.\n\nBackup masuk ke folder ini di server:\n\(path)"), false)
 }
 
 /// Jalankan backup.sh; password lewat stdin. Hasil: (berhasil, pesan).
@@ -880,6 +917,11 @@ final class Model: ObservableObject {
     @Published var lastClean = ""
     @Published var vault: VaultReply?
     @Published var busy: String?
+    /// Kemajuan kerja berat (0…1), tampil sebagai progress bar di overlay. nil = tidak diketahui.
+    @Published var progress: Double?
+    nonisolated static let progressSink: @Sendable (Double) -> Void = { p in
+        Task { @MainActor in Model.shared.progress = p }
+    }
     /// Laporan "yang akan dihapus": disiapkan di background, jadi halaman Preview langsung tampil.
     @Published var report: [DryGroup]?
     @Published var reportTime: Date?
@@ -974,6 +1016,7 @@ final class Model: ObservableObject {
 
     func finishOnboarding() {
         Config.set("ONBOARDED", "1")
+        Config.set("TOUR_STEP", "0")
         onboarded = true
         page = vault?.exists == true ? .home : .vault
     }
@@ -1008,10 +1051,12 @@ final class Model: ObservableObject {
     func background<R>(_ msg: String, _ work: @escaping @Sendable () -> R,
                        done: @escaping @MainActor (R) -> Void) {
         busy = msg
+        progress = nil
         DispatchQueue.global(qos: .userInitiated).async {
             let r = work()
             Task { @MainActor in
                 self.busy = nil
+                self.progress = nil
                 done(r)
             }
         }
@@ -1123,7 +1168,7 @@ final class Model: ObservableObject {
                       T("Save \(apps.joined(separator: ", ")) to the vault, then log out?\n\nThese apps will be closed first.",
                         "Simpan profil \(apps.joined(separator: ", ")) ke vault, lalu logout?\n\nApp tersebut akan ditutup dulu."),
                       ok: T("Save & Log Out", "Simpan & Logout")) else { return }
-        background(T("Saving profiles to the vault…", "Menyimpan profil ke vault…"), { vaultCall(["snapshot"]) }) { r in
+        background(T("Saving profiles to the vault…", "Menyimpan profil ke vault…"), { vaultCall(["snapshot"], progress: Model.progressSink) }) { r in
             if r.ok {
                 self.allowQuit = true       // logout ini dari kita sendiri: jangan ditahan
                 _ = vaultCall(["logout"])
@@ -1347,7 +1392,7 @@ struct Tile: View {
     }
 }
 
-enum Page { case home, vault, keep, backup, settings, preview }
+enum Page { case home, vault, keep, backup, settings, preview, move }
 
 struct MainView: View {
     @EnvironmentObject var m: Model
@@ -1367,6 +1412,7 @@ struct MainView: View {
                 case .vault: VaultView(back: { goHome() })
                 case .keep: KeepView(back: { goHome() })
                 case .backup: BackupView(back: { goHome() })
+                case .move: MoveView(back: { m.page = .vault })
                 }
                 }
             }
@@ -1378,8 +1424,18 @@ struct MainView: View {
                 ZStack {
                     Color.black.opacity(0.25)
                     VStack(spacing: 14) {
-                        ProgressView().controlSize(.large)
+                        if let p = m.progress {
+                            ProgressView(value: p).frame(width: 240)
+                            Text("\(Int(p * 100))%").font(.system(size: 22, weight: .bold, design: .rounded))
+                                .monospacedDigit()
+                        } else {
+                            ProgressView().controlSize(.large)
+                        }
                         Text(b).font(.system(size: 13, weight: .semibold)).multilineTextAlignment(.center)
+                        if m.progress != nil {
+                            Text(T("Please wait, don't close Amnesia.", "Tunggu sebentar, jangan tutup Amnesia."))
+                                .font(.system(size: 11)).foregroundStyle(.secondary)
+                        }
                     }
                     .padding(28)
                     .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(.regularMaterial))
@@ -1475,11 +1531,17 @@ struct VaultView: View {
     @State private var pw = ""
     @State private var pw2 = ""
     @State private var panic = ""
+    @State private var panic2 = ""
     @State private var panicFull = false
     @State private var showPanic = false
     @State private var newPanic = ""
+    @State private var newPanic2 = ""
     @State private var newPanicFull = false
-    @State private var backupPw = ""
+    @State private var showPassword = false
+    @State private var oldPw = ""
+    @State private var newPw = ""
+    @State private var newPw2 = ""
+    @State private var skip = Set(Config.get("VAULT_SKIP").split(separator: ",").map(String.init))
 
     var body: some View {
         ScrollView {
@@ -1501,6 +1563,7 @@ struct VaultView: View {
         .scrollIndicators(.never)
         .onAppear { m.refreshVault() }
         .sheet(isPresented: $showPanic) { panicSheet }
+        .sheet(isPresented: $showPassword) { passwordSheet }
     }
 
     @ViewBuilder
@@ -1512,7 +1575,8 @@ struct VaultView: View {
                    + "Setelah Mac dibersihkan, pulihkan semuanya dengan 1 password."))
                 .font(.system(size: 12)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Note(text: T("The password CANNOT be recovered if you forget it.", "Password TIDAK bisa dipulihkan kalau lupa."),
+            Note(text: T("The password CANNOT be recovered if you forget it. You can change it later.",
+                         "Password TIDAK bisa dipulihkan kalau lupa. Nanti bisa diganti."),
                  icon: "exclamationmark.triangle.fill",
                  color: .orange)
             Field(label: T("Vault password (min. \(v.min ?? 12) characters)",
@@ -1521,6 +1585,9 @@ struct VaultView: View {
         }
         Card {
             Field(label: T("Panic word (optional)", "Kata panik (opsional)"), text: $panic)
+            if !panic.isEmpty {
+                Field(label: T("Repeat panic word", "Ulangi kata panik"), text: $panic2)
+            }
             Note(text: T("Typing this word in the password box deletes the vault completely, right away.",
                          "Kalau kata ini diketik di kolom password, vault langsung dihapus total."))
             Toggle(T("The panic word also empties the Keep folder", "Kata panik juga mengosongkan folder Keep"), isOn: Binding(get: { panicFull && !panic.isEmpty }, set: { panicFull = $0 }))
@@ -1529,24 +1596,8 @@ struct VaultView: View {
         Button { create() } label: { Label(T("Create Vault", "Buat Vault"), systemImage: "lock.fill") }
             .buttonStyle(Pill(colors: Pal.vault))
             .disabled(pw.isEmpty)
-        Card {
-            HStack(spacing: 10) {
-                IconBadge(icon: "arrow.left.arrow.right", colors: Pal.backup, size: 30)
-                Text(T("Moving from an old Mac?", "Pindah dari Mac lama?")).font(.system(size: 14, weight: .semibold))
-            }
-            Text(T("Have an Amnesia backup that includes the Profile Vault? Take the vault from that file "
-                   + "instead of creating a new one.",
-                   "Punya file backup Amnesia yang berisi Profile Vault? Ambil vault-nya dari file itu, "
-                   + "tidak perlu buat vault baru."))
-                .font(.system(size: 12)).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Field(label: T("Backup password", "Password backup"), text: $backupPw)
-            Button { importVault() } label: {
-                Label(T("Get Vault from Backup…", "Ambil Vault dari Backup…"), systemImage: "tray.and.arrow.down.fill")
-            }
-                .buttonStyle(Pill(colors: Pal.backup))
-                .disabled(backupPw.isEmpty)
-        }
+        moveRow(T("Moving from an old Mac? Take the vault from a backup instead.",
+                  "Pindah dari Mac lama? Ambil vault dari file backup saja."))
     }
 
     @ViewBuilder
@@ -1561,13 +1612,18 @@ struct VaultView: View {
                     Text("\(man.size_mb, specifier: "%.1f") MB").font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Text(man.time).font(.system(size: 17, weight: .bold, design: .rounded))
-                HStack(spacing: 6) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 6)], alignment: .leading, spacing: 6) {
                     ForEach(man.apps, id: \.self) { a in
                         Text(a).font(.system(size: 11, weight: .semibold))
-                            .padding(.horizontal, 9).padding(.vertical, 4)
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                            .padding(.horizontal, 9).padding(.vertical, 5)
+                            .frame(maxWidth: .infinity)
                             .background(Capsule().fill(Color.indigo.opacity(0.15)))
                     }
                 }
+                Text(T("Only the newest snapshot is kept: a new one replaces this one.",
+                       "Hanya snapshot terbaru yang disimpan: snapshot baru menggantikan yang ini."))
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
             } else {
                 Note(text: T("The vault is ready, no snapshot yet. Log in to your apps, then press Snapshot.",
                              "Vault siap, belum ada snapshot. Login ke app dulu, lalu tekan Snapshot."))
@@ -1588,39 +1644,61 @@ struct VaultView: View {
                 .buttonStyle(Pill(colors: Pal.keep))
                 .disabled(pw.isEmpty)
         }
+        appsCard(v)
+        Button { snapshot(v) } label: { Label(T("Snapshot Now", "Snapshot Sekarang"), systemImage: "camera.fill") }
+            .buttonStyle(Pill(colors: Pal.logout))
         HStack(spacing: 10) {
-            Button { snapshot(v) } label: { Label("Snapshot", systemImage: "camera.fill") }
-                .buttonStyle(Pill(colors: Pal.logout))
+            Button { showPassword = true } label: { Label(T("Password", "Password"), systemImage: "key.fill") }
+                .buttonStyle(Pill(colors: Pal.gray))
             Button { showPanic = true } label: { Label(T("Panic Word", "Kata Panik"), systemImage: "flame.fill") }
                 .buttonStyle(Pill(colors: Pal.vault))
             Button { deleteVault() } label: { Label(T("Delete", "Hapus"), systemImage: "trash.fill") }
                 .buttonStyle(Pill(colors: Pal.danger))
         }
+        moveRow(T("Moving to a new Mac? Take your logins with you.", "Pindah ke Mac baru? Bawa login kamu."))
+    }
+
+    /// Pilih app mana yang ikut disimpan di vault (VAULT_SKIP = yang dimatikan).
+    private func appsCard(_ v: VaultReply) -> some View {
         Card {
+            Text(T("What goes in the vault", "Yang disimpan di vault")).font(.system(size: 13, weight: .semibold))
+            Text(T("Snapshots don't ask for your password: the vault locks them with a key that only your "
+                   + "password can open. You need the password to restore.",
+                   "Snapshot tidak minta password: vault menguncinya dengan kunci yang hanya bisa dibuka "
+                   + "password kamu. Password dipakai saat restore."))
+                .font(.system(size: 11)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if (v.apps ?? []).isEmpty {
+                Text(T("No app data found yet.", "Belum ada data app.")).font(.system(size: 12)).foregroundStyle(.secondary)
+            }
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 6) {
+                ForEach(v.apps ?? [], id: \.self) { a in
+                    Toggle(a, isOn: Binding(get: { !skip.contains(a) }, set: { on in
+                        if on { skip.remove(a) } else { skip.insert(a) }
+                        Config.set("VAULT_SKIP", skip.sorted().joined(separator: ","))
+                    }))
+                    .toggleStyle(.checkbox).font(.system(size: 12))
+                }
+            }
+        }
+    }
+
+    private func moveRow(_ text: String) -> some View {
+        Button { m.page = .move } label: {
             HStack(spacing: 10) {
                 IconBadge(icon: "arrow.left.arrow.right", colors: Pal.backup, size: 30)
-                Text(T("Move to a New Mac", "Pindah Mac")).font(.system(size: 14, weight: .semibold))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(T("Move to a New Mac", "Pindah Mac")).font(.system(size: 14, weight: .semibold))
+                    Text(text).font(.system(size: 11)).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundStyle(.secondary)
             }
-            Text(T("Chrome, Claude & WhatsApp logins are locked with this Mac's Keychain keys. To keep them working "
-                   + "on a new Mac, save the keys to the vault, then back up with Include Profile Vault.",
-                   "Login Chrome, Claude & WhatsApp dikunci oleh kunci Keychain milik Mac ini. Supaya tetap jalan "
-                   + "di Mac baru, simpan kuncinya ke vault, lalu backup dengan Sertakan Profile Vault."))
-                .font(.system(size: 12)).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if let k = v.keys {
-                Note(text: T("Keys saved \(k.time): ", "Kunci tersimpan \(k.time): ") + k.apps.joined(separator: ", "),
-                     icon: "checkmark.circle.fill", color: .green)
-            }
-            HStack(spacing: 10) {
-                Button { exportKeys() } label: { Label(T("Prepare Move", "Siapkan Pindah Mac"), systemImage: "key.fill") }
-                    .buttonStyle(Pill(colors: Pal.vault))
-                Button { importKeys() } label: { Label(T("Restore Keys", "Pulihkan Kunci"), systemImage: "key.horizontal.fill") }
-                    .buttonStyle(Pill(colors: Pal.keep))
-                    .disabled(pw.isEmpty || v.keys == nil)
-            }
-            Note(text: T("Use Restore Keys only on the NEW Mac, after Restore Profiles. It uses the vault password above.",
-                         "Pulihkan Kunci hanya di Mac BARU, setelah Restore Profil. Pakai password vault di atas."))
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.regularMaterial))
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 
     private var panicSheet: some View {
@@ -1634,11 +1712,38 @@ struct VaultView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Field(label: T("Vault password", "Password vault"), text: $pw)
             Field(label: T("New panic word", "Kata panik baru"), text: $newPanic)
+            if !newPanic.isEmpty {
+                Field(label: T("Repeat panic word", "Ulangi kata panik"), text: $newPanic2)
+            }
             Toggle(T("Also empty the Keep folder", "Juga kosongkan folder Keep"), isOn: $newPanicFull).font(.system(size: 12)).disabled(newPanic.isEmpty)
             HStack {
                 Button(T("Cancel", "Batal")) { showPanic = false }.keyboardShortcut(.cancelAction)
                 Spacer()
-                Button(T("Save", "Simpan")) { savePanic() }.keyboardShortcut(.defaultAction).disabled(pw.isEmpty)
+                Button(T("Save", "Simpan")) { savePanic() }.keyboardShortcut(.defaultAction)
+                    .disabled(pw.isEmpty || newPanic != newPanic2)
+            }
+        }
+        .padding(24)
+        .frame(width: 380)
+    }
+
+    private var passwordSheet: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(T("Change Vault Password", "Ganti Password Vault")).font(.system(size: 17, weight: .bold))
+            Text(T("Your snapshot stays as it is. Only the password that opens it changes.",
+                   "Snapshot kamu tetap utuh. Yang berubah hanya password untuk membukanya."))
+                .font(.system(size: 12)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Field(label: T("Current password", "Password sekarang"), text: $oldPw)
+            Field(label: T("New password (min. 12 characters)", "Password baru (min. 12 karakter)"), text: $newPw)
+            Field(label: T("Repeat new password", "Ulangi password baru"), text: $newPw2)
+            Note(text: T("A wrong current password counts as a failed try.", "Password sekarang yang salah dihitung sebagai percobaan gagal."),
+                 icon: "exclamationmark.triangle.fill", color: .orange)
+            HStack {
+                Button(T("Cancel", "Batal")) { showPassword = false }.keyboardShortcut(.cancelAction)
+                Spacer()
+                Button(T("Change", "Ganti")) { changePassword() }.keyboardShortcut(.defaultAction)
+                    .disabled(oldPw.isEmpty || newPw.isEmpty || newPw != newPw2)
             }
         }
         .padding(24)
@@ -1647,11 +1752,14 @@ struct VaultView: View {
 
     private func create() {
         guard pw == pw2 else { info("Profile Vault", T("The passwords do not match.", "Password tidak cocok."), error: true); return }
+        guard panic.isEmpty || panic == panic2 else {
+            info("Profile Vault", T("The panic words do not match.", "Kata panik tidak cocok."), error: true); return
+        }
         let input = pw + "\n" + panic + "\n"
         let args = ["create"] + (panicFull && !panic.isEmpty ? ["full"] : [])
         m.background(T("Creating vault keys…", "Membuat kunci vault…"), { vaultCall(args, input: input) }) { r in
             if r.ok {
-                pw = ""; pw2 = ""; panic = ""
+                pw = ""; pw2 = ""; panic = ""; panic2 = ""
                 info(T("Vault created", "Vault dibuat"),
                      T("Log in to your apps as usual, then press Snapshot (or Save & Log Out).",
                        "Login ke app seperti biasa, lalu tekan Snapshot (atau Simpan & Logout)."))
@@ -1665,7 +1773,9 @@ struct VaultView: View {
     private func restore() {
         guard !pw.isEmpty else { return }
         let input = pw + "\n"
-        m.background(T("Restoring profiles…", "Memulihkan profil…"), { vaultCall(["restore"], input: input) }) { r in
+        m.background(T("Restoring profiles…\nThe apps are closed first. A big Chrome profile can take a few minutes.",
+                       "Memulihkan profil…\nApp ditutup dulu. Profil Chrome yang besar bisa makan beberapa menit."),
+                     { vaultCall(["restore"], input: input, progress: Model.progressSink) }) { r in
             pw = ""
             if r.ok {
                 info(T("Profiles restored", "Profil dipulihkan"),
@@ -1678,28 +1788,37 @@ struct VaultView: View {
     }
 
     private func snapshot(_ v: VaultReply) {
-        let apps = v.apps ?? []
+        let apps = (v.apps ?? []).filter { !skip.contains($0) }
         guard !apps.isEmpty else {
-            info("Profile Vault", T("There is no app data to save on this Mac yet.",
-                                    "Belum ada data app yang bisa disimpan di Mac ini."))
+            info("Profile Vault", T("No apps are switched on under \"What goes in the vault\".",
+                                    "Tidak ada app yang dicentang di \"Yang disimpan di vault\"."))
             return
         }
-        guard confirm("Snapshot", T("Save \(apps.joined(separator: ", "))?\n\nThese apps will be closed first.",
-                                    "Simpan profil \(apps.joined(separator: ", "))?\n\nApp tersebut akan ditutup dulu."),
+        guard confirm("Snapshot", T("Save \(apps.joined(separator: ", "))?\n\nThese apps will be closed first. "
+                                    + "No password needed. It replaces the previous snapshot.",
+                                    "Simpan profil \(apps.joined(separator: ", "))?\n\nApp tersebut akan ditutup dulu. "
+                                    + "Tidak perlu password. Snapshot lama akan diganti."),
                       ok: T("Save", "Simpan")) else { return }
-        m.background(T("Saving profiles to the vault…", "Menyimpan profil ke vault…"), { vaultCall(["snapshot"]) }) { r in
-            if !r.ok { m.vaultError(r) }
+        m.background(T("Saving profiles to the vault…\nA big Chrome profile can take a few minutes.",
+                       "Menyimpan profil ke vault…\nProfil Chrome yang besar bisa makan beberapa menit."),
+                     { vaultCall(["snapshot"], progress: Model.progressSink) }) { r in
+            if r.ok {
+                info("Snapshot", T("Saved: ", "Tersimpan: ") + (r.apps ?? apps).joined(separator: ", "))
+            } else {
+                m.vaultError(r)
+            }
             m.refreshVault()
         }
     }
 
     private func savePanic() {
+        guard newPanic == newPanic2 else { return }
         let input = pw + "\n" + newPanic + "\n"
         let args = ["panic"] + (newPanicFull && !newPanic.isEmpty ? ["full"] : [])
         let word = newPanic
         showPanic = false
         m.background(T("Checking password…", "Memeriksa password…"), { vaultCall(args, input: input) }) { r in
-            pw = ""; newPanic = ""
+            pw = ""; newPanic = ""; newPanic2 = ""
             if r.ok {
                 info(T("Panic Word", "Kata Panik"), word.isEmpty ? T("Panic word turned off.", "Kata panik dimatikan.")
                                                                   : T("Panic word saved.", "Kata panik disimpan."))
@@ -1707,6 +1826,137 @@ struct VaultView: View {
                 m.vaultError(r)
             }
             m.refreshVault()
+        }
+    }
+
+    private func changePassword() {
+        let input = oldPw + "\n" + newPw + "\n"
+        showPassword = false
+        m.background(T("Changing the password…", "Mengganti password…"), { vaultCall(["passwd"], input: input) }) { r in
+            oldPw = ""; newPw = ""; newPw2 = ""
+            if r.ok {
+                info(T("Password changed", "Password diganti"),
+                     T("From now on, open the vault with the new password.", "Mulai sekarang buka vault pakai password baru."))
+            } else {
+                m.vaultError(r)
+            }
+            m.refreshVault()
+        }
+    }
+
+    private func deleteVault() {
+        guard confirm(T("Delete Vault?", "Hapus Vault?"),
+                      T("The vault and all profile snapshots are deleted.\n\nThis cannot be undone.",
+                        "Vault dan semua snapshot profil dihapus.\n\nTidak bisa dibatalkan."),
+                      ok: T("Delete", "Hapus"), danger: true) else { return }
+        m.background(T("Deleting the vault…", "Menghapus vault…"), { vaultCall(["delete"]) }) { r in
+            if !r.ok { m.vaultError(r) }
+            m.refreshVault()
+        }
+    }
+}
+
+// MARK: - Pindah Mac
+
+struct MoveView: View {
+    @EnvironmentObject var m: Model
+    let back: () -> Void
+    @State private var pw = ""
+    @State private var backupPw = ""
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                PageHeader(title: T("Move to a New Mac", "Pindah Mac"), icon: "arrow.left.arrow.right", colors: Pal.backup, back: back)
+                Card {
+                    Text(T("How it works", "Cara kerjanya")).font(.system(size: 13, weight: .semibold))
+                    Text(T("Chrome, Claude and WhatsApp lock their logins with secret keys in this Mac's Keychain. "
+                           + "A new Mac doesn't have those keys, so restored profiles would be logged out. "
+                           + "This page carries the keys over, safely inside your vault.",
+                           "Chrome, Claude dan WhatsApp mengunci login dengan kunci rahasia di Keychain Mac ini. "
+                           + "Mac baru tidak punya kunci itu, jadi profil yang dipulihkan akan ter-logout. "
+                           + "Halaman ini membawa kunci tersebut, aman di dalam vault kamu."))
+                        .font(.system(size: 12)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    step("1", T("Old Mac: Prepare Move", "Mac lama: Siapkan Pindah"),
+                         T("Saves the Keychain keys into the vault.", "Menyimpan kunci Keychain ke vault."))
+                    step("2", T("Old Mac: Back up", "Mac lama: Backup"),
+                         T("Backup page, tick Include Profile Vault.", "Halaman Backup, centang Sertakan Profile Vault."))
+                    step("3", T("New Mac: Get Vault from Backup", "Mac baru: Ambil Vault dari Backup"),
+                         T("Install Amnesia, then use the box below.", "Pasang Amnesia, lalu pakai kotak di bawah."))
+                    step("4", T("New Mac: Restore Profiles, then Restore Keys", "Mac baru: Restore Profil, lalu Pulihkan Kunci"),
+                         T("Your apps open with your old logins.", "App terbuka dengan login lama."))
+                }
+                if let v = m.vault, v.ok {
+                    if v.exists == true { oldMac(v); newMacKeys(v) } else { newMacVault }
+                } else {
+                    ProgressView().padding(30)
+                }
+            }
+        }
+        .scrollIndicators(.never)
+        .onAppear { m.refreshVault() }
+    }
+
+    private func step(_ n: String, _ t: String, _ sub: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(n).font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
+                .frame(width: 22, height: 22).background(Circle().fill(Color.pink))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(t).font(.system(size: 13, weight: .semibold))
+                Text(sub).font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    @ViewBuilder
+    private func oldMac(_ v: VaultReply) -> some View {
+        Card {
+            Text(T("On the old Mac", "Di Mac lama")).font(.system(size: 13, weight: .semibold))
+            if let k = v.keys {
+                Note(text: T("Keys saved \(k.time): ", "Kunci tersimpan \(k.time): ") + k.apps.joined(separator: ", "),
+                     icon: "checkmark.circle.fill", color: .green)
+            }
+            HStack(spacing: 10) {
+                Button { exportKeys() } label: { Label(T("Prepare Move", "Siapkan Pindah"), systemImage: "key.fill") }
+                    .buttonStyle(Pill(colors: Pal.vault))
+                Button { m.page = .backup } label: { Label(T("Go to Backup", "Ke Backup"), systemImage: "externaldrive.fill") }
+                    .buttonStyle(Pill(colors: Pal.backup))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func newMacKeys(_ v: VaultReply) -> some View {
+        Card {
+            Text(T("On the new Mac", "Di Mac baru")).font(.system(size: 13, weight: .semibold))
+            Note(text: T("Do this only on the NEW Mac, after Restore Profiles on the Profile Vault page.",
+                         "Lakukan hanya di Mac BARU, setelah Restore Profil di halaman Profile Vault."))
+            Field(label: T("Vault password", "Password vault"), text: $pw)
+            Button { importKeys() } label: { Label(T("Restore Keys", "Pulihkan Kunci"), systemImage: "key.horizontal.fill") }
+                .buttonStyle(Pill(colors: Pal.keep))
+                .disabled(pw.isEmpty || v.keys == nil)
+            if v.keys == nil {
+                Text(T("This vault has no keys yet (step 1 wasn't done on the old Mac).",
+                       "Vault ini belum berisi kunci (langkah 1 belum dilakukan di Mac lama)."))
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var newMacVault: some View {
+        Card {
+            Text(T("On the new Mac", "Di Mac baru")).font(.system(size: 13, weight: .semibold))
+            Text(T("Pick the Amnesia backup file (.7z) that includes the Profile Vault.",
+                   "Pilih file backup Amnesia (.7z) yang berisi Profile Vault."))
+                .font(.system(size: 12)).foregroundStyle(.secondary)
+            Field(label: T("Backup password", "Password backup"), text: $backupPw)
+            Button { importVault() } label: {
+                Label(T("Get Vault from Backup…", "Ambil Vault dari Backup…"), systemImage: "tray.and.arrow.down.fill")
+            }
+            .buttonStyle(Pill(colors: Pal.backup))
+            .disabled(backupPw.isEmpty)
         }
     }
 
@@ -1775,16 +2025,6 @@ struct VaultView: View {
         }
     }
 
-    private func deleteVault() {
-        guard confirm(T("Delete Vault?", "Hapus Vault?"),
-                      T("The vault and all profile snapshots are deleted.\n\nThis cannot be undone.",
-                        "Vault dan semua snapshot profil dihapus.\n\nTidak bisa dibatalkan."),
-                      ok: T("Delete", "Hapus"), danger: true) else { return }
-        m.background(T("Deleting the vault…", "Menghapus vault…"), { vaultCall(["delete"]) }) { r in
-            if !r.ok { m.vaultError(r) }
-            m.refreshVault()
-        }
-    }
 }
 
 // MARK: - Keep List
@@ -2146,17 +2386,28 @@ struct OnboardingView: View {
     @State private var accepted = Config.get("TERMS") == "1"
     private let last = 6
 
-    init(step: Int = 0, keepSetup: Bool = false) {
-        _step = State(initialValue: step)
-        _keepSetup = State(initialValue: keepSetup)
+    /// step nil = lanjutkan dari halaman terakhir (disimpan di TOUR_STEP), misalnya setelah app dibuka ulang
+    /// untuk Full Disk Access. 7 = halaman pilih app.
+    init(step: Int? = nil, keepSetup: Bool = false) {
+        let saved = step == nil ? Int(Config.get("TOUR_STEP")) ?? 0 : 0
+        _step = State(initialValue: step ?? min(max(saved, 0), 6))
+        _keepSetup = State(initialValue: keepSetup || saved == 7)
     }
 
     var body: some View {
-        if keepSetup {
-            KeepSetupView(back: { keepSetup = false })
-        } else {
-            tour
+        Group {
+            if keepSetup {
+                KeepSetupView(back: { keepSetup = false })
+            } else {
+                tour
+            }
         }
+        .onChange(of: step) { _, s in saveStep(s) }
+        .onChange(of: keepSetup) { _, k in saveStep(k ? 7 : step) }
+    }
+
+    private func saveStep(_ s: Int) {
+        if !Shots.on { Config.set("TOUR_STEP", String(s)) }
     }
 
     private var tour: some View {
@@ -2331,8 +2582,12 @@ struct OnboardingView: View {
                     Label(T("Allow Full Disk Access", "Izinkan Akses Disk Penuh"), systemImage: "lock.open.fill")
                 }
                 .buttonStyle(Pill(colors: Pal.vault))
-                Note(text: T("Switch on Amnesia in the list. Still red after that? Quit and reopen Amnesia.",
-                             "Nyalakan Amnesia di daftar itu. Masih merah? Tutup lalu buka lagi Amnesia."))
+                Note(text: T("Switch on Amnesia in the list, then press Quit & Reopen. The tour continues right here.",
+                             "Nyalakan Amnesia di daftar itu, lalu tekan Tutup & Buka Lagi. Tur lanjut dari halaman ini."))
+                Button { Engine.relaunch() } label: {
+                    Label(T("Quit & Reopen Amnesia", "Tutup & Buka Lagi Amnesia"), systemImage: "arrow.triangle.2.circlepath")
+                }
+                .buttonStyle(Pill(colors: Pal.gray))
             }
             if Engine.sevenz == nil {
                 Note(text: T("7-Zip is missing. Run in Terminal: brew install sevenzip",
@@ -2627,9 +2882,16 @@ struct BackupView: View {
     }
 
     @ViewBuilder private var cloudBox: some View {
+        Text(T("1. Pick your service", "1. Pilih layanan kamu")).font(.system(size: 12, weight: .semibold))
+            .frame(maxWidth: .infinity, alignment: .leading)
         Picker(T("Service", "Layanan"), selection: $provider) {
             ForEach(cloudProviders) { p in Text(p.name).tag(p) }
         }
+        .pickerStyle(.menu)
+        Text(T("2. Press the button below to log in to that service",
+               "2. Tekan tombol di bawah untuk login ke layanan itu"))
+            .font(.system(size: 12, weight: .semibold))
+            .frame(maxWidth: .infinity, alignment: .leading)
         .onChange(of: provider) { _, p in cloud = p.remote + ":Amnesia" }
         Field(label: T("Folder in the cloud (remote:folder)", "Folder di cloud (remote:folder)"), text: $cloud, secure: false)
         if connected.contains(remote) {
@@ -2748,7 +3010,23 @@ struct BackupView: View {
             return
         }
         server = srv
-        m.background(T("Connecting to \(host)…", "Menghubungi \(host)…"), { connectSSH(srv, password: pw) }) { r in
+        connect(srv, pw, forget: false)
+    }
+
+    private func connect(_ srv: String, _ pw: String, forget: Bool) {
+        m.background(T("Connecting to \(host)…", "Menghubungi \(host)…"),
+                     { connectSSH(srv, password: pw, forgetOldKey: forget) }) { r in
+            if r.hostChanged {
+                if confirm(T("Server changed", "Server berubah"),
+                           r.msg + "\n\n" + T("Was the server reinstalled? Then forget the old identity and connect again "
+                                              + "(you may need the server password once).",
+                                              "Server baru diinstal ulang? Lupakan identitas lama lalu hubungkan lagi "
+                                              + "(mungkin perlu password server sekali)."),
+                           ok: T("Yes, reconnect", "Ya, hubungkan lagi")) {
+                    connect(srv, pw, forget: true)
+                } else { sshPw = "" }
+                return
+            }
             sshPw = ""
             if r.ok {
                 Config.set("BACKUP_SSH", srv)
@@ -2822,9 +3100,16 @@ struct SettingsView: View {
                         Note(text: T("Give Amnesia Full Disk Access once, so macOS stops asking about every folder.",
                                      "Beri Amnesia Akses Disk Penuh sekali, supaya macOS tidak tanya per folder."),
                              icon: "lock.open.fill", color: .orange)
-                        Button(T("Open Privacy Settings", "Buka Pengaturan Privasi")) { Engine.openFullDiskSettings() }
+                        HStack {
+                            Button(T("Open Privacy Settings", "Buka Pengaturan Privasi")) { Engine.openFullDiskSettings() }
+                            Button(T("Quit & Reopen", "Tutup & Buka Lagi")) { Engine.relaunch() }
+                        }
                     }
                 }
+                Button { m.page = .move } label: {
+                    Label(T("Move to a new Mac", "Pindah ke Mac baru"), systemImage: "arrow.right.arrow.left.circle.fill")
+                }
+                .buttonStyle(Pill(colors: Pal.backup))
                 Button { m.showTour() } label: {
                     Label(T("Show the welcome tour again", "Tampilkan tur perkenalan lagi"), systemImage: "sparkles")
                 }
@@ -2881,12 +3166,18 @@ struct PreviewView: View {
     let back: () -> Void
     private var groups: [DryGroup]? { m.report }
 
+    @State private var open: Set<String> = []
+
+    /// Jam pembaruan yang pasti (misal "Diperbarui hari ini 15:20"), bukan "0 detik lalu".
     private var updated: String {
         if m.reportBusy { return T("Updating…", "Memperbarui…") }
         guard let d = m.reportTime else { return "" }
-        let f = RelativeDateTimeFormatter()
-        f.locale = Locale(identifier: Lang.current == .id ? "id" : "en")
-        return T("Updated ", "Diperbarui ") + f.localizedString(for: d, relativeTo: Date())
+        let f = DateFormatter()
+        f.locale = Locale(identifier: Lang.current == .id ? "id_ID" : "en_US")
+        f.dateStyle = .medium
+        f.timeStyle = .short
+        f.doesRelativeDateFormatting = true
+        return T("Updated ", "Diperbarui ") + f.string(from: d)
     }
 
     private var total: Int { (groups ?? []).reduce(0) { $0 + $1.items.count } }
@@ -2939,25 +3230,38 @@ struct PreviewView: View {
     }
 
     private func group(_ grp: DryGroup) -> some View {
-        DisclosureGroup {
-            VStack(alignment: .leading, spacing: 3) {
-                ForEach(Array(grp.items.prefix(200)), id: \.self) { i in
-                    Text(i).font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
-                        .lineLimit(1).truncationMode(.middle)
+        let shown = open.contains(grp.id)
+        return VStack(alignment: .leading, spacing: 6) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    if shown { _ = open.remove(grp.id) } else { _ = open.insert(grp.id) }
                 }
-                if grp.items.count > 200 {
-                    Text(T("…and \(grp.items.count - 200) more", "…dan \(grp.items.count - 200) lagi")).font(.system(size: 11)).foregroundStyle(.secondary)
+            } label: {
+                HStack {
+                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                        .rotationEffect(.degrees(shown ? 90 : 0)).foregroundStyle(.secondary)
+                    Text(grp.name).font(.system(size: 13, weight: .semibold))
+                    Spacer()
+                    Text("\(grp.items.count)").font(.system(size: 12, weight: .bold))
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .background(Capsule().fill(Color.pink.opacity(0.15)))
                 }
+                .contentShape(Rectangle())      // seluruh baris bisa diklik, bukan cuma panahnya
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 4)
-        } label: {
-            HStack {
-                Text(grp.name).font(.system(size: 13, weight: .semibold))
-                Spacer()
-                Text("\(grp.items.count)").font(.system(size: 12, weight: .bold))
-                    .padding(.horizontal, 8).padding(.vertical, 2)
-                    .background(Capsule().fill(Color.pink.opacity(0.15)))
+            .buttonStyle(.plain)
+            if shown {
+                VStack(alignment: .leading, spacing: 3) {
+                    ForEach(Array(grp.items.prefix(200)), id: \.self) { i in
+                        Text(i).font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
+                            .lineLimit(1).truncationMode(.middle)
+                            .textSelection(.enabled)
+                    }
+                    if grp.items.count > 200 {
+                        Text(T("…and \(grp.items.count - 200) more", "…dan \(grp.items.count - 200) lagi")).font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 18)
             }
         }
         .padding(10)
@@ -2965,8 +3269,11 @@ struct PreviewView: View {
     }
 
     /// Laporan lama langsung tampil; yang baru disiapkan di background.
+    /// Laporan baru dibuat lagi kalau yang ada sudah lebih dari 1 menit (atau logout sedang ditahan).
     private func load() {
-        if !Shots.on { m.updateReport() }
+        if Shots.on { return }
+        let age = m.reportTime.map { Date().timeIntervalSince($0) } ?? .infinity
+        if age > 60 || m.pending != nil { m.updateReport() }
     }
 
     private func cancel() {
@@ -3072,7 +3379,8 @@ struct MenuPanel: View {
             if let b = m.busy {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
-                    Text(b).font(.system(size: 11)).fixedSize(horizontal: false, vertical: true)
+                    Text(b + (m.progress.map { " \(Int($0 * 100))%" } ?? ""))
+                        .font(.system(size: 11)).fixedSize(horizontal: false, vertical: true)
                 }
             }
 
@@ -3138,17 +3446,28 @@ enum Shots {
         return P.realHome + "/Desktop/amnesia-shots"
     }
 
+    /// --lang en|id: hanya 1 bahasa (screenshots.sh menjalankan per bahasa, jadi 1 masalah tidak menghentikan semuanya)
+    static var langs: [Lang] {
+        let a = CommandLine.arguments
+        if let i = a.firstIndex(of: "--lang"), i + 1 < a.count, let l = Lang(rawValue: a[i + 1]) { return [l] }
+        return Lang.allCases
+    }
+
+    /// Catatan langkah ke stderr (screenshots.sh menyimpannya di ~/.amnesia/shots.log)
+    static func log(_ s: String) { FileHandle.standardError.write(Data(("shots: " + s + "\n").utf8)) }
+
     static func wait(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
 
     static func run() async {
         let m = Model.shared
         m.onboarded = true
         await wait(3)
-        for lang in Lang.allCases {
+        for lang in langs {
+            log("language \(lang.rawValue)")
             m.lang = lang
             await wait(2.5)
-            let log = (try? String(contentsOfFile: P.cleanLog, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            m.lastClean = T("Last: ", "Terakhir: ") + log
+            let cleanLog = (try? String(contentsOfFile: P.cleanLog, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            m.lastClean = T("Last: ", "Terakhir: ") + cleanLog
             let out = dir + "/" + lang.rawValue
             try? FileManager.default.createDirectory(atPath: out, withIntermediateDirectories: true)
             await shot(Shell { OnboardingView(step: 0) }, out + "/tour-welcome.png")
@@ -3162,13 +3481,16 @@ enum Shots {
                 m.page = page
                 await shot(MainView(), out + "/\(name).png")
             }
-            m.report = dryRun()
-            m.reportTime = Date()
-            m.page = .preview
-            await shot(MainView(), out + "/preview.png")
             m.page = .home
             await shot(MainView(), out + "/home-dark.png", dark: true)
             await shot(MenuPanel().background(Color(nsColor: .windowBackgroundColor)), out + "/menu.png", window: false)
+            log("preparing what-gets-deleted list")
+            let r = await Task.detached { dryRun() }.value
+            m.report = r
+            m.reportTime = Date()
+            log("list has \(r.count) groups")
+            m.page = .preview
+            await shot(MainView(), out + "/preview.png")
         }
         exit(0)
     }
@@ -3187,6 +3509,7 @@ enum Shots {
     }
 
     static func shot<V: View>(_ v: V, _ path: String, dark: Bool = false, settle: Double = 1.5, window: Bool = true) async {
+        log("shot " + (path as NSString).lastPathComponent)
         let host = NSHostingView(rootView: v.environmentObject(Model.shared))
         let size = host.fittingSize
         host.frame = NSRect(origin: .zero, size: size)
@@ -3202,6 +3525,8 @@ enum Shots {
         w.orderOut(nil)
         if let png = framed(rep, points: size, radius: window ? 12 : 10, dots: window) {
             try? png.write(to: URL(fileURLWithPath: path))
+        } else {
+            log("could not draw " + path)
         }
     }
 

@@ -72,11 +72,19 @@ Full terms: https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.md
 
 Your data stays on your Mac. Amnesia has no servers, no tracking, no analytics.
 
+UNINSTALL: don't just drag the app to the Trash (the login agent would stay).
+Paste this in Terminal instead:  bash ~/.amnesia/uninstall.sh
+(add --all to also delete the vault and settings in ~/.amnesia)
+
 ---
 PERINGATAN: Amnesia benar-benar menghapus data. Setelah aktif, semua di luar
 folder Keep dan Keep List dihapus setiap logout, restart dan shutdown, tidak
 masuk Trash dan tidak bisa dibatalkan. Backup dulu.
 Ketentuan lengkap: https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.id.md
+
+HAPUS APP: jangan cuma buang ke Trash (agent login masih tertinggal).
+Tempel ini di Terminal:  bash ~/.amnesia/uninstall.sh
+(tambah --all untuk ikut menghapus vault dan pengaturan di ~/.amnesia)
 TXT
 PKG="$(mktemp -d)/Amnesia-v$V.dmg"
 hdiutil create -quiet -volname "Amnesia $V" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$PKG"
@@ -120,6 +128,13 @@ cask "amnesia" do
 
   app "Amnesia.app"
 
+  # Turns off the login agent safely (agent file first, so stopping it doesn't wipe).
+  # ~/.amnesia (vault, settings) is kept; run uninstall.sh --all to remove it too.
+  uninstall early_script: {
+    executable: "/bin/bash",
+    args:       ["#{appdir}/Amnesia.app/Contents/Resources/engine/uninstall.sh", "--yes", "--keep-app"],
+  }
+
   # Not signed by Apple yet: remove the download quarantine so the app opens.
   postflight do
     system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{appdir}/Amnesia.app"]
@@ -128,7 +143,8 @@ cask "amnesia" do
   caveats <<~EOS
     Amnesia really deletes data once you turn it on. Read the terms first:
       https://github.com/$OWNER/$REPO/blob/main/TERMS.md
-    Before uninstalling, open Amnesia and press Turn Off first.
+    To uninstall: brew uninstall --cask amnesia (turns Amnesia off safely).
+    To also delete the vault and settings: bash ~/.amnesia/uninstall.sh --all
   EOS
 end
 CASK

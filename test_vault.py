@@ -75,6 +75,17 @@ try:
         with open(os.path.join(v.AMNESIA, "settings.conf"), "a") as f:
             f.write(f"KEEP_DIR={bad}\n")
         assert v.keep_dir() == os.path.join(T, "Keep"), bad
+    # ganti password: password lama tidak berlaku lagi, snapshot tetap bisa dibuka
+    shutil.rmtree(v.VAULT, ignore_errors=True)
+    with open(os.path.join(v.AMNESIA, "settings.conf"), "w") as f:
+        f.write("VAULT_SKIP=Claude\n")
+    mk("Library/Application Support/Claude/x.json", "c")
+    v.create(PW); v.snapshot()
+    assert "Claude" not in v.manifest()["apps"], "VAULT_SKIP must leave Claude out"
+    expect_error(lambda: v.change_password(PW, "pendek"), "12")
+    v.change_password(PW, "password-baru-123")
+    expect_error(lambda: v.check_password(PW), "Tries left")
+    v.restore("password-baru-123")
     print("OK: all vault tests passed")
 finally:
     shutil.rmtree(T)

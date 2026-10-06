@@ -5,6 +5,42 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.9.1 — 2026-10-06
+
+### Ditambahkan
+- **Hapus app dengan aman: `uninstall.sh`.** Jalankan `bash ~/.amnesia/uninstall.sh` di Terminal. Script ini menghapus file agent login lebih dulu, jadi menghentikan agent tidak akan memicu pembersihan. Lalu menghentikan yang masih jalan, menghapus app (termasuk versi Homebrew), dan mengecek tidak ada yang tersisa. Kalau masih ada sisa, kamu diberi tahu supaya jangan logout dulu.
+- Secara default vault, Keep List dan pengaturan di `~/.amnesia` tetap disimpan, kalau nanti mau pasang lagi. `--all` ikut menghapusnya, tapi hanya setelah kamu mengetik `HAPUS` (atau `DELETE`). Folder Keep kamu tidak pernah disentuh.
+- App menyalin `uninstall.sh` ke `~/.amnesia`, jadi tetap ada walaupun kamu pasang dari .dmg.
+- `brew uninstall --cask amnesia` sekarang menjalankan langkah aman yang sama.
+- **Cara hapus** dijelaskan di README (bagian "Cara hapus"), FAQ website, READ ME FIRST di .dmg, dan pesan Homebrew: jangan cuma buang app ke Trash.
+
+### Diperbaiki
+- App gagal di-compile karena bentrok nama di kode screenshot (`log`).
+
+## v5.9 — 2026-10-06
+
+### Ditambahkan
+- **Progress bar** untuk Snapshot, Restore dan Simpan & Logout. Ada persentasenya, jadi kamu tahu sudah sampai mana. Panel menu bar juga menampilkan persentasenya.
+- **Ganti password vault** (Profile Vault, tombol Password). Snapshot kamu tetap utuh; tidak perlu hapus vault lalu buat baru lagi.
+- **Pilih apa yang disimpan di vault.** Di halaman Profile Vault, centang app yang mau disimpan (misalnya WhatsApp tidak ikut). Snapshot dan Simpan & Logout hanya menyimpan app yang dicentang (`VAULT_SKIP` di settings.conf).
+- **Ketik ulang kata panik** saat mengaturnya (waktu buat vault dan di jendela Kata Panik), supaya salah ketik tidak bikin repot. Tombol Simpan baru aktif kalau keduanya sama.
+- **Pindah ke Mac baru** sekarang punya halaman sendiri (dari halaman Profile Vault atau Pengaturan), dengan panduan 4 langkah: Siapkan Pindah, Backup, Ambil Vault dari Backup, Restore Profil dan Kunci.
+- Tombol **Tutup & Buka Lagi** di samping Akses Disk Penuh (di tur dan di Pengaturan). **Tur ingat posisi terakhir**, jadi setelah dibuka lagi tur lanjut di halaman yang sama, tidak mulai dari awal.
+- **Pesan SSH yang jelas.** Kalau backup gagal ke server, pesannya bilang kenapa: server menolak kunci (tekan Hubungkan lagi), server terlihat berbeda (diinstal ulang?), atau server sedang tidak bisa dihubungi (nanti dicoba lagi). Ganti password server tidak merusak backup, karena Amnesia login pakai kunci, bukan password.
+- Kalau server diinstal ulang, tombol Hubungkan menjelaskannya dan bertanya dulu sebelum melupakan identitas server lama.
+
+### Diubah
+- App di snapshot sekarang tampil sebagai kotak-kotak rapi, bukan teks yang turun ke bawah. Halaman ini juga menjelaskan bahwa hanya snapshot terbaru yang disimpan, dan snapshot tidak perlu password (hanya Restore yang perlu).
+- **"Yang akan dihapus"**: klik di mana saja pada baris kelompok untuk membuka daftarnya (bukan cuma panah kecilnya). Waktunya sekarang menunjukkan kapan benar-benar diperbarui (misalnya "Hari ini 15.20"), bukan "0 detik lalu", dan daftar hanya dibuat ulang kalau sudah lebih dari 1 menit.
+- Kotak backup cloud menampilkan langkahnya: 1. pilih layanan (Google Drive, Dropbox, OneDrive, Box, pCloud), 2. tekan tombol untuk login.
+
+## v5.8.1 — 2026-10-06
+
+### Diperbaiki
+- `app/screenshots.sh` berhenti setelah 10 screenshot (cuma English). Sekarang jalan per bahasa, jadi masalah di satu bahasa tidak menghentikan yang lain, dan layar "yang akan dihapus" diambil paling akhir dengan daftarnya disiapkan di background.
+- Catatan proses screenshot disimpan di `~/.amnesia/shots.log`, dan script memberi tahu berapa dari 22 screenshot yang berhasil.
+- Pesan "No such file or directory" yang tidak berbahaya di script screenshot sudah hilang.
+
 ## v5.8 — 2026-10-06
 
 ### Ditambahkan

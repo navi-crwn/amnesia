@@ -11,6 +11,7 @@
   <a href="https://navi-crwn.github.io/amnesia-mac/">Website</a> ·
   <a href="#install">Install</a> ·
   <a href="#faq">FAQ</a> ·
+  <a href="#uninstall">Uninstall</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="TERMS.md">Terms</a>
 </p>
@@ -142,6 +143,10 @@ That's fine. Amnesia holds on for a moment to show you what will be deleted, the
 
 **What if I forget the vault password?**
 Then nobody can open the vault, including you. Delete it, make a new one, and log back in to your apps.
+If you still know it and just want a new one: Profile Vault → **Password**. Your snapshot stays.
+
+**Does Snapshot ask for my password?**
+No. The vault locks snapshots with a key that only your password can open, so saving needs no password; only **Restore** does. Only the newest snapshot is kept. You choose which apps go in it with the checkboxes on the Profile Vault page.
 
 **Does my data get sent to the internet?**
 No. Amnesia has no servers, no accounts, no tracking and no analytics, so there's nothing to send. The only exception is a backup to a server or cloud that **you** set up, and even then only the locked `.7z` file goes, straight from your Mac to the place you picked. Your vault and your personal Keep List never go to GitHub either.
@@ -151,7 +156,9 @@ To clean your Desktop, Documents and Downloads, macOS would otherwise ask permis
 
 **What do I need for online backups?**
 - *SSH server:* type `user@host` or `user@host:folder`, type the server password **once**, press **Connect**. Amnesia makes an SSH key and installs it on the server for you, no Terminal. The password isn't saved; from then on backups log in with the key. Already have a key that works? Leave the password empty. Without a folder, backups go to `~/amnesia-backup` on the server (the app shows the full path after connecting).
-- *Cloud:* pick Google Drive, Dropbox, OneDrive, Box or pCloud, press **Connect**, log in in the small login window, done. It doesn't use Chrome or your browser's cookies. Amnesia installs rclone for you (needs Homebrew).
+- *Cloud:* first pick your service (Google Drive, Dropbox, OneDrive, Box or pCloud) in the list, then press **Connect**, log in in the small login window, done. It doesn't use Chrome or your browser's cookies. Amnesia installs rclone for you (needs Homebrew).
+
+If you change your server password later, backups keep working (they use the key). Only if the server is reinstalled or the key is removed will a backup fail, and the message tells you to press **Connect** again.
 
 Heads up: every backup is uploaded in full (not just what changed), because the file is encrypted. Old backups aren't deleted automatically, so clean them up at the destination now and then.
 
@@ -159,13 +166,31 @@ Heads up: every backup is uploaded in full (not just what changed), because the 
 Use an app like Keka, or Terminal: `7zz x amnesia_backup_xxx.7z`, then type your backup password.
 
 **Moving to a new Mac, what are the steps?**
-1. On the old Mac: Profile Vault → **Prepare Move** (click *Always Allow* in the macOS popups).
+Open Profile Vault → **Move to a New Mac** (or Settings). The page walks you through it:
+1. On the old Mac: **Prepare Move** (click *Always Allow* in the macOS popups).
 2. Back up with **Include Profile Vault** ticked.
-3. On the new Mac: install Amnesia, open Profile Vault → **Get Vault from Backup**.
+3. On the new Mac: install Amnesia, open the Move page → **Get Vault from Backup**.
 4. Press **Restore Profiles**, then **Restore Keys**. Chrome, Claude and WhatsApp open with your old logins.
 
 **How do I turn it off?**
 Press *Turn Off* in the app. Your Mac stops being wiped until you turn it back on.
+
+## Uninstall
+
+> [!IMPORTANT]
+> Don't just drag Amnesia to the Trash. Its login agent would stay behind and keep running at every login.
+
+Paste this in Terminal:
+
+```bash
+bash ~/.amnesia/uninstall.sh
+```
+
+It turns off the login agent first (so stopping it can't wipe anything), stops Amnesia, removes the app and checks that nothing is left. Your vault and settings in `~/.amnesia` stay, in case you come back. Your Keep folder is never touched.
+
+- Want everything gone, vault included? Use `bash ~/.amnesia/uninstall.sh --all` (it asks you to type `DELETE` first).
+- Installed with Homebrew? `brew uninstall --cask amnesia` does the same safe steps.
+- No `~/.amnesia` folder? Then Amnesia never ran, and the script isn't needed: just delete the app.
 
 ## Under the hood
 

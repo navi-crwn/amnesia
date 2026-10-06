@@ -15,7 +15,7 @@ cp Info.plist "$APP/Contents/Info.plist"
 
 # Mesin Amnesia ikut di dalam app, jadi app dari GitHub Releases langsung bisa dipakai
 R="$APP/Contents/Resources"; mkdir -p "$R/engine" "$R/bin"
-cp ../clean.sh ../agent.sh ../vault.py ../backup.sh ../keep.example.conf "$R/engine/"
+cp ../clean.sh ../agent.sh ../vault.py ../backup.sh ../uninstall.sh ../keep.example.conf "$R/engine/"
 echo "     getting 7-Zip..."
 SZ="$B/7zip"; mkdir -p "$SZ"
 if curl -fsSL https://github.com/ip7z/7zip/releases/download/24.09/7z2409-mac.tar.xz -o "$SZ/7z.tar.xz" \

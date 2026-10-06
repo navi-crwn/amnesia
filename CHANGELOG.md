@@ -5,6 +5,42 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.9.1 — 2026-10-06
+
+### Added
+- **Safe uninstall: `uninstall.sh`.** Run `bash ~/.amnesia/uninstall.sh` in Terminal. It deletes the login agent file first, so stopping the agent can never start a wipe. Then it stops anything still running, removes the app (also the Homebrew version) and checks that nothing is left. If something is left, it tells you not to log out yet.
+- By default your vault, Keep List and settings in `~/.amnesia` stay, in case you install again. `--all` deletes those too, but only after you type `DELETE` (or `HAPUS`). Your Keep folder is never touched.
+- The app copies `uninstall.sh` into `~/.amnesia`, so it's there even if you installed from the .dmg.
+- `brew uninstall --cask amnesia` now runs the same safe steps.
+- **How to uninstall** is explained in the README ("Uninstall" section), on the website FAQ, in the .dmg's READ ME FIRST, and in the Homebrew message: don't just drag the app to the Trash.
+
+### Fixed
+- The app didn't compile because of a name clash in the screenshot code (`log`).
+
+## v5.9 — 2026-10-06
+
+### Added
+- **Progress bar** for Snapshot, Restore and Save & Log Out. It shows a percentage, so you know how far along it is. The menu bar panel shows the percentage too.
+- **Change the vault password** (Profile Vault, Password button). Your snapshot stays as it is; you no longer have to delete the vault and make a new one.
+- **Choose what goes in the vault.** On the Profile Vault page, tick the apps you want saved (for example, leave out WhatsApp). Snapshots and Save & Log Out only save the ticked apps (`VAULT_SKIP` in settings.conf).
+- **Repeat the panic word** when you set it (in the vault setup and in the Panic Word window), so a typo can't lock you out. Save only works when both match.
+- **Move to a new Mac** now has its own page (from the Profile Vault page or Settings), with a simple 4-step guide: Prepare Move, Back up, Get Vault from Backup, Restore Profiles and Keys.
+- **Quit & Reopen** button next to Full Disk Access (in the tour and in Settings). **The tour remembers where you were**, so after reopening it continues on the same page instead of starting over.
+- **Clear SSH messages.** If a backup can't reach your server, the message says why: the server refused the key (press Connect again), the server looks different (reinstalled?), or it can't be reached right now (tried again later). Changing your server password doesn't break backups, because Amnesia logs in with a key, not the password.
+- If your server was reinstalled, Connect explains it and asks before forgetting the old server identity.
+
+### Changed
+- Snapshot apps now show as a neat grid of chips, instead of text running down the page. The page also says that only the newest snapshot is kept, and that snapshots don't need your password (only Restore does).
+- **"What gets deleted"**: tap anywhere on a group's row to open its list (not just the small arrow). The time now shows when it was really updated (for example "Today 15:20") instead of "0 seconds ago", and the list is only rebuilt if it's more than a minute old.
+- The cloud backup box shows the steps: 1. pick your service (Google Drive, Dropbox, OneDrive, Box, pCloud), 2. press the button to log in.
+
+## v5.8.1 — 2026-10-06
+
+### Fixed
+- `app/screenshots.sh` stopped after 10 screenshots (English only). It now runs one language at a time, so a problem in one doesn't stop the other, and takes the "what gets deleted" screen last, with its list prepared in the background.
+- Notes from the screenshot run go to `~/.amnesia/shots.log`, and the script says how many of the 22 screenshots were made.
+- Removed a harmless "No such file or directory" message from the screenshot script.
+
 ## v5.8 — 2026-10-06
 
 ### Added

@@ -9,7 +9,7 @@ Cara kerja kunci (supaya "Simpan & Logout" tidak perlu ketik password):
 - Restore: password membuka kunci privat -> kunci acak -> profil.
 Password tidak pernah disimpan, dan dikirim ke 7zz lewat stdin (tidak terlihat di `ps`).
 """
-import glob, hashlib, json, os, re, secrets, shutil, subprocess, time
+import glob, hashlib, json, os, re, secrets, shutil, subprocess, sys, time
 
 HOME = os.environ.get("AMNESIA_HOME", os.path.expanduser("~"))
 AMNESIA = os.path.join(HOME, ".amnesia")
@@ -129,6 +129,35 @@ def _7z(args, password, cwd=None):
     return subprocess.run([SEVENZ] + args, input=stdin, capture_output=True, text=True, cwd=cwd)
 
 
+def _progress(pct, step=""):
+    """Kemajuan untuk app (dibaca dari stderr): 'PROGRESS 42 Chrome'."""
+    sys.stderr.write(f"PROGRESS {int(pct)} {step}\n")
+    sys.stderr.flush()
+
+
+def _7z_progress(args, password, cwd=None, start=0, end=100):
+    """Seperti _7z, tapi persen dari 7zz diteruskan ke app (start..end)."""
+    p = subprocess.Popen([SEVENZ] + args + ["-bso0", "-bsp2", "-bse2"], stdin=subprocess.PIPE,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, cwd=cwd)
+    p.stdin.write(((password + "\n") * 2).encode())
+    p.stdin.close()
+    err, last = b"", -1
+    while True:
+        chunk = os.read(p.stderr.fileno(), 4096)
+        if not chunk:
+            break
+        err = (err + chunk)[-20000:]
+        found = re.findall(rb"(\d{1,3})%", chunk)
+        if found:
+            pct = start + (end - start) * min(int(found[-1]), 100) / 100
+            if int(pct) != last:
+                last = int(pct)
+                _progress(pct)
+    p.wait()
+    text = re.sub(r"\s*\d{1,3}%[^\n\x08]*", "", err.decode(errors="replace").replace("\x08", ""))
+    return subprocess.CompletedProcess(p.args, p.returncode, "", text)
+
+
 def _clean_tmp():
     shutil.rmtree(TMP, ignore_errors=True)
 
@@ -165,6 +194,16 @@ def app_paths(name):
 def installed_apps():
     """App yang punya data di Mac ini."""
     return [n for n in APPS if app_paths(n)]
+
+
+def skipped_apps():
+    """App yang kamu matikan di halaman Profile Vault (VAULT_SKIP di settings.conf)."""
+    return [x for x in _setting("VAULT_SKIP", "").split(",") if x]
+
+
+def chosen_apps():
+    skip = skipped_apps()
+    return [n for n in installed_apps() if n not in skip]
 
 
 # ---------------- buat vault ----------------
@@ -224,10 +263,11 @@ def snapshot(names=None):
     """Simpan profil app ke vault. Tidak butuh password."""
     if not exists():
         raise VaultError(T("No vault yet.", "Vault belum dibuat."))
-    names = names or installed_apps()
+    names = names or chosen_apps()
     paths = [p for n in names for p in app_paths(n)]
     if not paths:
         raise VaultError(T("There is no app data to snapshot.", "Tidak ada data app yang bisa di-snapshot."))
+    _progress(0, "quit")
     quit_apps(names)
     key = secrets.token_hex(32)
     new_snap, new_key = F_SNAP + ".new", F_SNAPKEY + ".new"
@@ -235,7 +275,7 @@ def snapshot(names=None):
         if os.path.exists(f):
             os.remove(f)
     args = ["a", "-t7z", "-mx=3", "-mhe=on", "-p", new_snap] + paths + [f"-xr!{x}" for x in EXCLUDE]
-    r = _7z(args, key, cwd=HOME)
+    r = _7z_progress(args, key, cwd=HOME, start=2, end=98)
     if r.returncode not in (0, 1):          # 1 = warning (mis. file terkunci), arsip tetap jadi
         raise VaultError(T("Snapshot failed:\n", "Snapshot gagal:\n") + r.stderr[-300:])
     subprocess.run([OPENSSL, "pkeyutl", "-encrypt", "-pubin", "-inkey", F_PUB,
@@ -308,6 +348,7 @@ def restore(password):
     if not key or not os.path.exists(F_SNAP):
         raise VaultError(T("No snapshot yet. Make one first.", "Belum ada snapshot. Buat snapshot dulu."))
     names = manifest().get("apps", list(APPS))
+    _progress(0, "quit")
     quit_apps(names)
     for n in names:
         for p in app_paths(n):
@@ -316,7 +357,7 @@ def restore(password):
                 shutil.rmtree(full, ignore_errors=True)
             else:
                 os.remove(full)
-    r = _7z(["x", "-y", f"-o{HOME}", F_SNAP], key)
+    r = _7z_progress(["x", "-y", f"-o{HOME}", F_SNAP], key, start=5, end=100)
     if r.returncode != 0:
         raise VaultError(T("Restore failed:\n", "Restore gagal:\n") + r.stderr[-300:])
     return names
@@ -410,6 +451,31 @@ def import_keys(password):
     return sorted({i["svc"].removesuffix(" Safe Storage") for i in items})
 
 
+def change_password(old, new):
+    """Ganti password vault: kunci privat dibuka dengan password lama, lalu dikunci ulang dengan yang baru.
+    Snapshot tidak perlu dibuat ulang (dikunci dengan kunci publik yang sama)."""
+    if len(new) < MIN_PASSWORD:
+        raise VaultError(T(f"The new password needs at least {MIN_PASSWORD} characters.", f"Password baru minimal {MIN_PASSWORD} karakter."))
+    panic = _read_json(F_PANIC, None)
+    if panic and secrets.compare_digest(_hash(new, panic["salt"]), panic["hash"]):
+        raise VaultError(T("The new password can't be the same as the panic word.", "Password baru tidak boleh sama dengan kata panik."))
+    _unlock(old)                         # cek password lama (ikut hitungan salah & kata panik)
+    tmp = _new_tmp()
+    try:
+        r = _7z(["x", "-y", f"-o{tmp}", F_PRIV], old)
+        if r.returncode != 0:
+            raise VaultError(T("Couldn't open the vault key:\n", "Gagal membuka kunci vault:\n") + r.stderr[-300:])
+        new_priv = F_PRIV + ".new"
+        if os.path.exists(new_priv):
+            os.remove(new_priv)
+        r = _7z(["a", "-t7z", "-mhe=on", "-p", new_priv, "private.pem"], new, cwd=tmp)
+        if r.returncode != 0:
+            raise VaultError(T("Couldn't lock the vault key:\n", "Gagal mengunci kunci vault:\n") + r.stderr[-300:])
+        os.replace(new_priv, F_PRIV)
+    finally:
+        _clean_tmp()
+
+
 def change_panic(password, word, full=False):
     _unlock(password)
     if word == password:
@@ -430,7 +496,8 @@ def _cli(argv, stdin):
     out = {}
     if cmd == "status":
         out = {"exists": exists(), "manifest": manifest() or None, "attempts": attempts(),
-               "max": MAX_ATTEMPTS, "min": MIN_PASSWORD, "apps": installed_apps(), "keys": keys_info()}
+               "max": MAX_ATTEMPTS, "min": MIN_PASSWORD, "apps": installed_apps(), "skip": skipped_apps(),
+               "keys": keys_info()}
     elif cmd == "create":
         pw, panic = line(), line()
         create(pw, panic, full)
@@ -438,6 +505,9 @@ def _cli(argv, stdin):
         out = {"apps": snapshot()}
     elif cmd == "restore":
         out = {"apps": restore(line())}
+    elif cmd == "passwd":
+        old, new = line(), line()
+        change_password(old, new)
     elif cmd == "panic":
         pw, word = line(), line()
         change_panic(pw, word, full)

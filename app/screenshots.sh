@@ -14,7 +14,7 @@ done
 
 D="$(mktemp -d)/home"; trap 'rm -rf "$(dirname "$D")"' EXIT
 A="$D/.amnesia"
-mkdir -p "$A" "$D/Keep" "$D/Desktop" "$D/Downloads" "$D/Documents"
+mkdir -p "$A" "$D/Keep" "$D/Desktop" "$D/Downloads" "$D/Documents" "$D/Library/Preferences"
 cp clean.sh agent.sh vault.py backup.sh keep.example.conf "$A/"
 cp keep.example.conf "$A/keep.conf"
 [ -x "$HOME/.amnesia/bin/7zz" ] && { mkdir -p "$A/bin"; cp "$HOME/.amnesia/bin/7zz" "$A/bin/"; }
@@ -46,7 +46,7 @@ for app in /Applications/*.app; do
   case "$bid" in com.apple.*|com.amnesia.*|"") continue ;; esac
   n="$(basename "$app" .app)"; dd="$D/Library/Application Support/$n"
   mkdir -p "$dd" && head -c $((RANDOM * 40)) /dev/zero > "$dd/data" 2>/dev/null
-  echo demo > "$D/Library/Preferences/$bid.plist" 2>/dev/null || { mkdir -p "$D/Library/Preferences"; echo demo > "$D/Library/Preferences/$bid.plist"; }
+  echo demo > "$D/Library/Preferences/$bid.plist"
 done
 PY=/opt/homebrew/bin/python3; [ -x "$PY" ] || PY=/usr/bin/python3
 printf 'demo-password-123\n\n' | AMNESIA_HOME="$D" "$PY" "$A/vault.py" create >/dev/null 2>&1
@@ -54,10 +54,14 @@ AMNESIA_HOME="$D" "$PY" "$A/vault.py" snapshot >/dev/null 2>&1
 
 echo "Taking screenshots (about 1 minute, a Dock icon may blink)..."
 mkdir -p "$OUT"
-AMNESIA_HOME="$D" "$APPBIN" --shots "$OUT" >/dev/null 2>&1 &
-PID=$!
-for _ in $(seq 1 240); do kill -0 $PID 2>/dev/null || break; sleep 1; done
-kill $PID 2>/dev/null
+LOG="$HOME/.amnesia/shots.log"; : > "$LOG"
+for L in en id; do                   # 1 bahasa per jalan: kalau satu macet, yang lain tetap jadi
+  AMNESIA_HOME="$D" "$APPBIN" --shots "$OUT" --lang "$L" >>"$LOG" 2>&1 &
+  PID=$!
+  for _ in $(seq 1 150); do kill -0 $PID 2>/dev/null || break; sleep 1; done
+  kill -0 $PID 2>/dev/null && { echo "shots: $L timed out" >>"$LOG"; kill $PID 2>/dev/null; }
+  wait $PID 2>/dev/null; echo "shots: $L exit code $?" >>"$LOG"
+done
 N=$(ls "$OUT"/en/*.png "$OUT"/id/*.png 2>/dev/null | wc -l | tr -d ' ')
-echo "Done: $N screenshots in docs/screens/en and docs/screens/id"
+echo "Done: $N of 22 screenshots in docs/screens/en and docs/screens/id (log: ~/.amnesia/shots.log)"
 exit 0

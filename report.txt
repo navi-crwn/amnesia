@@ -13,7 +13,9 @@ HAPUS  ~/Library/Application Support/default.store-shm
 HAPUS  ~/Library/Application Support/default.store-wal
 HAPUS  ~/Library/Application Support/google-heartbeat-storage
 HAPUS  ~/Library/Application Support/homeenergyd
+HAPUS  ~/Library/Application Support/iCloud
 HAPUS  ~/Library/Application Support/networkserviceproxy
+HAPUS  ~/Library/Containers/cc.ffitch.shottr
 HAPUS  ~/Library/Containers/com.apple.AMPArtworkAgent
 HAPUS  ~/Library/Containers/com.apple.AMPDeviceDiscoveryAgent
 HAPUS  ~/Library/Containers/com.apple.AMSUIPaymentViewService
@@ -639,6 +641,7 @@ HAPUS  ~/Library/Containers/com.microsoft.rdc.macos
 HAPUS  ~/Library/Containers/com.microsoft.rdc.macos.qlx
 HAPUS  ~/Library/Containers/io.macfuse.app.fsmodule.macfuse
 HAPUS  ~/Library/Containers/io.macfuse.app.fsmodule.macfuse-local
+HAPUS  ~/Library/Containers/net.whatsapp.WhatsApp
 HAPUS  ~/Library/Containers/net.whatsapp.WhatsApp.Intents
 HAPUS  ~/Library/Containers/net.whatsapp.WhatsApp.ServiceExtension
 HAPUS  ~/Library/Containers/net.whatsapp.WhatsApp.WAAppKitBridgeService
@@ -651,6 +654,7 @@ HAPUS  ~/Library/Group Containers/com.apple.Home.group
 HAPUS  ~/Library/Group Containers/com.apple.MailPersonaStorage
 HAPUS  ~/Library/Group Containers/com.apple.PreviewLegacySignaturesConversion
 HAPUS  ~/Library/Group Containers/com.apple.bird
+HAPUS  ~/Library/Group Containers/com.apple.icloudwebd
 HAPUS  ~/Library/Group Containers/com.apple.poirot.poirot_tool
 HAPUS  ~/Library/Group Containers/com.apple.siri.ODDExperimentationExtension
 HAPUS  ~/Library/Group Containers/com.apple.siri.ODDIPoirotMetricsExtension
@@ -732,6 +736,9 @@ HAPUS  ~/Library/Group Containers/group.com.apple.weather
 HAPUS  ~/Library/Group Containers/group.com.facebook.family
 HAPUS  ~/Library/Group Containers/group.is.workflow.my.app
 HAPUS  ~/Library/Group Containers/group.is.workflow.shortcuts
+HAPUS  ~/Library/Group Containers/group.net.whatsapp.WhatsApp.private
+HAPUS  ~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared
+HAPUS  ~/Library/Group Containers/group.net.whatsapp.WhatsAppSMB.shared
 HAPUS  ~/Library/Group Containers/group.net.whatsapp.family
 HAPUS  ~/Library/Group Containers/group.tvappservices.container
 HAPUS  ~/Library/Cookies
@@ -796,7 +803,6 @@ HAPUS  ~/Library/Preferences/com.google.gmp.measurement.monitor.plist
 HAPUS  ~/Library/Preferences/com.microsoft.VSCode.plist
 HAPUS  ~/Library/Preferences/com.moonshot.kimichat.plist
 HAPUS  ~/Library/Preferences/com.qtproject.plist
-HAPUS  ~/Library/Preferences/com.todesktop.230313mzl4w4u92.plist
 HAPUS  ~/Library/Preferences/corespotlightd.plist
 HAPUS  ~/Library/Preferences/diagnostics_agent.plist
 HAPUS  ~/Library/Preferences/familycircled.plist
@@ -854,18 +860,23 @@ HAPUS  ~/Library/Caches/com.apple.feedbacklogger
 HAPUS  ~/Library/Caches/com.apple.geoanalyticsd
 HAPUS  ~/Library/Caches/com.apple.helpd
 HAPUS  ~/Library/Caches/com.apple.homed
+HAPUS  ~/Library/Caches/com.apple.iCloudNotificationAgent
+HAPUS  ~/Library/Caches/com.apple.icloudwebd
 HAPUS  ~/Library/Caches/com.apple.itunescloudd
 HAPUS  ~/Library/Caches/com.apple.managedappdistributionagent
 HAPUS  ~/Library/Caches/com.apple.nsservicescache.plist
 HAPUS  ~/Library/Caches/com.apple.nsurlsessiond
 HAPUS  ~/Library/Caches/com.apple.parsecd
 HAPUS  ~/Library/Caches/com.apple.passd
+HAPUS  ~/Library/Caches/com.apple.preferencepanes.usercache
 HAPUS  ~/Library/Caches/com.apple.proactive.eventtracker
 HAPUS  ~/Library/Caches/com.apple.python
 HAPUS  ~/Library/Caches/com.apple.remindd
 HAPUS  ~/Library/Caches/com.apple.sirittsd
 HAPUS  ~/Library/Caches/com.apple.storekitagent
+HAPUS  ~/Library/Caches/com.apple.systemsettings.menucache
 HAPUS  ~/Library/Caches/com.apple.tipsd
+HAPUS  ~/Library/Caches/com.apple.translationd
 HAPUS  ~/Library/Caches/com.tcltk.appnames
 HAPUS  ~/Library/Caches/familycircled
 HAPUS  ~/Library/Caches/google-sdks-events
@@ -891,6 +902,7 @@ HAPUS  ~/Desktop/Screenshot 2026-10-06 at 13.07.33.png
 HAPUS  ~/Desktop/Screenshot 2026-10-06 at 15.26.07.png
 HAPUS  ~/Desktop/Screenshot 2026-10-06 at 17.32.29.png
 HAPUS  ~/Desktop/Screenshot 2026-10-06 at 17.32.38.png
+HAPUS  ~/Desktop/Screenshot 2026-10-06 at 22.02.18.png
 HAPUS  ~/Downloads/.DS_Store
 HAPUS  ~/Downloads/.localized
 HAPUS  ~/Downloads/amnesia-v5.zip
@@ -902,4 +914,4 @@ HAPUS  ~/Documents/kimi
 HAPUS  ~/Pictures/Photos Library.photoslibrary
 HAPUS  ~/Movies/TV
 HAPUS  ~/Music/Music
---- dry-run (logout): 904 items would be deleted. Nothing was deleted. ---
+--- dry-run (logout): 916 items would be deleted. Nothing was deleted. ---

@@ -11,6 +11,7 @@
   <a href="https://navi-crwn.github.io/amnesia-mac/">Website</a> ·
   <a href="#cara-pasang">Cara pasang</a> ·
   <a href="#pertanyaan-umum">FAQ</a> ·
+  <a href="#cara-hapus">Cara hapus</a> ·
   <a href="CHANGELOG.id.md">Changelog</a> ·
   <a href="TERMS.id.md">Ketentuan</a>
 </p>
@@ -142,6 +143,10 @@ Aman. Amnesia menahan sebentar untuk menunjukkan apa yang akan dihapus, lalu men
 
 **Kalau lupa password vault?**
 Vault tidak bisa dibuka siapa pun, termasuk kamu. Hapus vault, buat yang baru, lalu login ulang ke app-app kamu.
+Kalau masih ingat dan cuma mau ganti: Profile Vault → **Password**. Snapshot tetap aman.
+
+**Snapshot minta password?**
+Tidak. Vault mengunci snapshot dengan kunci yang hanya bisa dibuka password kamu, jadi menyimpan tidak perlu password; yang perlu hanya **Restore**. Hanya snapshot terbaru yang disimpan. App mana yang ikut disimpan bisa kamu pilih lewat centang di halaman Profile Vault.
 
 **Apakah data saya dikirim ke internet?**
 Tidak. Amnesia tidak punya server, tidak pakai akun, tidak melacak dan tidak mengumpulkan data, jadi memang tidak ada yang dikirim. Satu-satunya pengecualian: backup ke server atau cloud yang **kamu** atur sendiri, dan itu pun cuma file `.7z` terkunci, langsung dari Mac kamu ke tempat yang kamu pilih. Vault dan Keep List pribadi kamu juga tidak ikut ke GitHub.
@@ -151,7 +156,9 @@ Untuk membersihkan Desktop, Documents dan Downloads, macOS biasanya minta izin p
 
 **Backup online, apa yang perlu disiapkan?**
 - *Server SSH:* isi `user@alamat` atau `user@alamat:folder`, ketik password server **sekali**, tekan **Hubungkan**. Amnesia membuat kunci SSH dan memasangnya di server, tanpa Terminal. Password tidak disimpan; sesudahnya backup login pakai kunci. Sudah punya kunci yang jalan? Kosongkan saja password-nya. Tanpa folder, backup masuk ke `~/amnesia-backup` di server (app menampilkan path lengkapnya setelah terhubung).
-- *Cloud:* pilih Google Drive, Dropbox, OneDrive, Box atau pCloud, tekan **Hubungkan**, login di jendela kecil, selesai. Tidak memakai Chrome atau cookie browser kamu. Amnesia memasang rclone sendiri (butuh Homebrew).
+- *Cloud:* pilih dulu layanannya (Google Drive, Dropbox, OneDrive, Box atau pCloud) di daftar, lalu tekan **Hubungkan**, login di jendela kecil, selesai. Tidak memakai Chrome atau cookie browser kamu. Amnesia memasang rclone sendiri (butuh Homebrew).
+
+Kalau nanti password server diganti, backup tetap jalan (pakai kunci). Backup baru gagal kalau server diinstal ulang atau kuncinya dihapus, dan pesannya akan menyuruh tekan **Hubungkan** lagi.
 
 Catatan jujur: setiap backup dikirim utuh (bukan hanya bagian yang berubah), karena filenya terenkripsi. Backup lama tidak dihapus otomatis, jadi sesekali bersihkan sendiri di tujuan.
 
@@ -159,13 +166,31 @@ Catatan jujur: setiap backup dikirim utuh (bukan hanya bagian yang berubah), kar
 Pakai app seperti Keka, atau Terminal: `7zz x amnesia_backup_xxx.7z`, lalu ketik password backup.
 
 **Pindah ke Mac baru, langkahnya?**
-1. Di Mac lama: Profile Vault → **Siapkan Pindah Mac** (klik *Always Allow* di dialog macOS).
+Buka Profile Vault → **Pindah Mac** (atau dari Pengaturan). Halamannya memandu langkah demi langkah:
+1. Di Mac lama: **Siapkan Pindah** (klik *Always Allow* di dialog macOS).
 2. Backup dengan **Sertakan Profile Vault** dicentang.
-3. Di Mac baru: pasang Amnesia, buka Profile Vault → **Ambil Vault dari Backup**.
+3. Di Mac baru: pasang Amnesia, buka halaman Pindah Mac → **Ambil Vault dari Backup**.
 4. **Restore Profil**, lalu **Pulihkan Kunci**. Chrome, Claude, dan WhatsApp terbuka dengan login lama.
 
 **Bagaimana mematikannya?**
 Tekan *Matikan* di app. Mac berhenti dibersihkan sampai kamu aktifkan lagi.
+
+## Cara hapus
+
+> [!IMPORTANT]
+> Jangan cuma buang Amnesia ke Trash. Agent login-nya akan tertinggal dan tetap jalan setiap login.
+
+Tempel ini di Terminal:
+
+```bash
+bash ~/.amnesia/uninstall.sh
+```
+
+Script ini mematikan agent login lebih dulu (supaya waktu dihentikan tidak ada yang terhapus), menghentikan Amnesia, menghapus app, lalu mengecek tidak ada yang tersisa. Vault dan pengaturan di `~/.amnesia` tetap disimpan, kalau nanti mau pasang lagi. Folder Keep kamu tidak pernah disentuh.
+
+- Mau hapus semuanya, termasuk vault? Pakai `bash ~/.amnesia/uninstall.sh --all` (kamu diminta mengetik `HAPUS` dulu).
+- Pasang lewat Homebrew? `brew uninstall --cask amnesia` menjalankan langkah aman yang sama.
+- Tidak ada folder `~/.amnesia`? Berarti Amnesia belum pernah jalan, jadi script tidak perlu: hapus app-nya saja.
 
 ## Untuk yang penasaran (teknis)
 
