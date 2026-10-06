@@ -1,0 +1,12 @@
+vault/
+*.log
+backup_checksums.txt
+pause_once
+.just_activated
+__pycache__/
+app/build/
+.DS_Store
+keep.conf
+*.md
+!README.md
+!CHANGELOG.md
