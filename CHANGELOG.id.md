@@ -5,6 +5,45 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.10 — 2026-10-07
+
+### Ditambahkan
+- **"Akun & data Apple" di Keep List.** Kartu baru di paling atas Keep List (dan di halaman "Apa yang disimpan?" setelah tur) menyimpan login iCloud / Apple ID, Foto, Notes, Mail, Calendar & Reminders, Kontak, Messages, Shortcuts dan pengaturan git. Semua menyala secara default. Tiap item bisa dimatikan (Amnesia tanya dulu). Disimpan di Keep List, bukan vault, karena akun Apple terikat ke Mac ini dan Foto bisa sangat besar (`APPLE_KEEP` di settings.conf).
+- **Tambah file atau folder apa saja ke Keep List.** "Tambah Folder atau File" sekarang punya tombol "Pilih di Finder…" (file tersembunyi ikut tampil) dan kolom untuk mengetik path, jadi file seperti `Library/Preferences/MobileMeAccounts.plist` juga bisa ditambahkan.
+- **Snapshot per app.** Setiap app punya snapshot sendiri, jadi menyimpan satu app tidak pernah menimpa app lain. Halaman vault menampilkan waktu dan ukuran snapshot terakhir per app. Snapshot lama (1 file) tetap dibaca, dan dibersihkan setelah semua app punya snapshot sendiri.
+- **Folder di vault.** Tambahkan folder (dokumen, PDF, musik, video) ke vault di halaman Profile Vault. Ada peringatan kalau folder lebih dari 1 GB (`VAULT_FOLDERS` di settings.conf).
+- **Ukuran sebelum menyimpan.** Halaman vault menampilkan ukuran tiap app dan totalnya, dan hanya app besar (500 MB atau lebih) yang diberi peringatan "bisa lama".
+- **"Hapus Snapshot"** hanya menghapus snapshot yang tersimpan. Vault dan password tetap. "Hapus Vault" tetap menghapus semuanya.
+- **Tombol Batal** untuk Snapshot, Restore dan Backup (di jendela dan di panel menu bar). Snapshot atau backup sebelumnya tetap utuh, dan file setengah jadi dihapus.
+- **Cek setelah Restore.** Setelah restore muncul daftar ✅ atau ❌ per app (misalnya apakah `gh` masih login), plus baris "cek sendiri" untuk login web di Chrome.
+- **Progress backup untuk semua tujuan** (flashdisk, folder, server, cloud): tahap ("1/2 Mengunci file…", "2/2 Mengunggah…"), persen, kecepatan, sisa waktu, dan tombol Batal. Kalau tidak ada kemajuan selama 10 menit, backup berhenti sendiri dan memberi tahu.
+- **Backup ke folder mana saja** (misalnya drive jaringan yang sudah terpasang), selain flashdisk, server dan cloud.
+- **Server: kolom Port** (default 22). Format `user@alamat:port` juga bisa.
+- **Server: Hubungkan mengecek folder.** Folder backup dibuat, dites bisa ditulis, dan path lengkapnya di server ditampilkan. Kalau folder butuh izin admin (sudo), pesannya jelas dan menyarankan folder di home. Amnesia tidak pernah memakai sudo.
+- **Server: tes kecepatan saat Hubungkan**, lalu perkiraan lama backup. Backup yang lambat biasanya karena upload internet yang pelan, bukan macet.
+- **Google Drive lewat app Google Drive.** Kalau Google Drive for Desktop terpasang, Amnesia menyalin backup ke foldernya dan app itu yang mengunggah. Kalau belum terpasang, ada tombol download. Client ID Google milikmu sendiri ada di "Lanjutan", dengan panduan langkah demi langkah.
+- **Panduan Backup di dalam app**: langkah per tujuan, folder yang aman, perkiraan lama, dan cara mengecek file backup.
+- **Tombol pintas "Yang akan dihapus"** di halaman utama.
+- Catatan login cloud ditulis ke `~/.amnesia/cloud.log` (tanpa password atau token), untuk membantu mencari tahu kenapa login gagal.
+
+### Diubah
+- **"Yang akan dihapus" lebih mudah dibaca.** Baris memakai ikon app asli, ikon macOS untuk item sistem, dan ikon jenis file untuk file. Thumbnail asli hanya dibuat saat kelompok dibuka, dan hanya untuk Desktop, Downloads, Documents dan Pictures. Tiap baris punya nama jelas (misalnya "Chrome · cache"); path lengkap muncul saat diklik atau disorot.
+- Kelompok berdasarkan arti: "Dipulihkan dari vault", "File kamu", "Akun & sinkronisasi Apple", "Data & setting app", "Keychain", "Riwayat, cache & log" dan "Data sistem macOS (dibuat ulang otomatis)". Kelompok sistem disembunyikan kecuali kamu nyalakan.
+- Pintasan buatan Amnesia (`~/Desktop/Keep`, `~/Desktop/Amnesia.app`) tidak ditampilkan lagi, karena dibuat ulang otomatis.
+- **Kotak Cloud 3 langkah:** 1. pilih layanan, 2. hubungkan ("✓ Terhubung sebagai …"), 3. tulis nama folder saja. Istilah "remote" dan "rclone" pindah ke "Lanjutan".
+- **Progress snapshot per app**: "Menyimpan OpenCode… 2 dari 3". Teksnya selalu sesuai app yang sedang disimpan.
+- **Akses Disk Penuh dicek sekali, sebelum Snapshot**, supaya macOS tidak bertanya di tengah proses. Tutup & Buka Lagi diblokir selama ada proses jalan, dan app menjelaskan cara membetulkan kalau terlanjur menekan "Limit Access".
+- **Buat vault:** kolom "Ulangi password" baru muncul setelah mulai mengetik, dan memberi tahu kalau keduanya tidak sama.
+- **Ganti password:** password sekarang dulu, lalu password baru, lalu ulangi. Password baru yang sama dengan yang lama ditolak.
+- **Pesan backup** menyebut jam dan tujuan, dengan pesan jelas untuk dibatalkan ("Backup dibatalkan. Backup sebelumnya tetap aman."), dihentikan, macet dan gagal, bukan "exited with code 15".
+- **Popup menempel di jendela Amnesia**, bukan di tengah layar, dan jendela mengingat posisinya.
+- Kotak di halaman utama sedikit lebih kecil dan halamannya bisa di-scroll, supaya semua muat.
+
+### Diperbaiki
+- Dropbox dan OneDrive kadang gagal dengan pesan "isn't connected". Kalau jendela login tidak selesai, Amnesia sekarang menawarkan login lewat browser biasa. (Belum pasti tuntas; kabari kalau masih gagal.)
+- `app/screenshots.sh` tidak memotret "Yang akan dihapus" karena macOS menutup app saat daftarnya disiapkan. Penutupan otomatis sekarang dimatikan selama screenshot. Halaman Pindah ke Mac baru juga ikut dipotret (total 28 screenshot).
+- Membatalkan backup bisa meninggalkan 7-Zip tetap jalan di belakang.
+
 ## v5.9.1 — 2026-10-06
 
 ### Ditambahkan

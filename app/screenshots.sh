@@ -63,5 +63,5 @@ for L in en id; do                   # 1 bahasa per jalan: kalau satu macet, yan
   wait $PID 2>/dev/null; echo "shots: $L exit code $?" >>"$LOG"
 done
 N=$(ls "$OUT"/en/*.png "$OUT"/id/*.png 2>/dev/null | wc -l | tr -d ' ')
-echo "Done: $N of 22 screenshots in docs/screens/en and docs/screens/id (log: ~/.amnesia/shots.log)"
+echo "Done: $N of 28 screenshots in docs/screens/en and docs/screens/id (log: ~/.amnesia/shots.log)"
 exit 0

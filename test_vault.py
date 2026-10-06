@@ -28,14 +28,19 @@ try:
     expect_error(lambda: v.create("pendek"), "at least")
     v.create(PW, panic_word="deletesemua")
     assert v.snapshot() == ["Chrome", "Claude", "OpenCode", "Claude Code", "WhatsApp"]
-    # vault tidak boleh berisi teks asli
-    raw = open(v.F_SNAP, "rb").read()
+    # vault tidak boleh berisi teks asli (1 arsip per app)
+    raw = open(v._app_files("Chrome")[0], "rb").read()
     assert b"login-gmail" not in raw and b"Cookies" not in raw
+    sz = v.sizes()
+    assert set(sz) == {"Chrome", "Claude", "OpenCode", "Claude Code", "WhatsApp"} and all(x >= 0 for x in sz.values())
     # simulasi amnesia: data hilang
     shutil.rmtree(os.path.join(T, "Library")); shutil.rmtree(os.path.join(T, ".local")); os.remove(os.path.join(T, ".claude.json"))
     # salah 1x, lalu benar -> counter reset
     expect_error(lambda: v.restore("salah-salah-salah"), "Tries left: 2")
-    assert v.restore(PW) == ["Chrome", "Claude", "OpenCode", "Claude Code", "WhatsApp"] and v.attempts() == 0
+    names, checks = v.restore(PW)
+    assert names == ["Chrome", "Claude", "OpenCode", "Claude Code", "WhatsApp"] and v.attempts() == 0
+    assert all(c["ok"] for c in checks), checks
+    assert not os.path.exists(v.F_STAGE)
     assert open(os.path.join(T, "Library/Application Support/Google/Chrome/Default/Cookies")).read() == "login-gmail"
     assert open(os.path.join(T, ".local/share/opencode/auth.json")).read() == "token-opencode"
     assert open(os.path.join(T, ".claude.json")).read() == "token-claude-code"
@@ -85,7 +90,93 @@ try:
     expect_error(lambda: v.change_password(PW, "pendek"), "12")
     v.change_password(PW, "password-baru-123")
     expect_error(lambda: v.check_password(PW), "Tries left")
+    expect_error(lambda: v.change_password("password-baru-123", "password-baru-123"), "same")
     v.restore("password-baru-123")
+
+    # --- v5.10: snapshot per app tidak saling menimpa ---
+    shutil.rmtree(v.VAULT, ignore_errors=True)
+    open(os.path.join(v.AMNESIA, "settings.conf"), "w").close()
+    mk("Library/Application Support/Claude/x.json", "claude-1")
+    mk(".config/gh/hosts.yml", "gh-1")
+    v.create(PW); v.snapshot()
+    t1 = v.manifest()["per_app"]["GitHub CLI"]
+    mk("Library/Application Support/Claude/x.json", "claude-2")
+    mk(".config/gh/hosts.yml", "gh-2")
+    assert v.snapshot(["Claude"]) == ["Claude"]
+    m = v.manifest()
+    assert "GitHub CLI" in m["apps"] and m["per_app"]["GitHub CLI"] == t1, "other apps must stay"
+    mk(".config/gh/hosts.yml", "gh-3")
+    v.restore(PW)
+    assert open(os.path.join(T, "Library/Application Support/Claude/x.json")).read() == "claude-2"
+    assert open(os.path.join(T, ".config/gh/hosts.yml")).read() == "gh-1"
+
+    # restore yang gagal di tengah: data sekarang tetap utuh
+    mk("Library/Application Support/Claude/x.json", "sekarang")
+    arc = v._app_files("GitHub CLI")[0]
+    good = open(arc, "rb").read()
+    open(arc, "wb").write(b"rusak")
+    try:
+        v.restore(PW)
+        raise AssertionError("broken archive must fail")
+    except v.VaultError:
+        pass
+    assert open(os.path.join(T, "Library/Application Support/Claude/x.json")).read() == "sekarang"
+    assert not os.path.exists(v.F_STAGE)
+    open(arc, "wb").write(good)
+
+    # folder pilihan ikut vault
+    mk("Documents/PDF/buku.pdf", "isi-pdf")
+    with open(os.path.join(v.AMNESIA, "settings.conf"), "a") as f:
+        f.write("VAULT_FOLDERS=Documents/PDF,../luar,.amnesia\n")
+    assert v.vault_folders() == ["Documents/PDF"]
+    assert "~/Documents/PDF" in v.snapshot(["~/Documents/PDF"])
+    shutil.rmtree(os.path.join(T, "Documents/PDF"))
+    v.restore(PW)
+    assert open(os.path.join(T, "Documents/PDF/buku.pdf")).read() == "isi-pdf"
+
+    # hapus snapshot saja: vault & password tetap
+    v.delete_snapshot()
+    assert v.exists() and v.manifest() == {} and not os.path.exists(v.F_APPDIR)
+    v.check_password(PW)
+    expect_error(lambda: v.restore(PW), "No snapshot")
+
+    # snapshot lama (v5.9, 1 arsip) tetap bisa di-restore, lalu dibuang setelah semua app punya arsip sendiri
+    key = "a" * 64
+    tmpd = tempfile.mkdtemp()
+    os.makedirs(os.path.join(tmpd, ".config/gh")); open(os.path.join(tmpd, ".config/gh/hosts.yml"), "w").write("gh-lama")
+    v._7z(["a", "-t7z", "-mhe=on", "-p", v.F_SNAP, ".config/gh"], key, cwd=tmpd)
+    shutil.rmtree(tmpd)
+    subprocess.run([v.OPENSSL, "pkeyutl", "-encrypt", "-pubin", "-inkey", v.F_PUB, "-pkeyopt", "rsa_padding_mode:oaep",
+                    "-out", v.F_SNAPKEY], input=key.encode(), check=True, capture_output=True)
+    v._write_json(v.F_MANIFEST, {"apps": ["GitHub CLI"], "time": "2026-10-01 10:00", "size_mb": 0.1})
+    assert v.manifest()["apps"] == ["GitHub CLI"]
+    v.restore(PW)
+    assert open(os.path.join(T, ".config/gh/hosts.yml")).read() == "gh-lama"
+    v.snapshot(["GitHub CLI"])
+    assert not os.path.exists(v.F_SNAP), "old archive is dropped once every app has its own"
+    # tombol Batal (SIGTERM) saat snapshot: berhenti rapi, snapshot lama utuh, tidak ada file setengah jadi
+    import signal, time as _t, json as _j
+    mk("Library/Application Support/Claude/x.json", "claude-ok")
+    v.snapshot(["Claude"])
+    before = open(v._app_files("Claude")[0], "rb").read()
+    big = os.path.join(T, "Library/Application Support/Claude/big.bin")
+    with open(big, "wb") as f:
+        f.write(os.urandom(60 * 1048576))
+    env = dict(os.environ)
+    p = subprocess.Popen([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "vault.py"),
+                          "snapshot", "Claude"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+    while True:                                  # tunggu sampai 7zz benar-benar jalan
+        line = p.stderr.readline().decode()
+        if line.startswith("PROGRESS") and "save" in line:
+            break
+    _t.sleep(0.3)
+    p.send_signal(signal.SIGTERM)
+    out, _ = p.communicate(timeout=30)
+    res = _j.loads(out.decode().strip().splitlines()[-1])
+    assert res == {"ok": False, "error": "CANCELLED"}, res
+    assert open(v._app_files("Claude")[0], "rb").read() == before, "old snapshot must stay"
+    assert not [f for f in os.listdir(v.F_APPDIR) if f.endswith(".new")], "no half-written files"
+    os.remove(big)
     print("OK: all vault tests passed")
 finally:
     shutil.rmtree(T)

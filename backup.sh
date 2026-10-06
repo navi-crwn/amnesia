@@ -4,7 +4,11 @@
 #   backup.sh [--auto]                  buat backup .7z terenkripsi lalu kirim ke tujuan
 #   backup.sh --restore-vault FILE      ambil Profile Vault dari file backup (untuk Mac baru)
 # Password backup selalu dibaca dari stdin (1 baris), tidak pernah lewat argumen.
-# Tujuan diatur di settings.conf: BACKUP_DEST = drive | ssh | rclone
+# Tujuan diatur di settings.conf: BACKUP_DEST = drive | ssh | rclone | folder
+#   folder = folder biasa di Mac, mis. folder Google Drive (app Google Drive for Desktop yang mengunggah)
+# Kemajuan ditulis ke stderr untuk app:  PROGRESS <persen> <tahap> <n/total> <byte selesai> <byte total>
+# Dibatalkan (SIGTERM dari tombol Batal): semua proses anak ikut dihentikan, file setengah jadi dihapus,
+# backup.log tidak diubah (backup sebelumnya tetap tercatat), keluar dengan kode 130.
 # BACKUP_FOLDERS: daftar dipisah koma. "@keep" = folder Keep, lainnya relatif ke home atau path lengkap.
 # ============================================
 set -uo pipefail
@@ -53,46 +57,142 @@ done
 NAME="amnesia_backup_$(date +%Y%m%d_%H%M).7z"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 OUT="$TMP/$NAME"
-printf '%s\n%s\n' "$PW" "$PW" | "$SEVENZ" a -t7z -m0=lzma2 -mx=5 -mhe=on -p -bso0 -bsp0 "$OUT" "${items[@]}" \
-    '-xr!node_modules' '-xr!.DS_Store' '-xr!.tmp' >/dev/null 2>"$TMP/err"
-rc=$?
-{ [ $rc -le 1 ] && [ -f "$OUT" ]; } || fail "$(t "7zz failed" "7zz gagal") ($rc) $(tail -c 200 "$TMP/err")"
+PARTIAL=""; REMOTE_CLEAN=()
+
+# ---------- Batal: hentikan semua anak proses (7zz, cp, rsync, ssh, rclone) ----------
+killtree() { local c; for c in $(pgrep -P "$1" 2>/dev/null); do killtree "$c"; done; kill -TERM "$1" 2>/dev/null; }
+on_cancel() {
+    trap '' TERM INT HUP
+    local c; for c in $(pgrep -P $$ 2>/dev/null); do killtree "$c"; done
+    # anak yang induknya sudah mati (mis. "pkill -f backup.sh" dari Terminal) dikenali dari file sementara ini
+    pkill -TERM -f "$TMP/" 2>/dev/null
+    [ -n "$PARTIAL" ] && rm -f "$PARTIAL"
+    [ ${#REMOTE_CLEAN[@]} -gt 0 ] && ssh "${REMOTE_CLEAN[@]}" >/dev/null 2>&1
+    echo "CANCELLED" >&2
+    exit 130
+}
+trap on_cancel TERM INT HUP
+
+progress() { echo "PROGRESS $1 $2 $3 ${4:-0} ${5:-0}" >&2; }
+fsize() { local n; n="$( { wc -c <"$1"; } 2>/dev/null | tr -d ' ')"; echo "${n:-0}"; }
+
+# persen dari 7zz (-bsp1: angka ditimpa pakai backspace)
+pct7z() {
+    local chunk last=-1
+    while IFS= read -r -d $'\b' chunk || [ -n "$chunk" ]; do
+        if [[ "$chunk" =~ ([0-9]{1,3})% ]] && [ "${BASH_REMATCH[1]}" != "$last" ]; then
+            last="${BASH_REMATCH[1]}"; progress "$last" compress 1/2
+        fi
+    done
+}
+# persen & byte dari rsync --progress (baris ditimpa pakai \r)
+pctrsync() {
+    local line last=-1 sec=-1 b
+    while IFS= read -r -d $'\r' line || [ -n "$line" ]; do
+        # dilaporkan saat persen berubah, atau tiap detik (supaya kecepatan & "masih jalan" terlihat)
+        if [[ "$line" =~ ^[[:space:]]*([0-9,.]+)[[:space:]]+([0-9]{1,3})% ]] \
+           && { [ "${BASH_REMATCH[2]}" != "$last" ] || [ "$SECONDS" != "$sec" ]; }; then
+            last="${BASH_REMATCH[2]}"; sec="$SECONDS"; b="${BASH_REMATCH[1]//[,.]/}"; progress "$last" upload 2/2 "$b" "$TOTAL"
+        fi
+    done
+}
+# persen dari rclone --stats-one-line
+pctrclone() {
+    local line last
+    while IFS= read -r line; do
+        if [[ "$line" =~ ([0-9]{1,3})%, ]]; then        # rclone menulis 1 baris tiap detik
+            last="${BASH_REMATCH[1]}"; progress "$last" upload 2/2 $((TOTAL * last / 100)) "$TOTAL"
+        else
+            echo "$line" >>"$TMP/up"
+        fi
+    done
+}
+# salin file sambil melaporkan ukuran yang sudah tersalin
+copy_progress() {   # sumber tujuan
+    PARTIAL="$2.part"
+    cp "$1" "$PARTIAL" & local cpid=$!
+    while kill -0 "$cpid" 2>/dev/null; do
+        local d; d="$(fsize "$PARTIAL")"; progress $((d * 100 / (TOTAL > 0 ? TOTAL : 1))) copy 2/2 "$d" "$TOTAL"
+        sleep 1
+    done
+    wait "$cpid" && mv -f "$PARTIAL" "$2" && PARTIAL=""
+}
+
+# ---------- 1/2 Kunci (kompres + enkripsi) ----------
+progress 0 compress 1/2
+( printf '%s\n%s\n' "$PW" "$PW" | "$SEVENZ" a -t7z -m0=lzma2 -mx=5 -mhe=on -p -bso0 -bse2 -bsp1 "$OUT" "${items[@]}" \
+    '-xr!node_modules' '-xr!.DS_Store' '-xr!.tmp' 2>"$TMP/err" | pct7z
+  echo "${PIPESTATUS[1]}" >"$TMP/rc" ) &
+wait $!
+rc="$(cat "$TMP/rc" 2>/dev/null || echo 9)"
+{ [ "$rc" -le 1 ] && [ -f "$OUT" ]; } || fail "$(t "7zz failed" "7zz gagal") ($rc) $(tail -c 200 "$TMP/err")"
 SHA="$(shasum -a 256 "$OUT" 2>/dev/null || sha256sum "$OUT")"; SHA="${SHA%% *}"
 SIZE="$(du -m "$OUT" | cut -f1)"
+TOTAL="$(fsize "$OUT")"
 
-# ---------- Kirim ke tujuan ----------
+# ---------- 2/2 Kirim ke tujuan ----------
 DEST="$(cfg BACKUP_DEST)"; DEST="${DEST:-drive}"
 case "$DEST" in
     drive)
         D="$(cfg BACKUP_DRIVE)"; T="$VOLUMES/$D"
         { [ -n "$D" ] && [ -d "$T" ] && [ -w "$T" ]; } || fail "$(t "drive \"$D\" is not plugged in" "drive \"$D\" tidak terpasang")"
-        cp "$OUT" "$T/" || fail "$(t "couldn't copy to $D" "gagal menyalin ke $D")"
+        copy_progress "$OUT" "$T/$NAME" || fail "$(t "couldn't copy to $D" "gagal menyalin ke $D")"
         WHERE="$T" ;;
+    folder)
+        D="$(cfg BACKUP_LOCAL)"; case "$D" in "~/"?*) D="$H/${D#\~/}" ;; esac
+        { [ -n "$D" ] && [ -d "$(dirname "$D")" ]; } || fail "$(t "the folder \"$D\" can't be found (is the Google Drive app running?)" "folder \"$D\" tidak ditemukan (app Google Drive sudah jalan?)")"
+        mkdir -p "$D" 2>/dev/null && [ -w "$D" ] || fail "$(t "can't write to \"$D\"" "tidak bisa menulis ke \"$D\"")"
+        copy_progress "$OUT" "$D/$NAME" || fail "$(t "couldn't copy to $D" "gagal menyalin ke $D")"
+        WHERE="$D" ;;
     ssh)
         R="$(cfg BACKUP_SSH)"; [ -n "$R" ] || fail "$(t "no server set up" "server belum diatur")"
+        PORT="$(cfg BACKUP_SSH_PORT)"; case "$PORT" in ''|*[!0-9]*) PORT=22 ;; esac
         HOST="${R%%:*}"; RPATH="${R#*:}"; { [ "$RPATH" = "$R" ] || [ -z "$RPATH" ]; } && RPATH="amnesia-backup"
-        SSHO=(-o BatchMode=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
-        if ! ssh "${SSHO[@]}" "$HOST" "mkdir -p -- $RPATH" 2>"$TMP/ssh"; then
+        # batas waktu: koneksi yang diam lebih dari ±1 menit diputus (tidak macet selamanya)
+        SSHO=(-p "$PORT" -o BatchMode=yes -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4
+              -o StrictHostKeyChecking=accept-new)
+        # buat folder + tes bisa ditulis; hasilnya path lengkap di server
+        FULL="$(ssh "${SSHO[@]}" "$HOST" "mkdir -p -- $RPATH 2>/dev/null && cd -- $RPATH && touch .amnesia-write-test 2>/dev/null && rm -f .amnesia-write-test && pwd || echo AMNESIA_NOWRITE" 2>"$TMP/ssh")"
+        if [ $? -ne 0 ]; then
             # pesan yang bisa dipahami, sesuai penyebabnya
             if grep -q "IDENTIFICATION HAS CHANGED\|Host key verification failed" "$TMP/ssh"; then
                 fail "$(t "$HOST looks different (server reinstalled?). Open Backup and press Connect again." "$HOST terlihat berbeda (server diinstal ulang?). Buka Backup lalu tekan Hubungkan lagi.")"
             elif grep -q "Permission denied" "$TMP/ssh"; then
                 fail "$(t "$HOST refused the key. Open Backup and press Connect again." "$HOST menolak kunci. Buka Backup lalu tekan Hubungkan lagi.")"
             elif grep -qi "timed out\|No route\|Could not resolve\|Connection refused" "$TMP/ssh"; then
-                fail "$(t "$HOST can't be reached (offline or server down). Will try again later." "$HOST tidak bisa dihubungi (offline atau server mati). Nanti dicoba lagi.")"
+                fail "$(t "$HOST can't be reached (offline, wrong port, or server down). Will try again later." "$HOST tidak bisa dihubungi (offline, port salah, atau server mati). Nanti dicoba lagi.")"
             else
                 fail "$(t "can't connect to $HOST" "tidak bisa konek ke $HOST"): $(tail -c 150 "$TMP/ssh")"
             fi
         fi
-        rsync -t --partial -e "ssh ${SSHO[*]}" "$OUT" "$HOST:$RPATH/" || fail "$(t "upload to $HOST failed" "upload ke $HOST gagal")"
-        WHERE="$HOST:$RPATH" ;;
+        case "$FULL" in *AMNESIA_NOWRITE*)
+            fail "$(t "the server account can't write to \"$RPATH\". Pick a folder in your home on the server, e.g. $HOST:backup (Amnesia never uses sudo)." "akun server tidak bisa menulis ke \"$RPATH\". Pilih folder di home server, mis. $HOST:backup (Amnesia tidak pernah memakai sudo).")" ;;
+        esac
+        FULL="$(printf '%s' "$FULL" | tail -1)"; [ -n "$FULL" ] || FULL="$RPATH"
+        RS=(-t)
+        RH="$(rsync --help 2>&1)"
+        case "$RH" in *--timeout*) RS+=(--timeout=120) ;; esac
+        case "$RH" in *--progress*) RS+=(--progress) ;; esac
+        REMOTE_CLEAN=("${SSHO[@]}" "$HOST" "rm -f -- $RPATH/.$NAME.*")    # sisa upload yang terputus
+        ( rsync "${RS[@]}" -e "ssh ${SSHO[*]}" "$OUT" "$HOST:$RPATH/" 2>"$TMP/up" | pctrsync
+          echo "${PIPESTATUS[0]}" >"$TMP/rc" ) &
+        wait $!
+        [ "$(cat "$TMP/rc" 2>/dev/null)" = 0 ] || fail "$(t "upload to $HOST failed" "upload ke $HOST gagal"): $(tail -c 150 "$TMP/up")"
+        REMOTE_CLEAN=()
+        WHERE="$HOST:$FULL" ;;
     rclone)
         R="$(cfg BACKUP_RCLONE)"; [ -n "$R" ] || fail "$(t "no cloud set up" "cloud belum diatur")"
         command -v rclone >/dev/null || fail "$(t "rclone is not installed" "rclone belum terpasang") (brew install rclone)"
-        rclone copy "$OUT" "$R" || fail "$(t "upload to $R failed" "upload ke $R gagal")"
+        # batas waktu: koneksi yang diam 2 menit dianggap gagal, dicoba ulang maksimal 2x
+        ( rclone copy "$OUT" "$R" --stats 1s --stats-one-line --stats-log-level NOTICE \
+              --contimeout 30s --timeout 2m --retries 2 --low-level-retries 3 2>&1 >/dev/null | pctrclone
+          echo "${PIPESTATUS[0]}" >"$TMP/rc" ) &
+        wait $!
+        [ "$(cat "$TMP/rc" 2>/dev/null)" = 0 ] || fail "$(t "upload to $R failed" "upload ke $R gagal"): $(grep -i "error\|fail" "$TMP/up" 2>/dev/null | tail -1 | tail -c 150)"
         WHERE="$R" ;;
     *) fail "$(t "unknown backup destination" "tujuan backup tidak dikenal"): $DEST" ;;
 esac
+trap '' TERM INT HUP          # sudah terkirim: catatan di bawah tidak boleh terpotong
 
 echo "$SHA  $WHERE/$NAME" >> "$A/backup_checksums.txt"
 TO="$(t to ke)"

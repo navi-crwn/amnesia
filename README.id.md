@@ -63,8 +63,9 @@ Masalahnya, kalau semua hilang, kamu harus login ulang Gmail, WhatsApp, Telegram
 | Isi Desktop, Downloads, Documents, Pictures | Login yang disimpan di **Profile Vault** |
 | Cache, log, riwayat Terminal | Semua yang ada di **Keep List** (VPN, kunci SSH, setting Terminal, dll.) |
 | Data app yang tidak kamu pilih | App yang terpasang di `/Applications` dan Homebrew |
+| | Akun Apple, Foto, Notes, Mail, Messages dan lainnya (kartu **Akun & data Apple**, menyala secara default) |
 
-Mau tahu persis apa yang akan dihapus **tanpa menghapus apa pun**? Jalankan:
+Mau tahu persis apa yang akan dihapus **tanpa menghapus apa pun**? Di app, tekan **Yang Akan Dihapus** di halaman utama. Atau jalankan:
 
 ```bash
 bash ~/.amnesia/clean.sh logout --dry-run
@@ -146,7 +147,7 @@ Vault tidak bisa dibuka siapa pun, termasuk kamu. Hapus vault, buat yang baru, l
 Kalau masih ingat dan cuma mau ganti: Profile Vault → **Password**. Snapshot tetap aman.
 
 **Snapshot minta password?**
-Tidak. Vault mengunci snapshot dengan kunci yang hanya bisa dibuka password kamu, jadi menyimpan tidak perlu password; yang perlu hanya **Restore**. Hanya snapshot terbaru yang disimpan. App mana yang ikut disimpan bisa kamu pilih lewat centang di halaman Profile Vault.
+Tidak. Vault mengunci snapshot dengan kunci yang hanya bisa dibuka password kamu, jadi menyimpan tidak perlu password; yang perlu hanya **Restore**. Setiap app punya snapshot sendiri, jadi menyimpan satu app tidak menimpa app lain; yang disimpan hanya yang terbaru per app. App (dan folder) mana yang ikut disimpan bisa kamu pilih di halaman Profile Vault, lengkap dengan ukurannya. **Hapus Snapshot** menghapus snapshot tapi vault dan password tetap. Snapshot, Restore dan Backup bisa dibatalkan; yang sebelumnya tetap aman.
 
 **Apakah data saya dikirim ke internet?**
 Tidak. Amnesia tidak punya server, tidak pakai akun, tidak melacak dan tidak mengumpulkan data, jadi memang tidak ada yang dikirim. Satu-satunya pengecualian: backup ke server atau cloud yang **kamu** atur sendiri, dan itu pun cuma file `.7z` terkunci, langsung dari Mac kamu ke tempat yang kamu pilih. Vault dan Keep List pribadi kamu juga tidak ikut ke GitHub.
@@ -155,8 +156,12 @@ Tidak. Amnesia tidak punya server, tidak pakai akun, tidak melacak dan tidak men
 Untuk membersihkan Desktop, Documents dan Downloads, macOS biasanya minta izin per folder (dan tidak bisa bertanya saat logout). Izinkan sekali di **System Settings → Privacy & Security → Full Disk Access**, selesai. Pembersihan saat logout juga lewat app, jadi izin yang sama ikut berlaku.
 
 **Backup online, apa yang perlu disiapkan?**
-- *Server SSH:* isi `user@alamat` atau `user@alamat:folder`, ketik password server **sekali**, tekan **Hubungkan**. Amnesia membuat kunci SSH dan memasangnya di server, tanpa Terminal. Password tidak disimpan; sesudahnya backup login pakai kunci. Sudah punya kunci yang jalan? Kosongkan saja password-nya. Tanpa folder, backup masuk ke `~/amnesia-backup` di server (app menampilkan path lengkapnya setelah terhubung).
-- *Cloud:* pilih dulu layanannya (Google Drive, Dropbox, OneDrive, Box atau pCloud) di daftar, lalu tekan **Hubungkan**, login di jendela kecil, selesai. Tidak memakai Chrome atau cookie browser kamu. Amnesia memasang rclone sendiri (butuh Homebrew).
+- *Flashdisk atau folder:* pilih flashdisk atau folder mana saja (misalnya drive jaringan).
+- *Server SSH:* isi `user@alamat` atau `user@alamat:folder` (port lain: isi kolom Port, atau tulis `user@alamat:port`), ketik password server **sekali**, tekan **Hubungkan**. Amnesia membuat kunci SSH dan memasangnya di server, tanpa Terminal. Password tidak disimpan; sesudahnya backup login pakai kunci. Sudah punya kunci yang jalan? Kosongkan saja password-nya. Tanpa folder, backup masuk ke `~/amnesia-backup` di server. Hubungkan mengecek folder itu bisa ditulis, menampilkan path lengkapnya, dan mengukur kecepatan supaya kamu tahu kira-kira berapa lama backup.
+- *Cloud:* 1. pilih layanannya (Dropbox, OneDrive, Box atau pCloud), 2. tekan **Hubungkan** lalu login di jendela kecil, 3. tulis nama folder. Tidak memakai Chrome atau cookie browser kamu. Kalau jendela login tidak selesai, Amnesia menawarkan login lewat browser biasa. Amnesia memasang rclone sendiri (butuh Homebrew).
+- *Google Drive:* paling mudah lewat app gratis **Google Drive for Desktop**: Amnesia menyalin backup ke foldernya dan app itu yang mengunggah. Mau langsung tanpa app? Pakai client ID Google milikmu sendiri di **Lanjutan** (ada panduan langkah demi langkah di app).
+
+**Cara kerja backup (panduan)** di halaman Backup menjelaskan tiap tujuan, folder yang aman, dan cara mengecek file backup.
 
 Kalau nanti password server diganti, backup tetap jalan (pakai kunci). Backup baru gagal kalau server diinstal ulang atau kuncinya dihapus, dan pesannya akan menyuruh tekan **Hubungkan** lagi.
 

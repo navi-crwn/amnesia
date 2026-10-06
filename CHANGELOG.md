@@ -5,6 +5,45 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.10 — 2026-10-07
+
+### Added
+- **"Apple accounts & data" in the Keep List.** A new card at the top of the Keep List (and on the "What should stay?" page after the tour) keeps your iCloud / Apple ID sign-in, Photos, Notes, Mail, Calendar & Reminders, Contacts, Messages, Shortcuts and git settings. All switched on by default. You can switch each one off (Amnesia asks first). These stay in the Keep List, not the vault, because Apple accounts are tied to this Mac and Photos can be huge (`APPLE_KEEP` in settings.conf).
+- **Add any file or folder to the Keep List.** "Add Folder or File" now has a "Choose in Finder…" button (hidden files shown) and a box to type a path, so files like `Library/Preferences/MobileMeAccounts.plist` can be added too.
+- **Snapshots per app.** Every app gets its own snapshot, so saving one app never overwrites another. The vault page shows the last snapshot time and size for each app. Old single-file snapshots are still read, and are cleaned up once every app has its own.
+- **Folders in the vault.** Add folders (documents, PDFs, music, videos) to the vault on the Profile Vault page. A warning shows when a folder is over 1 GB (`VAULT_FOLDERS` in settings.conf).
+- **Sizes before you save.** The vault page shows the size of every app and the total, and warns only for big apps (500 MB or more) that a snapshot can take a while.
+- **"Delete Snapshots"** removes only the saved snapshots. Your vault and password stay. "Delete Vault" still removes everything.
+- **Cancel button** for Snapshot, Restore and Backup (in the window and in the menu bar panel). Your previous snapshot or backup stays untouched, and half-finished files are removed.
+- **Check after Restore.** After a restore you get a list with ✅ or ❌ per app (for example whether `gh` is logged in), plus a "check yourself" line for web logins in Chrome.
+- **Backup progress for every destination** (drive, folder, server, cloud): the step ("1/2 Locking files…", "2/2 Uploading…"), percentage, speed, time left, and a Cancel button. If nothing moves for 10 minutes, the backup stops by itself and says so.
+- **Backup to any folder** (for example a mounted network drive), next to flash drive, server and cloud.
+- **Server: Port box** (default 22). `user@address:port` works too.
+- **Server: Connect checks the folder.** It creates the backup folder, tests that it can write there, and shows the full path on the server. If the folder needs admin rights (sudo), it says so and suggests a folder in your home instead. Amnesia never uses sudo.
+- **Server: speed test on Connect**, then an estimate of how long a backup will take. A slow backup usually means a slow upload connection, not that it's stuck.
+- **Google Drive through the Google Drive app.** If Google Drive for Desktop is installed, Amnesia copies backups into its folder and the app uploads them. If it isn't installed, there's a download button. Your own Google client ID is under "Advanced", with a step-by-step guide.
+- **Backup guide inside the app**: steps for each destination, which folders are safe, how long it takes, and how to check your backup file.
+- **Shortcut to "What gets deleted"** on the home page.
+- Cloud login notes are written to `~/.amnesia/cloud.log` (without passwords or tokens), to help find out why a login failed.
+
+### Changed
+- **"What gets deleted" is easier to read.** Rows use the real app icons, macOS icons for system items and file-type icons for files. Real thumbnails are made only when you open a group, and only for Desktop, Downloads, Documents and Pictures. Each row has a clear name (for example "Chrome · cache"); the full path shows when you click it or hover over it.
+- Groups by meaning: "Restored from your vault", "Your files", "Apple accounts & sync", "App data & settings", "Keychain", "History, caches & logs" and "macOS system data (made again automatically)". The system group is hidden unless you switch it on.
+- Shortcuts that Amnesia makes itself (`~/Desktop/Keep`, `~/Desktop/Amnesia.app`) are no longer listed, because they are made again automatically.
+- **Cloud box in 3 steps:** 1. pick the service, 2. connect ("✓ Connected as …"), 3. type just the folder name. The words "remote" and "rclone" moved to "Advanced".
+- **Snapshot progress per app**: "Saving OpenCode… 2 of 3". The text always matches the app being saved.
+- **Full Disk Access is checked once, before Snapshot**, so macOS doesn't keep asking in the middle. Quit & Reopen is blocked while something is running, and the app explains how to fix a "Limit Access" press.
+- **Vault setup:** the "Repeat password" box only appears once you start typing, and says when the two don't match.
+- **Change password:** first your current password, then the new one, then repeat it. A new password that's the same as the old one is refused.
+- **Backup messages** say the time and the destination, with a clear message for cancelled ("Backup cancelled. Your previous backup is safe."), stopped, stuck and failed, instead of "exited with code 15".
+- **Pop-ups stick to the Amnesia window** instead of the middle of the screen, and the window remembers its position.
+- Home page tiles are a bit smaller and the page scrolls, so everything fits.
+
+### Fixed
+- Dropbox and OneDrive sometimes failed with "isn't connected". If the login window doesn't finish, Amnesia now offers to log in with your normal browser instead. (Not fully confirmed yet; tell us if it still fails.)
+- `app/screenshots.sh` didn't capture "What gets deleted" because macOS closed the app while it prepared the list. Automatic closing is now switched off during screenshots. The Move to a new Mac page is captured too (28 screenshots in total).
+- Cancelling a backup could leave 7-Zip running in the background.
+
 ## v5.9.1 — 2026-10-06
 
 ### Added
