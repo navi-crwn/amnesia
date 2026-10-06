@@ -5,6 +5,14 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.10.1 — 2026-10-07
+
+### Diperbaiki
+- **Izin Akses Disk Penuh tidak hilang lagi setelah update.** Amnesia tidak ditandatangani Apple, jadi setiap build baru dianggap app lain oleh macOS: tombolnya di System Settings tetap menyala, tapi izinnya tidak berlaku. Sekarang `app/build.sh` membuat sertifikat tanda tangan lokal sekali saja ("Amnesia Local Signing", di Keychain login kamu) dan memakainya di setiap build, jadi macOS tahu ini app yang sama.
+- Build pertama mungkin memunculkan 1 popup Keychain yang menanyakan apakah `codesign` boleh memakai kuncinya. Masukkan password Mac, lalu tekan **Always Allow**.
+- Sekali lagi setelah update ini: hapus Amnesia dari Full Disk Access (−), tambahkan lagi (+), lalu Tutup & Buka Lagi. Setelah itu izinnya tetap.
+- Kalau sertifikat gagal dibuat, build memakai cara lama dan memberi tahu. Pembersihan saat logout hanya menghapus password di Keychain, tidak pernah sertifikat, jadi sertifikat ini tetap ada.
+
 ## v5.10 — 2026-10-07
 
 ### Ditambahkan

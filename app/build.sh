@@ -9,6 +9,47 @@ B="$PWD/build"; APP="$B/Amnesia.app"; ARCH="$(uname -m)"
 rm -rf "$B"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$B/AppIcon.iconset"
 
 [ -f ../keep.conf ] || cp ../keep.example.conf ../keep.conf   # Keep List pertama dari contoh
+
+# Tanda tangan lokal yang SAMA di setiap build. macOS mengenali app dari tanda tangannya: dengan tanda tangan
+# "ad-hoc" (-) setiap build dianggap app baru, jadi izin Full Disk Access hilang setiap update.
+# Sertifikat dibuat sekali di Keychain login kamu (bukan dari Apple, jadi "Open Anyway" tetap perlu di Mac lain).
+# Pembersihan Amnesia hanya menghapus password di Keychain, bukan sertifikat, jadi sertifikat ini tetap ada.
+SIGN_NAME="Amnesia Local Signing"
+KC="$HOME/Library/Keychains/login.keychain-db"
+sign_hash() { { security find-certificate -c "$SIGN_NAME" -Z "$KC" 2>/dev/null | awk '/SHA-1/ { print $NF; exit }'; } || true; }
+make_cert() {
+  local d r; d="$(mktemp -d)"
+  cat > "$d/cfg" <<CFG
+[req]
+distinguished_name = dn
+x509_extensions = ext
+prompt = no
+[dn]
+CN = $SIGN_NAME
+[ext]
+basicConstraints = critical,CA:false
+keyUsage = critical,digitalSignature
+extendedKeyUsage = critical,codeSigning
+CFG
+  # "amnesia" di bawah hanya kunci sementara untuk file .p12 ini (langsung dihapus), bukan password kamu
+  /usr/bin/openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -config "$d/cfg" \
+      -keyout "$d/key.pem" -out "$d/cert.pem" >/dev/null 2>&1 \
+    && /usr/bin/openssl pkcs12 -export -inkey "$d/key.pem" -in "$d/cert.pem" -name "$SIGN_NAME" \
+      -passout pass:amnesia -out "$d/id.p12" >/dev/null 2>&1 \
+    && security import "$d/id.p12" -k "$KC" -P amnesia -T /usr/bin/codesign >/dev/null 2>&1
+  r=$?; rm -rf "$d"; return $r
+}
+SIGN="$(sign_hash)"
+if [ -z "$SIGN" ]; then
+  echo "0/4  Making a local signing certificate (once, in your login Keychain)..."
+  make_cert && SIGN="$(sign_hash)"
+fi
+# Tanda tangani (dengan sertifikat tetap; kalau gagal, ad-hoc seperti dulu)
+sign() {
+  if [ -n "$SIGN" ] && codesign --force --deep -s "$SIGN" "$1" 2>/dev/null; then return 0; fi
+  [ -n "$SIGN" ] && { echo "     (local certificate didn't work, signing ad-hoc)"; SIGN=""; }
+  codesign --force --deep -s - "$1"
+}
 echo "1/4  Compile app..."
 swiftc -swift-version 5 -O -parse-as-library -target "$ARCH-apple-macos15.0" Amnesia.swift -o "$APP/Contents/MacOS/Amnesia"
 cp Info.plist "$APP/Contents/Info.plist"
@@ -26,7 +67,7 @@ elif [ -x /opt/homebrew/bin/7zz ]; then
 else
   echo "     (no 7-Zip bundled: install it with  brew install sevenzip)"
 fi
-[ -f "$R/bin/7zz" ] && codesign --force -s - "$R/bin/7zz"
+[ -f "$R/bin/7zz" ] && sign "$R/bin/7zz"
 
 echo "2/4  Drawing the icon..."
 swiftc -O makeicon.swift -o "$B/makeicon"
@@ -38,7 +79,12 @@ done
 iconutil -c icns "$B/AppIcon.iconset" -o "$APP/Contents/Resources/AppIcon.icns"
 
 echo "3/4  Signing locally..."
-codesign --force --deep -s - "$APP"
+sign "$APP"
+if [ -n "$SIGN" ]; then
+  echo "     signed with \"$SIGN_NAME\": Full Disk Access stays on after updates"
+else
+  echo "     signed ad-hoc: after each update, remove Amnesia from Full Disk Access (-), add it again (+), then reopen"
+fi
 
 echo "4/4  Removing old Amnesia copies & installing the new one..."
 pkill -f amnesia_app.py 2>/dev/null || true     # app lama (Tk)

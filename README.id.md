@@ -153,7 +153,7 @@ Tidak. Vault mengunci snapshot dengan kunci yang hanya bisa dibuka password kamu
 Tidak. Amnesia tidak punya server, tidak pakai akun, tidak melacak dan tidak mengumpulkan data, jadi memang tidak ada yang dikirim. Satu-satunya pengecualian: backup ke server atau cloud yang **kamu** atur sendiri, dan itu pun cuma file `.7z` terkunci, langsung dari Mac kamu ke tempat yang kamu pilih. Vault dan Keep List pribadi kamu juga tidak ikut ke GitHub.
 
 **Kenapa minta Akses Disk Penuh?**
-Untuk membersihkan Desktop, Documents dan Downloads, macOS biasanya minta izin per folder (dan tidak bisa bertanya saat logout). Izinkan sekali di **System Settings → Privacy & Security → Full Disk Access**, selesai. Pembersihan saat logout juga lewat app, jadi izin yang sama ikut berlaku.
+Untuk membersihkan Desktop, Documents dan Downloads, macOS biasanya minta izin per folder (dan tidak bisa bertanya saat logout). Izinkan sekali di **System Settings → Privacy & Security → Full Disk Access**, selesai. Kalau kamu build sendiri, `build.sh` menandatangani app dengan sertifikat lokal supaya izinnya tidak hilang saat update (build pertama mungkin minta password Mac sekali: tekan **Always Allow**). Pembersihan saat logout juga lewat app, jadi izin yang sama ikut berlaku.
 
 **Backup online, apa yang perlu disiapkan?**
 - *Flashdisk atau folder:* pilih flashdisk atau folder mana saja (misalnya drive jaringan).

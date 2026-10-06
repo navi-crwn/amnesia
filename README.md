@@ -153,7 +153,7 @@ No. The vault locks snapshots with a key that only your password can open, so sa
 No. Amnesia has no servers, no accounts, no tracking and no analytics, so there's nothing to send. The only exception is a backup to a server or cloud that **you** set up, and even then only the locked `.7z` file goes, straight from your Mac to the place you picked. Your vault and your personal Keep List never go to GitHub either.
 
 **Why does it want Full Disk Access?**
-To clean your Desktop, Documents and Downloads, macOS would otherwise ask permission folder by folder (and it can't ask during a logout). Allow it once in **System Settings → Privacy & Security → Full Disk Access** and you're done. The wiping at logout runs through the app too, so the same permission covers it.
+To clean your Desktop, Documents and Downloads, macOS would otherwise ask permission folder by folder (and it can't ask during a logout). Allow it once in **System Settings → Privacy & Security → Full Disk Access** and you're done. If you build the app yourself, `build.sh` signs it with a local certificate so the permission survives updates (the first build may ask for your Mac password once: press **Always Allow**). The wiping at logout runs through the app too, so the same permission covers it.
 
 **What do I need for online backups?**
 - *Flash drive or folder:* pick the drive or any folder (for example a network drive).
