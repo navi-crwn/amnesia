@@ -5,6 +5,25 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.11 — 2026-10-07
+
+### Fixed
+- **Logging in to Dropbox, OneDrive, Box and pCloud always failed** ("isn't connected"). Amnesia started rclone with an option (`--auth-no-open-browser`) that the connect command doesn't know, so rclone stopped right away and no login page ever opened. That option is gone.
+- **Google Drive said "not signed in" while it was still syncing.** Amnesia now looks for Google Drive in the background, says "signed in, but not ready yet (still syncing)" when that's the case, and shows 3 steps: open Google Drive and sign in, wait until syncing is done, press Check Again.
+
+### Changed
+- **Cloud login opens in your normal browser** (the one you set as default, or Safari on a new Mac), instead of a small window inside Amnesia. The waiting screen has a "Browser didn't open? Open the login page" button and a Cancel button.
+- **Repeat boxes tell you right away whether they match**: vault password, panic word (in the vault setup and in the Panic Word window), new password and backup password.
+- **"What goes in the vault" is now a grid of small tiles** with the app icon, name and size. Tap a tile to pick it. One short note at the bottom says when a snapshot can take a few minutes (and which apps are the big ones), instead of a warning under every app.
+- **A new vault starts with no apps picked.** You choose which apps go in.
+- **Delete one app's snapshot** with the trash icon next to it. "Delete All Snapshots" still removes them all (the vault and password stay).
+- **Guides open as pop-ups** with a clear button: "How backup works" (now at the top of the Backup page) and "Show me how (7 steps)" for your own Google access.
+- **Bigger, easier-to-read text** on the home page and in the welcome tour. Home tiles have the icon on the left and the text next to it, so the whole page (including "What Gets Deleted") fits without scrolling.
+- **"What Gets Deleted" explains rows from apps in your Keep List**, for example "only cache: the app is in your Keep List, its login stays".
+- **Server speed test** sends 2 MB and leaves out the time it takes to open the connection, so the number is closer to the real backup speed. It's marked as a rough estimate.
+- **Backup waiting screen** only says "Don't unplug the drive" for USB drives, "Keep the internet on" for servers and cloud, and that the Google Drive app uploads afterwards for Google Drive.
+- Google Drive now shows up in the Keep List app picker (its data lives in `Application Support/Google/DriveFS`).
+
 ## v5.10.1 — 2026-10-07
 
 ### Fixed

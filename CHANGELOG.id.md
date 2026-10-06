@@ -5,6 +5,25 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.11 — 2026-10-07
+
+### Diperbaiki
+- **Login ke Dropbox, OneDrive, Box dan pCloud selalu gagal** ("isn't connected"). Amnesia menjalankan rclone dengan pilihan (`--auth-no-open-browser`) yang tidak dikenal perintah hubungkan, jadi rclone langsung berhenti dan halaman login tidak pernah terbuka. Pilihan itu sudah dibuang.
+- **Google Drive dibilang "belum login" padahal sedang sinkron.** Sekarang Amnesia mencari Google Drive di belakang layar, bilang "sudah login, tapi belum siap (masih sinkron)" kalau memang begitu, dan menampilkan 3 langkah: buka Google Drive dan login, tunggu sampai sinkron selesai, tekan Cek Lagi.
+
+### Diubah
+- **Login cloud terbuka di browser biasa kamu** (browser default, atau Safari di Mac baru), bukan jendela kecil di dalam Amnesia. Layar tunggu punya tombol "Browser tidak terbuka? Buka halaman login" dan tombol Batal.
+- **Kolom ulangi langsung memberi tahu sudah sama atau belum**: password vault, kata panik (saat buat vault dan di jendela Kata Panik), password baru, dan password backup.
+- **"Yang disimpan di vault" sekarang berupa kotak-kotak kecil** berisi ikon app, nama dan ukuran. Klik kotak untuk memilih. Cukup 1 catatan singkat di bawah kalau snapshot bisa makan beberapa menit (dan app mana yang besar), bukan peringatan di setiap app.
+- **Vault baru dimulai tanpa app yang dicentang.** Kamu yang memilih app mana yang masuk.
+- **Hapus snapshot 1 app** lewat ikon tempat sampah di sampingnya. "Hapus Semua Snapshot" tetap menghapus semuanya (vault dan password tetap).
+- **Panduan terbuka sebagai popup** dengan tombol yang jelas: "Cara kerja backup" (sekarang di atas halaman Backup) dan "Lihat caranya (7 langkah)" untuk akses Google sendiri.
+- **Teks lebih besar dan mudah dibaca** di halaman utama dan tur awal. Kotak di halaman utama sekarang ikon di kiri dan teks di sampingnya, jadi seluruh halaman (termasuk "Yang Akan Dihapus") muat tanpa scroll.
+- **"Yang Akan Dihapus" menjelaskan baris dari app yang ada di Keep List**, misalnya "hanya cache: app ini ada di Keep List, login-nya tetap aman".
+- **Tes kecepatan server** mengirim 2 MB dan tidak menghitung waktu membuka koneksi, jadi angkanya lebih mendekati kecepatan backup sungguhan. Ditandai sebagai perkiraan kasar.
+- **Layar tunggu backup** hanya bilang "Jangan cabut drive-nya" untuk flashdisk, "Jangan matikan internet" untuk server dan cloud, dan bahwa app Google Drive yang mengunggah untuk Google Drive.
+- Google Drive sekarang muncul di daftar app Keep List (datanya ada di `Application Support/Google/DriveFS`).
+
 ## v5.10.1 — 2026-10-07
 
 ### Diperbaiki

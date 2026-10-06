@@ -425,8 +425,19 @@ def _drop_legacy(per):
                 os.remove(f)
 
 
-def delete_snapshot():
-    """Hapus semua snapshot. Vault, password, kata panik dan kunci Pindah Mac tetap ada."""
+def delete_snapshot(names=None):
+    """Hapus snapshot. names = hanya app/folder itu; kosong = semua.
+    Vault, password, kata panik dan kunci Pindah Mac tetap ada."""
+    if names:
+        per = _load_manifest()
+        for n in names:
+            for f in _app_files(n):
+                if os.path.exists(f):
+                    os.remove(f)
+            per.pop(n, None)
+        _drop_legacy(per)
+        _save_manifest(per)
+        return
     shutil.rmtree(F_APPDIR, ignore_errors=True)
     shutil.rmtree(F_STAGE, ignore_errors=True)
     for f in (F_SNAP, F_SNAPKEY, F_MANIFEST):
@@ -728,7 +739,7 @@ def _cli(argv, stdin):
         names, checks = restore(line())
         out = {"apps": names, "checks": checks}
     elif cmd == "delsnap":
-        delete_snapshot()
+        delete_snapshot(argv[2:] or None)
     elif cmd == "passwd":
         old, new = line(), line()
         change_password(old, new)

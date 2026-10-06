@@ -6,7 +6,9 @@ HAPUS  ~/Library/Application Support/CrashReporter
 HAPUS  ~/Library/Application Support/DifferentialPrivacy
 HAPUS  ~/Library/Application Support/FaceTime
 HAPUS  ~/Library/Application Support/FileProvider
-HAPUS  ~/Library/Application Support/Google
+HAPUS  ~/Library/Application Support/Google/Chrome
+HAPUS  ~/Library/Application Support/Google/GoogleUpdater
+HAPUS  ~/Library/Application Support/Google/RLZ
 HAPUS  ~/Library/Application Support/ai.opencode.desktop
 HAPUS  ~/Library/Application Support/default.store
 HAPUS  ~/Library/Application Support/default.store-shm
@@ -14,6 +16,7 @@ HAPUS  ~/Library/Application Support/default.store-wal
 HAPUS  ~/Library/Application Support/google-heartbeat-storage
 HAPUS  ~/Library/Application Support/homeenergyd
 HAPUS  ~/Library/Application Support/networkserviceproxy
+HAPUS  ~/Library/Containers/cc.ffitch.shottr
 HAPUS  ~/Library/Containers/com.apple.AMPArtworkAgent
 HAPUS  ~/Library/Containers/com.apple.AMPDeviceDiscoveryAgent
 HAPUS  ~/Library/Containers/com.apple.AMSUIPaymentViewService
@@ -598,6 +601,8 @@ HAPUS  ~/Library/Containers/com.microsoft.rdc.macos
 HAPUS  ~/Library/Containers/com.microsoft.rdc.macos.qlx
 HAPUS  ~/Library/Containers/io.macfuse.app.fsmodule.macfuse
 HAPUS  ~/Library/Containers/io.macfuse.app.fsmodule.macfuse-local
+HAPUS  ~/Library/Containers/io.tailscale.ipn.macsys.login-item-helper
+HAPUS  ~/Library/Containers/io.tailscale.ipn.macsys.share-extension
 HAPUS  ~/Library/Containers/net.whatsapp.WhatsApp
 HAPUS  ~/Library/Containers/net.whatsapp.WhatsApp.Intents
 HAPUS  ~/Library/Containers/net.whatsapp.WhatsApp.ServiceExtension
@@ -717,6 +722,7 @@ HAPUS  ~/.kimi-webbridge
 HAPUS  ~/.kimi-work
 HAPUS  ~/.local/share
 HAPUS  ~/.local/state
+HAPUS  ~/.mitmproxy
 HAPUS  ~/.npm
 HAPUS  ~/.vscode
 HAPUS  ~/.vscode-shared
@@ -751,10 +757,12 @@ HAPUS  ~/Library/Preferences/com.google.gmp.measurement.monitor.plist
 HAPUS  ~/Library/Preferences/com.microsoft.VSCode.plist
 HAPUS  ~/Library/Preferences/com.moonshot.kimichat.plist
 HAPUS  ~/Library/Preferences/com.qtproject.plist
+HAPUS  ~/Library/Preferences/com.todesktop.230313mzl4w4u92.plist
 HAPUS  ~/Library/Preferences/corespotlightd.plist
 HAPUS  ~/Library/Preferences/diagnostics_agent.plist
 HAPUS  ~/Library/Preferences/familycircled.plist
 HAPUS  ~/Library/Preferences/group.com.nordvpn.macos.firebase.plist
+HAPUS  ~/Library/Preferences/io.tailscale.ipn.macsys.plist
 HAPUS  ~/Library/Preferences/no_backup
 HAPUS  ~/Library/Preferences/org.cups.PrintingPrefs.plist
 HAPUS  ~/Library/Preferences/org.filezilla-project.filezilla.plist
@@ -867,4 +875,42 @@ HAPUS  ~/Documents/Default Project
 HAPUS  ~/Documents/kimi
 HAPUS  ~/Movies/TV
 HAPUS  ~/Music/Music
---- dry-run (logout): 869 items would be deleted. Nothing was deleted. ---
+HAPUS  ~/.Trash/.DS_Store
+HAPUS  ~/.Trash/4x6.zip
+HAPUS  ~/.Trash/AMP Carawin
+HAPUS  ~/.Trash/All of Me - John Legend - Violin and Guitar Cover - Daniel Jang.mp3
+HAPUS  ~/.Trash/Antigravity IDE.dmg
+HAPUS  ~/.Trash/Antigravity.dmg
+HAPUS  ~/.Trash/CodeBuddy-darwin-arm64-4.12.0.37847260-b4c35ed0.dmg
+HAPUS  ~/.Trash/FileZilla.app
+HAPUS  ~/.Trash/Flameshot-13.3.0-artifact-macos-arm64.dmg
+HAPUS  ~/.Trash/GoogleDrive.dmg
+HAPUS  ~/.Trash/Obvious (Alt Version).mp3
+HAPUS  ~/.Trash/OpenCode Desktop.dmg
+HAPUS  ~/.Trash/Proton.zip
+HAPUS  ~/.Trash/Shottr-1.9.1.dmg
+HAPUS  ~/.Trash/Surfshark (1).dmg
+HAPUS  ~/.Trash/Surfshark.dmg
+HAPUS  ~/.Trash/Thunderbird 153.0.2.dmg
+HAPUS  ~/.Trash/WhatsApp Unknown 2026-08-04 at 12.00.21 PM.zip
+HAPUS  ~/.Trash/anydesk.dmg
+HAPUS  ~/.Trash/backup.png
+HAPUS  ~/.Trash/c.txt
+HAPUS  ~/.Trash/dryrun.txt
+HAPUS  ~/.Trash/home-dark.png
+HAPUS  ~/.Trash/home.png
+HAPUS  ~/.Trash/keep-setup.png
+HAPUS  ~/.Trash/keep.png
+HAPUS  ~/.Trash/kimi_3.1.7.dmg
+HAPUS  ~/.Trash/menu.png
+HAPUS  ~/.Trash/pdf2png.zip
+HAPUS  ~/.Trash/rustdesk-1.5.0-x86_64.dmg
+HAPUS  ~/.Trash/settings.png
+HAPUS  ~/.Trash/takeout-20260809T073943Z-4-001.zip
+HAPUS  ~/.Trash/thingiverse-4596844.zip
+HAPUS  ~/.Trash/tour-apps.png
+HAPUS  ~/.Trash/tour-check.png
+HAPUS  ~/.Trash/tour-terms.png
+HAPUS  ~/.Trash/tour-welcome.png
+HAPUS  ~/.Trash/vault.png
+--- dry-run (logout): 915 items would be deleted. Nothing was deleted. ---

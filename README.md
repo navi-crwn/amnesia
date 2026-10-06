@@ -82,7 +82,7 @@ bash ~/.amnesia/clean.sh logout --dry-run
 - **💾 Backup anywhere.** Your chosen folders get locked into one `.7z` file (AES-256) and sent to:
   - a **USB drive / SSD** that's plugged in,
   - **your own server / VPS** over SSH + rsync. Type the server password once, Amnesia sets up the key. No Terminal.
-  - the **cloud**: Google Drive, Dropbox, OneDrive, Box or pCloud. You log in in a small login window, no Terminal and no Chrome needed. (S3, WebDAV and 40+ more work through rclone.)
+  - the **cloud**: Google Drive, Dropbox, OneDrive, Box or pCloud. You log in through your browser, no Terminal needed. (S3, WebDAV and 40+ more work through rclone.)
 - **⏰ Scheduled backups.** Daily or weekly, running on their own while the Amnesia icon is in the menu bar.
 - **🚚 Move to a new Mac.** Take all your logins with you: the Keychain keys go into the vault, the vault goes into a backup, and you restore it on the new Mac.
 - **👋 Welcome tour.** The first time you open it, Amnesia shows you around, checks that everything's ready, finds your apps and asks which ones should keep their data.
@@ -147,7 +147,7 @@ Then nobody can open the vault, including you. Delete it, make a new one, and lo
 If you still know it and just want a new one: Profile Vault → **Password**. Your snapshot stays.
 
 **Does Snapshot ask for my password?**
-No. The vault locks snapshots with a key that only your password can open, so saving needs no password; only **Restore** does. Every app has its own snapshot, so saving one app never overwrites another; only the newest one per app is kept. You choose which apps (and folders) go in it on the Profile Vault page, which also shows their sizes. **Delete Snapshots** removes the snapshots but keeps your vault and password. Snapshot, Restore and Backup can be cancelled; your previous one stays safe.
+No. The vault locks snapshots with a key that only your password can open, so saving needs no password; only **Restore** does. Every app has its own snapshot, so saving one app never overwrites another; only the newest one per app is kept. You choose which apps (and folders) go in it on the Profile Vault page, which also shows their sizes. The trash icon next to a snapshot deletes just that one; **Delete All Snapshots** removes them all but keeps your vault and password. Snapshot, Restore and Backup can be cancelled; your previous one stays safe.
 
 **Does my data get sent to the internet?**
 No. Amnesia has no servers, no accounts, no tracking and no analytics, so there's nothing to send. The only exception is a backup to a server or cloud that **you** set up, and even then only the locked `.7z` file goes, straight from your Mac to the place you picked. Your vault and your personal Keep List never go to GitHub either.
@@ -158,7 +158,7 @@ To clean your Desktop, Documents and Downloads, macOS would otherwise ask permis
 **What do I need for online backups?**
 - *Flash drive or folder:* pick the drive or any folder (for example a network drive).
 - *SSH server:* type `user@host` or `user@host:folder` (another port: fill in the Port box, or type `user@host:port`), type the server password **once**, press **Connect**. Amnesia makes an SSH key and installs it on the server for you, no Terminal. The password isn't saved; from then on backups log in with the key. Already have a key that works? Leave the password empty. Without a folder, backups go to `~/amnesia-backup` on the server. Connect checks that the folder can be written to, shows its full path, and measures the speed so you know roughly how long a backup takes.
-- *Cloud:* 1. pick your service (Dropbox, OneDrive, Box or pCloud), 2. press **Connect** and log in in the small login window, 3. type a folder name. It doesn't use Chrome or your browser's cookies. If the login window doesn't finish, Amnesia offers your normal browser instead. Amnesia installs rclone for you (needs Homebrew).
+- *Cloud:* 1. pick your service (Dropbox, OneDrive, Box or pCloud), 2. press **Connect**: the login page opens in your default browser (Safari if you haven't picked one). Log in and press Allow, 3. type a folder name. If the browser doesn't open, the waiting screen has a button to open the login page. Amnesia installs rclone for you (needs Homebrew).
 - *Google Drive:* easiest with the free **Google Drive for Desktop** app: Amnesia copies the backup into its folder and the app uploads it. Prefer a direct connection? Use your own Google client ID under **Advanced** (the app has a step-by-step guide).
 
 **How backup works (guide)** on the Backup page explains each destination, which folders are safe, and how to check your backup file.

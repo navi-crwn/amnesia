@@ -2,7 +2,6 @@
 // Dibuild oleh build.sh (swiftc dari Command Line Tools, tanpa Xcode).
 // Logika berat tetap di ~/.amnesia: clean.sh, agent.sh, vault.py (dipanggil lewat Process).
 import AppKit
-import AuthenticationServices
 import QuickLookThumbnailing
 import Security
 import SwiftUI
@@ -407,6 +406,10 @@ func scanApps() -> [FoundApp] {
             }
             p += groups.filter { $0.localizedCaseInsensitiveContains(bid) }.map { "Library/Group Containers/" + $0 }
             if fm.fileExists(atPath: lib + "Preferences/\(bid).plist") { p.append("Library/Preferences/\(bid)*") }
+            // Google Drive menyimpan datanya di Application Support/Google/DriveFS (bukan nama app-nya)
+            if bid == "com.google.drivefs", fm.fileExists(atPath: lib + "Application Support/Google/DriveFS") {
+                p.append("Library/Application Support/Google/DriveFS")
+            }
             guard !p.isEmpty else { continue }
             out.append(FoundApp(name: name, icon: NSWorkspace.shared.icon(forFile: path), paths: p,
                                 inVault: vaultApps.contains(name)))
@@ -768,6 +771,12 @@ func categorize(_ entries: [DryEntry], patterns: [String: [String]]) -> [DryGrou
     let appSubs: Set<String> = ["Application Support", "Containers", "Group Containers", "Preferences", "Saved Application State"]
     let apple = appleItems
     let keepName = KeepDir.name
+    let kept = Keep.entries().map { $0.lowercased() }
+    /// App ini (sebagian) ada di Keep List? Dipakai untuk keterangan "login tetap aman".
+    func inKeep(_ bundleOrName: String, _ appName: String?) -> Bool {
+        let keys = [bundleOrName.lowercased(), appName?.lowercased()].compactMap { $0 }.filter { $0.count > 2 }
+        return kept.contains { e in keys.contains { k in e.contains(k) } }
+    }
     var g: [String: [DryItem]] = [:]
     func put(_ key: String, _ item: DryItem) { g[key, default: []].append(item) }
 
@@ -819,14 +828,21 @@ func categorize(_ entries: [DryEntry], patterns: [String: [String]]) -> [DryGrou
             }
             if traceSubs.contains(sub) && !isApple {
                 let owner = comps.count >= 3 ? AppLookup.shared.find(name) : nil
+                let safe = comps.count >= 3 && inKeep(name, owner?.name)
                 put("traces", DryItem(rel: rel, title: (owner?.name ?? (comps.count >= 3 ? name : sub)) + " · " + libKind(sub),
-                                      detail: "~/" + rel, icon: owner.map { o in DryIcon.app(o.path) } ?? DryIcon.symbol("clock.fill"),
+                                      detail: safe ? T("only \(libKind(sub)): the app is in your Keep List, its login stays",
+                                                       "hanya \(libKind(sub)): app ini ada di Keep List, login-nya tetap aman")
+                                                   : "~/" + rel, icon: owner.map { o in DryIcon.app(o.path) } ?? DryIcon.symbol("clock.fill"),
                                       thumb: false, keychain: false))
                 continue
             }
             if appSubs.contains(sub) && comps.count >= 3 && !isApple {
                 let owner = AppLookup.shared.find(name)
-                put("apps", DryItem(rel: rel, title: (owner?.name ?? name) + " · " + libKind(sub), detail: "~/" + rel,
+                let partly = inKeep(name, owner?.name)
+                put("apps", DryItem(rel: rel, title: (owner?.name ?? name) + " · " + libKind(sub),
+                                    detail: partly ? T("extra \(libKind(sub)) not in the Keep List; the app's main data stays",
+                                                       "\(libKind(sub)) tambahan yang tidak ada di Keep List; data utama app tetap")
+                                                   : "~/" + rel,
                                     icon: owner.map { o in DryIcon.app(o.path) } ?? DryIcon.symbol("app.dashed"),
                                     thumb: false, keychain: false))
                 continue
@@ -979,54 +995,23 @@ func rcloneRemotes() -> [String] {
     return sh(r, ["listremotes"], timeout: 20).out.split(separator: "\n").map { String($0.dropLast()) }
 }
 
-/// Jendela login kecil milik macOS (ASWebAuthenticationSession), bukan Chrome/browser kamu.
-/// Diizinkan oleh Google & yang lain, dan tidak memakai cookie browser (sesi sekali pakai).
-@MainActor
-final class WebLogin: NSObject, ASWebAuthenticationPresentationContextProviding {
-    static let shared = WebLogin()
-    private var session: ASWebAuthenticationSession?
-    private var done = false
-
-    nonisolated func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        MainActor.assumeIsolated {
-            NSApp.windows.first { $0.isVisible && $0.canBecomeKey } ?? NSApp.keyWindow ?? NSWindow()
-        }
-    }
-
-    /// onCancel: dipanggil kalau kamu menutup jendelanya sebelum selesai.
-    func open(_ url: URL, onCancel: @escaping @MainActor () -> Void) {
-        close()
-        done = false
-        // callback "amnesia-login" tidak pernah dipanggil: rclone menerima kodenya sendiri di 127.0.0.1,
-        // lalu jendela ini ditutup oleh app begitu rclone selesai.
-        let s = ASWebAuthenticationSession(url: url, callbackURLScheme: "amnesia-login") { [weak self] _, _ in
-            Task { @MainActor in
-                guard let self, !self.done else { return }
-                self.session = nil
-                onCancel()
-            }
-        }
-        s.presentationContextProvider = self
-        s.prefersEphemeralWebBrowserSession = true
-        session = s
-        if !s.start() { NSWorkspace.shared.open(url) }   // cadangan: browser biasa
-    }
-
-    func close() {
-        done = true
-        session?.cancel()
-        session = nil
-    }
+/// Browser bawaan Mac (http). Mac baru tanpa browser default: Safari.
+func defaultBrowser() -> URL? {
+    NSWorkspace.shared.urlForApplication(toOpen: URL(string: "https://example.com")!)
 }
 
-final class ProcBox: @unchecked Sendable { var p: Process?; var opened = false }
+func openInBrowser(_ url: URL) {
+    if defaultBrowser() != nil, NSWorkspace.shared.open(url) { return }
+    let safari = URL(fileURLWithPath: "/Applications/Safari.app")
+    NSWorkspace.shared.open([url], withApplicationAt: safari, configuration: NSWorkspace.OpenConfiguration())
+}
 
-/// Hubungkan cloud tanpa Terminal: pasang rclone kalau perlu, buka login di jendela kecil, lalu cek koneksinya.
-/// browser: buka login di browser biasa (cadangan kalau jendela kecil gagal, mis. Dropbox/OneDrive).
-/// clientID/secret: akses Google milik user sendiri (Lanjutan). Hasil: pesan error, atau nil kalau berhasil.
-/// Token tidak pernah ditampilkan atau dicatat.
-func connectCloud(_ p: CloudProvider, remote: String, browser: Bool = false,
-                  clientID: String = "", secret: String = "") -> String? {
+/// Hubungkan cloud tanpa Terminal: pasang rclone kalau perlu, buka halaman login di browser bawaan Mac,
+/// lalu cek koneksinya. clientID/secret: akses Google milik user sendiri (Lanjutan).
+/// onURL: alamat halaman login, untuk tombol "Buka halaman login lagi". job: tombol Batal.
+/// Hasil: pesan error, "CANCELLED", atau nil kalau berhasil. Token tidak pernah ditampilkan atau dicatat.
+func connectCloud(_ p: CloudProvider, remote: String, clientID: String = "", secret: String = "",
+                  job: JobBox? = nil, onURL: (@Sendable (URL) -> Void)? = nil) -> String? {
     var rc = rcloneBin()
     if rc == nil {
         guard let brew = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
@@ -1040,24 +1025,19 @@ func connectCloud(_ p: CloudProvider, remote: String, browser: Bool = false,
     guard let r = rc else { return T("Couldn't install rclone.", "Gagal memasang rclone.") }
     if rcloneRemotes().contains(remote) { sh(r, ["config", "delete", remote]) }   // login ulang = token baru
     let own = clientID.isEmpty ? [] : ["client_id", clientID, "client_secret", secret]
-    // rclone tidak membuka browser sendiri; link login-nya dibuka di jendela kecil Amnesia (atau browser biasa)
-    let box = ProcBox()
-    let c = sh(r, ["config", "create", remote, p.id] + own + ["--auth-no-open-browser"], timeout: 300,
-               onStart: { box.p = $0 },
+    // rclone membuka halaman login di browser bawaan Mac sendiri (perintah "open").
+    // Alamatnya juga ditangkap, untuk tombol cadangan kalau browser tidak terbuka.
+    final class Seen: @unchecked Sendable { var url = false }
+    let seen = Seen()
+    let c = sh(r, ["config", "create", remote, p.id] + own, timeout: 300,
+               onStart: { job?.p = $0 },
                onErr: { text in
-                   guard !box.opened,
+                   guard !seen.url,
                          let m = text.range(of: #"http://127\.0\.0\.1:53682/auth\?state=[A-Za-z0-9_-]+"#, options: .regularExpression),
                          let url = URL(string: String(text[m])) else { return }
-                   box.opened = true
-                   Task { @MainActor in
-                       if browser {
-                           NSWorkspace.shared.open(url)
-                       } else {
-                           WebLogin.shared.open(url) { if box.p?.isRunning == true { box.p?.terminate() } }
-                       }
-                   }
+                   seen.url = true
+                   onURL?(url)
                })
-    Task { @MainActor in WebLogin.shared.close() }
     // catatan untuk mencari penyebab kalau gagal (tanpa token: baris berisi token/kurung kurawal dibuang)
     let diag = c.err.split(separator: "\n").filter { l in
         !l.localizedCaseInsensitiveContains("token") && !l.contains("{") && !l.contains("}") && !l.contains("secret")
@@ -1065,9 +1045,12 @@ func connectCloud(_ p: CloudProvider, remote: String, browser: Bool = false,
     FileManager.default.createFile(atPath: P.a + "/cloud.log",
                                    contents: Data("\(Date()) \(p.name) code \(c.code)\n\(diag)\n".utf8),
                                    attributes: [.posixPermissions: 0o600])
+    if job?.cancelled == true { return "CANCELLED" }
     guard c.code == 0, sh(r, ["lsd", remote + ":"], timeout: 60).code == 0 else {
-        return T("\(p.name) isn't connected. Finish the login in the window that opens. (Details: ~/.amnesia/cloud.log)",
-                 "\(p.name) belum terhubung. Selesaikan login di jendela yang terbuka. (Detail: ~/.amnesia/cloud.log)")
+        return T("\(p.name) isn't connected. The login wasn't finished in the browser (or took longer than 5 minutes). "
+                 + "Press Connect to try again. (Details: ~/.amnesia/cloud.log)",
+                 "\(p.name) belum terhubung. Login di browser belum selesai (atau lebih dari 5 menit). "
+                 + "Tekan Hubungkan untuk mencoba lagi. (Detail: ~/.amnesia/cloud.log)")
     }
     return nil
 }
@@ -1104,6 +1087,13 @@ func googleDriveFolder() -> (path: String, account: String)? {
     return nil
 }
 
+/// Folder akun Google Drive sudah ada (berarti sudah login), walau isinya belum bisa dibuka
+/// (app Google Drive masih menyiapkan/menyinkronkan, "Operation timed out").
+func googleDriveSignedIn() -> Bool {
+    let base = P.home + "/Library/CloudStorage"
+    return ((try? FileManager.default.contentsOfDirectory(atPath: base)) ?? []).contains { $0.hasPrefix("GoogleDrive-") }
+}
+
 func googleDriveInstalled() -> Bool {
     NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.google.drivefs") != nil
         || FileManager.default.fileExists(atPath: "/Applications/Google Drive.app")
@@ -1136,7 +1126,7 @@ func durationText(_ secs: Double) -> String {
 
 /// Hubungkan server SSH tanpa Terminal. Kalau kunci SSH belum diterima server, password dipakai SEKALI
 /// untuk memasang kunci (lewat SSH_ASKPASS, file sementara 0600 yang langsung dihapus). Password tidak disimpan.
-/// Folder tujuan dibuat dan DIUJI bisa ditulis (tanpa sudo). Lalu kecepatan upload diukur (1 MB).
+/// Folder tujuan dibuat dan DIUJI bisa ditulis (tanpa sudo). Lalu kecepatan upload diukur (2 MB).
 /// forgetOldKey: hapus catatan kunci server lama (setelah user setuju, misalnya server diinstal ulang).
 /// hostChanged = true kalau kunci server berbeda dari yang dulu; app lalu bertanya dulu ke user.
 func connectSSH(_ server: String, port: Int = 22, password: String, forgetOldKey: Bool = false)
@@ -1214,17 +1204,23 @@ func connectSSH(_ server: String, port: Int = 22, password: String, forgetOldKey
                          + "Pilih folder di home server saja, mis. \(host):backup. Amnesia tidak pernah memakai sudo."), false)
     }
     let path = w.out.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n").last ?? rpath
-    // tes kecepatan upload: kirim 1 MB acak, tidak disimpan di server
+    // tes kecepatan upload: kirim 2 MB acak (tidak disimpan di server). Waktu membuka koneksi SSH diukur terpisah
+    // lalu dikurangkan, supaya angkanya tidak terlalu rendah. Tetap perkiraan kasar: koneksi biasanya makin cepat.
+    let tc = Date()
+    _ = sh("/usr/bin/ssh", base + ["-o", "BatchMode=yes", host, "true"], timeout: 60)
+    let overhead = Date().timeIntervalSince(tc)
     let t0 = Date()
-    let sp = sh("/bin/sh", ["-c", "head -c 1000000 /dev/urandom | /usr/bin/ssh \"$@\" 'cat > /dev/null'", "sh"]
+    let sp = sh("/bin/sh", ["-c", "head -c 2000000 /dev/urandom | /usr/bin/ssh \"$@\" 'cat > /dev/null'", "sh"]
                 + base + ["-o", "BatchMode=yes", host], timeout: 120)
-    let secs = Date().timeIntervalSince(t0)
+    let secs = max(Date().timeIntervalSince(t0) - overhead, 0.2)
     var speed = ""
-    if sp.code == 0 && secs > 0 {
-        let bps = 1_000_000 / secs
+    if sp.code == 0 {
+        let bps = 2_000_000 / secs
         let kb = Int(bps / 1000), mbit = String(format: "%.1f", bps * 8 / 1_000_000)
-        speed = T("\n\nUpload speed: about \(kb) KB/s (\(mbit) Mbps). A 100 MB backup takes about \(durationText(100_000_000 / bps)).",
-                  "\n\nKecepatan upload: sekitar \(kb) KB/s (\(mbit) Mbps). Backup 100 MB butuh sekitar \(durationText(100_000_000 / bps)).")
+        speed = T("\n\nUpload speed: about \(kb) KB/s (\(mbit) Mbps), a rough estimate. A 100 MB backup takes about "
+                  + "\(durationText(100_000_000 / bps)), often less: the connection usually speeds up during a real backup.",
+                  "\n\nKecepatan upload: sekitar \(kb) KB/s (\(mbit) Mbps), perkiraan kasar. Backup 100 MB butuh sekitar "
+                  + "\(durationText(100_000_000 / bps)), sering lebih cepat: koneksi biasanya makin kencang saat backup sungguhan.")
     }
     return (true, T("Connected to \(host), no password needed from now on.\n\nBackups go to this folder on the server "
                     + "(tested, it can be written to):\n\(path)",
@@ -1463,6 +1459,8 @@ final class Model: ObservableObject {
     @Published var progressText = ""
     /// Pekerjaan yang sedang jalan dan bisa dibatalkan (tombol Batal di layar tunggu).
     @Published var job: JobBox?
+    /// Login cloud: halaman login di browser (tombol cadangan "Buka halaman login lagi" di layar tunggu).
+    @Published var loginURL: URL?
     nonisolated static let progressSink: @Sendable (Double, String) -> Void = { p, text in
         Task { @MainActor in
             let m = Model.shared
@@ -1630,6 +1628,7 @@ final class Model: ObservableObject {
         busy = msg
         progress = nil
         progressText = ""
+        loginURL = nil
         self.job = job
         DispatchQueue.global(qos: .userInitiated).async {
             let r = work()
@@ -1637,6 +1636,7 @@ final class Model: ObservableObject {
                 self.busy = nil
                 self.progress = nil
                 self.progressText = ""
+                self.loginURL = nil
                 self.job = nil
                 done(r)
             }
@@ -1906,6 +1906,45 @@ struct PageHeader: View {
     }
 }
 
+/// Popup panduan: judul, isi yang bisa di-scroll, tombol Tutup.
+struct GuideSheet<C: View>: View {
+    let title: String
+    let close: () -> Void
+    let content: C
+    init(_ title: String, close: @escaping () -> Void, @ViewBuilder content: () -> C) {
+        self.title = title
+        self.close = close
+        self.content = content()
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Label(title, systemImage: "questionmark.circle.fill").font(.system(size: 17, weight: .bold))
+            ScrollView { content.frame(maxWidth: .infinity, alignment: .leading) }.frame(maxHeight: 460)
+            HStack {
+                Spacer()
+                Button(T("Close", "Tutup")) { close() }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(24)
+        .frame(width: 420)
+    }
+}
+
+/// Di bawah kolom "ulangi": langsung memberi tahu kalau isinya belum sama (atau sudah sama).
+struct MatchNote: View {
+    let a: String
+    let b: String
+    var body: some View {
+        if !b.isEmpty {
+            if a == b {
+                Note(text: T("Both match.", "Sudah sama."), icon: "checkmark.circle.fill", color: .green)
+            } else {
+                Note(text: T("They don't match yet.", "Belum sama dengan yang di atas."), icon: "xmark.circle.fill", color: .red)
+            }
+        }
+    }
+}
+
 struct Note: View {
     let text: String
     var icon = "info.circle.fill"
@@ -1932,16 +1971,16 @@ struct HeroCard: View {
                 Image(systemName: state.icon).font(.system(size: 30, weight: .bold))
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text(state.title).font(.system(size: 22, weight: .bold, design: .rounded))
-                Text(state.subtitle).font(.system(size: 12)).opacity(0.92)
+                Text(state.title).font(.system(size: 24, weight: .bold, design: .rounded))
+                Text(state.subtitle).font(.system(size: 13.5)).opacity(0.92)
                     .fixedSize(horizontal: false, vertical: true)
-                Label(lastClean, systemImage: "clock.fill").font(.system(size: 11, weight: .medium))
+                Label(lastClean, systemImage: "clock.fill").font(.system(size: 12, weight: .medium))
                     .opacity(0.85).padding(.top, 2)
             }
             Spacer(minLength: 0)
         }
         .foregroundStyle(.white)
-        .padding(20)
+        .padding(18)
         .background(RoundedRectangle(cornerRadius: 24, style: .continuous)
             .fill(LinearGradient(colors: state.colors, startPoint: .topLeading, endPoint: .bottomTrailing)))
         .shadow(color: (state.colors.last ?? .black).opacity(0.4), radius: 16, y: 8)
@@ -1960,15 +1999,19 @@ struct Tile: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 6) {
-                IconBadge(icon: icon, colors: colors, size: 32)
+            // ikon di kiri, teks di kanan: lebih padat, teks lebih besar, tanpa ruang kosong
+            HStack(alignment: .center, spacing: 10) {
+                IconBadge(icon: icon, colors: colors, size: 36)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                    Text(sub).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Spacer(minLength: 0)
-                Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
-                Text(sub).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
-            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 66, alignment: .leading)
+            .padding(12)
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.regularMaterial))
             .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .strokeBorder(colors[0].opacity(hover ? 0.7 : 0.15), lineWidth: 1))
@@ -2032,6 +2075,13 @@ struct MainView: View {
                             Text(T("Please wait, don't close Amnesia.", "Tunggu sebentar, jangan tutup Amnesia."))
                                 .font(.system(size: 11)).foregroundStyle(.secondary)
                         }
+                        if let u = m.loginURL {
+                            Button { openInBrowser(u) } label: {
+                                Label(T("Browser didn't open? Open the login page", "Browser tidak terbuka? Buka halaman login"),
+                                      systemImage: "safari.fill")
+                            }
+                            .controlSize(.large)
+                        }
                         if m.job != nil {
                             Button { m.cancelJob() } label: { Label(T("Cancel", "Batal"), systemImage: "xmark.circle.fill") }
                                 .controlSize(.large)
@@ -2085,7 +2135,7 @@ struct MainView: View {
                     }
                     Text(T("Your Mac forgets everything, except what you choose.",
                            "Mac kamu lupa semuanya, kecuali yang kamu pilih."))
-                        .font(.system(size: 12)).foregroundStyle(.secondary)
+                        .font(.system(size: 13)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
@@ -2099,8 +2149,8 @@ struct MainView: View {
                 .help(T("Settings", "Pengaturan"))
             }
             HeroCard(state: m.state, lastClean: m.lastClean)
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
-                      spacing: 14) {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
+                      spacing: 12) {
                 Tile(title: "Profile Vault", sub: vaultSub, icon: "lock.rectangle.stack.fill",
                      colors: Pal.vault) { m.page = .vault }
                 Tile(title: T("Save & Log Out", "Simpan & Logout"),
@@ -2123,15 +2173,15 @@ struct MainView: View {
             }
             Button { m.page = .preview } label: {
                 HStack(spacing: 10) {
-                    IconBadge(icon: "eye.fill", colors: Pal.logout, size: 26)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(T("What Gets Deleted", "Yang Akan Dihapus")).font(.system(size: 14, weight: .semibold))
-                        Text(previewSub).font(.system(size: 11)).foregroundStyle(.secondary)
+                    IconBadge(icon: "eye.fill", colors: Pal.logout, size: 36)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(T("What Gets Deleted", "Yang Akan Dihapus")).font(.system(size: 15, weight: .semibold))
+                        Text(previewSub).font(.system(size: 12)).foregroundStyle(.secondary)
                     }
                     Spacer()
                     Image(systemName: "chevron.right").foregroundStyle(.secondary)
                 }
-                .padding(10)
+                .padding(12)
                 .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.regularMaterial))
                 .contentShape(Rectangle())
             }
@@ -2158,6 +2208,17 @@ func bigReason(_ app: String) -> String {
     case "WhatsApp": return T("big chat history", "riwayat chat besar")
     default: return T("lots of data", "datanya banyak")
     }
+}
+
+/// Ikon app di vault: ikon asli kalau app-nya terpasang, kalau tidak ikon terminal (alat coding).
+@MainActor
+func vaultAppIcon(_ name: String) -> some View {
+    let candidates = ["/Applications/\(name).app", "/Applications/Google \(name).app", P.home + "/Applications/\(name).app"]
+    if let path = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }) {
+        return AnyView(Image(nsImage: NSWorkspace.shared.icon(forFile: path)).resizable().interpolation(.high))
+    }
+    return AnyView(Image(systemName: name.hasPrefix("~/") ? "folder.fill" : "terminal.fill")
+        .font(.system(size: 18)).foregroundStyle(.indigo))
 }
 
 func mbText(_ mb: Double) -> String {
@@ -2236,15 +2297,14 @@ struct VaultView: View {
                            "Password vault (min. \(v.min ?? 12) karakter)"), text: $pw)
             if !pw.isEmpty {
                 Field(label: T("Repeat password", "Ulangi password"), text: $pw2)
-                if !pw2.isEmpty && pw != pw2 {
-                    Note(text: T("The passwords don't match yet.", "Password belum sama."), icon: "xmark.circle.fill", color: .red)
-                }
+                MatchNote(a: pw, b: pw2)
             }
         }
         Card {
             Field(label: T("Panic word (optional)", "Kata panik (opsional)"), text: $panic)
             if !panic.isEmpty {
                 Field(label: T("Repeat panic word", "Ulangi kata panik"), text: $panic2)
+                MatchNote(a: panic, b: panic2)
             }
             Note(text: T("Typing this word in the password box deletes the vault completely, right away.",
                          "Kalau kata ini diketik di kolom password, vault langsung dihapus total."))
@@ -2253,7 +2313,7 @@ struct VaultView: View {
         }
         Button { create() } label: { Label(T("Create Vault", "Buat Vault"), systemImage: "lock.fill") }
             .buttonStyle(Pill(colors: Pal.vault))
-            .disabled(pw.isEmpty || pw != pw2)
+            .disabled(pw.isEmpty || pw != pw2 || (!panic.isEmpty && panic != panic2))
         moveRow(T("Moving from an old Mac? Take the vault from a backup instead.",
                   "Pindah dari Mac lama? Ambil vault dari file backup saja."))
     }
@@ -2282,6 +2342,10 @@ struct VaultView: View {
                             Text(mbText(mb)).font(.system(size: 11)).foregroundStyle(.secondary)
                                 .frame(width: 64, alignment: .trailing)
                         }
+                        Button { deleteSnapshots(only: a) } label: {
+                            Image(systemName: "trash").font(.system(size: 11)).foregroundStyle(.red)
+                        }
+                        .buttonStyle(.plain).help(T("Delete only this snapshot", "Hapus snapshot ini saja"))
                     }
                 }
                 Text(T("Each app has its own snapshot: saving one app doesn't touch the others.",
@@ -2319,14 +2383,16 @@ struct VaultView: View {
                 .buttonStyle(Pill(colors: Pal.vault))
         }
         HStack(spacing: 10) {
-            Button { deleteSnapshots() } label: { Label(T("Delete Snapshots", "Hapus Snapshot"), systemImage: "camera.badge.ellipsis") }
+            Button { deleteSnapshots() } label: { Label(T("Delete All Snapshots", "Hapus Semua Snapshot"), systemImage: "camera.badge.ellipsis") }
                 .buttonStyle(Pill(colors: Pal.pause))
                 .disabled(v.manifest == nil)
             Button { deleteVault() } label: { Label(T("Delete Vault", "Hapus Vault"), systemImage: "trash.fill") }
                 .buttonStyle(Pill(colors: Pal.danger))
         }
-        Text(T("Delete Snapshots keeps the vault and its password. Delete Vault removes everything.",
-               "Hapus Snapshot: vault dan password tetap ada. Hapus Vault: semuanya dihapus."))
+        Text(T("To delete one app's snapshot, use the trash icon next to it. Delete All Snapshots keeps the vault and its "
+               + "password. Delete Vault removes everything.",
+               "Untuk menghapus snapshot 1 app, pakai ikon tempat sampah di sampingnya. Hapus Semua Snapshot: vault dan "
+               + "password tetap ada. Hapus Vault: semuanya dihapus."))
             .font(.system(size: 11)).foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
         moveRow(T("Moving to a new Mac? Take your logins with you.", "Pindah ke Mac baru? Bawa login kamu."))
@@ -2338,6 +2404,7 @@ struct VaultView: View {
     }
 
     /// Pilih app mana yang ikut disimpan di vault (VAULT_SKIP = yang dimatikan), dengan ukurannya.
+    /// Kotak kecil yang bisa diklik, dan 1 catatan ringkas di bawah (bukan peringatan per app).
     private func appsCard(_ v: VaultReply) -> some View {
         let apps = v.apps ?? []
         let chosen = apps.filter { !skip.contains($0) }
@@ -2348,36 +2415,63 @@ struct VaultView: View {
                 Text(T("What goes in the vault", "Yang disimpan di vault")).font(.system(size: 13, weight: .semibold))
                 Spacer()
                 if sizesLoaded {
-                    Text(T("Total \(mbText(totalMB))", "Total \(mbText(totalMB))")).font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                    Text(T("\(chosen.count) picked · \(mbText(totalMB))", "\(chosen.count) dipilih · \(mbText(totalMB))"))
+                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
                 }
             }
-            Text(T("Snapshots don't ask for your password: the vault locks them with a key that only your "
-                   + "password can open. You need the password to restore.",
-                   "Snapshot tidak minta password: vault menguncinya dengan kunci yang hanya bisa dibuka "
-                   + "password kamu. Password dipakai saat restore."))
+            Text(T("Tap an app to pick it. Snapshot needs no password; Restore does.",
+                   "Klik app untuk memilih. Snapshot tanpa password; Restore pakai password."))
                 .font(.system(size: 11)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if apps.isEmpty {
                 Text(T("No app data found yet.", "Belum ada data app.")).font(.system(size: 12)).foregroundStyle(.secondary)
             }
-            ForEach(apps, id: \.self) { a in
-                HStack {
-                    Toggle(a, isOn: Binding(get: { !skip.contains(a) }, set: { on in
-                        if on { skip.remove(a) } else { skip.insert(a) }
-                        Config.set("VAULT_SKIP", skip.sorted().joined(separator: ","))
-                    }))
-                    .toggleStyle(.checkbox).font(.system(size: 12))
-                    Spacer()
-                    Text(sizeText(a)).font(.system(size: 11)).foregroundStyle(.secondary).monospacedDigit()
-                }
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)],
+                      spacing: 8) {
+                ForEach(apps, id: \.self) { a in appTile(a, on: !skip.contains(a)) }
             }
-            ForEach(big, id: \.self) { a in
-                Note(text: T("\(a) is \(sizeText(a)) (\(bigReason(a))): its snapshot can take a few minutes.",
-                             "\(a) berukuran \(sizeText(a)) (\(bigReason(a))): snapshot-nya bisa makan beberapa menit."),
-                     icon: "hourglass", color: .orange)
+            if !big.isEmpty || totalMB >= 1024 {
+                Note(text: slowText(totalMB, big), icon: "hourglass", color: .orange)
             }
         }
+    }
+
+    /// 1 catatan ringkas: snapshot bisa lama (total, dan app mana yang paling besar).
+    private func slowText(_ totalMB: Double, _ big: [String]) -> String {
+        let names = big.joined(separator: ", ")
+        if big.isEmpty {
+            return T("Snapshot can take a few minutes: \(mbText(totalMB)) in total.",
+                     "Snapshot bisa makan beberapa menit: total \(mbText(totalMB)).")
+        }
+        return T("Snapshot can take a few minutes: \(mbText(totalMB)) in total, mostly \(names).",
+                 "Snapshot bisa makan beberapa menit: total \(mbText(totalMB)), terutama \(names).")
+    }
+
+    /// Kotak kecil 1 app: ikon, nama, ukuran. Terpilih = garis warna + centang.
+    private func appTile(_ a: String, on: Bool) -> some View {
+        Button {
+            if on { skip.insert(a) } else { skip.remove(a) }
+            Config.set("VAULT_SKIP", skip.sorted().joined(separator: ","))
+        } label: {
+            VStack(spacing: 4) {
+                ZStack(alignment: .topTrailing) {
+                    vaultAppIcon(a).frame(width: 28, height: 28)
+                    if on {
+                        Image(systemName: "checkmark.circle.fill").font(.system(size: 12)).foregroundStyle(.white, .indigo)
+                            .offset(x: 6, y: -4)
+                    }
+                }
+                Text(a).font(.system(size: 11, weight: .semibold)).lineLimit(1).truncationMode(.tail)
+                Text(sizeText(a)).font(.system(size: 10)).foregroundStyle(.secondary).monospacedDigit()
+            }
+            .frame(maxWidth: .infinity, minHeight: 74)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(on ? Color.indigo.opacity(0.18) : Color.primary.opacity(0.05)))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.indigo : Color.clear, lineWidth: 1.5))
+            .opacity(on ? 1 : 0.65)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(on ? T("Picked: tap to leave it out", "Dipilih: klik untuk tidak ikut") : T("Tap to pick", "Klik untuk memilih"))
     }
 
     /// Folder pilihan yang ikut vault (VAULT_FOLDERS): dihapus saat logout, kembali lewat Restore.
@@ -2484,6 +2578,7 @@ struct VaultView: View {
             Field(label: T("New panic word", "Kata panik baru"), text: $newPanic)
             if !newPanic.isEmpty {
                 Field(label: T("Repeat panic word", "Ulangi kata panik"), text: $newPanic2)
+                MatchNote(a: newPanic, b: newPanic2)
             }
             Toggle(T("Also empty the Keep folder", "Juga kosongkan folder Keep"), isOn: $newPanicFull).font(.system(size: 12)).disabled(newPanic.isEmpty)
             HStack {
@@ -2530,8 +2625,8 @@ struct VaultView: View {
                          icon: "xmark.circle.fill", color: .red)
                 } else if !newPw.isEmpty && newPw.count < minLen {
                     Note(text: T("Needs at least \(minLen) characters.", "Minimal \(minLen) karakter."), icon: "info.circle.fill", color: .orange)
-                } else if !newPw2.isEmpty && newPw != newPw2 {
-                    Note(text: T("The new passwords don't match yet.", "Password baru belum sama."), icon: "xmark.circle.fill", color: .red)
+                } else {
+                    MatchNote(a: newPw, b: newPw2)
                 }
                 HStack {
                     Button(T("Cancel", "Batal")) { showPassword = false }.keyboardShortcut(.cancelAction)
@@ -2555,9 +2650,14 @@ struct VaultView: View {
         m.background(T("Creating vault keys…", "Membuat kunci vault…"), { vaultCall(args, input: input) }) { r in
             if r.ok {
                 pw = ""; pw2 = ""; panic = ""; panic2 = ""
+                // vault baru: belum ada app yang dicentang, kamu sendiri yang memilih
+                skip = Set(m.vault?.apps ?? [])
+                Config.set("VAULT_SKIP", skip.sorted().joined(separator: ","))
                 info(T("Vault created", "Vault dibuat"),
-                     T("Log in to your apps as usual, then press Snapshot (or Save & Log Out).",
-                       "Login ke app seperti biasa, lalu tekan Snapshot (atau Simpan & Logout)."))
+                     T("Now tick the apps you want in the vault, log in to them as usual, then press Snapshot "
+                       + "(or Save & Log Out).",
+                       "Sekarang centang app yang mau disimpan di vault, login ke app itu seperti biasa, lalu tekan "
+                       + "Snapshot (atau Simpan & Logout)."))
             } else {
                 m.vaultError(r)
             }
@@ -2685,14 +2785,23 @@ struct VaultView: View {
         }
     }
 
-    private func deleteSnapshots() {
-        guard confirm(T("Delete all snapshots?", "Hapus semua snapshot?"),
-                      T("The saved apps and folders are deleted from the vault. The vault, its password, the panic word "
-                        + "and the Move-Mac keys stay.\n\nThis cannot be undone.",
-                        "App dan folder yang tersimpan dihapus dari vault. Vault, password, kata panik dan kunci Pindah Mac "
-                        + "tetap ada.\n\nTidak bisa dibatalkan."),
-                      ok: T("Delete Snapshots", "Hapus Snapshot"), danger: true) else { return }
-        m.background(T("Deleting snapshots…", "Menghapus snapshot…"), { vaultCall(["delsnap"]) }) { r in
+    /// only: hapus snapshot 1 app/folder saja; nil = semua.
+    private func deleteSnapshots(only: String? = nil) {
+        if let a = only {
+            guard confirm(T("Delete the snapshot of \(a)?", "Hapus snapshot \(a)?"),
+                          T("Only this snapshot is deleted. The other apps keep theirs.\n\nThis cannot be undone.",
+                            "Hanya snapshot ini yang dihapus. App lain tetap.\n\nTidak bisa dibatalkan."),
+                          ok: T("Delete", "Hapus"), danger: true) else { return }
+        } else {
+            guard confirm(T("Delete all snapshots?", "Hapus semua snapshot?"),
+                          T("The saved apps and folders are deleted from the vault. The vault, its password, the panic word "
+                            + "and the Move-Mac keys stay.\n\nThis cannot be undone.",
+                            "App dan folder yang tersimpan dihapus dari vault. Vault, password, kata panik dan kunci Pindah Mac "
+                            + "tetap ada.\n\nTidak bisa dibatalkan."),
+                          ok: T("Delete All", "Hapus Semua"), danger: true) else { return }
+        }
+        let args = ["delsnap"] + (only.map { [$0] } ?? [])
+        m.background(T("Deleting snapshots…", "Menghapus snapshot…"), { vaultCall(args) }) { r in
             if !r.ok { m.vaultError(r) }
             m.refreshVault()
         }
@@ -3409,17 +3518,21 @@ struct OnboardingView: View {
 
     private var tour: some View {
         VStack(spacing: 16) {
-            Group {
-                switch step {
-                case 0: welcome
-                case 1: terms
-                case 2: features
-                case 3: setup
-                case 4: appsExample
-                case 5: vaultPage
-                default: routine
+            ScrollView {
+                Group {
+                    switch step {
+                    case 0: welcome
+                    case 1: terms
+                    case 2: features
+                    case 3: setup
+                    case 4: appsExample
+                    case 5: vaultPage
+                    default: routine
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .top)
             }
+            .scrollIndicators(.never)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .transition(.opacity)
             HStack(spacing: 6) {
@@ -3450,8 +3563,8 @@ struct OnboardingView: View {
 
     private func title(_ t: String, _ sub: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(t).font(.system(size: 26, weight: .heavy, design: .rounded))
-            Text(sub).font(.system(size: 13)).foregroundStyle(.secondary)
+            Text(t).font(.system(size: 30, weight: .heavy, design: .rounded))
+            Text(sub).font(.system(size: 15)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -3459,10 +3572,10 @@ struct OnboardingView: View {
 
     private func item(_ icon: String, _ colors: [Color], _ t: String, _ sub: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            IconBadge(icon: icon, colors: colors, size: 36)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(t).font(.system(size: 14, weight: .semibold))
-                Text(sub).font(.system(size: 12)).foregroundStyle(.secondary)
+            IconBadge(icon: icon, colors: colors, size: 40)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(t).font(.system(size: 16, weight: .semibold))
+                Text(sub).font(.system(size: 13.5)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
@@ -3472,18 +3585,18 @@ struct OnboardingView: View {
     // 1. Sambutan + bahasa
     private var welcome: some View {
         VStack(spacing: 16) {
-            Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 104, height: 104)
+            Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 128, height: 128)
             Text(T("Welcome to Amnesia", "Selamat datang di Amnesia"))
-                .font(.system(size: 28, weight: .heavy, design: .rounded))
+                .font(.system(size: 32, weight: .heavy, design: .rounded))
             Text(T("Your Mac forgets everything every time you log out, except the stuff you choose to keep. "
                    + "This quick tour sets it up with you. Nothing gets deleted until you say so.",
                    "Mac kamu lupa semuanya setiap logout, kecuali yang kamu pilih untuk disimpan. "
                    + "Tur singkat ini bantu kamu menyiapkannya. Tidak ada yang dihapus sampai kamu bilang iya."))
-                .font(.system(size: 13)).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                .font(.system(size: 16)).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             Card {
                 HStack {
-                    Label(T("Language", "Bahasa"), systemImage: "globe").font(.system(size: 13, weight: .semibold))
+                    Label(T("Language", "Bahasa"), systemImage: "globe").font(.system(size: 15, weight: .semibold))
                     Spacer()
                     Picker("", selection: $m.lang) {
                         ForEach(Lang.allCases, id: \.self) { l in Text(l.name).tag(l) }
@@ -3497,7 +3610,7 @@ struct OnboardingView: View {
 
     // 2. Baca dulu (wajib dicentang)
     private var terms: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 18) {
             title(T("Read this first", "Baca ini dulu"),
                   T("Amnesia really deletes data. Please read before you continue.",
                     "Amnesia benar-benar menghapus data. Tolong baca sebelum lanjut."))
@@ -3522,18 +3635,18 @@ struct OnboardingView: View {
                 accepted = v
                 Config.set("TERMS", v ? "1" : "0")
             }))
-            .toggleStyle(.checkbox).font(.system(size: 12, weight: .semibold))
+            .toggleStyle(.checkbox).font(.system(size: 14, weight: .semibold))
             .frame(maxWidth: .infinity, alignment: .leading)
             Button { NSWorkspace.shared.open(URL(string: termsURL)!) } label: {
                 Label(T("Read the full terms", "Baca ketentuan lengkap"), systemImage: "arrow.up.right.square")
             }
-            .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(.indigo)
+            .buttonStyle(.plain).font(.system(size: 14, weight: .semibold)).foregroundStyle(.indigo)
         }
     }
 
     // 3. Cara kerja
     private var features: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             title(T("How it works", "Cara kerjanya"), T("Four things to know.", "Cukup tahu 4 hal ini."))
             Card {
                 item("sparkles", Pal.on, T("Wiped at logout", "Dihapus saat logout"),
@@ -3555,7 +3668,7 @@ struct OnboardingView: View {
     // 4. Cek kesiapan
     private var setup: some View {
         let _ = recheck
-        return VStack(spacing: 14) {
+        return VStack(spacing: 18) {
             title(T("Quick check", "Cek dulu"), T("Amnesia needs these to run.", "Amnesia butuh ini supaya bisa jalan."))
             Card {
                 status(Engine.ready, T("Amnesia engine", "Mesin Amnesia"),
@@ -3592,17 +3705,18 @@ struct OnboardingView: View {
                      icon: "exclamationmark.triangle.fill", color: .orange)
             }
             Button { recheck += 1 } label: { Label(T("Check again", "Cek lagi"), systemImage: "arrow.clockwise") }
-                .buttonStyle(.plain).font(.system(size: 12, weight: .semibold))
+                .buttonStyle(.plain).font(.system(size: 14, weight: .semibold))
         }
     }
 
     private func status(_ ok: Bool, _ t: String, _ sub: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: ok ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .font(.system(size: 20)).foregroundStyle(ok ? .green : .red)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(t).font(.system(size: 13, weight: .semibold))
-                Text(sub).font(.system(size: 11)).foregroundStyle(.secondary)
+                .font(.system(size: 24)).foregroundStyle(ok ? .green : .red)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(t).font(.system(size: 16, weight: .semibold))
+                Text(sub).font(.system(size: 13.5)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
@@ -3610,7 +3724,7 @@ struct OnboardingView: View {
 
     // 5. Contoh memilih app (yang asli muncul setelah tur)
     private var appsExample: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 18) {
             title(T("You choose what stays", "Kamu yang pilih apa yang tetap ada"),
                   T("Right after this tour, Amnesia lists the apps on your Mac. It looks like this:",
                     "Setelah tur ini, Amnesia menampilkan app yang ada di Mac kamu. Bentuknya seperti ini:"))
@@ -3637,10 +3751,10 @@ struct OnboardingView: View {
                             _ detail: [(String, String, String)]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                IconBadge(icon: icon, colors: colors, size: 30)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(name).font(.system(size: 13, weight: .semibold))
-                    Text(sub).font(.system(size: 11)).foregroundStyle(.secondary)
+                IconBadge(icon: icon, colors: colors, size: 36)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(name).font(.system(size: 15, weight: .semibold))
+                    Text(sub).font(.system(size: 12.5)).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Toggle("", isOn: .constant(on)).toggleStyle(.switch).labelsHidden().controlSize(.small)
@@ -3650,22 +3764,22 @@ struct OnboardingView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "folder.fill").font(.system(size: 10)).foregroundStyle(.teal).frame(width: 14)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(d.0).font(.system(size: 11, weight: .semibold))
-                        Text(d.1).font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+                        Text(d.0).font(.system(size: 12.5, weight: .semibold))
+                        Text(d.1).font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Text(d.2).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+                    Text(d.2).font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
                 }
                 .padding(.leading, 40)
             }
         }
-        .padding(8)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.regularMaterial))
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.regularMaterial))
     }
 
     // 6. Profile Vault
     private var vaultPage: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             title("Profile Vault", T("So you don't have to log in again every day.",
                                      "Supaya kamu tidak perlu login ulang setiap hari."))
             Card {
@@ -3686,7 +3800,7 @@ struct OnboardingView: View {
 
     // 7. Cara pakai sehari-hari
     private var routine: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             title(T("Your daily routine", "Rutinitas harian"), T("Use it like this and you'll never lose a thing.",
                                                                  "Pakai seperti ini dan tidak ada yang hilang."))
             Card {
@@ -3697,7 +3811,7 @@ struct OnboardingView: View {
                 item("arrow.counterclockwise", Pal.vault, T("Back? Restore Profiles", "Kembali? Restore Profil"),
                      T("Open Profile Vault, type your password, done.", "Buka Profile Vault, ketik password, selesai."))
                 item("eye.fill", Pal.pause, T("Not sure? Check first", "Ragu? Cek dulu"),
-                     T("Settings → See what would be deleted.", "Pengaturan → Lihat yang akan dihapus."))
+                     T("Home page → What Gets Deleted.", "Halaman utama → Yang Akan Dihapus."))
             }
             Note(text: T("Amnesia stays OFF until you press Turn On. Take your time.",
                          "Amnesia tetap MATI sampai kamu tekan Aktifkan. Santai saja."),
@@ -3741,6 +3855,8 @@ struct BackupView: View {
     /// Google Drive: "app" = lewat app Google Drive for Desktop (disarankan), "direct" = lewat rclone
     @State private var gMode = Config.get("BACKUP_DEST") == "folder" || Config.get("BACKUP_GMODE", "app") == "app" ? "app" : "direct"
     @State private var gdrive: (path: String, account: String)? = nil
+    /// "checking" = sedang dicek, "ready" = ketemu, "syncing" = sudah login tapi belum siap, "none" = belum login/terpasang
+    @State private var gState = "checking"
     @State private var clientID = Config.get("BACKUP_GCLIENT")
     @State private var clientSecret = ""
     @State private var connected: [String] = []
@@ -3751,6 +3867,8 @@ struct BackupView: View {
     @State private var pw = ""
     @State private var pw2 = ""
     @State private var status = lastBackupStatus()
+    @State private var showGuide = false
+    @State private var showGoogleGuide = false
     static let defaults = ["@keep", "Documents", "Desktop", "Downloads", "Pictures", "Music", "Movies"]
     /// "@keep" = folder Keep (di mana pun letaknya). "Keep" dari versi lama juga berarti folder Keep.
     static var saved: [String] {
@@ -3791,6 +3909,10 @@ struct BackupView: View {
         ScrollView {
             VStack(spacing: 14) {
                 PageHeader(title: "Backup", icon: "externaldrive.fill", colors: Pal.backup, back: back)
+                Button { showGuide = true } label: {
+                    Label(T("How backup works (guide)", "Cara kerja backup (panduan)"), systemImage: "questionmark.circle.fill")
+                }
+                .buttonStyle(Pill(colors: Pal.gray))
                 if !status.isEmpty {
                     Card {
                         Note(text: T("Last: ", "Terakhir: ") + status,
@@ -3835,7 +3957,10 @@ struct BackupView: View {
                                               "Password backup (kosongkan = pakai yang tersimpan)")
                                           : T("Backup password", "Password backup"),
                           text: $pw)
-                    if !pw.isEmpty { Field(label: T("Repeat password", "Ulangi password"), text: $pw2) }
+                    if !pw.isEmpty {
+                        Field(label: T("Repeat password", "Ulangi password"), text: $pw2)
+                        MatchNote(a: pw, b: pw2)
+                    }
                     Toggle(T("Save password in Keychain (needed for scheduled backups)",
                              "Simpan password di Keychain (wajib untuk backup terjadwal)"), isOn: $remember)
                         .toggleStyle(.checkbox).font(.system(size: 12))
@@ -3866,11 +3991,28 @@ struct BackupView: View {
                     Button { start() } label: { Label(T("Back Up Now", "Backup Sekarang"), systemImage: "arrow.up.doc.fill") }
                         .buttonStyle(Pill(colors: Pal.backup))
                 }
-                guide
             }
         }
         .scrollIndicators(.never)
         .onAppear { load() }
+        .sheet(isPresented: $showGuide) {
+            GuideSheet(T("How backup works", "Cara kerja backup"), close: { showGuide = false }) { guideContent }
+        }
+        .sheet(isPresented: $showGoogleGuide) {
+            GuideSheet(T("Your own Google access", "Akses Google milik sendiri"), close: { showGoogleGuide = false }) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(T("Google is shutting down the shared access rclone uses, so make your own once (about 10 minutes, free):",
+                           "Google sedang menutup akses bersama yang dipakai rclone, jadi buat akses sendiri sekali (±10 menit, gratis):"))
+                        .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    ForEach(Array(googleSteps.enumerated()), id: \.offset) { i, t in
+                        Text("\(i + 1). " + t).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
+                    }
+                    Button(T("Open Google Cloud Console", "Buka Google Cloud Console")) {
+                        NSWorkspace.shared.open(URL(string: "https://console.cloud.google.com/apis/credentials")!)
+                    }
+                }
+            }
+        }
     }
 
     @ViewBuilder private var driveBox: some View {
@@ -3951,14 +4093,31 @@ struct BackupView: View {
                              "Ketemu, login sebagai \(g.account). Tidak perlu login lagi: Amnesia menaruh backup di folder "
                              + "Google Drive dan app Google Drive yang mengunggahnya."),
                      icon: "checkmark.circle.fill", color: .green)
+            } else if gState == "checking" {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text(T("Looking for the Google Drive app…", "Mencari app Google Drive…")).font(.system(size: 12))
+                }
             } else {
-                Note(text: googleDriveInstalled()
-                     ? T("The Google Drive app is installed but not signed in yet. Open it and sign in, then press Check Again.",
-                         "App Google Drive sudah terpasang tapi belum login. Buka app-nya dan login, lalu tekan Cek Lagi.")
-                     : T("The Google Drive app isn't installed. It's free from Google. Or pick another service, "
-                         + "or Connect directly.",
-                         "App Google Drive belum terpasang. Gratis dari Google. Atau pilih layanan lain, atau Hubungkan langsung."),
-                     icon: "exclamationmark.triangle.fill", color: .orange)
+                if gState == "syncing" {
+                    Note(text: T("Google Drive is signed in, but isn't ready yet (it's still syncing). Wait until it's done, "
+                                 + "then press Check Again.",
+                                 "Google Drive sudah login, tapi belum siap (masih sinkron). Tunggu sampai selesai, "
+                                 + "lalu tekan Cek Lagi."),
+                         icon: "hourglass", color: .orange)
+                } else if !googleDriveInstalled() {
+                    Note(text: T("The Google Drive app isn't installed. It's free from Google. Or pick another service, "
+                                 + "or Connect directly.",
+                                 "App Google Drive belum terpasang. Gratis dari Google. Atau pilih layanan lain, atau Hubungkan langsung."),
+                         icon: "exclamationmark.triangle.fill", color: .orange)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(T("1. Open the Google Drive app and sign in.", "1. Buka app Google Drive dan login."))
+                    Text(T("2. Wait until syncing is done (Google Drive icon in the menu bar).",
+                           "2. Tunggu sampai sinkron selesai (ikon Google Drive di menu bar)."))
+                    Text(T("3. Press Check Again.", "3. Tekan Cek Lagi."))
+                }
+                .font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 10) {
                     if !googleDriveInstalled() {
                         Button { NSWorkspace.shared.open(URL(string: "https://www.google.com/drive/download/")!) } label: {
@@ -3966,7 +4125,7 @@ struct BackupView: View {
                         }
                         .buttonStyle(Pill(colors: Pal.logout))
                     }
-                    Button { gdrive = googleDriveFolder() } label: {
+                    Button { checkGoogleDrive() } label: {
                         Label(T("Check Again", "Cek Lagi"), systemImage: "arrow.clockwise")
                     }
                     .buttonStyle(Pill(colors: Pal.gray))
@@ -3980,14 +4139,14 @@ struct BackupView: View {
                      ?? T("\(provider.name) is connected.", "\(provider.name) sudah terhubung."),
                      icon: "checkmark.circle.fill", color: .green)
             }
-            Button { setupCloud(browser: false) } label: {
+            Button { setupCloud() } label: {
                 Label(connected.contains(remote) ? T("Reconnect \(provider.name)", "Hubungkan ulang \(provider.name)")
                                                  : T("Connect \(provider.name)", "Hubungkan \(provider.name)"),
                       systemImage: "icloud.and.arrow.up.fill")
             }
             .buttonStyle(Pill(colors: Pal.logout))
-            Text(T("A small login window opens. Log in there; no Terminal needed.",
-                   "Jendela login kecil terbuka. Login di sana; tanpa Terminal."))
+            Text(T("The login page opens in your browser. Log in there and press Allow; no Terminal needed.",
+                   "Halaman login terbuka di browser. Login di sana lalu tekan Allow / Izinkan; tanpa Terminal."))
                 .font(.system(size: 11)).foregroundStyle(.secondary)
         }
         stepTitle(T("3. Folder name", "3. Nama folder"))
@@ -4004,8 +4163,6 @@ struct BackupView: View {
                              + "then type the remote name above.",
                              "S3, WebDAV, SFTP dan 40+ layanan lain juga bisa: atur lewat rclone config di Terminal, "
                              + "lalu ketik nama remote-nya di atas."))
-                Button(T("Log in with my normal browser instead", "Login lewat browser biasa saja")) { setupCloud(browser: true) }
-                    .disabled(viaGoogleApp)
             }
             .padding(.top, 6)
         }
@@ -4014,23 +4171,15 @@ struct BackupView: View {
 
     /// Google Drive langsung: akses Google milik user sendiri (akses bersama rclone sedang dihentikan Google).
     @ViewBuilder private var googleOwnAccess: some View {
-        DisclosureGroup(T("Your own Google access (needed for Google Drive)", "Akses Google milik sendiri (perlu untuk Google Drive)")) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(T("Google is shutting down the shared access rclone uses, so make your own once (about 10 minutes, free):",
-                       "Google sedang menutup akses bersama yang dipakai rclone, jadi buat akses sendiri sekali (±10 menit, gratis):"))
-                    .font(.system(size: 11)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                ForEach(Array(googleSteps.enumerated()), id: \.offset) { i, t in
-                    Text("\(i + 1). " + t).font(.system(size: 11)).fixedSize(horizontal: false, vertical: true)
-                }
-                Button(T("Open Google Cloud Console", "Buka Google Cloud Console")) {
-                    NSWorkspace.shared.open(URL(string: "https://console.cloud.google.com/apis/credentials")!)
-                }
-                Field(label: "Client ID", text: $clientID, secure: false)
-                Field(label: "Client Secret", text: $clientSecret)
-            }
-            .padding(.top, 6)
+        Text(T("Google Drive needs your own Google access (one time, about 10 minutes, free).",
+               "Google Drive butuh akses Google milik sendiri (sekali saja, ±10 menit, gratis)."))
+            .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        Button { showGoogleGuide = true } label: {
+            Label(T("Show me how (7 steps)", "Lihat caranya (7 langkah)"), systemImage: "questionmark.circle.fill")
         }
-        .font(.system(size: 12))
+        .buttonStyle(Pill(colors: Pal.gray))
+        Field(label: "Client ID", text: $clientID, secure: false)
+        Field(label: "Client Secret", text: $clientSecret)
     }
 
     private var googleSteps: [String] {
@@ -4048,11 +4197,9 @@ struct BackupView: View {
            "Tekan Hubungkan. Google memperingatkan \"app belum diverifikasi\": itu app kamu sendiri, klik Advanced → Go to (nama app).")]
     }
 
-    /// Panduan singkat di dalam app.
-    private var guide: some View {
-        Card {
-            DisclosureGroup(T("How backup works (guide)", "Cara kerja backup (panduan)")) {
-                VStack(alignment: .leading, spacing: 10) {
+    /// Panduan singkat di dalam app (popup).
+    private var guideContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
                     guideItem("externaldrive.fill", T("USB / SSD", "Flashdisk / SSD"),
                               T("Plug in, pick the drive, press Back Up Now. Fast: usually seconds to a few minutes. "
                                 + "Check: open the drive in Finder, the file is called amnesia_backup_….7z.",
@@ -4066,9 +4213,9 @@ struct BackupView: View {
                                 + "Tekan Hubungkan sekali. Kecepatannya tergantung upload internet kamu: Hubungkan menampilkan perkiraan. "
                                 + "Cek: di server, jalankan ls -lh ~/backup."))
                     guideItem("icloud.fill", "Cloud",
-                              T("Google Drive: easiest through the Google Drive app. Other services: press Connect and log in. "
+                              T("Google Drive: easiest through the Google Drive app. Other services: press Connect and log in in your browser. "
                                 + "Check: open the service's website, folder \(cleanFolder).",
-                                "Google Drive: paling mudah lewat app Google Drive. Layanan lain: tekan Hubungkan lalu login. "
+                                "Google Drive: paling mudah lewat app Google Drive. Layanan lain: tekan Hubungkan lalu login di browser. "
                                 + "Cek: buka website layanan itu, folder \(cleanFolder)."))
                     guideItem("clock.fill", T("How long?", "Berapa lama?"),
                               T("Size ÷ speed. Example: 100 MB at 1 MB/s takes about 2 minutes, at 100 KB/s about 17 minutes. "
@@ -4081,10 +4228,6 @@ struct BackupView: View {
                                 "Setiap backup adalah file .7z terkunci. Simpan password-nya baik-baik: tanpa itu backup tidak bisa dibuka. "
                                 + "Checksum SHA256 tiap backup ada di ~/.amnesia/backup_checksums.txt."))
                 }
-                .padding(.top, 8)
-            }
-            .font(.system(size: 13, weight: .semibold))
-        }
     }
 
     private func guideItem(_ icon: String, _ t: String, _ sub: String) -> some View {
@@ -4125,7 +4268,16 @@ struct BackupView: View {
         drives = listDrives()
         if !drives.contains(where: { $0.name == drive }) { drive = drives.first?.name ?? drive }
         status = lastBackupStatus()
-        gdrive = googleDriveFolder()
+        checkGoogleDrive()
+    }
+
+    /// Dicek di background: folder Google Drive yang belum siap bisa membuat Finder/app menunggu lama.
+    private func checkGoogleDrive() {
+        gState = "checking"
+        m.quiet({ (googleDriveFolder(), googleDriveSignedIn()) }) { r in
+            gdrive = r.0
+            gState = r.0 != nil ? "ready" : (r.1 ? "syncing" : "none")
+        }
     }
 
     /// Simpan pengaturan ke settings.conf (+ password ke Keychain kalau dipilih).
@@ -4205,8 +4357,10 @@ struct BackupView: View {
         let started = f.string(from: Date())
         let which = T("The backup to \(to) (started \(started))", "Backup ke \(to) (mulai \(started))")
         let job = JobBox()
-        m.background(T("Backing up to \(to)…\nDon't unplug the drive or turn off the internet.",
-                       "Backup ke \(to)…\nJangan cabut drive / matikan internet."), job: job,
+        let hint = dest == "drive" ? T("Don't unplug the drive.", "Jangan cabut drive-nya.")
+            : viaGoogleApp ? T("The Google Drive app uploads it afterwards.", "Setelah itu app Google Drive yang mengunggahnya.")
+            : T("Keep the internet on.", "Jangan matikan internet.")
+        m.background(T("Backing up to \(to)…\n", "Backup ke \(to)…\n") + hint, job: job,
                      { () -> (ok: Bool, msg: String, code: Int32) in
             guard let p = typed.isEmpty ? Secret.get() : typed else {
                 return (false, T("Couldn't read the saved password.", "Password tersimpan tidak bisa dibaca."), 1)
@@ -4293,7 +4447,7 @@ struct BackupView: View {
         }
     }
 
-    private func setupCloud(browser: Bool) {
+    private func setupCloud() {
         let p = provider
         if remote.isEmpty { cloud = p.remote + ":" + cleanFolder }
         let name = remote
@@ -4303,19 +4457,22 @@ struct BackupView: View {
             info(p.name, T("Also paste the Client Secret.", "Tempel juga Client Secret-nya."), error: true)
             return
         }
-        m.background(browser ? T("Log in to \(p.name) in your browser…\n(Amnesia waits up to 5 minutes)",
-                                 "Login ke \(p.name) di browser…\n(Amnesia menunggu sampai 5 menit)")
-                             : T("Log in to \(p.name) in the login window…\n(Amnesia waits up to 5 minutes)",
-                                 "Login ke \(p.name) di jendela login…\n(Amnesia menunggu sampai 5 menit)"),
-                     { connectCloud(p, remote: name, browser: browser, clientID: id, secret: sec) }) { err in
-            if let e = err {
-                if !browser && confirm(p.name, e + T("\n\nTry again with your normal browser instead?",
-                                                     "\n\nCoba lagi lewat browser biasa?"),
-                                       ok: T("Use My Browser", "Pakai Browser")) {
-                    setupCloud(browser: true)
-                    return
-                }
-                if browser { info(p.name, e, error: true) }
+        let browser = defaultBrowser().map { FileManager.default.displayName(atPath: $0.path).replacingOccurrences(of: ".app", with: "") }
+            ?? "Safari"
+        let job = JobBox()
+        m.background(T("Log in to \(p.name) in \(browser), then press Allow.\nCome back here afterwards. Amnesia waits up to 5 minutes.",
+                       "Login ke \(p.name) di \(browser), lalu tekan Allow / Izinkan.\nSetelah itu kembali ke sini. Amnesia menunggu sampai 5 menit."),
+                     job: job,
+                     { connectCloud(p, remote: name, clientID: id, secret: sec, job: job, onURL: { url in
+                         Task { @MainActor in
+                             Model.shared.loginURL = url
+                             if defaultBrowser() == nil { openInBrowser(url) }   // Mac baru tanpa browser default: Safari
+                         }
+                     }) }) { err in
+            if err == "CANCELLED" {
+                info(p.name, T("Login cancelled. Nothing was changed.", "Login dibatalkan. Tidak ada yang diubah."))
+            } else if let e = err {
+                info(p.name, e, error: true)
             } else {
                 clientSecret = ""
                 _ = save()

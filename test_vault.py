@@ -134,6 +134,12 @@ try:
     v.restore(PW)
     assert open(os.path.join(T, "Documents/PDF/buku.pdf")).read() == "isi-pdf"
 
+    # hapus snapshot 1 app saja: app lain tetap
+    v.delete_snapshot(["~/Documents/PDF"])
+    m = v.manifest()
+    assert "~/Documents/PDF" not in m["per_app"] and "Claude" in m["per_app"], "only the chosen snapshot goes"
+    assert not os.path.exists(v._app_files("~/Documents/PDF")[0])
+
     # hapus snapshot saja: vault & password tetap
     v.delete_snapshot()
     assert v.exists() and v.manifest() == {} and not os.path.exists(v.F_APPDIR)
