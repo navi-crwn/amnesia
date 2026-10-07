@@ -3,8 +3,11 @@ HAPUS  ~/Library/Application Support/FileProvider
 HAPUS  ~/Library/Application Support/Google/Chrome
 HAPUS  ~/Library/Application Support/Google/RLZ
 HAPUS  ~/Library/Application Support/locationaccessstored
+HAPUS  ~/Library/Application Support/networkserviceproxy
 HAPUS  ~/Library/Containers/com.apple.AquaAppearanceHelper
 HAPUS  ~/Library/Containers/com.apple.CloudPhotosConfiguration
+HAPUS  ~/Library/Containers/com.apple.CloudSharingUI.CopyLink
+HAPUS  ~/Library/Containers/com.apple.CloudSharingUI.invite
 HAPUS  ~/Library/Containers/com.apple.Family
 HAPUS  ~/Library/Containers/com.apple.FamilyControlsAgent
 HAPUS  ~/Library/Containers/com.apple.FollowUpSettings.FollowUpSettingsExtension
@@ -19,8 +22,11 @@ HAPUS  ~/Library/Containers/com.apple.TV.TVCacheExtension
 HAPUS  ~/Library/Containers/com.apple.UsageTrackingAgent
 HAPUS  ~/Library/Containers/com.apple.WindowManager.controls
 HAPUS  ~/Library/Containers/com.apple.WorkflowKit.ShortcutsViewService
+HAPUS  ~/Library/Containers/com.apple.accessibility.axassetsd
 HAPUS  ~/Library/Containers/com.apple.archiveutility
 HAPUS  ~/Library/Containers/com.apple.assessmentagent
+HAPUS  ~/Library/Containers/com.apple.ax.KonaTTSSupport.KonaSynthesizer
+HAPUS  ~/Library/Containers/com.apple.ax.MauiTTSSupport.MauiAUSP
 HAPUS  ~/Library/Containers/com.apple.calendar.CalendarIntentsExtension
 HAPUS  ~/Library/Containers/com.apple.contacts.donation-agent
 HAPUS  ~/Library/Containers/com.apple.controls.display
@@ -38,11 +44,15 @@ HAPUS  ~/Library/Containers/com.apple.quicklook.QuickLookUIService
 HAPUS  ~/Library/Containers/com.apple.quicklook.ui.helper
 HAPUS  ~/Library/Containers/com.apple.routined
 HAPUS  ~/Library/Containers/com.apple.siri.GMSSELFIngestor
+HAPUS  ~/Library/Containers/com.apple.speech.MacinTalkFramework.MacinTalkAUSP
+HAPUS  ~/Library/Containers/com.apple.speech.MacinTalkFramework.WardaSynthesizer
 HAPUS  ~/Library/Containers/com.apple.speech.SpeechSynthesisServerXPC
 HAPUS  ~/Library/Containers/com.apple.stocks
 HAPUS  ~/Library/Containers/com.apple.stocks.widget
 HAPUS  ~/Library/Containers/com.apple.systempreferences.AppleIDSettings
 HAPUS  ~/Library/Containers/com.apple.systempreferences.GeneralSettings
+HAPUS  ~/Library/Containers/com.apple.texttospeech.SiriAUSP
+HAPUS  ~/Library/Containers/com.apple.voicebankingd
 HAPUS  ~/Library/Containers/com.apple.weather
 HAPUS  ~/Library/Group Containers/com.apple.bird
 HAPUS  ~/Library/Group Containers/com.apple.icloudwebd
@@ -55,6 +65,8 @@ HAPUS  ~/Library/Group Containers/group.com.apple.FileProvider.DomainCaching
 HAPUS  ~/Library/Group Containers/group.com.apple.ManagedSettings
 HAPUS  ~/Library/Group Containers/group.com.apple.PegasusConfiguration
 HAPUS  ~/Library/Group Containers/group.com.apple.ScreenTime
+HAPUS  ~/Library/Group Containers/group.com.apple.SiriTTS
+HAPUS  ~/Library/Group Containers/group.com.apple.accessibility.voicebanking
 HAPUS  ~/Library/Group Containers/group.com.apple.amsondevicestoraged
 HAPUS  ~/Library/Group Containers/group.com.apple.appstoreagent
 HAPUS  ~/Library/Group Containers/group.com.apple.contacts
@@ -79,6 +91,7 @@ HAPUS  ~/Library/Group Containers/group.com.apple.siri.sirisuggestions
 HAPUS  ~/Library/Group Containers/group.com.apple.spotlight
 HAPUS  ~/Library/Group Containers/group.com.apple.storekit
 HAPUS  ~/Library/Group Containers/group.com.apple.studentd
+HAPUS  ~/Library/Group Containers/group.com.apple.swtransparency
 HAPUS  ~/Library/Group Containers/group.com.apple.tips
 HAPUS  ~/Library/Group Containers/group.com.apple.transparency
 HAPUS  ~/Library/Group Containers/group.com.apple.usernoted
@@ -105,6 +118,7 @@ HAPUS  ~/Library/Preferences/familycircled.plist
 HAPUS  ~/Library/Preferences/no_backup
 HAPUS  ~/Library/Preferences/pbs.plist
 HAPUS  ~/Library/Preferences/systemgroup.com.apple.icloud.searchpartyd.sharedsettings.plist
+HAPUS  ~/Library/Assistant
 HAPUS  ~/Library/Suggestions
 HAPUS  ~/Library/Caches/Amnesia
 HAPUS  ~/Library/Caches/CloudKit
@@ -146,6 +160,7 @@ HAPUS  ~/Library/Caches/com.apple.parsecd
 HAPUS  ~/Library/Caches/com.apple.preferencepanes.usercache
 HAPUS  ~/Library/Caches/com.apple.proactive.eventtracker
 HAPUS  ~/Library/Caches/com.apple.python
+HAPUS  ~/Library/Caches/com.apple.remindd
 HAPUS  ~/Library/Caches/com.apple.storekitagent
 HAPUS  ~/Library/Caches/com.apple.systemsettings.menucache
 HAPUS  ~/Library/Caches/com.apple.tipsd
@@ -165,4 +180,4 @@ HAPUS  ~/Downloads/m2-res_1080p.mp4
 HAPUS  ~/.Trash/.DS_Store
 HAPUS  ~/.Trash/Amnesia.app
 HAPUS  ~/.Trash/amnesia-lama-20261007-0103
---- dry-run (logout): 167 items would be deleted. Nothing was deleted. ---
+--- dry-run (logout): 182 items would be deleted. Nothing was deleted. ---

@@ -5,6 +5,13 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## Website — 2026-10-07
+
+### Changed
+- **New landing page** (navi-crwn.github.io/amnesia-mac). Dark design with scroll animations: the headline word "everything" breaks into particles, a Mac desk full of files is wiped when **Log Out** is pressed while Keep, Vault, Keep List and Apps stay and glow green, the Profile Vault locks while app initials fly in, the daily timeline draws itself and the backup `.7z` connects to every destination. All old content is still there in English and Indonesian: features, wiped vs. stays, the feature tour with screenshots, install, the 10-step tutorial, the glossary and all 27 FAQ answers. The deletion warning and the Terms link are in the hero and in Install.
+- Works without animations too: with "Reduce motion" on, with JavaScript off, or if the animation library can't load, the page shows everything in its final state. No tracking or analytics.
+- New files: `docs/assets/css/site.css`, `docs/assets/js/site.js` and `docs/assets/js/scenes/` (hero, desk, story). Animations use GSAP and Lenis from jsDelivr (pinned versions). The app itself did not change.
+
 ## v5.17.1 — 2026-10-07
 
 ### Fixed
