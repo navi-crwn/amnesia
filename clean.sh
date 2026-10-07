@@ -59,9 +59,11 @@ if [ "$DRY" = 0 ] && [ -f "$A/pause_once" ]; then
     if [ "$MODE" = "login" ]; then
         rm -f "$A/pause_once"
         echo "$(date '+%F %T') login: $(t "paused (marker removed)" "dijeda (penanda dihapus)")" > "$A/clean.log"
+        printf '%s\tpaused\tlogin\n' "$(date '+%F %T')" >> "$A/history.log"
         exit 0
     elif [ "$MODE" = "logout" ]; then
         echo "$(date '+%F %T') logout: $(t paused dijeda)" > "$A/clean.log"
+        printf '%s\tpaused\tlogout\n' "$(date '+%F %T')" >> "$A/history.log"
         exit 0
     fi
 fi
@@ -292,6 +294,7 @@ esac
 rm -f "$A/report.txt"     # laporan "yang akan dihapus" berisi nama file: ikut dibuang
 # Log hanya waktu + jumlah, tanpa nama file (log juga jejak)
 echo "$(date '+%F %T') $MODE: $(t "$COUNT items wiped" "$COUNT item dibersihkan")" > "$A/clean.log"
+printf '%s\tclean\t%s %s\n' "$(date '+%F %T')" "$MODE" "$COUNT" >> "$A/history.log"   # halaman Riwayat
 [ "$MODE" = logout ] && touch "$A/clean.done"      # login berikutnya cukup cek ringan
 [ "$MODE" = logout ] || purge_trash               # saat logout waktunya terbatas: hapus nanti saja
 trace "done ($COUNT)"

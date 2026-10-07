@@ -51,6 +51,18 @@ echo "pw-backup-123" | bash "$DIR/backup.sh" --restore-vault "$F" >/dev/null || 
 echo "pw-backup-123" | bash "$DIR/backup.sh" --restore-vault "$F" 2>/dev/null && fail "existing vault must not be overwritten"
 # kemajuan & tombol Batal: berhenti rapi (kode 130), tidak ada file setengah jadi, backup.log tidak berubah
 sed -i.bak 's/BACKUP_DRIVE=TidakAda/BACKUP_DRIVE=SSD/' "$T/home/.amnesia/settings.conf"
+# v5.16: cek vault di file backup tanpa menyentuh vault yang ada
+printf '{"apps": ["Chrome", "Claude"], "time": "2026-10-07 09:00"}' > "$T/home/.amnesia/vault/manifest.json"
+echo "pw-backup-123" | bash "$DIR/backup.sh" >/dev/null 2>&1 || fail "backup for check-vault"
+C=$(ls -t "$T/Volumes/SSD"/amnesia_backup_*.7z | head -1)
+echo kunci-sekarang > "$T/home/.amnesia/vault/private.7z"
+echo "salah-password" | bash "$DIR/backup.sh" --check-vault "$C" >/dev/null 2>&1 && fail "check-vault wrong password must fail"
+R=$(echo "pw-backup-123" | bash "$DIR/backup.sh" --check-vault "$C" 2>/dev/null) || fail "check-vault"
+echo "$R" | grep -q "^OK: VAULT .*2026-10-07 09:00|Chrome, Claude" || fail "check-vault info: $R"
+[ "$(cat "$T/home/.amnesia/vault/private.7z")" = kunci-sekarang ] || fail "check-vault must not touch the vault"
+rm -f "$C" "$T/home/.amnesia/vault/manifest.json"; echo kunci > "$T/home/.amnesia/vault/private.7z"
+grep -q "	backup	" "$T/home/.amnesia/history.log" || fail "history.log backup entry"
+
 echo "pw-backup-123" | bash "$DIR/backup.sh" >/dev/null 2>"$T/prog" || fail "backup for progress"
 grep -q "^PROGRESS [0-9]* compress 1/2" "$T/prog" || fail "compress progress lines"
 grep -q "^PROGRESS 100 copy 2/2\|^PROGRESS [0-9]* copy 2/2" "$T/prog" || fail "copy progress lines"

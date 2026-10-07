@@ -215,6 +215,26 @@ try:
     assert open(v._app_files("Claude")[0], "rb").read() == before, "old snapshot must stay"
     assert not [f for f in os.listdir(v.F_APPDIR) if f.endswith(".new")], "no half-written files"
     os.remove(big)
+
+    # --- v5.16: snapshot ringan per app, browser Chromium lain, riwayat ---
+    open(os.path.join(v.AMNESIA, "settings.conf"), "w").close()
+    assert v._light_skip("Chrome")[0], "Chrome is light by default"
+    with open(os.path.join(v.AMNESIA, "settings.conf"), "w") as f:
+        f.write("VAULT_FULL=Chrome\n")
+    assert v._light_skip("Chrome") == ([], []), "VAULT_FULL=Chrome must save Chrome in full"
+    with open(os.path.join(v.AMNESIA, "settings.conf"), "w") as f:
+        f.write("VAULT_LIGHT=0\n")
+    assert "Chrome" in v.full_apps(), "old VAULT_LIGHT=0 means full"
+    open(os.path.join(v.AMNESIA, "settings.conf"), "w").close()
+    mk("Library/Application Support/BraveSoftware/Brave-Browser/Default/Cookies", "brave-login")
+    assert "Brave Browser" in v.installed_apps() and "Brave Browser" in v.light_apps()
+    assert "Brave Browser" in v.skipped_apps(), "a new browser must not join the vault by itself"
+    with open(os.path.join(v.AMNESIA, "settings.conf"), "w") as f:
+        f.write("VAULT_PICK=Brave Browser\n")
+    assert "Brave Browser" in v.chosen_apps(), "picked browser joins the vault"
+    hist = open(os.path.join(v.AMNESIA, "history.log")).read()
+    assert "\tsnapshot\t" in hist and "\trestore\t" in hist and "\tdoomsday\t" in hist, hist
+    assert "login-gmail" not in hist and "Cookies" not in hist, "history has no file names"
     print("OK: all vault tests passed")
 finally:
     shutil.rmtree(T)

@@ -5,6 +5,29 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.16 — 2026-10-07
+
+### Baru
+- **Snapshot ringan per browser, langsung di Profile Vault.** Tombol "Snapshot Chrome ringan" dipindah dari Pengaturan. Sekarang Profile Vault punya kartu **Snapshot ringan** dengan 1 tombol untuk tiap browser. Nyala (bawaan): cache browser dan file program extension dari Web Store tidak ikut disimpan, jadi Chrome dari sekitar 1 GB jadi 150 MB. Login, bookmark, pengaturan extension, dan extension yang bukan dari Web Store selalu disimpan. Mati: browser disimpan lengkap. Simpan & Logout dan snapshot otomatis saat logout mengikuti tombol yang sama. Kalau di v5.15 mode ringan kamu matikan, Chrome otomatis jadi "lengkap", jadi tidak ada yang berubah.
+- **Browser Chromium lain bisa masuk vault:** Brave, Microsoft Edge, Vivaldi, Arc dan Opera. Hanya muncul kalau terpasang, dan awalnya tidak dipilih: klik untuk menambahkan.
+- **Halaman Riwayat.** Kotak baru di halaman utama yang menampilkan apa saja yang dilakukan Amnesia, dikelompokkan per hari (Hari ini, Kemarin, lalu tanggal): pembersihan saat logout dan login (dengan jumlah item), sesi yang dijeda, snapshot (manual atau otomatis), restore, backup (otomatis atau manual, dengan ukuran, dan yang gagal) serta tombol darurat. Yang dicatat hanya waktu, jumlah dan nama app, tidak pernah nama file kamu. Catatannya ada di `~/.amnesia/history.log` dan merapikan dirinya sendiri supaya tidak membesar.
+- **Cek file backup** (halaman Backup). Pilih file backup `.7z`: Amnesia membuka Profile Vault-nya saja di folder sementara, menampilkan ukuran, tanggal dan app di dalamnya, lalu menghapus salinan sementara itu. Vault kamu yang sekarang tidak pernah disentuh. Cara aman untuk mengetes apakah backup benar-benar bisa mengembalikan login kamu.
+- **Jalankan backup terjadwal sekarang** (halaman Backup, muncul kalau jadwal sudah diatur). Berjalan persis seperti jadwal, pakai password tersimpan, jadi bisa dites tanpa menunggu sehari.
+- **Footer di halaman utama:** versi, Lisensi MIT (link), © 2026 navi-crwn dan link ke GitHub.
+
+### Diubah
+- **Tombol Aktifkan / Matikan dipindah** dari kotak kanan bawah ke tombol besar di kartu status paling atas halaman utama. Kotak yang kosong sekarang jadi Riwayat.
+- **Popup lebih jelas.** Semua peringatan dan konfirmasi sekarang dibagi jadi kotak berwarna, bukan teks biasa: *Yang akan terjadi* (biru), *Yang akan dihapus* (merah), *Berikut ini tetap tersimpan (tidak dihapus)* (hijau), *Yang perlu kamu lakukan* (ungu), *Perhatikan* (oranye) dan *Perlu diketahui* (abu-abu). Dipakai di Aktifkan/Matikan, Simpan & Logout, hasil Restore, hapus snapshot atau vault, kesempatan terakhir password vault, Pindah Mac, Keep List dan Hapus Amnesia.
+- **Semua kata-kata dicek ulang.** Nama tombol di teks sekarang sama dengan tombol aslinya (Restore Profil, Snapshot Sekarang, Yang Akan Dihapus, Pindah Mac). Singkatan seperti "=" dan "1x" dihapus, "setting" diganti "pengaturan" di semua tempat, "Tidak bisa dibatalkan" jadi "Tidak bisa dikembalikan lagi", dan teks Inggris serta Indonesia sekarang artinya sama.
+- **Penjelasan snapshot otomatis lebih detail** di Pengaturan: kapan berjalan, hanya menyimpan app yang datanya berubah, batas 150 detik, app yang dimatikan dilewati, dan snapshot lama tetap aman kalau waktunya habis.
+- **Hapus Amnesia sekarang bertahap.** Popup pertama menjelaskan apa yang akan terjadi dan apa saja yang masih tersimpan (vault, snapshot di dalamnya, Keep List, pengaturan). Ada kotak centang *Hapus juga vault, snapshot, Keep List, dan pengaturan* yang bawaannya tidak dicentang. Kalau dicentang, ada konfirmasi kedua; file-file itu dipindah ke Trash (tidak langsung hilang) dan password backup yang tersimpan dihapus dari Keychain. Kalau tidak dicentang, semuanya tetap di `~/.amnesia` seperti sebelumnya.
+- **README dan website ditulis ulang:** setiap fitur dijelaskan dengan screenshot, tutorial langkah demi langkah dengan screenshot, galeri popup baru, dan FAQ yang jauh lebih lengkap per topik.
+- **Screenshot HD.** `app/screenshots.sh` sekarang membuat salinan khusus screenshot, **Amnesia Shots** (`app/shots/`, tidak di-upload). Salinan ini tidak bisa menghapus, memindah atau menyimpan apa pun: semua perintah diblokir kecuali yang hanya membaca (preview dry-run, status dan ukuran vault), dan langsung keluar kalau dibuka tanpa `--shots`. Jendela asli difoto lewat ScreenCaptureKit macOS, jadi hasilnya persis seperti app (saat pertama kali, macOS minta izin **Perekaman Layar** untuk *Amnesia Shots*; tanpa izin itu, dipakai cara gambar 2x yang lama). Screenshot baru: Riwayat, Vault/Backup/Pengaturan versi panjang, dan 5 popup.
+
+### Tes
+- `test_vault.py`: Chrome ringan secara bawaan, `VAULT_FULL` dan `VAULT_LIGHT=0` lama menyimpan lengkap, Brave dilewati sampai dipilih, `VAULT_PICK` menambahkannya, baris riwayat tidak pernah berisi nama file.
+- `test_backup.sh`: `--check-vault` menemukan vault di dalam backup dan tidak menyentuh vault asli.
+
 ## v5.15 — 2026-10-07
 
 ### Diperbaiki

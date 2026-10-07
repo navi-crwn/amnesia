@@ -3,6 +3,7 @@
 // Logika berat tetap di ~/.amnesia: clean.sh, agent.sh, vault.py (dipanggil lewat Process).
 import AppKit
 import QuickLookThumbnailing
+import ScreenCaptureKit
 import Security
 import SwiftUI
 
@@ -86,6 +87,15 @@ final class DataBox: @unchecked Sendable { var data = Data() }
 func sh(_ exe: String, _ args: [String], input: String? = nil, cwd: String? = nil, timeout: Double? = nil,
         env: [String: String] = [:], onStart: (@Sendable (Process) -> Void)? = nil,
         onErr: (@Sendable (String) -> Void)? = nil) -> Out {
+    // v5.16: salinan khusus screenshot ("Amnesia Shots") hanya boleh membaca: daftar dry-run, status vault, ukuran.
+    if Shots.mandul {
+        let script = args.first ?? ""
+        let allowed = (script.hasSuffix("/clean.sh") && args.contains("--dry-run"))
+            || (script.hasSuffix("/vault.py") && ["status", "sizes"].contains(args.count > 1 ? args[1] : "status"))
+            || ["/usr/bin/du", "/usr/bin/xattr"].contains(exe)
+            || (exe == "/usr/bin/xcode-select" && args == ["-p"])
+        if !allowed { return Out(code: 1, out: "", err: "FAILED: blocked in the screenshot copy") }
+    }
     let p = Process()
     p.executableURL = URL(fileURLWithPath: exe)
     p.arguments = args
@@ -168,11 +178,13 @@ struct VaultReply: Decodable {
     let sizes: [String: Double]?
     let checks: [RestoreCheck]?
     /// v5.14: app yang snapshot-nya mode ringan (extension Web Store tidak ikut)
+    /// (status) v5.16: app yang bisa disimpan ringan, dan yang disimpan lengkap (saklar Ringan dimatikan)
     let light: [String]?
+    let full: [String]?
 
     static func fail(_ msg: String) -> VaultReply {
         VaultReply(ok: false, error: msg, exists: nil, manifest: nil, attempts: nil, max: nil, min: nil, apps: nil,
-                   keys: nil, skip: nil, folders: nil, patterns: nil, sizes: nil, checks: nil, light: nil)
+                   keys: nil, skip: nil, folders: nil, patterns: nil, sizes: nil, checks: nil, light: nil, full: nil)
     }
 }
 
@@ -413,7 +425,7 @@ func pathKind(_ p: String) -> (icon: String, label: String) {
     if p.hasPrefix("Library/Application Support/") { return ("folder.fill", T("App data", "Data app")) }
     if p.hasPrefix("Library/Containers/") { return ("shippingbox.fill", T("App data (sandbox)", "Data app (sandbox)")) }
     if p.hasPrefix("Library/Group Containers/") { return ("square.stack.3d.up.fill", T("Shared data", "Data bersama")) }
-    if p.hasPrefix("Library/Preferences/") { return ("slider.horizontal.3", T("Settings", "Setting")) }
+    if p.hasPrefix("Library/Preferences/") { return ("slider.horizontal.3", T("Settings", "Pengaturan")) }
     return ("doc.fill", T("Files", "File"))
 }
 
@@ -510,7 +522,7 @@ var appleItems: [AppleItem] {
                   icon: "photo.on.rectangle.angled",
                   paths: ["Pictures/Photos Library.photoslibrary", "Library/Containers/com.apple.Photos*"]),
         AppleItem(id: "notes", title: "Notes", sub: T("Notes saved \"On My Mac\" (iCloud notes come back by themselves).",
-                                                        "Catatan \"On My Mac\" (catatan iCloud kembali sendiri)."),
+                                                        "Catatan \"On My Mac\" (catatan iCloud muncul lagi otomatis)."),
                   icon: "note.text",
                   paths: ["Library/Group Containers/group.com.apple.notes*", "Library/Containers/com.apple.Notes*"]),
         AppleItem(id: "mail", title: "Mail", sub: T("Mail accounts and mail stored on this Mac.", "Akun Mail dan email yang tersimpan di Mac ini."),
@@ -783,10 +795,10 @@ func libKind(_ sub: String) -> String {
     switch sub {
     case "Application Support", "Containers": return T("data", "data")
     case "Group Containers": return T("shared data", "data bersama")
-    case "Preferences": return T("settings", "setting")
+    case "Preferences": return T("settings", "pengaturan")
     case "Caches": return "cache"
     case "Logs": return "log"
-    case "Saved Application State": return T("last open windows", "jendela terakhir")
+    case "Saved Application State": return T("last open windows", "jendela yang terakhir terbuka")
     case "HTTPStorages", "WebKit": return T("web data", "data web")
     case "Cookies": return "cookies"
     default: return sub
@@ -844,7 +856,7 @@ func categorize(_ entries: [DryEntry], patterns: [String: [String]]) -> [DryGrou
            (try? fm.destinationOfSymbolicLink(atPath: full)) != nil { continue }
         if let app = patterns.first(where: { kv in kv.value.contains { p in dryMatch(rel, p) } })?.key {
             let kind = comps.count > 1 && comps[0] == "Library" ? libKind(comps[1]) : T("files", "file")
-            put("vault", DryItem(rel: rel, title: app + " · " + kind, detail: T("comes back with Restore", "kembali lewat Restore"),
+            put("vault", DryItem(rel: rel, title: app + " · " + kind, detail: T("comes back with Restore Profiles", "kembali lewat Restore Profil"),
                                  icon: .symbol("lock.fill"), thumb: false, keychain: false))
             continue
         }
@@ -889,8 +901,9 @@ func categorize(_ entries: [DryEntry], patterns: [String: [String]]) -> [DryGrou
                 let owner = AppLookup.shared.find(name)
                 let partly = inKeep(name, owner?.name)
                 put("apps", DryItem(rel: rel, title: (owner?.name ?? name) + " · " + libKind(sub),
-                                    detail: partly ? T("extra \(libKind(sub)) not in the Keep List; the app's main data stays",
-                                                       "\(libKind(sub)) tambahan yang tidak ada di Keep List; data utama app tetap")
+                                    detail: partly ? T("extra \(libKind(sub)) not in the Keep List. The app's main data is kept",
+                                                       "\(libKind(sub)) tambahan yang tidak ada di Keep List. "
+                                                       + "Data utama app tetap disimpan")
                                                    : "~/" + rel,
                                     icon: owner.map { o in DryIcon.app(o.path) } ?? DryIcon.symbol("app.dashed"),
                                     thumb: false, keychain: false))
@@ -902,8 +915,9 @@ func categorize(_ entries: [DryEntry], patterns: [String: [String]]) -> [DryGrou
     }
 
     let meta: [(String, String, String, String, Bool)] = [
-        ("vault", T("Restored from your vault", "Dipulihkan dari vault"),
-         T("Deleted at logout, back with your vault password (Restore).", "Dihapus saat logout, kembali dengan password vault (Restore)."),
+        ("vault", T("Deleted, but saved in your vault", "Dihapus, tapi tersimpan di vault"),
+         T("Deleted at logout. Comes back when you press Restore Profiles and type your vault password.",
+           "Dihapus saat logout. Kembali lagi kalau kamu tekan Restore Profil dan ketik password vault."),
          "lock.rectangle.stack.fill", false),
         ("files", T("Your files", "File kamu"),
          T("Move anything you need to your Keep folder (\(KeepDir.shown)) first.", "Pindahkan yang masih perlu ke folder Keep (\(KeepDir.shown)) dulu."),
@@ -911,7 +925,7 @@ func categorize(_ entries: [DryEntry], patterns: [String: [String]]) -> [DryGrou
         ("apple", T("Apple accounts & sync", "Akun & sinkronisasi Apple"),
          T("Switched off in Keep List → Apple accounts & data.", "Dimatikan di Keep List → Akun & data Apple."),
          "applelogo", false),
-        ("apps", T("App data & settings", "Data & setting app"),
+        ("apps", T("App data & settings", "Data & pengaturan app"),
          T("These apps start fresh after logout, like a new install.", "App ini mulai dari awal setelah logout, seperti baru dipasang."),
          "square.grid.2x2.fill", false),
         ("keychain", T("Keychain (saved passwords & logins)", "Keychain (password & login tersimpan)"),
@@ -1432,6 +1446,126 @@ func info(_ title: String, _ text: String, error: Bool = false) {
     _ = runAlert(a)
 }
 
+// MARK: - Popup berwarna (v5.16)
+
+/// Jenis bagian di popup: tiap jenis punya warna dan ikon sendiri, supaya mudah dibedakan sekilas.
+enum PopKind {
+    case happens, deleted, kept, todo, warn, note
+
+    var color: Color {
+        switch self {
+        case .happens: return .blue
+        case .deleted: return .red
+        case .kept: return .green
+        case .todo: return .indigo
+        case .warn: return .orange
+        case .note: return .gray
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .happens: return "arrow.right.circle.fill"
+        case .deleted: return "trash.circle.fill"
+        case .kept: return "checkmark.shield.fill"
+        case .todo: return "hand.point.right.fill"
+        case .warn: return "exclamationmark.triangle.fill"
+        case .note: return "info.circle.fill"
+        }
+    }
+
+    /// Judul bawaan, kalau bagian tidak diberi judul sendiri.
+    var title: String {
+        switch self {
+        case .happens: return T("What will happen", "Yang akan terjadi")
+        case .deleted: return T("What gets deleted", "Yang akan dihapus")
+        case .kept: return T("These stay saved (not deleted)", "Berikut ini tetap tersimpan (tidak dihapus)")
+        case .todo: return T("What you need to do", "Yang perlu kamu lakukan")
+        case .warn: return T("Be careful", "Perhatikan")
+        case .note: return T("Good to know", "Perlu diketahui")
+        }
+    }
+}
+
+struct PopSection: Identifiable {
+    let id = UUID()
+    let kind: PopKind
+    var title: String? = nil
+    let lines: [String]
+
+    init(_ kind: PopKind, _ lines: [String], title: String? = nil) {
+        self.kind = kind
+        self.lines = lines.filter { !$0.isEmpty }
+        self.title = title
+    }
+}
+
+/// Isi popup: kotak berwarna per bagian (bukan garis teks).
+struct PopupBody: View {
+    let sections: [PopSection]
+    var width: CGFloat = 340
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(sections.filter { !$0.lines.isEmpty }) { s in
+                VStack(alignment: .leading, spacing: 5) {
+                    Label(s.title ?? s.kind.title, systemImage: s.kind.icon)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(s.kind.color)
+                    ForEach(Array(s.lines.enumerated()), id: \.offset) { _, l in
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            // langkah bernomor ("1. …") tanpa titik di depan
+                            if l.first?.isNumber != true {
+                                Text("•").font(.system(size: 12, weight: .bold)).foregroundStyle(s.kind.color)
+                            }
+                            Text(l).font(.system(size: 12)).foregroundStyle(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(s.kind.color.opacity(0.12)))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(s.kind.color.opacity(0.35), lineWidth: 1))
+            }
+        }
+        .frame(width: width, alignment: .leading)
+    }
+}
+
+/// Popup dengan bagian berwarna. Hasil: tombol pertama ditekan atau tidak, dan kotak centang (kalau ada).
+@MainActor @discardableResult
+func popup(_ title: String, _ intro: String = "", _ sections: [PopSection], ok: String = "OK", cancel: String? = nil,
+           danger: Bool = false, warning: Bool = false, check: String? = nil) -> (ok: Bool, checked: Bool) {
+    let a = NSAlert()
+    a.messageText = title
+    a.informativeText = intro
+    a.alertStyle = danger ? .critical : (warning ? .warning : .informational)
+    a.addButton(withTitle: ok)
+    if let c = cancel { a.addButton(withTitle: c) }
+    if danger { a.buttons.first?.hasDestructiveAction = true }
+    let shown = sections.filter { !$0.lines.isEmpty }
+    if !shown.isEmpty {
+        let host = NSHostingView(rootView: PopupBody(sections: shown))
+        host.frame = NSRect(origin: .zero, size: host.fittingSize)
+        a.accessoryView = host
+    }
+    if let c = check {
+        a.showsSuppressionButton = true
+        a.suppressionButton?.title = c
+        a.suppressionButton?.state = .off
+    }
+    let r = runAlert(a)
+    return (r == .alertFirstButtonReturn, a.suppressionButton?.state == .on && check != nil)
+}
+
+/// Pertanyaan ya/tidak dengan bagian berwarna.
+@MainActor
+func ask(_ title: String, _ intro: String = "", _ sections: [PopSection], ok: String, danger: Bool = false) -> Bool {
+    popup(title, intro, sections, ok: ok, cancel: T("Cancel", "Batal"), danger: danger).ok
+}
+
 /// Izin Akses Disk Penuh dicek SEKALI sebelum snapshot/restore, supaya macOS tidak memunculkan
 /// banyak popup izin (atau minta "Tutup & Buka Lagi") di tengah proses. Hasil: boleh lanjut atau tidak.
 @MainActor
@@ -1441,18 +1575,18 @@ func ensureFullDisk() -> Bool {
     a.messageText = T("Allow Full Disk Access first", "Izinkan Akses Disk Penuh dulu")
     a.informativeText = T("Without it, macOS asks again and again while Amnesia works, and may ask you to "
                           + "\"Quit & Reopen\" in the middle of a snapshot.\n\n"
-                          + "1. Press Open Settings and switch on Amnesia.\n"
+                          + "1. Press Open Settings, then turn on the switch next to Amnesia.\n"
                           + "2. macOS asks to Quit & Reopen: that's fine now, nothing is running.\n\n"
                           + "Pressed \"Limit Access\" or \"Don't Allow\" by mistake? Open System Settings → Privacy & Security "
                           + "→ Full Disk Access, switch Amnesia on, then Quit & Reopen Amnesia.",
                           "Tanpa izin ini, macOS bertanya berkali-kali selama Amnesia bekerja, dan bisa meminta "
                           + "\"Tutup & Buka Lagi\" di tengah snapshot.\n\n"
-                          + "1. Tekan Buka Pengaturan lalu nyalakan Amnesia.\n"
-                          + "2. macOS minta Tutup & Buka Lagi: aman sekarang, tidak ada yang sedang jalan.\n\n"
+                          + "1. Tekan Buka Pengaturan, lalu nyalakan tombol di samping Amnesia.\n"
+                          + "2. macOS minta Tutup & Buka Lagi: tidak apa-apa, sekarang tidak ada proses yang berjalan.\n\n"
                           + "Terlanjur menekan \"Limit Access\" atau \"Don't Allow\"? Buka System Settings → Privacy & Security "
                           + "→ Full Disk Access, nyalakan Amnesia, lalu Tutup & Buka Lagi Amnesia.")
     a.addButton(withTitle: T("Open Settings", "Buka Pengaturan"))
-    a.addButton(withTitle: T("Continue Without", "Lanjut Tanpa Izin"))
+    a.addButton(withTitle: T("Continue Without Access", "Lanjut Tanpa Izin"))
     a.addButton(withTitle: T("Cancel", "Batal"))
     switch runAlert(a) {
     case .alertFirstButtonReturn:
@@ -1481,12 +1615,14 @@ enum AState {
 
     var subtitle: String {
         switch self {
-        case .active: return T("Everything is wiped at logout, restart & shutdown, then checked again at login.",
-                               "Semua dibersihkan saat logout, restart & shutdown, lalu dicek ulang saat login.")
+        case .active: return T("Everything outside the Keep List and Keep folder is wiped at logout, restart & shutdown, "
+                               + "then checked again at login.",
+                               "Semua di luar Keep List dan folder Keep dibersihkan saat logout, restart & shutdown, "
+                               + "lalu dicek ulang saat login.")
         case .paused: return T("The next logout & login are not wiped. It turns back on by itself afterwards.",
                                "Logout & login berikutnya tidak dibersihkan. Sesudahnya aktif lagi otomatis.")
         case .off: return T("Nothing is wiped. Turn it on to protect this Mac.",
-                            "Data TIDAK dibersihkan. Aktifkan untuk melindungi Mac ini.")
+                            "Tidak ada yang dibersihkan. Aktifkan untuk melindungi Mac ini.")
         }
     }
 
@@ -1571,6 +1707,8 @@ final class Model: ObservableObject {
         if Shots.on { state = .active; refreshVault(); return }    // mode screenshot: tanpa timer & backup
         Agent.migrate()
         Agent.LoginItem.sync()
+        // v5.16: saklar lama "Snapshot Chrome ringan" mati → Chrome disimpan lengkap (sekarang saklar per app di Profile Vault)
+        if Config.get("VAULT_LIGHT") == "0" { Config.set("VAULT_FULL", "Chrome"); Config.set("VAULT_LIGHT", "1") }
         refresh()
         refreshVault()
         // laporan: 20 detik setelah app jalan, lalu tiap 30 menit
@@ -1721,12 +1859,18 @@ final class Model: ObservableObject {
     /// v5.13: tinggal 1 percobaan → tanya dulu. Salah sekali lagi = vault terhapus selamanya.
     func lastTryOK() -> Bool {
         guard let v = vault, (v.max ?? 3) - (v.attempts ?? 0) <= 1 else { return true }
-        return confirm(T("LAST TRY", "PERCOBAAN TERAKHIR"),
-                       T("You have 1 try left. If this password is wrong, the vault is DELETED FOREVER and cannot be "
-                         + "brought back.\n\nNot 100% sure? Press Cancel and check your password notes first.",
-                         "Tinggal 1 percobaan. Kalau password ini salah, vault TERHAPUS SELAMANYA dan tidak bisa "
-                         + "dikembalikan.\n\nTidak 100% yakin? Tekan Batal lalu cek catatan password kamu dulu."),
-                       ok: T("I'm Sure, Try", "Saya Yakin, Coba"), danger: true)
+        return ask(T("Last try", "Percobaan terakhir"),
+                   T("You have 1 password try left.", "Kesempatan memasukkan password tinggal 1 kali."),
+                   [PopSection(.deleted, [T("If this password is wrong, the vault and all snapshots in it are deleted for good. "
+                                            + "They can't be brought back on this Mac.",
+                                            "Kalau password ini salah, vault beserta semua snapshot di dalamnya terhapus untuk "
+                                            + "selamanya. Tidak bisa dikembalikan di Mac ini.")],
+                               title: T("If the password is wrong", "Kalau password salah")),
+                    PopSection(.todo, [T("Not 100% sure? Press Cancel and check your password notes first.",
+                                         "Tidak 100% yakin? Tekan Batal, lalu cek catatan password kamu dulu."),
+                                       T("Is the vault in a backup? Then it can still be taken back from that backup file.",
+                                         "Vault ikut di-backup? Kalau ya, vault masih bisa diambil lagi dari file backup itu.")])],
+                   ok: T("I'm Sure, Try This Password", "Yakin, Coba Password Ini"), danger: true)
     }
 
     func vaultError(_ r: VaultReply, cancelled: String? = nil) {
@@ -1734,9 +1878,16 @@ final class Model: ObservableObject {
         if e == "CANCELLED" {
             info(T("Cancelled", "Dibatalkan"), cancelled ?? T("Nothing was changed.", "Tidak ada yang diubah."))
         } else if e == "DOOMSDAY" {
-            info(T("Vault destroyed", "Vault dimusnahkan"),
-                 T("The vault was destroyed to protect your data.", "Vault telah dimusnahkan untuk melindungi data."),
-                 error: true)
+            popup(T("Vault deleted", "Vault dihapus"), "",
+                  [PopSection(.deleted, [T("The vault and all its snapshots were deleted to protect your data (too many wrong "
+                                           + "passwords, or the panic word was typed).",
+                                           "Vault beserta semua snapshot-nya dihapus untuk melindungi data kamu (password salah "
+                                           + "terlalu banyak, atau kata panik diketik).")]),
+                   PopSection(.todo, [T("Was the vault in a backup? Open Move to a New Mac → Get Vault from Backup.",
+                                        "Vault pernah ikut di-backup? Buka Pindah Mac → Ambil Vault dari Backup."),
+                                      T("No backup? Create a new vault, log in to your apps again, then make a snapshot.",
+                                        "Tidak ada backup? Buat vault baru, login lagi ke app kamu, lalu buat snapshot.")])],
+                  warning: true)
         } else {
             info("Profile Vault", e, error: true)
         }
@@ -1746,29 +1897,39 @@ final class Model: ObservableObject {
 
     func togglePower() {
         if state != .off {
-            guard confirm(T("Turn off Amnesia?", "Matikan Amnesia?"),
-                          T("Nothing will be wiped at logout until you turn it on again.",
-                            "Data tidak akan dibersihkan saat logout sampai kamu aktifkan lagi."),
-                          ok: T("Turn Off", "Matikan"), danger: true) else { return }
+            guard ask(T("Turn off Amnesia?", "Matikan Amnesia?"), "",
+                      [PopSection(.happens, [T("Nothing gets wiped at logout, restart or shutdown anymore, until you press "
+                                               + "Turn On again.",
+                                               "Tidak ada lagi yang dibersihkan saat logout, restart, atau shutdown, sampai kamu "
+                                               + "menekan Aktifkan lagi."),
+                                             T("If Pause 1 Session is on, it is cancelled too.",
+                                               "Kalau Jeda 1 Sesi sedang aktif, jedanya ikut dibatalkan.")]),
+                       PopSection(.kept, [T("Your vault, snapshots, Keep List, settings and Keep folder don't change.",
+                                            "Vault, snapshot, Keep List, pengaturan, dan folder Keep tidak berubah.")])],
+                      ok: T("Turn Off", "Matikan"), danger: true) else { return }
             deactivate()
         } else {
             guard Config.get("TERMS") == "1" else {
                 info(T("Read this first", "Baca ini dulu"),
-                     T("Before turning Amnesia on, please read the warning in the welcome tour and tick that you understand.",
-                       "Sebelum mengaktifkan Amnesia, baca dulu peringatan di tur perkenalan dan centang bahwa kamu paham."))
+                     T("Before turning Amnesia on, read the warning in the welcome tour and tick that you understand it.",
+                       "Sebelum mengaktifkan Amnesia, baca dulu peringatan di tur perkenalan, lalu centang bahwa kamu paham."))
                 showTour()
                 return
             }
             // v5.13: vault yang belum pernah ikut backup hilang total kalau password salah 3x (kejadian 7 Okt)
             if vault?.exists == true, !FileManager.default.fileExists(atPath: P.a + "/backup.vault.ok") {
-                guard confirm(T("Your vault is not in any backup yet", "Vault kamu belum ada di backup mana pun"),
-                              T("If the vault is lost (for example 3 wrong passwords), your saved logins are gone for good.\n\n"
-                                + "Recommended: open Backup, keep \"Include Profile Vault\" ticked and press Back Up Now. "
-                                + "Then turn Amnesia on.",
-                                "Kalau vault hilang (misalnya salah password 3x), login yang tersimpan hilang selamanya.\n\n"
-                                + "Disarankan: buka Backup, biarkan \"Sertakan Profile Vault\" tercentang, lalu tekan Back Up Now. "
-                                + "Setelah itu baru aktifkan Amnesia."),
-                              ok: T("Turn On Anyway", "Tetap Aktifkan"), danger: true) else {
+                guard ask(T("Your vault is not in any backup yet", "Vault kamu belum pernah ikut backup"), "",
+                          [PopSection(.warn, [T("If the vault is lost (for example after 3 wrong passwords), the logins saved "
+                                                + "in it are gone for good.",
+                                                "Kalau vault hilang (misalnya setelah salah password 3 kali), login yang tersimpan "
+                                                + "di dalamnya hilang untuk selamanya.")],
+                                      title: T("Why this matters", "Kenapa ini penting")),
+                           PopSection(.todo, [T("1. Press Cancel. The Backup page opens.", "1. Tekan Batal. Halaman Backup terbuka."),
+                                              T("2. Keep \"Include Profile Vault\" ticked and press Back Up Now.",
+                                                "2. Biarkan \"Sertakan Profile Vault\" tercentang, lalu tekan Backup Sekarang."),
+                                              T("3. Come back here and press Turn On.", "3. Kembali ke sini, lalu tekan Aktifkan.")],
+                                      title: T("Recommended", "Disarankan"))],
+                          ok: T("Turn On Anyway", "Tetap Aktifkan"), danger: true) else {
                     page = .backup
                     return
                 }
@@ -1776,36 +1937,49 @@ final class Model: ObservableObject {
             // v5.14: vault ada tapi belum ada snapshot → login app bisa hilang di logout pertama
             if vault?.exists == true, vault?.manifest == nil {
                 let auto = Setting.autoSnapshot.isOn
-                guard confirm(T("Your vault has no snapshot yet", "Vault kamu belum punya snapshot"),
-                              auto ? T("Auto snapshot is on, so your app logins are saved at your first logout. "
-                                       + "To be safe, you can also press Snapshot Now in Profile Vault first.",
-                                       "Snapshot otomatis menyala, jadi login app kamu disimpan saat logout pertama. "
-                                       + "Supaya lebih aman, kamu juga bisa tekan Snapshot Sekarang di Profile Vault dulu.")
-                                   : T("Auto snapshot is off. Without a snapshot, your app logins are DELETED at the next "
-                                       + "logout. Press Snapshot Now in Profile Vault first.",
-                                       "Snapshot otomatis mati. Tanpa snapshot, login app kamu IKUT TERHAPUS saat logout "
-                                       + "berikutnya. Tekan Snapshot Sekarang di Profile Vault dulu."),
-                              ok: T("Turn On Anyway", "Tetap Aktifkan"), danger: !auto) else {
+                guard ask(T("Your vault has no snapshot yet", "Vault kamu belum punya snapshot"), "",
+                          [auto ? PopSection(.note, [T("Auto snapshot is on, so your app logins are saved at your first logout.",
+                                                       "Snapshot otomatis menyala, jadi login app kamu disimpan saat logout pertama.")])
+                                : PopSection(.deleted, [T("Auto snapshot is off. Without a snapshot, your app logins are deleted at "
+                                                          + "the next logout and can't be restored.",
+                                                          "Snapshot otomatis mati. Tanpa snapshot, login app kamu ikut terhapus saat "
+                                                          + "logout berikutnya dan tidak bisa dikembalikan.")]),
+                           PopSection(.todo, [T("To be safe, press Cancel, then press Snapshot Now on the Profile Vault page.",
+                                                "Supaya aman, tekan Batal, lalu tekan Snapshot Sekarang di halaman Profile Vault.")])],
+                          ok: T("Turn On Anyway", "Tetap Aktifkan"), danger: !auto) else {
                     page = .vault
                     return
                 }
             }
-            guard confirm(T("Turn on Amnesia?", "Aktifkan Amnesia?"),
-                          T("From the next logout on, everything outside the Keep List and your Keep folder (\(KeepDir.shown)) will be "
-                            + "DELETED at logout/restart/shutdown, then checked again at login.\n\n"
-                            + "Move important files to \(KeepDir.shown) first. This session is safe until you log out.",
-                            "Mulai logout berikutnya, semua data di luar Keep List dan folder Keep (\(KeepDir.shown)) akan DIHAPUS "
-                            + "saat logout/restart/shutdown, lalu dicek ulang saat login.\n\n"
-                            + "Pindahkan file penting ke \(KeepDir.shown) dulu. Sesi sekarang aman sampai kamu logout."),
-                          ok: T("Turn On", "Aktifkan"), danger: true) else { return }
+            let keepCount = Keep.entries().count
+            guard ask(T("Turn on Amnesia?", "Aktifkan Amnesia?"), "",
+                      [PopSection(.happens, [T("From the next logout on, everything outside the Keep List and your Keep folder "
+                                               + "is DELETED every time you log out, restart or shut down.",
+                                               "Mulai logout berikutnya, semua data di luar Keep List dan folder Keep DIHAPUS "
+                                               + "setiap kamu logout, restart, atau mematikan Mac."),
+                                             T("At every login Amnesia checks once more and cleans up anything left over.",
+                                               "Setiap login, Amnesia mengecek sekali lagi dan membersihkan sisa yang tertinggal.")]),
+                       PopSection(.kept, [T("Your Keep folder (\(KeepDir.shown)) and everything in it.",
+                                            "Folder Keep (\(KeepDir.shown)) beserta seluruh isinya."),
+                                          T("Everything on the Keep List (\(keepCount) items).",
+                                            "Semua yang ada di Keep List (\(keepCount) item)."),
+                                          T("App logins saved in Profile Vault: they come back when you press Restore Profiles.",
+                                            "Login app yang tersimpan di Profile Vault: kembali saat kamu tekan Restore Profil.")]),
+                       PopSection(.todo, [T("Move important files into \(KeepDir.shown) before you log out.",
+                                            "Pindahkan file penting ke \(KeepDir.shown) sebelum logout."),
+                                          T("Nothing is deleted before you log out.",
+                                            "Sebelum kamu logout, belum ada yang dihapus.")])],
+                      ok: T("Turn On", "Aktifkan"), danger: true) else { return }
             if let err = activate() {
                 info(T("Could not turn on", "Gagal mengaktifkan"), err, error: true)
             } else {
-                info(T("Amnesia is ON", "Amnesia AKTIF"),
-                     T("This session will be wiped at logout/restart/shutdown, then checked again at login.\n"
-                       + "Your Keep folder (\(KeepDir.shown)) stays safe.",
-                       "Sesi ini dibersihkan saat logout/restart/shutdown, lalu dicek ulang saat login.\n"
-                       + "Folder Keep (\(KeepDir.shown)) tetap aman."))
+                popup(T("Amnesia is ON", "Amnesia AKTIF"), "",
+                      [PopSection(.happens, [T("This session is wiped when you log out, restart or shut down, then checked "
+                                               + "again at login.",
+                                               "Sesi ini dibersihkan saat kamu logout, restart, atau mematikan Mac, lalu dicek "
+                                               + "lagi saat login.")]),
+                       PopSection(.kept, [T("Your Keep folder (\(KeepDir.shown)) and the Keep List.",
+                                            "Folder Keep (\(KeepDir.shown)) dan Keep List.")])])
             }
         }
         refresh()
@@ -1864,34 +2038,75 @@ final class Model: ObservableObject {
         NSApp.terminate(nil)
     }
 
-    /// Tombol "Uninstall Amnesia" di Pengaturan.
+    /// Tombol "Hapus Amnesia" di Pengaturan (v5.16: bertahap, vault ikut dihapus hanya kalau dicentang).
     func uninstall() {
         let brew = ["/opt/homebrew/Caskroom/amnesia", "/usr/local/Caskroom/amnesia"]
             .contains { FileManager.default.fileExists(atPath: $0) }
-        let brewNote = brew ? T("\n\nInstalled with Homebrew? Then run this in Terminal instead: brew uninstall --cask amnesia",
-                                "\n\nPasang lewat Homebrew? Jalankan ini di Terminal saja: brew uninstall --cask amnesia") : ""
-        guard confirm(T("Uninstall Amnesia?", "Hapus Amnesia?"),
-                      T("Amnesia turns off for good (nothing gets wiped anymore) and the app goes to the Trash.\n\n"
-                        + "Kept: your vault, Keep List and settings in ~/.amnesia, and your Keep folder (\(KeepDir.shown)). "
-                        + "Install again later and everything is still there.\n\n"
-                        + "Want the vault gone too? Run this in Terminal afterwards: bash ~/.amnesia/uninstall.sh --all",
-                        "Amnesia dimatikan untuk seterusnya (tidak ada lagi yang dibersihkan) dan app-nya dipindah ke Trash.\n\n"
-                        + "Tetap disimpan: vault, Keep List dan pengaturan di ~/.amnesia, juga folder Keep (\(KeepDir.shown)). "
-                        + "Kalau nanti pasang lagi, semuanya masih ada.\n\n"
-                        + "Mau vault ikut dihapus? Setelah ini jalankan di Terminal: bash ~/.amnesia/uninstall.sh --all")
-                        + brewNote,
-                      ok: T("Uninstall", "Hapus"), danger: true) else { return }
-        trace("uninstall from Settings")
+        let man = vault?.exists == true ? vault?.manifest : nil
+        let vaultLine: String
+        if vault?.exists == true {
+            vaultLine = man.map { T("Profile Vault: \($0.apps.count) app snapshots, \(mbText($0.size_mb)) in total (in ~/.amnesia/vault).",
+                                    "Profile Vault: snapshot \($0.apps.count) app, total \(mbText($0.size_mb)) (di ~/.amnesia/vault).") }
+                ?? T("Profile Vault (no snapshot yet), in ~/.amnesia/vault.", "Profile Vault (belum ada snapshot), di ~/.amnesia/vault.")
+        } else {
+            vaultLine = ""
+        }
+        let step1 = popup(T("Uninstall Amnesia from this Mac?", "Hapus Amnesia dari Mac ini?"), "",
+            [PopSection(.happens, [T("Amnesia is turned off for good. From now on nothing gets wiped at logout, restart or shutdown.",
+                                     "Amnesia dimatikan untuk seterusnya. Mulai sekarang tidak ada lagi yang dibersihkan saat "
+                                     + "logout, restart, atau shutdown."),
+                                   T("The Amnesia app goes to the Trash. Until you empty the Trash, you can still put it back.",
+                                     "App Amnesia dipindah ke Trash. Selama Trash belum dikosongkan, app masih bisa dikembalikan."),
+                                   T("Leftovers of the last cleanup (~/.amnesia-trash) are deleted.",
+                                     "Sisa pembersihan terakhir (~/.amnesia-trash) dihapus.")]),
+             PopSection(.kept, [T("Your Keep folder (\(KeepDir.shown)) and everything in it.",
+                                  "Folder Keep (\(KeepDir.shown)) beserta seluruh isinya."),
+                                vaultLine,
+                                T("Keep List and settings (in ~/.amnesia).", "Keep List dan pengaturan (di ~/.amnesia)."),
+                                T("Install Amnesia again later and all of it is used again right away.",
+                                  "Kalau nanti Amnesia dipasang lagi, semuanya langsung terpakai lagi.")],
+                        title: T("These stay saved (unless you tick the box below)",
+                                 "Berikut ini tetap tersimpan (kecuali kamu mencentang kotak di bawah)")),
+             PopSection(.note, brew ? [T("You installed with Homebrew. Afterwards, also run in Terminal: brew uninstall --cask amnesia",
+                                         "Kamu memasang lewat Homebrew. Setelah ini, jalankan juga di Terminal: brew uninstall --cask amnesia")] : [])],
+            ok: T("Uninstall", "Hapus Amnesia"), cancel: T("Cancel", "Batal"), danger: true,
+            check: T("Also delete the vault, snapshots, Keep List and settings", "Hapus juga vault, snapshot, Keep List, dan pengaturan"))
+        guard step1.ok else { return }
+        var data: [URL] = []
+        if step1.checked {
+            guard ask(T("Also delete the vault and all snapshots?", "Hapus juga vault dan semua snapshot?"), "",
+                      [PopSection(.deleted, [vaultLine.isEmpty ? "" : vaultLine + T(" The logins saved in it are lost.",
+                                                                                   " Login yang tersimpan di dalamnya ikut hilang."),
+                                             T("Keep List and Amnesia settings (including your backup address).",
+                                               "Keep List dan pengaturan Amnesia (termasuk alamat backup).")]),
+                       PopSection(.kept, [T("Your Keep folder (\(KeepDir.shown)) and your files.",
+                                            "Folder Keep (\(KeepDir.shown)) dan file kamu."),
+                                          T("Backup files already on your USB drive, server or cloud. If the vault was in a "
+                                            + "backup, you can take it back from there.",
+                                            "File backup yang sudah ada di flashdisk, server, atau cloud. Kalau vault ikut di-backup, "
+                                            + "vault bisa diambil lagi dari sana.")]),
+                       PopSection(.note, [T("Everything is moved to the Trash first. It's really gone once you empty the Trash.",
+                                            "Semuanya dipindah ke Trash dulu. Baru benar-benar terhapus saat kamu mengosongkan Trash.")])],
+                      ok: T("Yes, Delete Everything", "Ya, Hapus Semuanya"), danger: true) else { return }
+            let fm = FileManager.default
+            data = ["vault", "settings.conf", "keep.conf", "backup.vault.ok", "backup.ok", "clean.done",
+                    "history.log", "trace.log", "clean.log", "backup.log", "backup_checksums.txt"]
+                .map { P.a + "/" + $0 }.filter { fm.fileExists(atPath: $0) }.map { URL(fileURLWithPath: $0) }
+            sh("/usr/bin/security", ["delete-generic-password", "-s", "Amnesia Backup"])
+        }
+        trace("uninstall from Settings (data too: \(step1.checked))")
         turnOffForGood()
-        guard installedApp else { quitNow(); return }
-        NSWorkspace.shared.recycle([Bundle.main.bundleURL]) { _, err in
+        let urls = data + (installedApp ? [Bundle.main.bundleURL] : [])
+        guard !urls.isEmpty else { quitNow(); return }
+        NSWorkspace.shared.recycle(urls) { _, err in
             Task { @MainActor in
                 if err != nil {
-                    info(T("Amnesia is turned off", "Amnesia sudah dimatikan"),
-                         T("Amnesia won't wipe anything anymore. Moving the app to the Trash didn't work, so drag "
-                           + "Amnesia from Applications to the Trash yourself.",
-                           "Amnesia tidak akan membersihkan apa pun lagi. App-nya gagal dipindah ke Trash, jadi seret "
-                           + "Amnesia dari Applications ke Trash sendiri."))
+                    popup(T("Amnesia is turned off", "Amnesia sudah dimatikan"), "",
+                          [PopSection(.kept, [T("Amnesia won't wipe anything anymore.", "Amnesia tidak akan membersihkan apa pun lagi.")],
+                                      title: T("Done", "Sudah beres")),
+                           PopSection(.todo, [T("Moving to the Trash didn't work. Drag Amnesia from Applications to the Trash yourself.",
+                                                "Pemindahan ke Trash gagal. Seret Amnesia dari Applications ke Trash sendiri.")])],
+                          warning: true)
                 }
                 self.quitNow()
             }
@@ -1904,15 +2119,19 @@ final class Model: ObservableObject {
         trashedShown = true
         trace("app moved to the Trash: turning off")
         turnOffForGood()
-        info(T("Amnesia was moved to the Trash", "Amnesia dipindah ke Trash"),
-             T("To be safe, Amnesia turned itself off: nothing gets wiped anymore.\n\n"
-               + "Your vault, Keep List and settings stay in ~/.amnesia, and your Keep folder is untouched. "
-               + "Empty the Trash to finish.\n\n"
-               + "Moved it by mistake? In the Trash, right-click Amnesia → Put Back, open it and press Turn On.",
-               "Supaya aman, Amnesia mematikan dirinya sendiri: tidak ada lagi yang dibersihkan.\n\n"
-               + "Vault, Keep List dan pengaturan tetap ada di ~/.amnesia, folder Keep tidak disentuh. "
-               + "Kosongkan Trash untuk menyelesaikan.\n\n"
-               + "Tidak sengaja? Di Trash, klik kanan Amnesia → Put Back, buka lagi lalu tekan Turn On."))
+        popup(T("Amnesia was moved to the Trash", "Amnesia dipindah ke Trash"), "",
+              [PopSection(.happens, [T("To be safe, Amnesia turned itself off. Nothing gets wiped at logout anymore.",
+                                       "Supaya aman, Amnesia mematikan dirinya sendiri. Tidak ada lagi yang dibersihkan saat logout."),
+                                     T("Amnesia closes when you press OK.", "Amnesia ditutup setelah kamu menekan OK.")]),
+               PopSection(.kept, [T("Vault, snapshots, Keep List and settings in ~/.amnesia.",
+                                    "Vault, snapshot, Keep List, dan pengaturan di ~/.amnesia."),
+                                  T("Your Keep folder (\(KeepDir.shown)) and everything in it.",
+                                    "Folder Keep (\(KeepDir.shown)) beserta seluruh isinya.")]),
+               PopSection(.todo, [T("Want it gone for good? Empty the Trash.", "Mau dihapus permanen? Kosongkan Trash."),
+                                  T("Moved it by mistake? In the Trash, right-click Amnesia → Put Back, open it and press Turn On.",
+                                    "Tidak sengaja memindahkannya? Di Trash, klik kanan Amnesia → Put Back, "
+                                    + "buka lagi, lalu tekan Aktifkan.")])],
+              warning: true)
         quitNow()
     }
 
@@ -1924,9 +2143,13 @@ final class Model: ObservableObject {
             try? fm.removeItem(atPath: P.pause)
         } else {
             fm.createFile(atPath: P.pause, contents: nil)
-            info(T("Paused for 1 session", "Dijeda 1 sesi"),
-                 T("The next logout and login will NOT be wiped.\nThe logout after that is wiped again as usual.",
-                   "Logout dan login berikutnya TIDAK dibersihkan.\nLogout sesudahnya otomatis dibersihkan lagi."))
+            popup(T("Paused for 1 session", "Dijeda 1 sesi"), "",
+                  [PopSection(.happens, [T("The next logout and the login after it are NOT wiped.",
+                                           "Logout berikutnya dan login sesudahnya TIDAK dibersihkan."),
+                                         T("The auto snapshot is skipped too.", "Snapshot otomatis juga dilewati."),
+                                         T("The logout after that is wiped again as usual. You don't need to do anything.",
+                                           "Logout setelah itu dibersihkan lagi seperti biasa. Kamu tidak perlu melakukan apa pun.")]),
+                   PopSection(.todo, [T("Changed your mind? Press Cancel Pause.", "Berubah pikiran? Tekan Batalkan Jeda.")])])
         }
         refresh()
     }
@@ -1936,34 +2159,48 @@ final class Model: ObservableObject {
     func saveAndLogout() {
         guard let v = vault, v.ok, v.exists == true else {
             info(T("Profile Vault not set up yet", "Profile Vault belum dibuat"),
-                 T("Create a vault first in Profile Vault.", "Buat vault dulu di menu Profile Vault."))
+                 T("Create a vault first on the Profile Vault page.", "Buat vault dulu di halaman Profile Vault."))
             return
         }
         let apps = (v.apps ?? []).filter { !(v.skip ?? []).contains($0) }   // hanya app yang nyala di vault
         guard !apps.isEmpty else {
             info(T("Save & Log Out", "Simpan & Logout"),
-                 T("There is no app data to save on this Mac yet.", "Belum ada data app yang bisa disimpan di Mac ini."))
+                 T("No app is picked in Profile Vault, or there is no app data on this Mac yet.",
+                   "Belum ada app yang dipilih di Profile Vault, atau belum ada data app di Mac ini."))
             return
         }
-        guard confirm(T("Save Profiles & Log Out", "Simpan Profil & Logout"),
-                      T("Save \(apps.joined(separator: ", ")) to the vault, then log out?\n\nThese apps will be closed first.",
-                        "Simpan profil \(apps.joined(separator: ", ")) ke vault, lalu logout?\n\nApp tersebut akan ditutup dulu."),
-                      ok: T("Save & Log Out", "Simpan & Logout")) else { return }
+        let light = (v.light ?? []).filter { apps.contains($0) && !(v.full ?? []).contains($0) }
+        guard ask(T("Save profiles & log out?", "Simpan profil & logout?"), "",
+                  [PopSection(.happens, [T("1. These apps are closed: \(apps.joined(separator: ", ")).",
+                                           "1. App ini ditutup: \(apps.joined(separator: ", "))."),
+                                         T("2. Their logins are saved to the vault. Each app's new snapshot replaces only its own old one.",
+                                           "2. Login-nya disimpan ke vault. Snapshot baru tiap app hanya menggantikan snapshot lama app itu sendiri."),
+                                         T("3. You are logged out, and Amnesia wipes this session.",
+                                           "3. Kamu di-logout, lalu Amnesia membersihkan sesi ini.")]),
+                   PopSection(.kept, [T("Snapshots of apps not in this list stay as they are.",
+                                        "Snapshot app yang tidak ada di daftar ini tetap seperti sebelumnya.")]),
+                   PopSection(.note, light.isEmpty ? [] : [T("Saved as a light snapshot (Web Store extensions must be downloaded again with Repair): "
+                                                             + light.joined(separator: ", ") + ".",
+                                                             "Disimpan sebagai snapshot ringan "
+                                                             + "(extension dari Web Store perlu diunduh ulang lewat Repair): "
+                                                             + light.joined(separator: ", ") + ".")])],
+                  ok: T("Save & Log Out", "Simpan & Logout")) else { return }
         guard ensureFullDisk() else { return }
         let job = JobBox()
         background(T("Saving profiles to the vault…", "Menyimpan profil ke vault…"), job: job,
                    { vaultCall(["snapshot"], job: job, progress: Model.progressSink) }) { r in
             if r.error == "CANCELLED" {
-                info(T("Cancelled", "Dibatalkan"), T("You're still logged in. Apps saved before Cancel keep their new snapshot.",
-                                                     "Kamu tetap login. App yang tersimpan sebelum Batal memakai snapshot baru."))
+                info(T("Cancelled", "Dibatalkan"), T("You're still logged in. Apps saved before you pressed Cancel use their new snapshot.",
+                                                     "Kamu tetap login. App yang sudah tersimpan sebelum Batal ditekan memakai snapshot baru."))
                 self.refreshVault()
             } else if r.ok {
                 self.allowQuit = true       // logout ini dari kita sendiri: jangan ditahan
                 _ = vaultCall(["logout"])
             } else {
-                info(T("Snapshot failed", "Snapshot gagal"),
-                     (r.error ?? "") + T("\n\nLogout was cancelled so your profiles are not lost.",
-                                         "\n\nLogout dibatalkan supaya profil tidak hilang."), error: true)
+                popup(T("Snapshot failed", "Snapshot gagal"), r.error ?? "",
+                      [PopSection(.kept, [T("Logout was cancelled, so your profiles are not lost.",
+                                            "Logout dibatalkan, jadi profil kamu tidak hilang.")])],
+                      warning: true)
                 self.refreshVault()
             }
         }
@@ -2161,8 +2398,10 @@ struct Note: View {
 struct HeroCard: View {
     let state: AState
     let lastClean: String
+    var power: (() -> Void)? = nil      // v5.16: tombol Aktifkan / Matikan ada di kartu status
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
         HStack(spacing: 16) {
             ZStack {
                 Circle().fill(Color.white.opacity(0.25)).frame(width: 64, height: 64)
@@ -2176,6 +2415,22 @@ struct HeroCard: View {
                     .opacity(0.85).padding(.top, 2)
             }
             Spacer(minLength: 0)
+        }
+            if let power {
+                Button(action: power) {
+                    Label(state == .off ? T("Turn On Amnesia", "Aktifkan Amnesia") : T("Turn Off Amnesia", "Matikan Amnesia"),
+                          systemImage: "power")
+                        .font(.system(size: 14, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background(Capsule().fill(Color.white.opacity(state == .off ? 0.95 : 0.22)))
+                        .foregroundStyle(state == .off ? (state.colors.last ?? .green) : .white)
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help(state == .off ? T("Start wiping this Mac at every logout", "Mulai membersihkan Mac ini setiap logout")
+                                    : T("Stop the automatic wiping", "Hentikan pembersihan otomatis"))
+            }
         }
         .foregroundStyle(.white)
         .padding(18)
@@ -2223,7 +2478,7 @@ struct Tile: View {
     }
 }
 
-enum Page { case home, vault, keep, backup, settings, preview, move }
+enum Page { case home, vault, keep, backup, settings, preview, move, history }
 
 struct MainView: View {
     @EnvironmentObject var m: Model
@@ -2244,6 +2499,7 @@ struct MainView: View {
                 case .keep: KeepView(back: { goHome() })
                 case .backup: BackupView(back: { goHome() })
                 case .move: MoveView(back: { m.page = .vault })
+                case .history: HistoryView(back: { goHome() })
                 }
                 }
             }
@@ -2346,7 +2602,7 @@ struct MainView: View {
                 .buttonStyle(.plain)
                 .help(T("Settings", "Pengaturan"))
             }
-            HeroCard(state: m.state, lastClean: m.lastClean)
+            HeroCard(state: m.state, lastClean: m.lastClean, power: { m.togglePower() })
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
                       spacing: 12) {
                 Tile(title: "Profile Vault", sub: vaultSub, icon: "lock.rectangle.stack.fill",
@@ -2356,18 +2612,16 @@ struct MainView: View {
                      icon: "rectangle.portrait.and.arrow.right", colors: Pal.logout) { m.saveAndLogout() }
                 Tile(title: m.state == .paused ? T("Cancel Pause", "Batalkan Jeda") : T("Pause 1 Session", "Jeda 1 Sesi"),
                      sub: m.state == .off ? T("Turn on Amnesia first", "Aktifkan Amnesia dulu")
-                                          : T("Skip the next logout & login", "Lewati 1x logout & login berikutnya"),
+                                          : T("Don't wipe the next logout & login", "Logout & login berikutnya tidak dibersihkan"),
                      icon: "pause.fill", colors: Pal.pause) { m.togglePause() }
                     .disabled(m.state == .off)
                 Tile(title: "Keep List", sub: T("\(Keep.entries().count) items never wiped",
-                                                "\(Keep.entries().count) item tidak dihapus"),
+                                                "\(Keep.entries().count) item tidak pernah dihapus"),
                      icon: "pin.fill", colors: Pal.keep) { m.page = .keep }
                 Tile(title: "Backup", sub: T("To a USB drive, server or cloud", "Ke flashdisk, server atau cloud"),
                      icon: "externaldrive.fill", colors: Pal.backup) { m.page = .backup }
-                Tile(title: m.state == .off ? T("Turn On", "Aktifkan") : T("Turn Off", "Matikan"),
-                     sub: m.state == .off ? T("Start protecting this Mac", "Mulai lindungi Mac ini")
-                                          : T("Stop automatic wiping", "Hentikan pembersihan otomatis"),
-                     icon: "power", colors: m.state == .off ? Pal.on : Pal.danger) { m.togglePower() }
+                Tile(title: T("History", "Riwayat"), sub: T("Cleanups, snapshots and backups", "Pembersihan, snapshot dan backup"),
+                     icon: "clock.arrow.circlepath", colors: Pal.gray) { m.page = .history }
             }
             Button { m.page = .preview } label: {
                 HStack(spacing: 10) {
@@ -2384,6 +2638,7 @@ struct MainView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            AppFooter().padding(.top, 4)
         }
         }
         .scrollIndicators(.never)
@@ -2442,6 +2697,8 @@ struct VaultView: View {
     @State private var pwStep = 0
     @State private var checking = false
     @State private var skip = Set(Config.get("VAULT_SKIP").split(separator: ",").map(String.init))
+    @State private var pick = Set(Config.get("VAULT_PICK").split(separator: ",").map(String.init))   // v5.16: app baru yang kamu pilih
+    @State private var full = Set(Config.get("VAULT_FULL").split(separator: ",").map(String.init))   // v5.16: saklar Ringan mati
     @State private var sizes: [String: Double] = [:]
     @State private var sizesLoaded = false
 
@@ -2551,14 +2808,14 @@ struct VaultView: View {
                     .font(.system(size: 11)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                Note(text: T("The vault is ready, no snapshot yet. Log in to your apps, then press Snapshot.",
-                             "Vault siap, belum ada snapshot. Login ke app dulu, lalu tekan Snapshot."))
+                Note(text: T("The vault is ready, no snapshot yet. Log in to your apps, then press Snapshot Now.",
+                             "Vault siap, belum ada snapshot. Login ke app dulu, lalu tekan Snapshot Sekarang."))
             }
         }
         if left < maxTry {
             Card {
-                Note(text: T("\(left) tries left. Run out of tries = the vault is DELETED FOREVER.",
-                             "Sisa \(left)x percobaan. Salah lagi sampai habis = vault DIHAPUS PERMANEN."),
+                Note(text: T("\(left) tries left. If all of them are wrong, the vault is DELETED FOREVER.",
+                             "Kesempatan tinggal \(left) kali. Kalau semuanya salah, vault DIHAPUS PERMANEN."),
                      icon: "exclamationmark.octagon.fill", color: .red)
             }
         }
@@ -2571,6 +2828,7 @@ struct VaultView: View {
                 .disabled(pw.isEmpty || v.manifest == nil)
         }
         appsCard(v)
+        lightCard(v)
         foldersCard(v)
         Button { snapshot(v) } label: { Label(T("Snapshot Now", "Snapshot Sekarang"), systemImage: "camera.fill") }
             .buttonStyle(Pill(colors: Pal.logout))
@@ -2596,6 +2854,55 @@ struct VaultView: View {
         moveRow(T("Moving to a new Mac? Take your logins with you.", "Pindah ke Mac baru? Bawa login kamu."))
     }
 
+    /// App tidak ikut vault: kamu matikan, atau app baru (browser lain) yang belum kamu pilih.
+    private func isOff(_ a: String) -> Bool {
+        skip.contains(a) || ((m.vault?.skip ?? []).contains(a) && !pick.contains(a))
+    }
+
+    /// v5.16: snapshot ringan per app (browser berbasis Chromium), dipakai juga oleh Simpan & Logout dan snapshot otomatis.
+    @ViewBuilder
+    private func lightCard(_ v: VaultReply) -> some View {
+        let apps = (v.light ?? []).filter { !isOff($0) }
+        if !apps.isEmpty {
+            Card {
+                HStack(spacing: 8) {
+                    Image(systemName: "leaf.fill").foregroundStyle(.green)
+                    Text(T("Light snapshot", "Snapshot ringan")).font(.system(size: 13, weight: .semibold))
+                }
+                Text(T("For browsers. Light skips the browser's caches and the program files of Web Store extensions, so the "
+                       + "snapshot is much smaller (Chrome: about 1 GB → 150 MB). Your logins, bookmarks, extension settings "
+                       + "and extensions that are not from the Web Store are always saved. After Restore Profiles, press Repair "
+                       + "in the browser's extensions page to download the Web Store ones again.",
+                       "Untuk browser. Mode ringan melewati cache browser dan file program extension dari Web Store, jadi "
+                       + "snapshot jauh lebih kecil (Chrome: sekitar 1 GB → 150 MB). Login, bookmark, pengaturan extension, "
+                       + "dan extension yang bukan dari Web Store selalu disimpan. Setelah Restore Profil, tekan Repair "
+                       + "di halaman extension browser untuk mengunduh ulang yang dari Web Store."))
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(apps, id: \.self) { a in
+                    Toggle(isOn: Binding(get: { !full.contains(a) }, set: { on in
+                        if on { full.remove(a) } else { full.insert(a) }
+                        Config.set("VAULT_FULL", full.sorted().joined(separator: ","))
+                        loadSizes()
+                    })) {
+                        HStack(spacing: 8) {
+                            vaultAppIcon(a).frame(width: 18, height: 18)
+                            Text(a).font(.system(size: 12, weight: .semibold))
+                            Text(full.contains(a) ? T("full", "lengkap") : T("light", "ringan"))
+                                .font(.system(size: 11)).foregroundStyle(.secondary)
+                            Spacer(minLength: 6)
+                            Text(sizeText(a)).font(.system(size: 11)).foregroundStyle(.secondary).monospacedDigit()
+                        }
+                    }
+                    .toggleStyle(.switch).controlSize(.small)
+                }
+                Text(T("Save & Log Out and the auto snapshot at logout use the same choice.",
+                       "Simpan & Logout dan snapshot otomatis saat logout memakai pilihan yang sama."))
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private func sizeText(_ a: String) -> String {
         guard let mb = sizes[a] else { return sizesLoaded ? "" : "…" }
         return mbText(mb)
@@ -2605,7 +2912,7 @@ struct VaultView: View {
     /// Kotak kecil yang bisa diklik, dan 1 catatan ringkas di bawah (bukan peringatan per app).
     private func appsCard(_ v: VaultReply) -> some View {
         let apps = v.apps ?? []
-        let chosen = apps.filter { !skip.contains($0) }
+        let chosen = apps.filter { !isOff($0) }
         let totalMB = chosen.compactMap { sizes[$0] }.reduce(0, +)
         let big = chosen.filter { (sizes[$0] ?? 0) >= VaultView.bigMB }
         return Card {
@@ -2617,8 +2924,8 @@ struct VaultView: View {
                         .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
                 }
             }
-            Text(T("Tap an app to pick it. Snapshot needs no password; Restore does.",
-                   "Klik app untuk memilih. Snapshot tanpa password; Restore pakai password."))
+            Text(T("Click an app to pick it. Snapshot Now needs no password. Restore Profiles does.",
+                   "Klik app untuk memilih. Snapshot Sekarang tidak perlu password. Restore Profil perlu password."))
                 .font(.system(size: 11)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if apps.isEmpty {
@@ -2626,7 +2933,7 @@ struct VaultView: View {
             }
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)],
                       spacing: 8) {
-                ForEach(apps, id: \.self) { a in appTile(a, on: !skip.contains(a)) }
+                ForEach(apps, id: \.self) { a in appTile(a, on: !isOff(a)) }
             }
             if !big.isEmpty || totalMB >= 1024 {
                 Note(text: slowText(totalMB, big), icon: "hourglass", color: .orange)
@@ -2648,8 +2955,10 @@ struct VaultView: View {
     /// Kotak kecil 1 app: ikon, nama, ukuran. Terpilih = garis warna + centang.
     private func appTile(_ a: String, on: Bool) -> some View {
         Button {
-            if on { skip.insert(a) } else { skip.remove(a) }
+            if on { skip.insert(a) } else { skip.remove(a); pick.insert(a) }
             Config.set("VAULT_SKIP", skip.sorted().joined(separator: ","))
+            Config.set("VAULT_PICK", pick.sorted().joined(separator: ","))
+            m.refreshVault()
         } label: {
             VStack(spacing: 4) {
                 ZStack(alignment: .topTrailing) {
@@ -2669,7 +2978,7 @@ struct VaultView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(on ? T("Picked: tap to leave it out", "Dipilih: klik untuk tidak ikut") : T("Tap to pick", "Klik untuk memilih"))
+        .help(on ? T("Picked: click to leave it out", "Dipilih. Klik untuk batal memilih") : T("Click to pick", "Klik untuk memilih"))
     }
 
     /// Folder pilihan yang ikut vault (VAULT_FOLDERS): dihapus saat logout, kembali lewat Restore.
@@ -2678,9 +2987,9 @@ struct VaultView: View {
         return Card {
             Text(T("Folders in the vault", "Folder di vault")).font(.system(size: 13, weight: .semibold))
             Text(T("For documents, PDFs, music or videos you want locked away. They're wiped at logout like everything "
-                   + "else, but a copy stays locked in the vault. Restore brings them back with your password.",
+                   + "else, but a copy stays locked in the vault. Restore Profiles brings them back with your password.",
                    "Untuk dokumen, PDF, musik atau video yang mau dikunci. Ikut dihapus saat logout seperti yang lain, "
-                   + "tapi salinannya terkunci di vault. Restore mengembalikannya dengan password kamu."))
+                   + "tapi salinannya terkunci di vault. Restore Profil mengembalikannya dengan password kamu."))
                 .font(.system(size: 11)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             ForEach(folders, id: \.self) { f in
@@ -2690,7 +2999,7 @@ struct VaultView: View {
                     Spacer()
                     Text(sizeText("~/" + f)).font(.system(size: 11)).foregroundStyle(.secondary)
                     Button { removeFolder(f) } label: { Image(systemName: "minus.circle.fill").foregroundStyle(.red) }
-                        .buttonStyle(.plain).help(T("Remove from the vault", "Hapus dari vault"))
+                        .buttonStyle(.plain).help(T("Remove from the vault", "Keluarkan dari vault"))
                 }
                 if (sizes["~/" + f] ?? 0) >= 1024 {
                     Note(text: T("This folder is big: snapshots and restores of it take a while, and the vault grows by its size.",
@@ -2736,10 +3045,14 @@ struct VaultView: View {
     }
 
     private func removeFolder(_ f: String) {
-        guard confirm(T("Remove from the vault?", "Hapus dari vault?"),
-                      T("~/\(f) is no longer saved in the vault. The folder itself stays on this Mac until the next logout.",
-                        "~/\(f) tidak lagi disimpan di vault. Foldernya tetap ada di Mac ini sampai logout berikutnya."),
-                      ok: T("Remove", "Hapus")) else { return }
+        guard ask(T("Remove ~/\(f) from the vault?", "Keluarkan ~/\(f) dari vault?"), "",
+                  [PopSection(.happens, [T("Its snapshot is deleted and the next snapshots don't save it anymore.",
+                                           "Snapshot-nya dihapus, dan snapshot berikutnya tidak menyimpannya lagi.")]),
+                   PopSection(.warn, [T("The folder itself stays on this Mac only until the next logout, then it is wiped "
+                                        + "like everything else. Want to keep it? Move it to your Keep folder.",
+                                        "Folder aslinya tetap ada di Mac ini hanya sampai logout berikutnya, lalu ikut dibersihkan. "
+                                        + "Mau tetap disimpan? Pindahkan ke folder Keep.")])],
+                  ok: T("Remove", "Keluarkan")) else { return }
         let list = (m.vault?.folders ?? []).filter { $0 != f }
         Config.set("VAULT_FOLDERS", list.joined(separator: ","))
         m.refreshVault()
@@ -2802,7 +3115,7 @@ struct VaultView: View {
             if pwStep == 0 {
                 Field(label: T("Step 1: current password", "Langkah 1: password sekarang"), text: $oldPw)
                     .onSubmit { checkOld() }
-                Note(text: T("A wrong current password counts as a failed try.", "Password sekarang yang salah dihitung sebagai percobaan gagal."),
+                Note(text: T("If the current password is wrong, it counts as 1 failed try.", "Kalau password sekarang salah, itu dihitung 1 percobaan gagal."),
                      icon: "exclamationmark.triangle.fill", color: .orange)
                 HStack {
                     Button(T("Cancel", "Batal")) { showPassword = false }.keyboardShortcut(.cancelAction)
@@ -2852,10 +3165,10 @@ struct VaultView: View {
                 skip = Set(m.vault?.apps ?? [])
                 Config.set("VAULT_SKIP", skip.sorted().joined(separator: ","))
                 info(T("Vault created", "Vault dibuat"),
-                     T("Now tick the apps you want in the vault, log in to them as usual, then press Snapshot "
+                     T("Now pick the apps you want in the vault, log in to them as usual, then press Snapshot Now "
                        + "(or Save & Log Out).",
-                       "Sekarang centang app yang mau disimpan di vault, login ke app itu seperti biasa, lalu tekan "
-                       + "Snapshot (atau Simpan & Logout)."))
+                       "Sekarang pilih app yang mau disimpan di vault, login ke app itu seperti biasa, lalu tekan "
+                       + "Snapshot Sekarang (atau Simpan & Logout)."))
             } else {
                 m.vaultError(r)
             }
@@ -2863,39 +3176,42 @@ struct VaultView: View {
         }
     }
 
-    /// Ringkasan cek otomatis setelah restore (centang hijau / silang merah per app).
-    private func restoreReport(_ r: VaultReply) -> String {
+    /// Hasil restore sebagai bagian berwarna: hasil cek per app, yang perlu kamu lakukan, dan data lama.
+    private func restoreReport(_ r: VaultReply) -> [PopSection] {
         let checks = r.checks ?? (r.apps ?? []).map { RestoreCheck(app: $0, ok: true, note: "") }
-        var lines: [String] = checks.map { (c: RestoreCheck) -> String in
-            let mark = c.ok ? "✅ " : "❌ "
-            return mark + c.app + (c.note.isEmpty ? "" : " — " + c.note)
-        }
+        let good = checks.filter(\.ok).map { $0.app + ($0.note.isEmpty ? "" : ": " + $0.note) }
+        let bad = checks.filter { !$0.ok }.map { $0.app + ($0.note.isEmpty ? "" : ": " + $0.note) }
+        let browsers = (r.light ?? [])
+        var todo: [String] = []
         if checks.contains(where: { $0.app == "Chrome" }) {
-            lines.append("")
-            lines.append(T("Check yourself (web logins can't be checked automatically): open Chrome and look at Gmail, "
-                           + "WhatsApp Web and Telegram Web.",
-                           "Cek sendiri (login web tidak bisa dicek otomatis): buka Chrome lalu lihat Gmail, "
-                           + "WhatsApp Web dan Telegram Web."))
+            todo.append(T("Web logins can't be checked automatically: open Chrome and look at Gmail, WhatsApp Web and Telegram Web.",
+                          "Login web tidak bisa dicek otomatis: buka Chrome, lalu lihat Gmail, WhatsApp Web, dan Telegram Web."))
         }
-        if (r.light ?? []).contains("Chrome") {
-            lines.append("")
-            lines.append(T("Chrome extensions from the Web Store were not in this light snapshot. To get them back:\n"
-                           + "1. Open Chrome and type chrome://extensions in the address bar.\n"
-                           + "2. Press Repair on each extension. Its settings and logins stay.\n"
-                           + "3. No Repair button? Quit Chrome (Cmd+Q), open it again and look once more.\n"
-                           + "Don't use Remove: that also deletes the extension's settings.",
-                           "Extension Chrome dari Web Store tidak ikut di snapshot ringan ini. Cara mengembalikannya:\n"
-                           + "1. Buka Chrome, ketik chrome://extensions di address bar.\n"
-                           + "2. Tekan Repair di tiap extension. Pengaturan dan login di dalamnya tetap ada.\n"
-                           + "3. Tidak ada tombol Repair? Tutup Chrome (Cmd+Q), buka lagi, lalu cek sekali lagi.\n"
-                           + "Jangan pakai Remove: pengaturan extension ikut terhapus."))
+        var repair: [String] = []
+        if !browsers.isEmpty {
+            let names = browsers.joined(separator: ", ")
+            repair = [T("Web Store extensions were not in the light snapshot of \(names). To get them back:",
+                        "Extension dari Web Store tidak ikut di snapshot ringan \(names). Cara mengembalikannya:"),
+                      T("1. Open the browser and type chrome://extensions in the address bar (Edge: edge://extensions, "
+                        + "Brave: brave://extensions).",
+                        "1. Buka browser-nya, lalu ketik chrome://extensions di address bar (Edge: edge://extensions, "
+                        + "Brave: brave://extensions)."),
+                      T("2. Press Repair on each extension. Its settings and logins stay.",
+                        "2. Tekan Repair di tiap extension. Pengaturan dan login di dalamnya tetap ada."),
+                      T("3. No Repair button? Quit the browser (Cmd+Q), open it again and look once more.",
+                        "3. Tidak ada tombol Repair? Tutup browser (Cmd+Q), buka lagi, lalu cek sekali lagi."),
+                      T("Don't press Remove: that also deletes the extension's settings.",
+                        "Jangan tekan Remove: pengaturan extension ikut terhapus.")]
         }
-        lines.append("")
-        lines.append(T("The app data that was on this Mac before the restore was moved (not deleted) to "
-                       + "~/Library/Caches/Amnesia/before-restore. It stays there until the next logout.",
-                       "Data app yang ada di Mac ini sebelum restore dipindah (tidak dihapus) ke "
-                       + "~/Library/Caches/Amnesia/before-restore. Folder itu ada sampai logout berikutnya."))
-        return lines.joined(separator: "\n")
+        return [PopSection(.kept, good, title: T("Restored and checked", "Berhasil dikembalikan dan dicek")),
+                PopSection(.warn, bad, title: T("Needs a look", "Perlu dicek")),
+                PopSection(.todo, todo),
+                PopSection(.todo, repair, title: T("Repair extensions", "Perbaiki extension")),
+                PopSection(.note, [T("The app data that was on this Mac before the restore was moved (not deleted) to "
+                                     + "~/Library/Caches/Amnesia/before-restore. It stays there until the next logout.",
+                                     "Data app yang ada di Mac ini sebelum restore dipindah (tidak dihapus) ke "
+                                     + "~/Library/Caches/Amnesia/before-restore. Folder itu tetap ada sampai logout berikutnya.")],
+                           title: T("Your old app data", "Data app sebelumnya"))]
     }
 
     private func restore() {
@@ -2903,13 +3219,13 @@ struct VaultView: View {
         let input = pw + "\n"
         let job = JobBox()
         m.background(T("Restoring profiles…\nThe apps are closed just before the files are put back.",
-                       "Memulihkan profil…\nApp baru ditutup tepat sebelum file dikembalikan."), job: job,
+                       "Memulihkan profil…\nApp ditutup sesaat sebelum file dikembalikan."), job: job,
                      { vaultCall(["restore"], input: input, job: job, progress: Model.progressSink) }) { r in
             pw = ""
             if r.ok {
                 let allOk = (r.checks ?? []).allSatisfy(\.ok)
-                info(allOk ? T("Restore done", "Restore selesai") : T("Restore done, check the list", "Restore selesai, cek daftarnya"),
-                     restoreReport(r), error: !allOk)
+                popup(allOk ? T("Restore done", "Restore selesai") : T("Restore done, check the list", "Restore selesai, cek daftarnya"),
+                      "", restoreReport(r), warning: !allOk)
             } else {
                 m.vaultError(r, cancelled: T("Nothing on this Mac was changed.", "Tidak ada yang diubah di Mac ini."))
             }
@@ -2918,21 +3234,26 @@ struct VaultView: View {
     }
 
     private func snapshot(_ v: VaultReply) {
-        let apps = (v.apps ?? []).filter { !skip.contains($0) }
+        let apps = (v.apps ?? []).filter { !isOff($0) }
         guard !apps.isEmpty else {
-            info("Profile Vault", T("No apps are switched on under \"What goes in the vault\".",
-                                    "Tidak ada app yang dicentang di \"Yang disimpan di vault\"."))
+            info("Profile Vault", T("No app is picked under \"What goes in the vault\".",
+                                    "Belum ada app yang dipilih di \"Yang disimpan di vault\"."))
             return
         }
         let list = apps.map { a in sizes[a].map { "\(a) (\(mbText($0)))" } ?? a }.joined(separator: ", ")
         let slow = apps.filter { (sizes[$0] ?? 0) >= VaultView.bigMB }
         let slowNote = slow.isEmpty ? "" : T("\n\nThis can take a few minutes: ", "\n\nIni bisa makan beberapa menit: ")
             + slow.map { "\($0) (\(bigReason($0)))" }.joined(separator: ", ") + "."
-        guard confirm("Snapshot", T("Save \(list)?\n\nThese apps will be closed first. No password needed. Only these get a "
-                                    + "new snapshot; the others keep theirs.",
-                                    "Simpan \(list)?\n\nApp tersebut akan ditutup dulu. Tidak perlu password. Hanya app ini "
-                                    + "yang snapshot-nya diperbarui; yang lain tetap.") + slowNote,
-                      ok: T("Save", "Simpan")) else { return }
+        guard ask(T("Make a snapshot now?", "Buat snapshot sekarang?"), "",
+                  [PopSection(.happens, [T("1. These apps are closed first: \(list).", "1. App ini ditutup dulu: \(list)."),
+                                         T("2. Their logins are saved to the vault (no password needed).",
+                                           "2. Login-nya disimpan ke vault (tidak perlu password)."),
+                                         T("3. Each new snapshot replaces only that app's old one, after it's saved successfully.",
+                                           "3. Snapshot baru hanya menggantikan snapshot lama app itu sendiri, setelah berhasil disimpan.")]),
+                   PopSection(.kept, [T("Snapshots of apps not in this list.", "Snapshot app yang tidak ada di daftar ini.")]),
+                   PopSection(.warn, slowNote.isEmpty ? [] : [slowNote.trimmingCharacters(in: .whitespacesAndNewlines)],
+                              title: T("Takes a while", "Butuh waktu"))],
+                  ok: T("Save", "Simpan")) else { return }
         guard ensureFullDisk() else { return }
         let job = JobBox()
         m.background(T("Saving to the vault…", "Menyimpan ke vault…"), job: job,
@@ -3004,17 +3325,23 @@ struct VaultView: View {
     /// only: hapus snapshot 1 app/folder saja; nil = semua.
     private func deleteSnapshots(only: String? = nil) {
         if let a = only {
-            guard confirm(T("Delete the snapshot of \(a)?", "Hapus snapshot \(a)?"),
-                          T("Only this snapshot is deleted. The other apps keep theirs.\n\nThis cannot be undone.",
-                            "Hanya snapshot ini yang dihapus. App lain tetap.\n\nTidak bisa dibatalkan."),
-                          ok: T("Delete", "Hapus"), danger: true) else { return }
+            guard ask(T("Delete the snapshot of \(a)?", "Hapus snapshot \(a)?"), "",
+                      [PopSection(.deleted, [T("The saved snapshot of \(a) in the vault. This can't be undone.",
+                                               "Snapshot \(a) yang tersimpan di vault. Tidak bisa dikembalikan lagi.")]),
+                       PopSection(.kept, [T("The snapshots of the other apps and folders.", "Snapshot app dan folder lain."),
+                                          T("\(a) itself on this Mac (until the next logout).",
+                                            "\(a) yang ada di Mac ini sekarang (sampai logout berikutnya)."),
+                                          T("The vault, its password and the panic word.", "Vault, password, dan kata panik.")])],
+                      ok: T("Delete", "Hapus"), danger: true) else { return }
         } else {
-            guard confirm(T("Delete all snapshots?", "Hapus semua snapshot?"),
-                          T("The saved apps and folders are deleted from the vault. The vault, its password, the panic word "
-                            + "and the Move-Mac keys stay.\n\nThis cannot be undone.",
-                            "App dan folder yang tersimpan dihapus dari vault. Vault, password, kata panik dan kunci Pindah Mac "
-                            + "tetap ada.\n\nTidak bisa dibatalkan."),
-                          ok: T("Delete All", "Hapus Semua"), danger: true) else { return }
+            guard ask(T("Delete all snapshots?", "Hapus semua snapshot?"), "",
+                      [PopSection(.deleted, [T("Every saved app and folder in the vault. This can't be undone.",
+                                               "Semua app dan folder yang tersimpan di vault. Tidak bisa dikembalikan lagi.")]),
+                       PopSection(.kept, [T("The vault itself, its password and the panic word.", "Vault itu sendiri, password, dan kata panik."),
+                                          T("The Move-Mac keys.", "Kunci Pindah Mac."),
+                                          T("The apps on this Mac right now (until the next logout).",
+                                            "App yang ada di Mac ini sekarang (sampai logout berikutnya).")])],
+                      ok: T("Delete All", "Hapus Semua"), danger: true) else { return }
         }
         let args = ["delsnap"] + (only.map { [$0] } ?? [])
         m.background(T("Deleting snapshots…", "Menghapus snapshot…"), { vaultCall(args) }) { r in
@@ -3024,14 +3351,158 @@ struct VaultView: View {
     }
 
     private func deleteVault() {
-        guard confirm(T("Delete Vault?", "Hapus Vault?"),
-                      T("The vault, its password and all snapshots are deleted.\n\nThis cannot be undone.",
-                        "Vault, password-nya dan semua snapshot dihapus.\n\nTidak bisa dibatalkan."),
-                      ok: T("Delete", "Hapus"), danger: true) else { return }
+        guard ask(T("Delete the vault?", "Hapus vault?"), "",
+                  [PopSection(.deleted, [T("The vault, its password, the panic word and all snapshots. This can't be undone.",
+                                           "Vault, password, kata panik, dan semua snapshot. Tidak bisa dikembalikan lagi."),
+                                         T("If Amnesia is on, the app logins on this Mac are gone after the next logout.",
+                                           "Kalau Amnesia aktif, login app di Mac ini hilang setelah logout berikutnya.")]),
+                   PopSection(.kept, [T("Backups that already include the vault (USB drive, server or cloud).",
+                                        "Backup yang sudah berisi vault (flashdisk, server, atau cloud)."),
+                                      T("Your Keep folder and the Keep List.", "Folder Keep dan Keep List.")])],
+                  ok: T("Delete Vault", "Hapus Vault"), danger: true) else { return }
         m.background(T("Deleting the vault…", "Menghapus vault…"), { vaultCall(["delete"]) }) { r in
             if !r.ok { m.vaultError(r) }
             m.refreshVault()
         }
+    }
+}
+
+// MARK: - Riwayat (v5.16)
+
+struct HistEvent: Identifiable {
+    let id = UUID()
+    let day: String
+    let time: String
+    let icon: String
+    let color: Color
+    let title: String
+    let detail: String
+}
+
+enum History {
+    static let path = P.a + "/history.log"
+
+    /// Baris history.log: "YYYY-MM-DD HH:MM:SS<tab>jenis<tab>data". Terbaru di atas. File dipangkas kalau terlalu panjang.
+    static func load(limit: Int = 300) -> [HistEvent] {
+        guard let text = try? String(contentsOfFile: path, encoding: .utf8) else { return [] }
+        var lines = text.split(separator: "\n").map(String.init)
+        if lines.count > 1000 {
+            lines = Array(lines.suffix(500))
+            try? (lines.joined(separator: "\n") + "\n").write(toFile: path, atomically: true, encoding: .utf8)
+        }
+        return lines.reversed().prefix(limit).compactMap(parse)
+    }
+
+    static func parse(_ line: String) -> HistEvent? {
+        let f = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+        guard f.count >= 2, f[0].count >= 16 else { return nil }
+        let day = String(f[0].prefix(10)), time = String(f[0].dropFirst(11).prefix(5))
+        let data = f.count > 2 ? f[2] : ""
+        let w = data.split(separator: " ").map(String.init)
+        func ev(_ icon: String, _ color: Color, _ title: String, _ detail: String = "") -> HistEvent {
+            HistEvent(day: day, time: time, icon: icon, color: color, title: title, detail: detail)
+        }
+        switch f[1] {
+        case "clean":
+            let n = w.count > 1 ? w[1] : "?"
+            return w.first == "login"
+                ? ev("checkmark.shield.fill", .teal, T("Checked at login", "Dicek saat login"), T("\(n) items cleaned", "\(n) item dibersihkan"))
+                : ev("sparkles", .blue, T("Wiped at logout", "Dibersihkan saat logout"), T("\(n) items", "\(n) item"))
+        case "paused":
+            return ev("pause.circle.fill", .orange, data == "login" ? T("Login not wiped (paused)", "Login tidak dibersihkan (dijeda)")
+                                                                    : T("Logout not wiped (paused)", "Logout tidak dibersihkan (dijeda)"))
+        case "snapshot":
+            let auto = data.hasPrefix("auto:")
+            return ev("camera.fill", .indigo, auto ? T("Auto snapshot", "Snapshot otomatis") : T("Snapshot", "Snapshot"),
+                      auto ? String(data.dropFirst(5)) : data)
+        case "restore":
+            return ev("arrow.counterclockwise.circle.fill", .green, T("Profiles restored", "Profil dikembalikan"), data)
+        case "backup":
+            let auto = w.first == "1", vault = w.count > 1 && w[1] == "1", mb = w.count > 2 ? w[2] : "?"
+            return ev("externaldrive.fill.badge.checkmark", .pink,
+                      auto ? T("Scheduled backup done", "Backup terjadwal berhasil") : T("Backup done", "Backup berhasil"),
+                      "\(mb) MB" + (vault ? T(", vault included", ", termasuk vault") : ""))
+        case "backupfail":
+            return ev("exclamationmark.triangle.fill", .red,
+                      data == "1" ? T("Scheduled backup failed", "Backup terjadwal gagal") : T("Backup failed", "Backup gagal"),
+                      T("Details on the Backup page", "Detailnya di halaman Backup"))
+        case "doomsday":
+            return ev("flame.fill", .red, T("Vault deleted", "Vault dihapus"),
+                      data == "keep" ? T("Too many wrong passwords or the panic word was typed. Keep folder emptied too",
+                                         "Password salah terlalu banyak atau kata panik diketik. Folder Keep ikut dikosongkan")
+                                     : T("Too many wrong passwords or the panic word was typed", "Password salah terlalu banyak atau kata panik diketik"))
+        default:
+            return nil
+        }
+    }
+}
+
+struct HistoryView: View {
+    let back: () -> Void
+    @State private var events: [HistEvent] = []
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                PageHeader(title: T("History", "Riwayat"), icon: "clock.arrow.circlepath", colors: Pal.gray, back: back)
+                Text(T("What Amnesia did and when: cleanups, snapshots, restores and backups. Only the time and the app "
+                       + "names are kept here, never file names.",
+                       "Apa yang dilakukan Amnesia dan kapan: pembersihan, snapshot, restore, dan backup. Yang dicatat hanya "
+                       + "waktu dan nama app, tidak pernah nama file."))
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                if events.isEmpty {
+                    Card {
+                        Note(text: T("Nothing here yet. From v5.16 on, every cleanup, snapshot and backup is listed here.",
+                                     "Belum ada isinya. Mulai v5.16, setiap pembersihan, snapshot, dan backup dicatat di sini."))
+                        let last = [(try? String(contentsOfFile: P.cleanLog, encoding: .utf8)) ?? "", lastBackupStatus()]
+                            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+                        ForEach(last, id: \.self) { l in
+                            Text(l).font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                ForEach(days, id: \.self) { d in
+                    Card {
+                        Text(dayTitle(d)).font(.system(size: 13, weight: .semibold))
+                        ForEach(events.filter { $0.day == d }) { e in
+                            HStack(alignment: .top, spacing: 10) {
+                                Image(systemName: e.icon).font(.system(size: 13)).foregroundStyle(e.color).frame(width: 18)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(e.title).font(.system(size: 12, weight: .semibold))
+                                    if !e.detail.isEmpty {
+                                        Text(e.detail).font(.system(size: 11)).foregroundStyle(.secondary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                                Spacer(minLength: 6)
+                                Text(e.time).font(.system(size: 11)).foregroundStyle(.secondary).monospacedDigit()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .scrollIndicators(.never)
+        .onAppear { events = History.load() }
+    }
+
+    private var days: [String] {
+        var seen = Set<String>()
+        return events.map(\.day).filter { seen.insert($0).inserted }
+    }
+
+    private func dayTitle(_ d: String) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        guard let date = f.date(from: d) else { return d }
+        if Calendar.current.isDateInToday(date) { return T("Today", "Hari ini") }
+        if Calendar.current.isDateInYesterday(date) { return T("Yesterday", "Kemarin") }
+        let out = DateFormatter()
+        out.locale = Locale(identifier: Lang.current == .id ? "id_ID" : "en_US")
+        out.dateFormat = "EEEE, d MMMM yyyy"
+        return out.string(from: date)
     }
 }
 
@@ -3060,7 +3531,8 @@ struct MoveView: View {
                     step("1", T("Old Mac: Prepare Move", "Mac lama: Siapkan Pindah"),
                          T("Saves the Keychain keys into the vault.", "Menyimpan kunci Keychain ke vault."))
                     step("2", T("Old Mac: Back up", "Mac lama: Backup"),
-                         T("Backup page, tick Include Profile Vault.", "Halaman Backup, centang Sertakan Profile Vault."))
+                         T("On the Backup page, tick Include Profile Vault, then press Back Up Now.",
+                           "Di halaman Backup, centang Sertakan Profile Vault, lalu tekan Backup Sekarang."))
                     step("3", T("New Mac: Get Vault from Backup", "Mac baru: Ambil Vault dari Backup"),
                          T("Install Amnesia, then use the box below.", "Pasang Amnesia, lalu pakai kotak di bawah."))
                     step("4", T("New Mac: Restore Profiles, then Restore Keys", "Mac baru: Restore Profil, lalu Pulihkan Kunci"),
@@ -3140,20 +3612,25 @@ struct MoveView: View {
     }
 
     private func exportKeys() {
-        guard confirm(T("Prepare Move", "Siapkan Pindah Mac"),
-                      T("The Keychain keys (Chrome, Claude, WhatsApp, etc.) are saved, encrypted, to the vault.\n\n"
-                        + "macOS will ask a few times. Type your Mac login password, then click Always Allow.",
-                        "Kunci Keychain (Chrome, Claude, WhatsApp, dll.) disimpan terenkripsi ke vault.\n\n"
-                        + "macOS akan bertanya beberapa kali. Ketik password login Mac lalu klik Always Allow / "
-                        + "Selalu Izinkan."), ok: T("Start", "Mulai")) else { return }
+        guard ask(T("Prepare the move?", "Siapkan pindah Mac?"), "",
+                  [PopSection(.happens, [T("The secret Keychain keys of Chrome, Claude, WhatsApp and similar apps are saved, "
+                                           + "encrypted, into the vault.",
+                                           "Kunci rahasia Keychain milik Chrome, Claude, WhatsApp, dan app sejenis disimpan "
+                                           + "terenkripsi ke dalam vault.")]),
+                   PopSection(.todo, [T("macOS asks a few times: type your Mac login password, then click Always Allow.",
+                                        "macOS akan bertanya beberapa kali: ketik password login Mac, lalu klik Always Allow (Selalu Izinkan)."),
+                                      T("Afterwards, make a backup with Include Profile Vault ticked.",
+                                        "Setelah itu, buat backup dengan Sertakan Profile Vault dicentang.")])],
+                  ok: T("Start", "Mulai")) else { return }
         m.background(T("Saving Keychain keys to the vault…\nAnswer the macOS permission dialogs.",
                        "Menyimpan kunci Keychain ke vault…\nJawab dialog izin dari macOS."),
                      { vaultCall(["exportkeys"]) }) { r in
             if r.ok {
                 let apps = (r.apps ?? []).joined(separator: ", ")
-                info(T("Ready to move", "Siap pindah Mac"),
-                     T("Keys saved: \(apps).\n\nNow make a backup with Include Profile Vault checked.",
-                       "Kunci tersimpan: \(apps).\n\nSekarang buat backup dengan Sertakan Profile Vault dicentang."))
+                popup(T("Ready to move", "Siap pindah Mac"), "",
+                      [PopSection(.kept, [apps], title: T("Keys saved for", "Kunci tersimpan untuk")),
+                       PopSection(.todo, [T("Now make a backup with Include Profile Vault ticked.",
+                                            "Sekarang buat backup dengan Sertakan Profile Vault dicentang.")])])
             } else {
                 m.vaultError(r)
             }
@@ -3162,12 +3639,14 @@ struct MoveView: View {
     }
 
     private func importKeys() {
-        guard confirm(T("Restore Keys?", "Pulihkan Kunci?"),
-                      T("The Keychain keys for Chrome, Claude, etc. on this Mac are REPLACED with the keys from the old "
-                        + "Mac. Only do this on the new Mac, after Restore Profiles.\n\nThose apps will be closed first.",
-                        "Kunci Keychain Chrome, Claude, dll. di Mac ini DIGANTI dengan kunci dari Mac lama. "
-                        + "Lakukan hanya di Mac baru, setelah Restore Profil.\n\nApp terkait akan ditutup dulu."),
-                      ok: T("Restore", "Pulihkan"), danger: true), m.lastTryOK() else { return }
+        guard ask(T("Restore the keys?", "Pulihkan kunci?"), "",
+                  [PopSection(.happens, [T("Chrome, Claude and the other apps in the vault are closed first.",
+                                           "Chrome, Claude, dan app lain di vault ditutup dulu."),
+                                         T("Their Keychain keys on this Mac are REPLACED with the keys from the old Mac.",
+                                           "Kunci Keychain app tersebut di Mac ini DIGANTI dengan kunci dari Mac lama.")]),
+                   PopSection(.warn, [T("Only do this on the new Mac, after Restore Profiles.",
+                                        "Lakukan hanya di Mac baru, setelah Restore Profil.")])],
+                  ok: T("Restore", "Pulihkan"), danger: true), m.lastTryOK() else { return }
         let input = pw + "\n"
         m.background(T("Putting keys into the Keychain…", "Memasang kunci ke Keychain…"),
                      { vaultCall(["importkeys"], input: input) }) { r in
@@ -3194,9 +3673,11 @@ struct MoveView: View {
         }) { r in
             backupPw = ""
             if r.code == 0 {
-                info(T("Vault restored", "Vault dipulihkan"),
-                     T("Next steps:\n1. Restore Profiles (vault password).\n2. Restore Keys (vault password).",
-                       "Langkah berikutnya:\n1. Restore Profil (password vault).\n2. Pulihkan Kunci (password vault)."))
+                popup(T("Vault restored", "Vault dipulihkan"), "",
+                      [PopSection(.todo, [T("1. Open Profile Vault and press Restore Profiles (vault password).",
+                                            "1. Buka Profile Vault, lalu tekan Restore Profil (pakai password vault)."),
+                                          T("2. Moving Macs? Then press Restore Keys here (vault password).",
+                                            "2. Pindah Mac? Tekan juga Pulihkan Kunci di sini (pakai password vault).")])])
             } else {
                 info(T("Failed", "Gagal"), stripFail(r.err), error: true)
             }
@@ -3263,16 +3744,19 @@ struct KeepView: View {
                 Image(systemName: "minus.circle.fill").foregroundStyle(.red)
             }
             .buttonStyle(.plain)
-            .help(T("Remove from Keep List", "Hapus dari Keep List"))
+            .help(T("Remove from Keep List", "Keluarkan dari Keep List"))
         }
         .padding(10)
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.regularMaterial))
     }
 
     private func remove(_ e: String) {
-        guard confirm(T("Remove from Keep List?", "Hapus dari Keep List?"),
-                      e + T("\n\nIts data will be wiped at the next logout.", "\n\nDatanya akan ikut dibersihkan saat logout berikutnya."),
-                      ok: T("Remove", "Hapus"), danger: true) else { return }
+        guard ask(T("Remove from the Keep List?", "Keluarkan dari Keep List?"), e,
+                  [PopSection(.deleted, [T("From the next logout on, this item is wiped like everything else.",
+                                           "Mulai logout berikutnya, item ini ikut dibersihkan seperti yang lain.")]),
+                   PopSection(.todo, [T("Still need it? Move a copy into your Keep folder first.",
+                                        "Masih perlu? Pindahkan salinannya ke folder Keep dulu.")])],
+                  ok: T("Remove", "Keluarkan"), danger: true) else { return }
         Keep.remove(e)
         entries = Keep.entries()
     }
@@ -3397,7 +3881,7 @@ func chooseKeepDir() -> Bool {
     panel.canChooseFiles = false
     panel.canCreateDirectories = true
     panel.allowsMultipleSelection = false
-    panel.prompt = T("Use as Keep folder", "Pakai jadi folder Keep")
+    panel.prompt = T("Use as Keep folder", "Jadikan folder Keep")
     panel.message = T("Pick (or create) the folder that should never be wiped. Any place, any name.",
                       "Pilih (atau buat) folder yang tidak pernah dihapus. Di mana saja, nama apa saja.")
     panel.directoryURL = URL(fileURLWithPath: (KeepDir.path as NSString).deletingLastPathComponent)
@@ -3409,12 +3893,15 @@ func chooseKeepDir() -> Bool {
     let oldFiles = ((try? FileManager.default.contentsOfDirectory(atPath: KeepDir.path)) ?? []).filter { $0 != ".DS_Store" }
     var move = false
     if !oldFiles.isEmpty {
-        move = confirm(T("Move your files too?", "Pindahkan file kamu juga?"),
-                       T("\(KeepDir.shown) has \(oldFiles.count) items. Move them to the new folder?\n\n"
-                         + "If you don't, they stay where they are.",
-                         "\(KeepDir.shown) berisi \(oldFiles.count) item. Pindahkan ke folder baru?\n\n"
-                         + "Kalau tidak, file tetap di tempat lama."),
-                       ok: T("Move", "Pindahkan"))
+        move = ask(T("Move your files too?", "Pindahkan file kamu juga?"),
+                   T("\(KeepDir.shown) has \(oldFiles.count) items.", "\(KeepDir.shown) berisi \(oldFiles.count) item."),
+                   [PopSection(.happens, [T("Move: the items go into the new Keep folder.",
+                                            "Pindahkan: semua item masuk ke folder Keep yang baru.")]),
+                    PopSection(.warn, [T("Cancel: they stay in the old folder, which is NO LONGER protected. If it's in a "
+                                         + "place that gets wiped (like Desktop or Documents), they are deleted at the next logout.",
+                                         "Batal: item tetap di folder lama, yang TIDAK lagi dilindungi. Kalau folder itu ada di "
+                                         + "tempat yang dibersihkan (misalnya Desktop atau Documents), isinya terhapus saat logout berikutnya.")])],
+                   ok: T("Move", "Pindahkan"))
     }
     KeepDir.set(new, moveFiles: move)
     return true
@@ -3468,8 +3955,8 @@ struct AppleKeepCard: View {
                     IconBadge(icon: "applelogo", colors: Pal.gray, size: 30)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(T("Apple accounts & data", "Akun & data Apple")).font(.system(size: 13, weight: .semibold))
-                        Text(T("Switched on = stays after logout. Switch off what you don't need.",
-                               "Nyala = tetap ada setelah logout. Matikan yang tidak perlu."))
+                        Text(T("Switched on: kept after logout. Switch off what you don't need.",
+                               "Kalau tombolnya nyala, data itu tetap ada setelah logout. Matikan yang tidak kamu perlukan."))
                             .font(.system(size: 11)).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -3506,10 +3993,10 @@ struct AppleKeepCard: View {
             }
             Spacer(minLength: 6)
             Toggle("", isOn: Binding(get: { on[a.id] ?? false }, set: { v in
-                if !v && !confirm(T("Stop keeping \(a.title)?", "Berhenti menyimpan \(a.title)?"),
-                                  T("\(a.title) will be DELETED from this Mac at the next logout.",
-                                    "\(a.title) akan DIHAPUS dari Mac ini saat logout berikutnya."),
-                                  ok: T("Stop Keeping", "Berhenti Simpan"), danger: true) { return }
+                if !v && !ask(T("Stop keeping \(a.title)?", "Berhenti menyimpan \(a.title)?"), "",
+                              [PopSection(.deleted, [T("\(a.title) is DELETED from this Mac at the next logout.",
+                                                       "\(a.title) DIHAPUS dari Mac ini saat logout berikutnya.")])],
+                              ok: T("Stop Keeping", "Berhenti Menyimpan"), danger: true) { return }
                 AppleKeep.set(a, v)
                 load()
                 changed()
@@ -3539,7 +4026,7 @@ struct AppPickList: View {
         switch (a.inVault, on) {
         case (true, true): return T("Kept whole, not encrypted", "Disimpan utuh, tidak dienkripsi")
         case (true, false): return T("Logins go in the Profile Vault (encrypted)", "Login masuk Profile Vault (terenkripsi)")
-        case (false, true): return T("Kept: data & settings stay", "Disimpan: data & setting tetap ada")
+        case (false, true): return T("Kept: data & settings stay", "Disimpan: data & pengaturan tetap ada")
         default: return T("Wiped at logout", "Dihapus saat logout")
         }
     }
@@ -3595,8 +4082,8 @@ struct AppPickList: View {
                 }
             }
             if a.inVault {
-                Note(text: T("You don't need the vault for this app now: its data simply stays.",
-                             "App ini tidak perlu vault lagi: datanya langsung tetap ada."),
+                Note(text: T("This app doesn't need the vault anymore: it's on the Keep List, so its data isn't wiped at logout.",
+                             "App ini tidak perlu vault lagi: app ini ada di Keep List, jadi datanya tidak dihapus saat logout."),
                      icon: "info.circle.fill", color: .secondary)
             }
         }
@@ -3616,7 +4103,7 @@ struct AppPickerSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(T("Pick apps to keep", "Pilih app yang disimpan")).font(.system(size: 17, weight: .bold))
             Text(T("Apps you switch on keep their data and settings. Everything else gets wiped at logout.",
-                   "App yang dinyalakan tetap menyimpan data & settingnya. Sisanya dihapus saat logout."))
+                   "App yang dinyalakan tetap menyimpan data & pengaturannya. Sisanya dihapus saat logout."))
                 .font(.system(size: 12)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if let a = apps {
@@ -3833,15 +4320,15 @@ struct OnboardingView: View {
             Card {
                 item("exclamationmark.triangle.fill", Pal.danger, T("It deletes for real", "Benar-benar menghapus"),
                      T("Once it's on, files outside the Keep folder and the Keep List are deleted at every logout, "
-                       + "restart and shutdown. They don't go to the Trash and can't be undone.",
+                       + "restart and shutdown. They don't go to the Trash and can't be brought back.",
                        "Setelah aktif, file di luar folder Keep dan Keep List dihapus setiap logout, restart dan "
-                       + "shutdown. Tidak masuk Trash dan tidak bisa dibatalkan."))
+                       + "shutdown. Tidak masuk Trash dan tidak bisa dikembalikan."))
                 item("key.fill", Pal.pause, T("Forget the password, lose the vault", "Lupa password, vault hilang"),
                      T("Nobody can open the Profile Vault without its password, including us.",
                        "Profile Vault tidak bisa dibuka tanpa password-nya, termasuk oleh kami."))
                 item("checkmark.shield.fill", Pal.keep, T("Check before you turn it on", "Cek dulu sebelum mengaktifkan"),
-                     T("Back up your files first and use \"What would be deleted\" to see the list.",
-                       "Backup file kamu dulu dan pakai \"Lihat yang akan dihapus\" untuk melihat daftarnya."))
+                     T("Back up your files first and use \"What Gets Deleted\" to see the list.",
+                       "Backup file kamu dulu dan pakai \"Yang Akan Dihapus\" untuk melihat daftarnya."))
                 item("doc.text.fill", Pal.gray, T("Free software, no warranty", "Software gratis, tanpa garansi"),
                      T("Amnesia is MIT licensed and comes as-is. You use it at your own risk.",
                        "Amnesia berlisensi MIT dan diberikan apa adanya. Risiko pemakaian ada di kamu."))
@@ -3895,7 +4382,7 @@ struct OnboardingView: View {
                        T("Free tools from Apple. The Profile Vault needs them.", "Alat gratis dari Apple, dibutuhkan Profile Vault."))
                 status(Engine.hasFullDisk, T("Full Disk Access", "Akses Disk Penuh"),
                        T("Allow once, and macOS stops asking about every folder.",
-                         "Izinkan sekali, macOS tidak akan tanya lagi per folder."))
+                         "Cukup izinkan sekali, supaya macOS tidak bertanya lagi untuk tiap folder."))
             }
             if !Engine.hasPython {
                 Button { _ = sh("/usr/bin/xcode-select", ["--install"]) } label: {
@@ -3946,9 +4433,9 @@ struct OnboardingView: View {
                     "Setelah tur ini, Amnesia menampilkan app yang ada di Mac kamu. Bentuknya seperti ini:"))
             VStack(spacing: 6) {
                 exampleRow("shield.lefthalf.filled", Pal.logout, "My VPN", on: true,
-                           T("Kept: data & settings stay", "Disimpan: data & setting tetap ada"),
+                           T("Kept: data & settings stay", "Disimpan: data & pengaturan tetap ada"),
                            [(T("App data", "Data app"), "~/Library/Application Support/MyVPN", "12 MB"),
-                            (T("Settings", "Setting"), "~/Library/Preferences/com.myvpn*", "4 KB")])
+                            (T("Settings", "Pengaturan"), "~/Library/Preferences/com.myvpn*", "4 KB")])
                 exampleRow("globe", Pal.vault, T("Web browser", "Browser"), on: false,
                            T("Logins go in the Profile Vault (encrypted)", "Login masuk Profile Vault (terenkripsi)"), [])
                 exampleRow("gamecontroller.fill", Pal.backup, T("Some game", "Game"), on: false,
@@ -4005,7 +4492,7 @@ struct OnboardingView: View {
                 item("2.circle.fill", Pal.logout, T("Log in to your apps", "Login ke app kamu"),
                      T("Chrome, WhatsApp, Claude, your coding tools… just like normal.",
                        "Chrome, WhatsApp, Claude, alat coding… seperti biasa."))
-                item("3.circle.fill", Pal.keep, T("Press Snapshot", "Tekan Snapshot"),
+                item("3.circle.fill", Pal.keep, T("Press Snapshot Now", "Tekan Snapshot Sekarang"),
                      T("Your logins are now locked in the vault.", "Login kamu sekarang terkunci di vault."))
             }
             Note(text: T("Panic word: set a word that destroys the vault right away if you ever type it.",
@@ -4021,11 +4508,12 @@ struct OnboardingView: View {
                                                                  "Pakai seperti ini dan tidak ada yang hilang."))
             Card {
                 item("tray.full.fill", Pal.keep, T("Put important files in your Keep folder", "Taruh file penting di folder Keep"),
-                     T("Anything outside it can disappear.", "Yang di luar folder itu bisa hilang."))
+                     T("Anything outside it can be deleted at logout.", "Yang di luar folder itu bisa terhapus saat logout."))
                 item("rectangle.portrait.and.arrow.right", Pal.logout, T("Done? Save & Log Out", "Selesai? Simpan & Logout"),
                      T("Saves your logins, then logs out.", "Simpan login dulu, baru logout."))
-                item("arrow.counterclockwise", Pal.vault, T("Back? Restore Profiles", "Kembali? Restore Profil"),
-                     T("Open Profile Vault, type your password, done.", "Buka Profile Vault, ketik password, selesai."))
+                item("arrow.counterclockwise", Pal.vault, T("Logged in again? Restore Profiles", "Login lagi? Restore Profil"),
+                     T("Open Profile Vault, type your vault password, press Restore Profiles.",
+                       "Buka Profile Vault, ketik password vault, lalu tekan Restore Profil."))
                 item("eye.fill", Pal.pause, T("Not sure? Check first", "Ragu? Cek dulu"),
                      T("Home page → What Gets Deleted.", "Halaman utama → Yang Akan Dihapus."))
             }
@@ -4051,6 +4539,26 @@ struct PrivacyNote: View {
 }
 
 let termsURL = "https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.md"
+let repoURL = "https://github.com/navi-crwn/amnesia-mac"
+
+/// v5.16: baris kecil di bawah halaman utama: versi, lisensi, pembuat, tautan.
+struct AppFooter: View {
+    var body: some View {
+        HStack(spacing: 6) {
+            Text("Amnesia v\(appVersion)")
+            Text("·")
+            Link(T("MIT License", "Lisensi MIT"), destination: URL(string: repoURL + "/blob/main/LICENSE")!)
+            Text("·")
+            Text("© 2026 navi-crwn")
+            Text("·")
+            Link("GitHub", destination: URL(string: repoURL)!)
+        }
+        .font(.system(size: 10.5, weight: .medium))
+        .foregroundStyle(.secondary)
+        .tint(.secondary)
+        .frame(maxWidth: .infinity)
+    }
+}
 
 // MARK: - Backup
 
@@ -4176,7 +4684,7 @@ struct BackupView: View {
                 }
                 Card {
                     Field(label: remember ? T("Backup password (leave empty to use the saved one)",
-                                              "Password backup (kosongkan = pakai yang tersimpan)")
+                                              "Password backup (kosongkan untuk pakai yang tersimpan)")
                                           : T("Backup password", "Password backup"),
                           text: $pw)
                     if !pw.isEmpty {
@@ -4200,10 +4708,18 @@ struct BackupView: View {
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
-                    Note(text: T("Runs on its own while the Amnesia icon is in the menu bar. If it goes to a USB drive, "
-                                 + "it runs when the drive is plugged in.",
-                                 "Berjalan sendiri selama ikon Amnesia ada di menu bar. Kalau tujuannya flashdisk, "
-                                 + "backup jalan saat flashdisk tercolok."))
+                    Note(text: T("Runs on its own while the Amnesia icon is in the menu bar, using the password saved in "
+                                 + "Keychain. If it goes to a USB drive, it runs when the drive is plugged in.",
+                                 "Berjalan sendiri selama ikon Amnesia ada di menu bar, memakai password yang tersimpan di "
+                                 + "Keychain. Kalau tujuannya flashdisk, backup jalan saat flashdisk tercolok."))
+                    if schedule != "off" {
+                        Button { runScheduledNow() } label: {
+                            Label(T("Run the scheduled backup now", "Jalankan backup terjadwal sekarang"), systemImage: "clock.arrow.circlepath")
+                        }
+                        .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(.pink)
+                        .help(T("Runs exactly like the schedule would (saved password, no typing), so you can test it without waiting.",
+                                "Berjalan persis seperti jadwal (pakai password tersimpan, tanpa mengetik), jadi bisa dites tanpa menunggu."))
+                    }
                 }
                 HStack(spacing: 10) {
                     Button { if save() { info("Backup", T("Settings saved.", "Pengaturan disimpan.")) } } label: {
@@ -4212,6 +4728,19 @@ struct BackupView: View {
                     .buttonStyle(Pill(colors: Pal.gray))
                     Button { start() } label: { Label(T("Back Up Now", "Backup Sekarang"), systemImage: "arrow.up.doc.fill") }
                         .buttonStyle(Pill(colors: Pal.backup))
+                }
+                Card {
+                    Text(T("Check a backup file", "Cek file backup")).font(.system(size: 13, weight: .semibold))
+                    Text(T("Makes sure the Profile Vault inside a backup can really be opened, without touching the vault "
+                           + "on this Mac. Uses the backup password above (or the saved one).",
+                           "Memastikan Profile Vault di dalam file backup benar-benar bisa dibuka, tanpa menyentuh vault di "
+                           + "Mac ini. Memakai password backup di atas (atau yang tersimpan)."))
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button { checkFile() } label: {
+                        Label(T("Check a Backup File…", "Cek File Backup…"), systemImage: "checkmark.seal.fill")
+                    }
+                    .buttonStyle(Pill(colors: Pal.keep))
                 }
             }
         }
@@ -4367,8 +4896,8 @@ struct BackupView: View {
                       systemImage: "icloud.and.arrow.up.fill")
             }
             .buttonStyle(Pill(colors: Pal.logout))
-            Text(T("The login page opens in your browser. Log in there and press Allow; no Terminal needed.",
-                   "Halaman login terbuka di browser. Login di sana lalu tekan Allow / Izinkan; tanpa Terminal."))
+            Text(T("The login page opens in your browser. Log in there and press Allow. No Terminal needed.",
+                   "Halaman login terbuka di browser. Login di sana lalu tekan Allow / Izinkan. Tidak perlu Terminal."))
                 .font(.system(size: 11)).foregroundStyle(.secondary)
         }
         stepTitle(T("3. Folder name", "3. Nama folder"))
@@ -4516,8 +5045,8 @@ struct BackupView: View {
                  error: true); return false
         }
         if viaGoogleApp && localTarget == nil {
-            info("Backup", T("The Google Drive app isn't ready yet (installed and signed in). Or pick Connect directly.",
-                             "App Google Drive belum siap (terpasang dan login). Atau pilih Hubungkan langsung."), error: true)
+            info("Backup", T("The Google Drive app isn't ready yet (it must be installed and signed in). Or pick Connect directly.",
+                             "App Google Drive belum siap (harus terpasang dan sudah login). Atau pilih Hubungkan langsung."), error: true)
             return false
         }
         if dest == "rclone" && !viaGoogleApp && (remote.isEmpty || !cloud.contains(":")) {
@@ -4599,23 +5128,118 @@ struct BackupView: View {
                                  "\n\nChecksum SHA256 dicatat di backup_checksums.txt."))
             } else if job.cancelled {
                 info(T("Backup cancelled", "Backup dibatalkan"),
-                     which + T(" was cancelled. Previous backups are safe; the unfinished file was removed.",
-                               " dibatalkan. Backup sebelumnya tetap aman; file yang belum selesai sudah dihapus."))
+                     which + T(" was cancelled. Previous backups are safe. The unfinished file was removed.",
+                               " dibatalkan. Backup sebelumnya tetap aman. File yang belum selesai sudah dihapus."))
             } else if job.stalled {
                 info(T("Backup stopped", "Backup dihentikan"),
-                     which + T(" didn't move for 10 minutes (the internet or the server stopped answering), so Amnesia stopped it. "
+                     which + T(" made no progress for 10 minutes (the internet or the server stopped answering), so Amnesia stopped it. "
                                + "Previous backups are safe. Try again later.",
-                               " tidak bergerak selama 10 menit (internet atau server tidak menjawab), jadi Amnesia menghentikannya. "
+                               " tidak ada kemajuan selama 10 menit (internet atau server tidak menjawab), jadi Amnesia menghentikannya. "
                                + "Backup sebelumnya tetap aman. Coba lagi nanti."), error: true)
             } else if [130, 143, 15, 9].contains(r.code) {
                 info(T("Backup stopped", "Backup dihentikan"),
-                     which + T(" was stopped from outside Amnesia (for example by a Terminal command). Previous backups are safe; "
-                               + "the unfinished file was removed.",
-                               " dihentikan dari luar Amnesia (misalnya oleh perintah di Terminal). Backup sebelumnya tetap aman; "
-                               + "file yang belum selesai sudah dihapus."), error: true)
+                     which + T(" was stopped from outside Amnesia (for example by a Terminal command). Previous backups are safe. "
+                               + "The unfinished file was removed.",
+                               " dihentikan dari luar Amnesia (misalnya oleh perintah di Terminal). Backup sebelumnya tetap aman. "
+                               + "File yang belum selesai sudah dihapus."), error: true)
             } else {
                 info(T("Backup failed", "Backup gagal"), which + ":\n" + stripFail(r.msg), error: true)
             }
+        }
+    }
+
+    /// v5.16: jalankan backup terjadwal sekarang juga (sama persis seperti jadwal: --auto, password Keychain).
+    private func runScheduledNow() {
+        guard save() else { return }
+        guard Secret.exists else {
+            popup(T("No saved password", "Belum ada password tersimpan"), "",
+                  [PopSection(.todo, [T("Type the backup password, tick Save password in Keychain, then press Save.",
+                                        "Isi password backup, centang Simpan password di Keychain, lalu tekan Simpan.")])],
+                  warning: true)
+            return
+        }
+        if dest == "drive" {
+            let d = Config.get("BACKUP_DRIVE")
+            guard !d.isEmpty, FileManager.default.fileExists(atPath: "/Volumes/" + d) else {
+                popup(T("Drive not plugged in", "Drive belum tercolok"), "",
+                      [PopSection(.todo, [T("Plug in the drive, then press this button again. The schedule also waits until the drive is plugged in.",
+                                            "Colokkan drive-nya, lalu tekan tombol ini lagi. Jadwal juga menunggu sampai drive tercolok.")])],
+                      warning: true)
+                return
+            }
+        }
+        let job = JobBox()
+        let to = destLabel
+        m.background(T("Running the scheduled backup to \(to)…", "Menjalankan backup terjadwal ke \(to)…"), job: job,
+                     { () -> (ok: Bool, msg: String, code: Int32) in
+            guard let p = Secret.get() else {
+                return (false, T("Couldn't read the saved password.", "Password tersimpan tidak bisa dibaca."), 1)
+            }
+            return runBackup(p, auto: true, job: job, progress: Model.progressSink)
+        }) { r in
+            status = lastBackupStatus()
+            if r.ok {
+                popup(T("The scheduled backup works", "Backup terjadwal berfungsi"), "",
+                      [PopSection(.kept, [r.msg.replacingOccurrences(of: "OK: ", with: "")],
+                                  title: T("Backup saved", "Backup tersimpan")),
+                       PopSection(.happens, [schedule == "daily"
+                                             ? T("From now on it runs by itself about once a day.", "Mulai sekarang backup jalan sendiri sekitar sekali sehari.")
+                                             : T("From now on it runs by itself about once a week.", "Mulai sekarang backup jalan sendiri sekitar sekali seminggu."),
+                                             T("You get a macOS notification each time it's done or fails.",
+                                               "Setiap selesai atau gagal, muncul notifikasi macOS.")])])
+            } else if job.cancelled {
+                info(T("Backup cancelled", "Backup dibatalkan"),
+                     T("Previous backups are safe. The unfinished file was removed.",
+                       "Backup sebelumnya tetap aman. File yang belum selesai sudah dihapus."))
+            } else {
+                popup(T("The scheduled backup failed", "Backup terjadwal gagal"), stripFail(r.msg),
+                      [PopSection(.todo, [T("Fix the problem above, then press Run the scheduled backup now again.",
+                                            "Perbaiki masalah di atas, lalu tekan Jalankan backup terjadwal sekarang lagi.")])],
+                      warning: true)
+            }
+        }
+    }
+
+    /// v5.16: cek vault di dalam file backup (folder sementara, vault di Mac ini tidak disentuh).
+    private func checkFile() {
+        let typed = pw
+        guard !typed.isEmpty || Secret.exists else {
+            info("Backup", T("Type the backup password first.", "Isi password backup dulu."), error: true)
+            return
+        }
+        let panel = NSOpenPanel()
+        panel.title = T("Choose an Amnesia backup file (.7z)", "Pilih file backup Amnesia (.7z)")
+        panel.canChooseDirectories = false
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let file = panel.url?.path else { return }
+        let name = (file as NSString).lastPathComponent
+        m.background(T("Checking \(name)…", "Mengecek \(name)…"), {
+            guard let p = typed.isEmpty ? Secret.get() : typed else { return Out(code: 1, out: "", err: "FAILED: no password") }
+            return sh("/bin/bash", [P.backupSh, "--check-vault", file], input: p + "\n")
+        }) { r in
+            let line = r.out.split(separator: "\n").last.map(String.init) ?? ""
+            guard r.code == 0, line.hasPrefix("OK: VAULT ") else {
+                popup(T("This backup can't be used for the vault", "Backup ini tidak bisa dipakai untuk vault"), "",
+                      [PopSection(.warn, [stripFail(r.err.trimmingCharacters(in: .whitespacesAndNewlines))],
+                                  title: T("What went wrong", "Masalahnya")),
+                       PopSection(.kept, [T("Nothing on this Mac was changed.", "Tidak ada yang diubah di Mac ini.")])],
+                      warning: true)
+                return
+            }
+            let parts = line.dropFirst("OK: VAULT ".count).split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+            let mb = Double(parts.first ?? "") ?? 0
+            let time = parts.count > 1 ? parts[1] : ""
+            let apps = parts.count > 2 ? parts[2] : ""
+            popup(T("The vault in this backup can be opened", "Vault di backup ini bisa dibuka"), name,
+                  [PopSection(.kept, [apps.isEmpty ? T("Profile Vault found (no snapshot inside).", "Profile Vault ditemukan (tanpa snapshot).")
+                                                   : T("Snapshots of: \(apps).", "Ada snapshot untuk: \(apps)."),
+                                      time.isEmpty ? "" : T("Latest snapshot: \(time).", "Snapshot terbaru: \(time)."),
+                                      T("Vault size: \(mbText(mb)).", "Ukuran vault: \(mbText(mb)).")],
+                              title: T("Inside the backup", "Isi backup")),
+                   PopSection(.note, [T("The vault on this Mac was not touched. The check used a temporary folder that is already deleted.",
+                                        "Vault di Mac ini tidak disentuh. Pengecekan memakai folder sementara yang sudah dihapus lagi."),
+                                      T("If your vault is ever lost, get it back on Move to a New Mac → Get Vault from Backup.",
+                                        "Kalau vault suatu saat hilang, ambil lagi di Pindah Mac → Ambil Vault dari Backup.")])])
         }
     }
 
@@ -4714,7 +5338,6 @@ struct SettingsView: View {
     @State private var notify = Setting.notify.isOn
     @State private var preview = Setting.preview.isOn
     @State private var atLogin = Setting.openAtLogin.isOn
-    @State private var light = Setting.vaultLight.isOn
 
     var body: some View {
         ScrollView {
@@ -4722,35 +5345,40 @@ struct SettingsView: View {
                 PageHeader(title: T("Settings", "Pengaturan"), icon: "gearshape.fill", colors: Pal.gray, back: back)
                 language
                 row(T("Auto snapshot at logout", "Snapshot otomatis saat logout"),
-                    T("Your logins get saved to the vault on every logout, restart or shutdown, even if you didn't "
-                      + "use Save & Log Out. Needs a vault.",
-                      "Login kamu disimpan ke vault setiap logout, restart atau shutdown, walau tidak lewat tombol "
-                      + "Simpan & Logout. Butuh vault yang sudah dibuat."),
+                    T("Every time you log out, restart or shut down the normal way (not with Save & Log Out), Amnesia "
+                      + "first saves your app logins to the vault, then cleans the Mac.\n"
+                      + "• Only apps whose data changed since their last snapshot are saved.\n"
+                      + "• It takes at most 150 seconds. If it takes longer, it stops and the old snapshot stays.\n"
+                      + "• Skipped if you just used Save & Log Out (last 10 minutes) or Pause 1 Session is on.\n"
+                      + "Off: a normal logout cleans right away without saving, so logins you didn't save are lost. "
+                      + "Needs a vault.",
+                      "Setiap kali kamu logout, restart, atau mematikan Mac dengan cara biasa (bukan lewat tombol "
+                      + "Simpan & Logout), Amnesia lebih dulu menyimpan login app ke vault, baru kemudian membersihkan Mac.\n"
+                      + "• Yang disimpan hanya app yang datanya berubah sejak snapshot terakhir.\n"
+                      + "• Paling lama 150 detik. Kalau lebih lama, penyimpanan dibatalkan dan snapshot lama tetap dipakai.\n"
+                      + "• Dilewati kalau kamu baru saja menekan Simpan & Logout (10 menit terakhir) atau sedang memakai Jeda 1 Sesi.\n"
+                      + "Kalau dimatikan: logout biasa langsung membersihkan tanpa menyimpan, jadi login yang belum "
+                      + "disimpan ikut hilang. Butuh vault yang sudah dibuat."),
                     "camera.fill", Pal.vault, $auto) { Setting.autoSnapshot.set($0) }
                 row(T("Notification after login", "Notifikasi setelah login"),
-                    T("Tells you the Mac is clean and reminds you to restore your profiles.",
-                      "Muncul pemberitahuan bahwa Mac sudah bersih, plus pengingat untuk restore profil."),
+                    T("After you log in, a notification tells you the Mac was cleaned and reminds you to press Restore Profiles "
+                      + "to bring your profiles back from the vault.",
+                      "Setelah kamu login, muncul pemberitahuan bahwa Mac sudah dibersihkan, sekaligus pengingat untuk "
+                      + "mengembalikan profil dari vault (Restore Profil)."),
                     "bell.badge.fill", Pal.pause, $notify) { Setting.notify.set($0) }
                 row(T("Check before logout", "Cek dulu sebelum logout"),
-                    T("On logout, restart or shutdown, Amnesia holds on for a moment and shows what will be deleted. "
-                      + "You pick Continue or Cancel.",
-                      "Saat logout, restart atau shutdown, Amnesia menahan sebentar dan menampilkan daftar yang "
-                      + "akan dihapus. Kamu pilih Lanjut atau Batal."),
+                    T("When you log out, restart or shut down, Amnesia stops it for a moment and shows the list of what "
+                      + "will be deleted. Press Continue to go on, or Cancel to stay logged in. Only while Amnesia is on.",
+                      "Saat kamu logout, restart, atau mematikan Mac, Amnesia menahannya sebentar dan menampilkan daftar "
+                      + "yang akan dihapus. Tekan Lanjut untuk meneruskan, atau Batal untuk tetap login. Hanya saat "
+                      + "Amnesia aktif."),
                     "eye.fill", Pal.logout, $preview) { Setting.preview.set($0) }
                 row(T("Open at login", "Buka saat login"),
-                    T("Amnesia starts by itself in the menu bar every time you log in, also while it is turned off. "
-                      + "Takes effect from the next login.",
-                      "Amnesia jalan sendiri di menu bar setiap kamu login, juga saat sedang dimatikan. "
-                      + "Berlaku mulai login berikutnya."),
+                    T("Every time you log in, Amnesia starts by itself as an icon in the menu bar (no window), also while "
+                      + "it is turned off. Takes effect from the next login.",
+                      "Setiap kamu login, Amnesia otomatis jalan sebagai ikon di menu bar (tanpa jendela), juga saat "
+                      + "sedang dimatikan. Berlaku mulai login berikutnya."),
                     "power.circle.fill", Pal.keep, $atLogin) { Setting.openAtLogin.set($0); Agent.LoginItem.sync() }
-                row(T("Light Chrome snapshot", "Snapshot Chrome ringan"),
-                    T("Skips Chrome's caches and the program files of Web Store extensions (about 1 GB → 150 MB). "
-                      + "Logins, bookmarks, extension settings and extensions not from the Web Store are kept. After "
-                      + "Restore, press Repair in chrome://extensions to download the Web Store ones again.",
-                      "Melewati cache Chrome dan file program extension dari Web Store (sekitar 1 GB → 150 MB). Login, "
-                      + "bookmark, pengaturan extension dan extension yang bukan dari Web Store tetap disimpan. Setelah "
-                      + "Restore, tekan Repair di chrome://extensions untuk mengunduh ulang yang dari Web Store."),
-                    "leaf.fill", Pal.vault, $light) { Setting.vaultLight.set($0) }
                 Button { m.page = .preview } label: {
                     Label(T("See what would be deleted now", "Lihat yang akan dihapus sekarang"), systemImage: "list.bullet.rectangle")
                 }
@@ -4769,12 +5397,12 @@ struct SettingsView: View {
                             Button(T("Open Privacy Settings", "Buka Pengaturan Privasi")) { Engine.openFullDiskSettings() }
                             Button(T("Quit & Reopen", "Tutup & Buka Lagi")) { Engine.relaunch() }
                                 .disabled(m.busy != nil)
-                                .help(T("Wait until the current job is finished.", "Tunggu sampai proses yang jalan selesai."))
+                                .help(T("Wait until the current job is finished.", "Tunggu sampai proses yang sedang berjalan selesai."))
                         }
                     }
                 }
                 Button { m.page = .move } label: {
-                    Label(T("Move to a new Mac", "Pindah ke Mac baru"), systemImage: "arrow.right.arrow.left.circle.fill")
+                    Label(T("Move to a New Mac", "Pindah Mac"), systemImage: "arrow.right.arrow.left.circle.fill")
                 }
                 .buttonStyle(Pill(colors: Pal.backup))
                 Button { m.showTour() } label: {
@@ -4786,8 +5414,8 @@ struct SettingsView: View {
                 }
                 .buttonStyle(Pill(colors: Pal.danger))
                 .disabled(m.busy != nil)
-                .help(T("Turns Amnesia off safely and moves the app to the Trash. Your vault is kept.",
-                        "Mematikan Amnesia dengan aman dan memindah app ke Trash. Vault tetap disimpan."))
+                .help(T("Turns Amnesia off safely and moves the app to the Trash. You choose whether the vault goes too.",
+                        "Mematikan Amnesia dengan aman dan memindah app ke Trash. Kamu yang memilih vault ikut dihapus atau tidak."))
                 PrivacyNote().padding(.horizontal, 4)
             }
         }
@@ -5172,7 +5800,7 @@ struct MenuPanel: View {
                     openWindow(id: "main")
                     NSApp.activate(ignoringOtherApps: true)
                 }
-                MenuTile(title: T("Save & Log Out", "Simpan Profil & Logout"), icon: "rectangle.portrait.and.arrow.right",
+                MenuTile(title: T("Save & Log Out", "Simpan & Logout"), icon: "rectangle.portrait.and.arrow.right",
                          colors: Pal.logout) { m.saveAndLogout() }
                     .disabled(m.busy != nil)
                 MenuTile(title: m.state == .paused ? T("Cancel Pause", "Batalkan Jeda") : T("Pause 1 Session", "Jeda 1 Sesi"), icon: "pause.fill",
@@ -5223,6 +5851,9 @@ struct MenuIcon: View {
 @MainActor
 enum Shots {
     static let on = CommandLine.arguments.contains("--shots")
+    /// v5.16: "Amnesia Shots" = salinan app khusus screenshot (dibuat screenshots.sh). Tidak bisa membersihkan,
+    /// tidak bisa mengubah LaunchAgent, Keychain atau vault asli, dan hanya jalan dengan --shots di home palsu.
+    static let mandul = Bundle.main.bundleIdentifier == "com.amnesia.shots"
     static var dir: String {
         let a = CommandLine.arguments
         if let i = a.firstIndex(of: "--shots"), i + 1 < a.count { return a[i + 1] }
@@ -5251,6 +5882,10 @@ enum Shots {
         ProcessInfo.processInfo.disableSuddenTermination()
         let m = Model.shared
         m.onboarded = true
+        if !CGPreflightScreenCaptureAccess() {
+            log("no screen recording permission: drawing at 2x instead")
+            _ = CGRequestScreenCaptureAccess()
+        }
         await wait(3)
         for lang in langs {
             log("language \(lang.rawValue)")
@@ -5266,13 +5901,22 @@ enum Shots {
             await shot(Shell { OnboardingView(step: 4) }, out + "/tour-apps.png")
             await shot(Shell { OnboardingView(keepSetup: true) }, out + "/keep-setup.png", settle: 4)
             let pages: [(Page, String)] = [(.home, "home"), (.vault, "vault"), (.keep, "keep"), (.backup, "backup"),
-                                           (.settings, "settings"), (.move, "move")]
+                                           (.settings, "settings"), (.move, "move"), (.history, "history")]
             for (page, name) in pages {
                 m.page = page
                 await shot(MainView(), out + "/\(name).png")
             }
             m.page = .home
             await shot(MainView(), out + "/home-dark.png", dark: true)
+            // v5.16: halaman panjang utuh (untuk tutorial di website)
+            await shot(Shell(height: 1500) { VaultView(back: {}) }, out + "/vault-full.png", settle: 3)
+            await shot(Shell(height: 1900) { BackupView(back: {}) }, out + "/backup-full.png", settle: 3)
+            await shot(Shell(height: 1250) { SettingsView(back: {}) }, out + "/settings-full.png")
+            // v5.16: popup berwarna (sama seperti di app)
+            for (name, title, intro, sections, ok, cancel, check) in popups() {
+                await shot(PopupShot(title: title, intro: intro, sections: sections, ok: ok, cancel: cancel, check: check),
+                           out + "/popup-\(name).png", window: false)
+            }
             await shot(MenuPanel().background(Color(nsColor: .windowBackgroundColor)), out + "/menu.png", window: false)
             log("preparing what-gets-deleted list")
             let r = await Task.detached { dryRun() }.value
@@ -5293,13 +5937,109 @@ enum Shots {
     /// Bungkus seperti jendela utama (latar + jarak tepi yang sama).
     struct Shell<C: View>: View {
         let content: C
-        init(@ViewBuilder _ c: () -> C) { content = c() }
+        var height: CGFloat = 690
+        init(height: CGFloat = 690, @ViewBuilder _ c: () -> C) { self.height = height; content = c() }
         var body: some View {
             ZStack {
                 Backdrop()
                 content.padding(.horizontal, 24).padding(.top, 34).padding(.bottom, 20)
             }
-            .frame(width: 480, height: 690)
+            .frame(width: 480, height: height)
+        }
+    }
+
+    /// Tiruan popup macOS untuk screenshot (isi berwarna sama persis dengan PopupBody di app).
+    struct PopupShot: View {
+        let title: String
+        let intro: String
+        let sections: [PopSection]
+        let ok: String
+        let cancel: String?
+        let check: String?
+        var body: some View {
+            VStack(alignment: .leading, spacing: 12) {
+                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 52, height: 52)
+                Text(title).font(.system(size: 14, weight: .bold))
+                if !intro.isEmpty { Text(intro).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true) }
+                PopupBody(sections: sections)
+                if let c = check {
+                    Label(c, systemImage: "square").font(.system(size: 12))
+                }
+                HStack(spacing: 8) {
+                    if let c = cancel {
+                        Text(c).font(.system(size: 13)).frame(maxWidth: .infinity).padding(.vertical, 6)
+                            .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.1)))
+                    }
+                    Text(ok).font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).padding(.vertical, 6)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.accentColor))
+                }
+            }
+            .padding(20)
+            .frame(width: 380)
+            .background(Color(nsColor: .windowBackgroundColor))
+        }
+    }
+
+    typealias Pop = (String, String, String, [PopSection], String, String?, String?)
+
+    /// Popup penting untuk website (teksnya sama dengan di app).
+    static func popups() -> [Pop] {
+        [("turn-on", T("Turn on Amnesia?", "Aktifkan Amnesia?"), "",
+          [PopSection(.happens, [T("From the next logout on, everything outside the Keep List and your Keep folder is DELETED "
+                                   + "every time you log out, restart or shut down.",
+                                   "Mulai logout berikutnya, semua data di luar Keep List dan folder Keep DIHAPUS setiap kamu "
+                                   + "logout, restart, atau mematikan Mac.")]),
+           PopSection(.kept, [T("Your Keep folder (~/Keep) and everything in it.", "Folder Keep (~/Keep) beserta seluruh isinya."),
+                              T("App logins in Profile Vault: they come back with Restore.",
+                                "Login app yang ada di Profile Vault: kembali lewat Restore.")]),
+           PopSection(.todo, [T("Move important files into ~/Keep before you log out.", "Pindahkan file penting ke ~/Keep sebelum logout.")])],
+          T("Turn On", "Aktifkan"), T("Cancel", "Batal"), nil),
+         ("uninstall", T("Uninstall Amnesia from this Mac?", "Hapus Amnesia dari Mac ini?"), "",
+          [PopSection(.happens, [T("Amnesia is turned off for good.", "Amnesia dimatikan untuk seterusnya."),
+                                 T("The app goes to the Trash.", "App dipindah ke Trash.")]),
+           PopSection(.kept, [T("Your Keep folder and everything in it.", "Folder Keep beserta seluruh isinya."),
+                              T("Profile Vault: 5 app snapshots, 312 MB in total.", "Profile Vault: snapshot 5 app, total 312 MB.")],
+                      title: T("These stay saved (unless you tick the box below)", "Berikut ini tetap tersimpan (kecuali kamu mencentang kotak di bawah)"))],
+          T("Uninstall", "Hapus Amnesia"), T("Cancel", "Batal"),
+          T("Also delete the vault, snapshots, Keep List and settings", "Ikut hapus vault, snapshot, Keep List, dan pengaturan")),
+         ("save-logout", T("Save profiles & log out?", "Simpan profil & logout?"), "",
+          [PopSection(.happens, [T("1. These apps are closed: Chrome, Claude, WhatsApp.", "1. App ini ditutup: Chrome, Claude, WhatsApp."),
+                                 T("2. Their logins are saved to the vault.", "2. Login-nya disimpan ke vault."),
+                                 T("3. You are logged out, and Amnesia wipes this session.", "3. Kamu di-logout, lalu Amnesia membersihkan sesi ini.")])],
+          T("Save & Log Out", "Simpan & Logout"), T("Cancel", "Batal"), nil),
+         ("restore", T("Restore done", "Restore selesai"), "",
+          [PopSection(.kept, ["Chrome", "Claude", "WhatsApp"], title: T("Restored and checked", "Berhasil dikembalikan dan dicek")),
+           PopSection(.todo, [T("1. Open chrome://extensions.", "1. Buka chrome://extensions."),
+                              T("2. Press Repair on each extension.", "2. Tekan Repair di tiap extension.")],
+                      title: T("Repair extensions", "Perbaiki extension"))],
+          "OK", nil, nil),
+         ("last-try", T("Last try", "Percobaan terakhir"), T("You have 1 password try left.", "Kesempatan memasukkan password tinggal 1 kali."),
+          [PopSection(.deleted, [T("If this password is wrong, the vault and all snapshots in it are deleted for good.",
+                                   "Kalau password ini salah, vault beserta semua snapshot di dalamnya terhapus untuk selamanya.")],
+                      title: T("If the password is wrong", "Kalau password salah"))],
+          T("I'm Sure, Try", "Saya Yakin, Coba"), T("Cancel", "Batal"), nil)]
+    }
+
+    /// v5.16: tangkap jendela asli di layar dalam resolusi Retina (efek kaca ikut tergambar). Butuh izin
+    /// Screen Recording untuk "Amnesia Shots". Tanpa izin: digambar sendiri dalam 2x.
+    static func capture(_ w: NSWindow) async -> NSBitmapImageRep? {
+        guard CGPreflightScreenCaptureAccess() else { return nil }
+        do {
+            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            guard let scw = content.windows.first(where: { $0.windowID == CGWindowID(w.windowNumber) }) else { return nil }
+            let filter = SCContentFilter(desktopIndependentWindow: scw)
+            let cfg = SCStreamConfiguration()
+            let scale = CGFloat(filter.pointPixelScale)
+            cfg.width = Int(filter.contentRect.width * scale)
+            cfg.height = Int(filter.contentRect.height * scale)
+            cfg.showsCursor = false
+            cfg.ignoreShadowsSingleWindow = true
+            let img = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: cfg)
+            return NSBitmapImageRep(cgImage: img)
+        } catch {
+            log("capture failed: \(error.localizedDescription)")
+            return nil
         }
     }
 
@@ -5311,13 +6051,29 @@ enum Shots {
         let w = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         w.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         w.contentView = host
-        w.setFrameOrigin(NSPoint(x: -30000, y: -30000))     // di luar layar
+        w.level = .floating
+        // v5.16: di layar (bukan di luar layar), supaya bisa ditangkap persis seperti aslinya
+        let vis = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        w.setFrameOrigin(NSPoint(x: vis.midX - size.width / 2, y: max(vis.minY, vis.midY - size.height / 2)))
         w.orderFrontRegardless()
         await wait(settle)
         host.layoutSubtreeIfNeeded()
-        guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return }
-        host.cacheDisplay(in: host.bounds, to: rep)
+        // jendela lebih tinggi dari layar tidak bisa ditangkap utuh: digambar sendiri (2x)
+        var rep: NSBitmapImageRep? = nil
+        if size.height <= vis.height { rep = await capture(w) }
+        if rep == nil {
+            // tanpa izin Screen Recording: gambar sendiri, tetap 2x (HD)
+            let s: CGFloat = 2
+            if let r = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(size.width * s), pixelsHigh: Int(size.height * s),
+                                        bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                        colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) {
+                r.size = size
+                host.cacheDisplay(in: host.bounds, to: r)
+                rep = r
+            }
+        }
         w.orderOut(nil)
+        guard let rep else { log("could not draw " + path); return }
         if let png = framed(rep, points: size, radius: window ? 12 : 10, dots: window) {
             try? png.write(to: URL(fileURLWithPath: path))
         } else {
@@ -5457,7 +6213,9 @@ struct AmnesiaApp: App {
     private let background = CommandLine.arguments.contains("--background")
 
     init() {
-        if CommandLine.arguments.contains("--agent") { Agent.run() }   // dijalankan launchd, tanpa jendela
+        // salinan khusus screenshot tidak boleh dipakai sebagai Amnesia biasa
+        if Shots.mandul && !Shots.on { exit(0) }
+        if CommandLine.arguments.contains("--agent") && !Shots.mandul { Agent.run() }   // dijalankan launchd, tanpa jendela
         signal(SIGPIPE, SIG_IGN)   // program yang ditutup lebih cepat tidak boleh membuat app crash
     }
 

@@ -21,6 +21,7 @@ pause_once
 .just_activated
 __pycache__/
 app/build/
+app/shots/
 .DS_Store
 keep.conf
 settings.conf

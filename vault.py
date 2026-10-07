@@ -32,9 +32,7 @@ APPS = {
                # extension yang dari Web Store (Chrome mengunduh ulang lewat tombol Repair). Extension lain tetap
                # disimpan (tidak bisa diunduh ulang). Login (Cookies, Login Data, Local Storage, IndexedDB,
                # Local Extension Settings) selalu disimpan.
-               "light": ["Extensions", "ScriptCache", "optimization_guide_model_store", "OptGuideOnDeviceModel",
-                         "OnDeviceHeadSuggestModel", "WasmTtsEngine", "Safe Browsing", "screen_ai",
-                         "GraphiteDawnCache", "BrowserMetrics", "BrowserMetrics-spare.pma"]},
+               "light": "chromium"},
     "Claude": {"quit": "Claude",
                "paths": ["Library/Application Support/Claude"]},
     "OpenCode": {"quit": "OpenCode",
@@ -53,7 +51,25 @@ APPS = {
     "Windows App": {"quit": "Windows App",
                     "paths": ["Library/Containers/com.microsoft.rdc.macos",
                               "Library/Group Containers/*com.microsoft.rdc*"]},
+    # v5.16: browser lain berbasis Chromium (profil seperti Chrome, bisa disimpan ringan). Hanya muncul kalau
+    # datanya ada di Mac ini, dan saat pertama muncul TIDAK langsung ikut vault (kamu yang memilih).
+    "Brave Browser": {"quit": "Brave Browser", "light": "chromium", "new": True,
+                      "paths": ["Library/Application Support/BraveSoftware/Brave-Browser"]},
+    "Microsoft Edge": {"quit": "Microsoft Edge", "light": "chromium", "new": True,
+                       "paths": ["Library/Application Support/Microsoft Edge"]},
+    "Vivaldi": {"quit": "Vivaldi", "light": "chromium", "new": True,
+                "paths": ["Library/Application Support/Vivaldi"]},
+    "Arc": {"quit": "Arc", "light": "chromium", "new": True,
+            "paths": ["Library/Application Support/Arc/User Data"]},
+    "Opera": {"quit": "Opera", "light": "chromium", "new": True,
+              "paths": ["Library/Application Support/com.operasoftware.Opera"]},
 }
+# Snapshot ringan untuk browser berbasis Chromium: cache & model tidak disimpan, juga program extension yang
+# dari Web Store (browser mengunduh ulang lewat tombol Repair). Extension lain tetap disimpan (tidak bisa diunduh
+# ulang). Login (Cookies, Login Data, Local Storage, IndexedDB, Local Extension Settings) selalu disimpan.
+CHROMIUM_LIGHT = ["Extensions", "ScriptCache", "optimization_guide_model_store", "OptGuideOnDeviceModel",
+                  "OnDeviceHeadSuggestModel", "WasmTtsEngine", "Safe Browsing", "screen_ai",
+                  "GraphiteDawnCache", "BrowserMetrics", "BrowserMetrics-spare.pma"]
 # Cache tidak perlu disimpan (besar, dibuat ulang otomatis oleh app)
 EXCLUDE = ["Cache", "Code Cache", "GPUCache", "CacheStorage", "ShaderCache", "GrShaderCache",
            "DawnCache", "DawnGraphiteCache", "DawnWebGPUCache", "component_crx_cache",
@@ -84,6 +100,15 @@ def _lang():
             return [l.strip()[5:] for l in f if l.startswith("LANG=")][-1]
     except (OSError, IndexError):
         return "en"
+
+
+def history(kind, data=""):
+    """v5.16: 1 baris di ~/.amnesia/history.log (halaman Riwayat). Hanya waktu, jenis dan nama app, tanpa nama file."""
+    try:
+        with open(os.path.join(AMNESIA, "history.log"), "a") as f:
+            f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}\t{kind}\t{data}\n")
+    except OSError:
+        pass
 
 
 def _setting(key, default=""):
@@ -293,8 +318,11 @@ def installed_apps():
 
 
 def skipped_apps():
-    """App yang kamu matikan di halaman Profile Vault (VAULT_SKIP di settings.conf)."""
-    return [x for x in _setting("VAULT_SKIP", "").split(",") if x]
+    """App yang kamu matikan di halaman Profile Vault (VAULT_SKIP di settings.conf).
+    v5.16: app baru (browser Chromium lain) ikut dimatikan sampai kamu memilihnya (VAULT_PICK)."""
+    skip = [x for x in _setting("VAULT_SKIP", "").split(",") if x]
+    pick = [x for x in _setting("VAULT_PICK", "").split(",") if x]
+    return skip + [n for n, v in APPS.items() if v.get("new") and n not in pick and n not in skip]
 
 
 def chosen_apps():
@@ -399,11 +427,24 @@ def _webstore_ext(ext_dir, settings):
     return False
 
 
+def light_apps():
+    """App yang bisa disimpan ringan (browser berbasis Chromium)."""
+    return [n for n, v in items().items() if v.get("light")]
+
+
+def full_apps():
+    """v5.16: app yang disimpan LENGKAP (saklar "Ringan" dimatikan di Profile Vault, VAULT_FULL).
+    VAULT_LIGHT=0 dari versi lama = semua disimpan lengkap."""
+    if _setting("VAULT_LIGHT", "1") == "0":
+        return light_apps()
+    return [x for x in _setting("VAULT_FULL", "").split(",") if x]
+
+
 def _light_skip(n):
     """Mode ringan: (nama folder yang dilewati di mana saja, path persis yang dilewati).
     Program extension dari Web Store dilewati; extension lain tetap ikut snapshot."""
-    light = items().get(n, {}).get("light", [])
-    if not light or _setting("VAULT_LIGHT", "1") == "0":
+    light = CHROMIUM_LIGHT if items().get(n, {}).get("light") else []
+    if not light or n in full_apps():
         return [], []
     exact = []
     if "Extensions" in light:
@@ -498,6 +539,8 @@ def snapshot(names=None, changed=False):
         done += weight[n]
         saved.append(n)
     _drop_legacy(per)
+    if saved:
+        history("snapshot", ("auto:" if changed else "") + ", ".join(saved))
     return saved
 
 
@@ -545,6 +588,7 @@ def doomsday(full=False, reason=""):
                 os.remove(p)
     with open(F_LOG, "a") as f:
         f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} doomsday ({reason}){' + Keep' if full else ''}\n")
+    history("doomsday", "keep" if full else "")
 
 
 def _unlock_many(password, keyfiles):
@@ -645,6 +689,7 @@ def restore(password):
     finally:
         shutil.rmtree(F_STAGE, ignore_errors=True)
     _progress(96, f"check 1/1 {names[0]}")
+    history("restore", ", ".join(names))
     return names, check_restore(names)
 
 
@@ -816,6 +861,7 @@ def _cli(argv, stdin):
         out = {"exists": exists(), "manifest": manifest() or None, "attempts": attempts(),
                "max": MAX_ATTEMPTS, "min": MIN_PASSWORD, "apps": installed_apps(), "skip": skipped_apps(),
                "folders": vault_folders(), "keys": keys_info(),
+               "light": [n for n in light_apps() if n in installed_apps()], "full": full_apps(),
                # path tiap app yang ikut snapshot: dipakai halaman "Yang akan dihapus" (kelompok "dipulihkan dari vault")
                "patterns": {n: items()[n]["paths"] for n in chosen_apps()} if exists() else {}}
     elif cmd == "sizes":

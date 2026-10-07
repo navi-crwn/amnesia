@@ -37,8 +37,10 @@ Masalahnya, kalau semua hilang, kamu harus login ulang Gmail, WhatsApp, Telegram
 <p align="center">
   <img src="docs/screens/id/home.png" alt="Home" width="32%">
   <img src="docs/screens/id/keep-setup.png" alt="Pilih yang disimpan" width="32%">
-  <img src="docs/screens/id/backup.png" alt="Backup" width="32%">
+  <img src="docs/screens/id/vault.png" alt="Profile Vault" width="32%">
 </p>
+
+📖 **Panduan lengkap dengan screenshot, tutorial dan FAQ:** [navi-crwn.github.io/amnesia-mac](https://navi-crwn.github.io/amnesia-mac/)
 
 <details>
 <summary><b>Screenshot lainnya</b></summary>
@@ -46,12 +48,17 @@ Masalahnya, kalau semua hilang, kamu harus login ulang Gmail, WhatsApp, Telegram
   <img src="docs/screens/id/tour-welcome.png" alt="Tur perkenalan" width="32%">
   <img src="docs/screens/id/tour-terms.png" alt="Baca ini dulu" width="32%">
   <img src="docs/screens/id/tour-check.png" alt="Cek dulu" width="32%">
-  <img src="docs/screens/id/vault.png" alt="Profile Vault" width="32%">
+  <img src="docs/screens/id/backup.png" alt="Backup" width="32%">
+  <img src="docs/screens/id/history.png" alt="Riwayat" width="32%">
+  <img src="docs/screens/id/move.png" alt="Pindah Mac" width="32%">
   <img src="docs/screens/id/keep.png" alt="Keep List" width="32%">
   <img src="docs/screens/id/preview.png" alt="Yang akan dihapus" width="32%">
   <img src="docs/screens/id/settings.png" alt="Pengaturan" width="32%">
   <img src="docs/screens/id/home-dark.png" alt="Mode gelap" width="32%">
   <img src="docs/screens/id/menu.png" alt="Menu bar" width="32%">
+  <img src="docs/screens/id/popup-turn-on.png" alt="Popup Aktifkan" width="32%">
+  <img src="docs/screens/id/popup-uninstall.png" alt="Popup Hapus Amnesia" width="32%">
+  <img src="docs/screens/id/popup-restore.png" alt="Hasil Restore" width="32%">
 </p>
 </details>
 
@@ -74,7 +81,8 @@ bash ~/.amnesia/clean.sh logout --dry-run
 ## Fitur
 
 - **🛡️ Bersih otomatis.** Pembersihan berjalan **sebelum** Mac logout, restart, atau shutdown. Saat login berikutnya Amnesia mengecek ulang, jadi kalau ada yang terlewat, ikut dibersihkan.
-- **🔐 Profile Vault.** Login Chrome (Gmail, WhatsApp Web, Telegram Web), Claude, WhatsApp, dan alat coding seperti Claude Code, OpenCode, Gemini CLI, GitHub CLI disimpan dalam brankas terenkripsi (AES-256). Untuk memulihkan, cukup 1 password.
+- **🔐 Profile Vault.** Login Chrome (Gmail, WhatsApp Web, Telegram Web), Claude, WhatsApp, dan alat coding seperti Claude Code, OpenCode, Gemini CLI, GitHub CLI disimpan dalam brankas terenkripsi (AES-256). Untuk memulihkan, cukup 1 password. Browser Chromium lain (Brave, Edge, Vivaldi, Arc, Opera) bisa ditambahkan dengan 1 klik.
+- **🪶 Snapshot ringan, per browser.** Kartu **Snapshot ringan** di Profile Vault punya tombol untuk tiap browser. Nyala (bawaan): cache browser dan file program extension dari Web Store tidak ikut disimpan, jadi snapshot jauh lebih kecil dan cepat; login, bookmark dan pengaturan tetap tersimpan, dan setelah Restore kamu tinggal tekan *Repair* di tiap extension. Mati: semuanya disimpan. Simpan & Logout dan snapshot otomatis mengikuti tombol yang sama.
 - **⏏️ Simpan & Logout.** 1 klik: login kamu disimpan dulu ke vault, baru Mac logout. Kalau penyimpanannya gagal, logout dibatalkan, jadi tidak ada yang hilang.
 - **⏸️ Jeda 1 Sesi.** Butuh Mac tidak dibersihkan sekali saja? Tekan Jeda. Setelah 1x logout dan login, Amnesia aktif lagi sendiri.
 - **📌 Keep List.** Pilih folder atau app yang tidak boleh ikut dihapus, langsung dari app. Nyalakan sebuah app dan kamu lihat persis apa yang disimpan (data app, setting, ukurannya).
@@ -83,17 +91,20 @@ bash ~/.amnesia/clean.sh logout --dry-run
   - **Flashdisk / SSD** yang tercolok,
   - **Server sendiri / VPS** lewat SSH + rsync. Ketik password server sekali, Amnesia yang menyiapkan kuncinya. Tanpa Terminal.
   - **Cloud**: Google Drive, Dropbox, OneDrive, Box atau pCloud. Login lewat browser, tanpa Terminal. (S3, WebDAV dan 40+ lainnya lewat rclone.)
-- **⏰ Backup terjadwal.** Harian atau mingguan, jalan sendiri selama ikon Amnesia ada di menu bar.
+- **⏰ Backup terjadwal.** Harian atau mingguan, jalan sendiri selama ikon Amnesia ada di menu bar. Tombol **Jalankan backup terjadwal sekarang** untuk langsung mengetesnya.
+- **🔎 Cek file backup.** Pilih file backup `.7z`, lalu Amnesia membukanya di folder sementara untuk memastikan vault di dalamnya bisa dipulihkan. Vault kamu yang sekarang tidak berubah sama sekali.
+- **🕘 Riwayat.** Halaman yang mencatat setiap pembersihan, snapshot, restore dan backup, dikelompokkan per hari. Isinya hanya waktu dan nama app, tidak pernah nama file kamu.
 - **🚚 Pindah Mac.** Bawa semua login ke Mac baru: kunci Keychain ikut disimpan ke vault, vault ikut ke backup, lalu dipulihkan di Mac baru.
 - **👋 Tur perkenalan.** Saat pertama dibuka, Amnesia mengajak kamu keliling, cek semua sudah siap, mendeteksi app kamu, lalu tanya mana yang datanya mau disimpan.
 - **🔥 Tombol darurat.** Kalau password vault salah 3x, atau kamu mengetik *kata panik* yang sudah kamu atur, vault langsung dimusnahkan.
 - **👀 Cek dulu sebelum logout.** Logout atau restart lewat menu Apple ditahan sebentar, lalu kamu lihat dulu apa saja yang akan dihapus. Lanjut atau batal, kamu yang pilih. Daftarnya disiapkan di background, jadi langsung tampil.
 - **🏠 Offline & privat.** Tanpa server, tanpa akun, tanpa pelacakan, tanpa pengumpulan data. Tidak ada yang keluar dari Mac kamu kecuali kamu sendiri yang mengatur backup.
-- **📸 Snapshot otomatis.** Lupa menekan Simpan & Logout? Login kamu tetap disimpan ke vault saat logout biasa.
+- **📸 Snapshot otomatis.** Lupa menekan Simpan & Logout? Saat logout, restart atau shutdown biasa, Amnesia tetap menyimpan app yang datanya **berubah** sejak snapshot terakhirnya (maksimal 150 detik, supaya Mac tidak tertahan lama). App yang kamu matikan di vault dilewati. Kalau waktunya habis, snapshot lama app itu tetap aman.
+- **🎨 Peringatan yang jelas.** Setiap popup dibagi jadi kotak berwarna: *Yang akan terjadi* (biru), *Yang akan dihapus* (merah), *Berikut ini tetap tersimpan (tidak dihapus)* (hijau) dan *Yang perlu kamu lakukan* (ungu).
 - **🔔 Notifikasi.** Setelah login, Amnesia memberi tahu bahwa Mac sudah bersih dan mengingatkan untuk restore profil.
 - **⚙️ Pengaturan.** Semua fitur di atas bisa dinyalakan atau dimatikan sesukamu.
 - **🌐 2 bahasa.** English atau Bahasa Indonesia, tinggal pilih di Pengaturan.
-- **🟢 Ikon di menu bar.** Status Amnesia selalu terlihat di pojok kanan atas: hijau aktif, oranye jeda, merah mati.
+- **🟢 Ikon di menu bar.** Status Amnesia selalu terlihat di pojok kanan atas: hijau aktif, oranye jeda, merah mati. Tombol besar **Aktifkan / Matikan** ada langsung di kartu status halaman utama.
 
 ## Cara pasang
 
@@ -120,7 +131,7 @@ git clone https://github.com/navi-crwn/amnesia-mac.git ~/.amnesia
 bash ~/.amnesia/app/build.sh
 ```
 
-**Mau uninstall:** buka Pengaturan lalu tekan *Hapus Amnesia*. Vault dan setting kamu tetap ada di `~/.amnesia`.
+**Mau uninstall:** buka Pengaturan lalu tekan *Hapus Amnesia*. Lihat bagian [Cara hapus](#cara-hapus) di bawah.
 
 ## Cara pakai pertama kali
 
@@ -130,7 +141,7 @@ Tur perkenalan akan memandu kamu, tapi singkatnya begini:
 2. **Simpan login.** Login ke Chrome, WhatsApp, dan app lain seperti biasa, lalu tekan *Snapshot*.
 3. **Amankan file.** Pindahkan file yang penting ke folder Keep kamu (`~/Keep`, atau di mana pun kamu menaruhnya).
 4. **Cek dulu.** Buka Pengaturan (⚙️) → **Lihat yang akan dihapus sekarang**, pastikan tidak ada yang penting di daftar.
-5. **Aktifkan.** Tekan *Aktifkan*. Mulai logout berikutnya, Mac kamu akan selalu bersih.
+5. **Aktifkan.** Tekan *Aktifkan* di kartu status halaman utama. Mulai logout berikutnya, Mac kamu akan selalu bersih.
 
 **Sehari-hari:** logout lewat tombol **Simpan & Logout**. Saat login lagi, buka Profile Vault dan tekan **Restore Profil**.
 
@@ -177,12 +188,22 @@ Buka Profile Vault → **Pindah Mac** (atau dari Pengaturan). Halamannya memandu
 3. Di Mac baru: pasang Amnesia, buka halaman Pindah Mac → **Ambil Vault dari Backup**.
 4. **Restore Profil**, lalu **Pulihkan Kunci**. Chrome, Claude, dan WhatsApp terbuka dengan login lama.
 
+**Bisa cek apakah backup benar-benar bisa dipakai?**
+Bisa. Backup → **Cek file backup**: pilih file `.7z`, ketik password backup, lalu Amnesia membuka vault-nya di folder sementara, menampilkan ukuran, tanggal dan daftar app-nya, lalu menghapus salinan sementara itu. Vault kamu yang sekarang tidak disentuh.
+
+**Di mana saya bisa lihat apa yang sudah dilakukan Amnesia?**
+Halaman utama → **Riwayat**. Isinya pembersihan (berapa item), jeda, snapshot, restore, backup dan tombol darurat, per hari. Nama file tidak pernah dicatat.
+
 **Bagaimana mematikannya?**
-Tekan *Matikan* di app. Mac berhenti dibersihkan sampai kamu aktifkan lagi.
+Tekan *Matikan* di kartu status halaman utama. Mac berhenti dibersihkan sampai kamu aktifkan lagi.
 
 ## Cara hapus
 
-Cara paling gampang: buka **Pengaturan** di app lalu tekan **Hapus Amnesia**. Amnesia dimatikan untuk seterusnya dan app-nya dipindah ke Trash. Vault, Keep List dan pengaturan di `~/.amnesia` tetap ada, dan folder Keep kamu tidak pernah disentuh.
+Cara paling gampang: buka **Pengaturan** di app lalu tekan **Hapus Amnesia**. Prosesnya bertahap:
+1. Popup menjelaskan apa yang akan terjadi dan apa saja yang masih tersimpan (vault, snapshot di dalamnya, Keep List dan pengaturan).
+2. Ada kotak centang **Hapus juga vault, snapshot, Keep List, dan pengaturan** (bawaannya tidak dicentang). Biarkan kosong kalau mau disimpan untuk nanti.
+3. Kalau kamu mencentangnya, ada konfirmasi kedua sekali lagi. File-file itu dipindah ke Trash, tidak langsung hilang.
+4. Amnesia dimatikan untuk seterusnya dan app-nya dipindah ke Trash. Folder Keep kamu tidak pernah disentuh.
 
 Terlanjur menyeret Amnesia ke Trash? Itu juga aman: Amnesia tahu, mematikan dirinya sendiri dan tidak membersihkan apa pun lagi.
 

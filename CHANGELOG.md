@@ -5,6 +5,29 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.16 — 2026-10-07
+
+### Added
+- **Light snapshot per browser, right in Profile Vault.** The "Light Chrome snapshot" switch left Settings. Profile Vault now has a **Light snapshot** card with one switch per browser. On (default): the browser's caches and the program files of Web Store extensions are skipped, so Chrome goes from about 1 GB to 150 MB. Logins, bookmarks, extension settings and extensions not from the Web Store are always saved. Off: the browser is saved in full. Save & Log Out and the auto snapshot at logout follow the same switches. If you had turned light mode off in v5.15, Chrome starts as "full", so nothing changes for you.
+- **More Chromium browsers in the vault:** Brave, Microsoft Edge, Vivaldi, Arc and Opera. They show up only if they're installed, and start unpicked: tap one to add it.
+- **History page.** A new tile on the home page shows what Amnesia did, grouped by day (Today, Yesterday, then the date): cleanups at logout and login (with the number of items), paused sessions, snapshots (manual or auto), restores, backups (auto or manual, with size, and failures) and the panic button. Only times, counts and app names are written, never your file names. The log lives in `~/.amnesia/history.log` and trims itself so it never grows big.
+- **Check a backup file** (Backup page). Pick a backup `.7z`: Amnesia unpacks only the Profile Vault into a temporary folder, shows its size, date and the apps inside, then deletes the temporary copy. Your current vault is never touched. A safe way to test that a backup can really bring your logins back.
+- **Run the scheduled backup now** (Backup page, shown when a schedule is set). Runs exactly like the schedule would, with the saved password, so you can test it without waiting a day.
+- **Footer on the home page:** version, MIT License (link), © 2026 navi-crwn and a link to GitHub.
+
+### Changed
+- **Turn On / Turn Off moved** from the bottom-right tile to a big button on the status card at the top of the home page. The freed tile is now History.
+- **Clearer popups.** Every warning and confirmation is now split into colored boxes instead of plain text: *What will happen* (blue), *What gets deleted* (red), *These stay saved (not deleted)* (green), *What you need to do* (purple), *Be careful* (orange) and *Good to know* (gray). Used for Turn On/Off, Save & Log Out, Restore results, deleting snapshots or the vault, the last vault try, Move Mac, the Keep List and uninstall.
+- **All wording checked again.** Button names in texts now match the real buttons (Restore Profiles, Snapshot Now, What Gets Deleted, Move Mac). Shorthand like "=" and "1x" is gone, Indonesian uses "pengaturan" everywhere, "Tidak bisa dibatalkan" became "Tidak bisa dikembalikan lagi", and the English and Indonesian texts say the same thing.
+- **Auto snapshot explained in detail** in Settings: when it runs, that it saves only apps whose data changed, the 150-second limit, that switched-off apps are skipped, and that the old snapshot stays if time runs out.
+- **Uninstall goes in steps.** The first popup explains what happens and lists what is still stored (vault, its snapshots, Keep List, settings). A checkbox *Also delete the vault, snapshots, Keep List and settings* is unticked by default. If you tick it, a second confirmation asks again; those files then go to the Trash (not deleted right away) and the saved backup password is removed from the Keychain. Without the tick, everything stays in `~/.amnesia` like before.
+- **README and website rewritten:** every feature explained with screenshots, a step-by-step tutorial with screenshots, a gallery of the new popups, and a much bigger FAQ grouped by topic.
+- **HD screenshots.** `app/screenshots.sh` now builds a separate screenshot-only copy, **Amnesia Shots** (`app/shots/`, not uploaded). That copy can't delete, move or save anything: every command except read-only ones (the dry-run preview, vault status and sizes) is blocked, and it quits if started without `--shots`. It captures the real window with macOS ScreenCaptureKit, so screenshots look exactly like the app (the first run asks for **Screen Recording** permission for *Amnesia Shots*; without it, the old 2x drawing is used). New shots: History, full-length Vault/Backup/Settings, and five popups.
+
+### Tests
+- `test_vault.py`: light is the default for Chrome, `VAULT_FULL` and the old `VAULT_LIGHT=0` save in full, Brave is skipped until picked, `VAULT_PICK` adds it, history lines never contain file names.
+- `test_backup.sh`: `--check-vault` finds the vault in a backup and leaves the real vault untouched.
+
 ## v5.15 — 2026-10-07
 
 ### Fixed

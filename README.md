@@ -37,8 +37,10 @@ The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, 
 <p align="center">
   <img src="docs/screens/en/home.png" alt="Home" width="32%">
   <img src="docs/screens/en/keep-setup.png" alt="Pick what stays" width="32%">
-  <img src="docs/screens/en/backup.png" alt="Backup" width="32%">
+  <img src="docs/screens/en/vault.png" alt="Profile Vault" width="32%">
 </p>
+
+📖 **Full guide with screenshots, tutorial and FAQ:** [navi-crwn.github.io/amnesia-mac](https://navi-crwn.github.io/amnesia-mac/)
 
 <details>
 <summary><b>More screenshots</b></summary>
@@ -46,12 +48,17 @@ The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, 
   <img src="docs/screens/en/tour-welcome.png" alt="Welcome tour" width="32%">
   <img src="docs/screens/en/tour-terms.png" alt="Read this first" width="32%">
   <img src="docs/screens/en/tour-check.png" alt="Quick check" width="32%">
-  <img src="docs/screens/en/vault.png" alt="Profile Vault" width="32%">
+  <img src="docs/screens/en/backup.png" alt="Backup" width="32%">
+  <img src="docs/screens/en/history.png" alt="History" width="32%">
+  <img src="docs/screens/en/move.png" alt="Move to a new Mac" width="32%">
   <img src="docs/screens/en/keep.png" alt="Keep List" width="32%">
   <img src="docs/screens/en/preview.png" alt="What gets deleted" width="32%">
   <img src="docs/screens/en/settings.png" alt="Settings" width="32%">
   <img src="docs/screens/en/home-dark.png" alt="Dark mode" width="32%">
   <img src="docs/screens/en/menu.png" alt="Menu bar" width="32%">
+  <img src="docs/screens/en/popup-turn-on.png" alt="Turn On popup" width="32%">
+  <img src="docs/screens/en/popup-uninstall.png" alt="Uninstall popup" width="32%">
+  <img src="docs/screens/en/popup-restore.png" alt="Restore result" width="32%">
 </p>
 </details>
 
@@ -74,7 +81,8 @@ bash ~/.amnesia/clean.sh logout --dry-run
 ## Features
 
 - **🛡️ Auto wipe.** Cleaning runs **before** your Mac logs out, restarts or shuts down. At the next login Amnesia checks again, so anything that slipped through gets cleaned too.
-- **🔐 Profile Vault.** Your Chrome logins (Gmail, WhatsApp Web, Telegram Web), Claude, WhatsApp, and coding tools like Claude Code, OpenCode, Gemini CLI and GitHub CLI go into an encrypted safe (AES-256). One password brings them back.
+- **🔐 Profile Vault.** Your Chrome logins (Gmail, WhatsApp Web, Telegram Web), Claude, WhatsApp, and coding tools like Claude Code, OpenCode, Gemini CLI and GitHub CLI go into an encrypted safe (AES-256). One password brings them back. Other Chromium browsers (Brave, Edge, Vivaldi, Arc, Opera) can be added with one tap.
+- **🪶 Light snapshot, per browser.** The **Light snapshot** card in Profile Vault has a switch for each browser. On (default): the browser's caches and the program files of Web Store extensions are skipped, so the snapshot is much smaller and faster; logins, bookmarks and settings are still saved, and after Restore you press *Repair* on each extension. Off: everything is saved. Save & Log Out and the auto snapshot follow the same switch.
 - **⏏️ Save & Log Out.** One click: your logins are saved to the vault first, then the Mac logs out. If saving fails, the logout is cancelled, so nothing gets lost.
 - **⏸️ Pause 1 Session.** Need to skip the wipe just once? Hit Pause. After one logout and login, Amnesia turns itself back on.
 - **📌 Keep List.** Pick the folders and apps that should never be wiped, right from the app. Switch an app on and you see exactly what's kept (app data, settings, sizes).
@@ -83,17 +91,20 @@ bash ~/.amnesia/clean.sh logout --dry-run
   - a **USB drive / SSD** that's plugged in,
   - **your own server / VPS** over SSH + rsync. Type the server password once, Amnesia sets up the key. No Terminal.
   - the **cloud**: Google Drive, Dropbox, OneDrive, Box or pCloud. You log in through your browser, no Terminal needed. (S3, WebDAV and 40+ more work through rclone.)
-- **⏰ Scheduled backups.** Daily or weekly, running on their own while the Amnesia icon is in the menu bar.
+- **⏰ Scheduled backups.** Daily or weekly, running on their own while the Amnesia icon is in the menu bar. **Run the scheduled backup now** tests it right away.
+- **🔎 Check a backup file.** Pick a backup `.7z` and Amnesia opens it in a temporary folder to check that the vault inside can be restored. Nothing in your current vault changes.
+- **🕘 History.** A page that lists every cleanup, snapshot, restore and backup, grouped by day. Only times and app names, never your file names.
 - **🚚 Move to a new Mac.** Take all your logins with you: the Keychain keys go into the vault, the vault goes into a backup, and you restore it on the new Mac.
 - **👋 Welcome tour.** The first time you open it, Amnesia shows you around, checks that everything's ready, finds your apps and asks which ones should keep their data.
 - **🔥 Panic button.** Get the vault password wrong 3 times, or type your *panic word*, and the vault is destroyed on the spot.
 - **👀 Check before logout.** Logging out or restarting from the Apple menu? Amnesia holds on for a second and shows what's about to be deleted. You decide: continue or cancel. The list is prepared in the background, so it opens right away.
 - **🏠 Offline & private.** No servers, no accounts, no tracking, no analytics. Nothing leaves your Mac unless you set up a backup yourself.
-- **📸 Auto snapshot.** Forgot to press Save & Log Out? Your logins still get saved to the vault on a normal logout.
+- **📸 Auto snapshot.** Forgot to press Save & Log Out? On a normal logout, restart or shutdown, Amnesia still saves the apps whose data **changed** since their last snapshot (at most 150 seconds, so the Mac doesn't hang). Apps you switched off in the vault are skipped. If it runs out of time, the older snapshot of that app stays.
+- **🎨 Clear warnings.** Every popup is split into colored boxes: *What will happen* (blue), *What gets deleted* (red), *These stay saved (not deleted)* (green) and *What you need to do* (purple).
 - **🔔 Notifications.** After login, Amnesia tells you the Mac is clean and reminds you to restore your profiles.
 - **⚙️ Settings.** Turn any of the above on or off.
 - **🌐 Two languages.** English or Bahasa Indonesia, pick one in Settings.
-- **🟢 Menu bar icon.** You can always see Amnesia's status in the top right: green is on, orange is paused, red is off.
+- **🟢 Menu bar icon.** You can always see Amnesia's status in the top right: green is on, orange is paused, red is off. The big **Turn On / Turn Off** button sits right on the status card of the home page.
 
 ## Install
 
@@ -120,7 +131,7 @@ git clone https://github.com/navi-crwn/amnesia-mac.git ~/.amnesia
 bash ~/.amnesia/app/build.sh
 ```
 
-**Uninstalling:** open Settings and press *Uninstall Amnesia*. Your vault and settings stay in `~/.amnesia`.
+**Uninstalling:** open Settings and press *Uninstall Amnesia*. See [Uninstall](#uninstall) below.
 
 ## First-time setup
 
@@ -130,7 +141,7 @@ The welcome tour walks you through this, but here's the short version:
 2. **Save your logins.** Log in to Chrome, WhatsApp and your other apps like normal, then press *Snapshot*.
 3. **Protect your files.** Move anything important into your Keep folder (`~/Keep`, or wherever you put it).
 4. **Double-check.** Open Settings (⚙️) → **See what would be deleted now**, and make sure nothing important is on the list.
-5. **Turn it on.** Press *Turn On*. From the next logout on, your Mac always starts clean.
+5. **Turn it on.** Press *Turn On* on the home page's status card. From the next logout on, your Mac always starts clean.
 
 **Day to day:** log out with **Save & Log Out**. When you log back in, open Profile Vault and press **Restore Profiles**.
 
@@ -177,12 +188,22 @@ Open Profile Vault → **Move to a New Mac** (or Settings). The page walks you t
 3. On the new Mac: install Amnesia, open the Move page → **Get Vault from Backup**.
 4. Press **Restore Profiles**, then **Restore Keys**. Chrome, Claude and WhatsApp open with your old logins.
 
+**Can I check that a backup really works?**
+Yes. Backup → **Check a backup file**: pick the `.7z`, type the backup password, and Amnesia unpacks the vault into a temporary folder, shows its size, date and apps, then deletes the temporary copy. Your current vault isn't touched.
+
+**Where can I see what Amnesia did?**
+Home → **History**. It lists cleanups (how many items), pauses, snapshots, restores, backups and the panic button, per day. File names are never written.
+
 **How do I turn it off?**
-Press *Turn Off* in the app. Your Mac stops being wiped until you turn it back on.
+Press *Turn Off* on the home page's status card. Your Mac stops being wiped until you turn it back on.
 
 ## Uninstall
 
-The easy way: open **Settings** in the app and press **Uninstall Amnesia**. It turns Amnesia off for good and moves the app to the Trash. Your vault, Keep List and settings in `~/.amnesia` stay, and your Keep folder is never touched.
+The easy way: open **Settings** in the app and press **Uninstall Amnesia**. It goes in steps:
+1. A popup explains what will happen and lists what's still stored (your vault, its snapshots, Keep List and settings).
+2. A checkbox **Also delete the vault, snapshots, Keep List and settings** (unticked by default). Leave it unticked to keep them for later.
+3. If you ticked it, a second confirmation asks once more. Those files go to the Trash, not deleted right away.
+4. Amnesia turns off for good and moves the app to the Trash. Your Keep folder is never touched.
 
 Dragged Amnesia to the Trash anyway? That's safe too: Amnesia notices, turns itself off and wipes nothing anymore.
 

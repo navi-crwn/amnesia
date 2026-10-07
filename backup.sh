@@ -3,6 +3,7 @@
 # AMNESIA BACKUP — dipanggil app (manual atau terjadwal).
 #   backup.sh [--auto]                  buat backup .7z terenkripsi lalu kirim ke tujuan
 #   backup.sh --restore-vault FILE      ambil Profile Vault dari file backup (untuk Mac baru)
+#   backup.sh --check-vault FILE        cek vault di file backup (folder sementara, vault di Mac ini tidak disentuh)
 # Password backup selalu dibaca dari stdin (1 baris), tidak pernah lewat argumen.
 # Tujuan diatur di settings.conf: BACKUP_DEST = drive | ssh | rclone | folder
 #   folder = folder biasa di Mac, mis. folder Google Drive (app Google Drive for Desktop yang mengunggah)
@@ -23,7 +24,7 @@ AUTO=0; [ "${1:-}" = "--auto" ] && AUTO=1
 cfg() { grep "^$1=" "$CONF" 2>/dev/null | tail -1 | cut -d= -f2-; }
 t() { if [ "$(cfg LANG)" = id ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }   # English / Indonesia
 notify() { [ "$AUTO" = 1 ] && osascript -e "display notification \"$1\" with title \"Amnesia Backup\"" 2>/dev/null; true; }
-fail() { echo "$(date '+%F %T') FAILED: $*" > "$A/backup.log"; notify "$(t "Backup failed" "Backup gagal"): $*"; echo "FAILED: $*" >&2; exit 1; }
+fail() { echo "$(date '+%F %T') FAILED: $*" > "$A/backup.log"; printf '%s\tbackupfail\t%s\n' "$(date '+%F %T')" "$AUTO" >> "$A/history.log"; notify "$(t "Backup failed" "Backup gagal"): $*"; echo "FAILED: $*" >&2; exit 1; }
 
 IFS= read -r PW || true
 [ -n "$PW" ] || fail "$(t "backup password is empty" "password backup kosong")"
@@ -36,6 +37,28 @@ if [ "${1:-}" = "--restore-vault" ]; then
     out="$(printf '%s\n' "$PW" | "$SEVENZ" x -y -bso0 -bsp0 -o"$H" "$FILE" ".amnesia/vault/*" -r 2>&1)"
     [ -f "$A/vault/private.7z" ] || { echo "FAILED: $(t "wrong password, or this backup has no Profile Vault." "password salah, atau backup ini tidak berisi Profile Vault.") $out" | tail -c 300 >&2; exit 1; }
     echo "OK: $(t "vault restored" "vault dipulihkan")"
+    exit 0
+fi
+
+# ---------- v5.16: cek file backup tanpa menyentuh vault yang ada ----------
+# Vault dibongkar ke folder sementara, dicek isinya, lalu folder itu dihapus. Vault di Mac ini tidak diubah.
+if [ "${1:-}" = "--check-vault" ]; then
+    FILE="${2:-}"; [ -f "$FILE" ] || { echo "FAILED: $(t "backup file not found" "file backup tidak ditemukan")" >&2; exit 1; }
+    TMPV="$(mktemp -d)"; trap 'rm -rf "$TMPV"' EXIT
+    out="$(printf '%s\n' "$PW" | "$SEVENZ" x -y -bso0 -bsp0 -o"$TMPV" "$FILE" ".amnesia/vault/*" -r 2>&1)"
+    V="$TMPV/.amnesia/vault"
+    [ -f "$V/private.7z" ] || { echo "FAILED: $(t "wrong password, or this backup has no Profile Vault." "password salah, atau backup ini tidak berisi Profile Vault.") $out" | tail -c 300 >&2; exit 1; }
+    SIZE_MB=$(du -sm "$V" 2>/dev/null | cut -f1)
+    INFO="$(/usr/bin/python3 - "$V/manifest.json" 2>/dev/null <<'PY'
+import json, sys
+try:
+    m = json.load(open(sys.argv[1]))
+except Exception:
+    m = {}
+print(f"{m.get('time', '')}|{', '.join(m.get('apps', []))}")
+PY
+)"
+    echo "OK: VAULT ${SIZE_MB:-0}|$INFO"
     exit 0
 fi
 
@@ -205,6 +228,7 @@ trap '' TERM INT HUP          # sudah terkirim: catatan di bawah tidak boleh ter
 echo "$SHA  $WHERE/$NAME" >> "$A/backup_checksums.txt"
 TO="$(t to ke)"
 echo "$(date '+%F %T') OK: $NAME (${SIZE} MB) $TO $WHERE" > "$A/backup.log"
+printf '%s\tbackup\t%s %s %s\n' "$(date '+%F %T')" "$AUTO" "$WITHVAULT" "$SIZE" >> "$A/history.log"   # halaman Riwayat
 touch "$A/backup.ok"                                  # dipakai app untuk jadwal backup
 [ "$WITHVAULT" = 1 ] && touch "$A/backup.vault.ok"   # app: vault sudah pernah ikut backup
 notify "$(t "Backup done" "Backup selesai"): ${SIZE} MB $TO $WHERE"

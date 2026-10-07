@@ -72,6 +72,31 @@ details{background:var(--card);border:1px solid var(--line);border-radius:16px;p
 summary{font-weight:700;cursor:pointer}
 details p{color:var(--muted);margin:10px 0 0}
 footer{padding:40px 0 60px;color:var(--muted);font-size:14px;text-align:center}
+.feat{display:grid;grid-template-columns:minmax(0,360px) 1fr;gap:34px;align-items:center;margin:0 0 46px}
+.feat:nth-of-type(even){grid-template-columns:1fr minmax(0,360px)}
+.feat:nth-of-type(even)>img{order:2}
+.feat img{width:100%;border-radius:18px;box-shadow:var(--shadow);background:var(--card)}
+.feat h3{font-size:22px;margin:0 0 8px}
+.feat p,.feat li{color:var(--muted)}
+.feat ul{padding-left:20px;margin:8px 0 0}
+.minih{font-size:22px;margin:30px 0 14px}
+.gallery.pops img{height:auto;max-height:460px;width:auto;max-width:86vw}
+.tut{list-style:none;counter-reset:t;padding:0;margin:0}
+.tut>li{counter-increment:t;display:grid;grid-template-columns:1fr minmax(0,320px);gap:26px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;margin-bottom:18px;box-shadow:var(--shadow)}
+.tut>li>div:before{content:counter(t);display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--indigo));color:#fff;font-weight:800;margin-bottom:10px}
+.tut h3{margin:0 0 6px;font-size:19px}
+.tut p,.tut li li{color:var(--muted)}
+.tut img{width:100%;border-radius:14px;box-shadow:var(--shadow)}
+.nav-links{display:flex;gap:4px}
+.nav-links a{padding:7px 10px;border-radius:10px;font:600 14px Inter,sans-serif;text-decoration:none;color:var(--muted)}
+.nav-links a:hover{color:var(--text);background:var(--card)}
+.faqg{font-size:20px;margin:26px 0 12px}
+@media (max-width:860px){
+  .feat,.feat:nth-of-type(even),.tut>li{grid-template-columns:1fr}
+  .feat:nth-of-type(even)>img{order:0}
+  .feat img,.tut img{max-width:420px}
+  .nav-links{display:none}
+}
 [data-id]{display:none}
 html[lang=id] [data-en]{display:none}
 html[lang=id] [data-id]{display:revert}
@@ -97,6 +122,11 @@ html[lang=id] [data-id]{display:revert}
   <div class="wrap">
     <nav>
       <a class="brand" href="#"><img src="logo.png" alt="">Amnesia</a>
+      <div class="nav-links">
+        <a href="#features"><span data-en>Features</span><span data-id>Fitur</span></a>
+        <a href="#tutorial"><span data-en>Tutorial</span><span data-id>Tutorial</span></a>
+        <a href="#faq">FAQ</a>
+      </div>
       <div class="nav-r">
         <button class="chip on" id="l-en" onclick="setLang('en')">EN</button>
         <button class="chip" id="l-id" onclick="setLang('id')">ID</button>
@@ -128,26 +158,32 @@ html[lang=id] [data-id]{display:revert}
 <section id="features">
   <div class="wrap">
     <h2><span data-en>Clean every day. Nothing lost.</span><span data-id>Bersih setiap hari. Tidak ada yang hilang.</span></h2>
-    <p class="sub"><span data-en>Everything you need to start fresh, without logging in again 20 times.</span><span data-id>Semua yang kamu butuhkan untuk mulai bersih, tanpa login ulang 20 kali.</span></p>
+    <p class="sub"><span data-en>Everything Amnesia can do, at a glance. Scroll down for each feature with screenshots, a full tutorial and the FAQ.</span><span data-id>Semua yang bisa dilakukan Amnesia, sekilas. Gulir ke bawah untuk penjelasan tiap fitur lengkap dengan screenshot, tutorial lengkap, dan FAQ.</span></p>
     <div class="grid">
-      <div class="card"><div class="ic" style="background:#d1fae5">🛡️</div><h3><span data-en>Auto wipe</span><span data-id>Bersih otomatis</span></h3><p><span data-en>Runs before logout, restart and shutdown, then checks again at login.</span><span data-id>Jalan sebelum logout, restart dan shutdown, lalu dicek ulang saat login.</span></p></div>
-      <div class="card"><div class="ic" style="background:#e0e7ff">🔐</div><h3>Profile Vault</h3><p><span data-en>Chrome, WhatsApp, Claude and your coding tools, locked with AES-256. One password brings them back.</span><span data-id>Chrome, WhatsApp, Claude dan alat coding, dikunci AES-256. 1 password untuk mengembalikan semuanya.</span></p></div>
-      <div class="card"><div class="ic" style="background:#dbeafe">⏏️</div><h3><span data-en>Save & Log Out</span><span data-id>Simpan & Logout</span></h3><p><span data-en>One click saves your logins, then logs out. If saving fails, the logout is cancelled.</span><span data-id>1 klik simpan login, lalu logout. Kalau gagal menyimpan, logout dibatalkan.</span></p></div>
-      <div class="card"><div class="ic" style="background:#ccfbf1">📌</div><h3><span data-en>Pick what stays</span><span data-id>Pilih yang tetap ada</span></h3><p><span data-en>Amnesia finds your apps and lets you switch on the ones to keep. VPNs are suggested for you.</span><span data-id>Amnesia mendeteksi app kamu, tinggal nyalakan yang mau disimpan. VPN sudah disarankan.</span></p></div>
-      <div class="card"><div class="ic" style="background:#fce7f3">💾</div><h3><span data-en>Backup anywhere</span><span data-id>Backup ke mana saja</span></h3><p><span data-en>USB drive, your own server over SSH, or Google Drive, Dropbox, OneDrive, Box and pCloud. Daily or weekly.</span><span data-id>Flashdisk, server sendiri lewat SSH, atau Google Drive, Dropbox, OneDrive, Box dan pCloud. Harian atau mingguan.</span></p></div>
-      <div class="card"><div class="ic" style="background:#ffedd5">🔥</div><h3><span data-en>Panic word</span><span data-id>Kata panik</span></h3><p><span data-en>Type it, or get the password wrong 3 times, and the vault is gone for good.</span><span data-id>Ketik kata itu, atau salah password 3x, dan vault musnah selamanya.</span></p></div>
+      <div class="card"><div class="ic" style="background:#d1fae5">🛡️</div><h3><span data-en>Auto wipe</span><span data-id>Bersih otomatis</span></h3><p><span data-en>Runs at logout, restart and shutdown, then checks once more at login.</span><span data-id>Jalan saat logout, restart, dan shutdown, lalu dicek sekali lagi saat login.</span></p></div>
+      <div class="card"><div class="ic" style="background:#e0e7ff">🔐</div><h3>Profile Vault</h3><p><span data-en>Chrome, WhatsApp, Claude and your coding tools, locked with AES-256. One password brings them back.</span><span data-id>Chrome, WhatsApp, Claude, dan alat coding dikunci AES-256. 1 password untuk mengembalikan semuanya.</span></p></div>
+      <div class="card"><div class="ic" style="background:#dcfce7">🍃</div><h3><span data-en>Light browser snapshots</span><span data-id>Snapshot browser ringan</span></h3><p><span data-en>Chrome, Brave, Edge, Arc, Vivaldi and Opera can be saved without caches: about 1 GB becomes 150 MB. One switch per browser.</span><span data-id>Chrome, Brave, Edge, Arc, Vivaldi, dan Opera bisa disimpan tanpa cache: sekitar 1 GB jadi 150 MB. Satu saklar per browser.</span></p></div>
+      <div class="card"><div class="ic" style="background:#dbeafe">⏏️</div><h3><span data-en>Save & Log Out</span><span data-id>Simpan & Logout</span></h3><p><span data-en>One click saves your logins, then logs out. If saving fails, the logout is cancelled.</span><span data-id>1 klik menyimpan login, lalu logout. Kalau gagal menyimpan, logout dibatalkan.</span></p></div>
+      <div class="card"><div class="ic" style="background:#e0f2fe">📸</div><h3><span data-en>Auto snapshot</span><span data-id>Snapshot otomatis</span></h3><p><span data-en>Forgot Save & Log Out? A normal logout still saves the apps that changed first.</span><span data-id>Lupa menekan Simpan & Logout? Logout biasa tetap menyimpan dulu app yang berubah.</span></p></div>
+      <div class="card"><div class="ic" style="background:#ccfbf1">📌</div><h3><span data-en>Pick what stays</span><span data-id>Pilih yang tetap ada</span></h3><p><span data-en>A Keep folder for your files, and a Keep List for apps like VPNs and SSH keys.</span><span data-id>Folder Keep untuk file kamu, dan Keep List untuk app seperti VPN dan kunci SSH.</span></p></div>
+      <div class="card"><div class="ic" style="background:#fef9c3">👀</div><h3><span data-en>See it first</span><span data-id>Lihat dulu</span></h3><p><span data-en>"What Gets Deleted" lists everything before anything is deleted. Logout can wait for your OK.</span><span data-id>"Yang Akan Dihapus" menampilkan semuanya sebelum ada yang dihapus. Logout bisa menunggu persetujuan kamu.</span></p></div>
+      <div class="card"><div class="ic" style="background:#ffedd5">⏸️</div><h3><span data-en>Pause 1 Session</span><span data-id>Jeda 1 Sesi</span></h3><p><span data-en>Skip the next logout and login once, without turning Amnesia off.</span><span data-id>Lewati 1 kali logout dan login berikutnya, tanpa mematikan Amnesia.</span></p></div>
+      <div class="card"><div class="ic" style="background:#fce7f3">💾</div><h3><span data-en>Backup anywhere</span><span data-id>Backup ke mana saja</span></h3><p><span data-en>USB drive, your own server over SSH, Google Drive, Dropbox, OneDrive, Box or pCloud. Daily or weekly, and you can check a backup file.</span><span data-id>Flashdisk, server sendiri lewat SSH, Google Drive, Dropbox, OneDrive, Box, atau pCloud. Harian atau mingguan, dan file backup bisa dicek.</span></p></div>
+      <div class="card"><div class="ic" style="background:#f1f5f9">🕘</div><h3><span data-en>History</span><span data-id>Riwayat</span></h3><p><span data-en>When the Mac was cleaned, which apps were saved, when backups ran. Never file names.</span><span data-id>Kapan Mac dibersihkan, app apa yang disimpan, kapan backup jalan. Tanpa nama file.</span></p></div>
+      <div class="card"><div class="ic" style="background:#fee2e2">🔥</div><h3><span data-en>Panic word</span><span data-id>Kata panik</span></h3><p><span data-en>Type it, or get the password wrong 3 times, and the vault is gone for good.</span><span data-id>Ketik kata itu, atau salah password 3 kali, dan vault terhapus selamanya.</span></p></div>
+      <div class="card"><div class="ic" style="background:#ede9fe">🚚</div><h3><span data-en>Move to a new Mac</span><span data-id>Pindah Mac</span></h3><p><span data-en>Take your vault and the Keychain keys with you, so your apps open logged in on the new Mac.</span><span data-id>Bawa vault dan kunci Keychain, jadi app di Mac baru langsung terbuka dalam keadaan login.</span></p></div>
     </div>
   </div>
 </section>
 
 <section id="how">
   <div class="wrap">
-    <h2><span data-en>How it works</span><span data-id>Cara kerjanya</span></h2>
-    <p class="sub"><span data-en>Your day with Amnesia, in four steps.</span><span data-id>Hari kamu bersama Amnesia, dalam 4 langkah.</span></p>
+    <h2><span data-en>A normal day with Amnesia</span><span data-id>Sehari-hari dengan Amnesia</span></h2>
+    <p class="sub"><span data-en>Once it's set up, this is all you do.</span><span data-id>Setelah disiapkan, cukup ini yang kamu lakukan.</span></p>
     <div class="steps">
-      <div class="card step"><h3><span data-en>Log in</span><span data-id>Login</span></h3><p><span data-en>Your Mac starts clean. Open Profile Vault, type your password.</span><span data-id>Mac mulai bersih. Buka Profile Vault, ketik password.</span></p></div>
-      <div class="card step"><h3><span data-en>Work</span><span data-id>Kerja</span></h3><p><span data-en>All your logins are back. Keep important files in ~/Keep.</span><span data-id>Semua login kembali. Simpan file penting di ~/Keep.</span></p></div>
-      <div class="card step"><h3><span data-en>Save & Log Out</span><span data-id>Simpan & Logout</span></h3><p><span data-en>Your logins go back into the vault.</span><span data-id>Login kamu masuk lagi ke vault.</span></p></div>
+      <div class="card step"><h3><span data-en>Log in</span><span data-id>Login</span></h3><p><span data-en>Your Mac starts clean. Open Profile Vault, type your password, press Restore Profiles.</span><span data-id>Mac mulai bersih. Buka Profile Vault, ketik password, tekan Restore Profil.</span></p></div>
+      <div class="card step"><h3><span data-en>Work</span><span data-id>Kerja</span></h3><p><span data-en>All your logins are back. Keep files you need tomorrow in your Keep folder.</span><span data-id>Semua login kembali. Simpan file yang masih perlu besok di folder Keep.</span></p></div>
+      <div class="card step"><h3><span data-en>Save & Log Out</span><span data-id>Simpan & Logout</span></h3><p><span data-en>Your logins go back into the vault, then you're logged out.</span><span data-id>Login kamu masuk lagi ke vault, lalu kamu di-logout.</span></p></div>
       <div class="card step"><h3><span data-en>Forgotten</span><span data-id>Terlupakan</span></h3><p><span data-en>Everything else is wiped. No traces left.</span><span data-id>Sisanya dihapus. Tanpa jejak.</span></p></div>
     </div>
   </div>
@@ -155,38 +191,136 @@ html[lang=id] [data-id]{display:revert}
 
 <section>
   <div class="wrap">
-    <h2><span data-en>What gets wiped, what stays</span><span data-id>Apa yang dihapus, apa yang aman</span></h2>
-    <p class="sub"><span data-en>You can always check the list first, nothing is deleted until you turn Amnesia on.</span><span data-id>Kamu selalu bisa cek daftarnya dulu, tidak ada yang dihapus sampai Amnesia kamu aktifkan.</span></p>
+    <h2><span data-en>What gets wiped, what stays</span><span data-id>Apa yang dihapus, apa yang tetap aman</span></h2>
+    <p class="sub"><span data-en>Nothing is deleted until you press Turn On, and you can always check the list first.</span><span data-id>Tidak ada yang dihapus sampai kamu menekan Aktifkan, dan daftarnya selalu bisa kamu cek dulu.</span></p>
     <div class="split">
       <div class="card"><h3>🗑️ <span data-en>Wiped at logout</span><span data-id>Dihapus saat logout</span></h3><ul>
-        <li><span data-en>Browser history & cookies</span><span data-id>Riwayat & cookie browser</span></li>
-        <li>Desktop, Downloads, Documents, Pictures</li>
+        <li><span data-en>Browser history and cookies</span><span data-id>Riwayat dan cookie browser</span></li>
+        <li>Desktop, Downloads, Documents, Pictures, Movies, Music</li>
         <li><span data-en>Caches, logs, Terminal history</span><span data-id>Cache, log, riwayat Terminal</span></li>
-        <li><span data-en>Data from apps you didn't pick</span><span data-id>Data app yang tidak kamu pilih</span></li></ul></div>
+        <li><span data-en>Data of apps that are not in the vault or on the Keep List</span><span data-id>Data app yang tidak ada di vault atau Keep List</span></li></ul></div>
       <div class="card"><h3>✅ <span data-en>Stays safe</span><span data-id>Tetap aman</span></h3><ul>
         <li><span data-en>Everything in your Keep folder (any place, any name)</span><span data-id>Semua isi folder Keep kamu (di mana saja, nama apa saja)</span></li>
-        <li><span data-en>Logins in the Profile Vault</span><span data-id>Login di Profile Vault</span></li>
-        <li><span data-en>Apps on your Keep List (VPN, SSH keys…)</span><span data-id>App di Keep List (VPN, kunci SSH…)</span></li>
-        <li><span data-en>Your installed apps</span><span data-id>App yang terpasang</span></li></ul></div>
+        <li><span data-en>Logins saved in the Profile Vault (back with Restore)</span><span data-id>Login yang tersimpan di Profile Vault (kembali lewat Restore)</span></li>
+        <li><span data-en>Apps on your Keep List (VPN, SSH keys, Apple account…)</span><span data-id>App di Keep List (VPN, kunci SSH, akun Apple…)</span></li>
+        <li><span data-en>Your installed apps themselves</span><span data-id>App yang terpasang itu sendiri</span></li></ul></div>
     </div>
   </div>
 </section>
 
-<section id="screens">
+<section id="tour">
   <div class="wrap">
-    <h2><span data-en>Take a look</span><span data-id>Lihat tampilannya</span></h2>
-    <p class="sub"><span data-en>A native Mac app that lives in your menu bar. English and Bahasa Indonesia.</span><span data-id>App Mac asli yang tinggal di menu bar. Bahasa Inggris dan Indonesia.</span></p>
-    <div class="gallery">
-      <img data-shot="tour-welcome" src="screens/en/tour-welcome.png" alt="Welcome tour" loading="lazy">
-      <img data-shot="tour-terms" src="screens/en/tour-terms.png" alt="Read this first" loading="lazy">
-      <img data-shot="keep-setup" src="screens/en/keep-setup.png" alt="Pick what stays" loading="lazy">
-      <img data-shot="home" src="screens/en/home.png" alt="Home" loading="lazy">
-      <img data-shot="vault" src="screens/en/vault.png" alt="Profile Vault" loading="lazy">
-      <img data-shot="keep" src="screens/en/keep.png" alt="Keep List" loading="lazy">
-      <img data-shot="backup" src="screens/en/backup.png" alt="Backup" loading="lazy">
-      <img data-shot="preview" src="screens/en/preview.png" alt="What gets deleted" loading="lazy">
-      <img data-shot="settings" src="screens/en/settings.png" alt="Settings" loading="lazy">
-      <img data-shot="home-dark" src="screens/en/home-dark.png" alt="Dark mode" loading="lazy">
+    <h2><span data-en>Every feature, explained</span><span data-id>Penjelasan setiap fitur</span></h2>
+    <p class="sub"><span data-en>Screenshots come straight from the app (English or Indonesian, follows the language switch above).</span><span data-id>Screenshot diambil langsung dari app (bahasa Inggris atau Indonesia, mengikuti pilihan bahasa di atas).</span></p>
+
+    <div class="feat">
+      <img data-shot="home" src="screens/en/home.png" alt="Home" loading="lazy" onerror="this.style.display='none'">
+      <div>
+        <h3><span data-en>Home</span><span data-id>Halaman utama</span></h3>
+        <p><span data-en>The colored card shows whether Amnesia is ON, OFF or paused, and when it last cleaned. The big button on it turns Amnesia on or off. Below it:</span><span data-id>Kartu berwarna menunjukkan Amnesia sedang AKTIF, MATI, atau dijeda, dan kapan terakhir membersihkan. Tombol besar di kartu itu untuk mengaktifkan atau mematikan Amnesia. Di bawahnya:</span></p>
+        <ul>
+          <li><b>Profile Vault</b>: <span data-en>save and restore your app logins.</span><span data-id>simpan dan kembalikan login app.</span></li>
+          <li><b><span data-en>Save & Log Out</span><span data-id>Simpan & Logout</span></b>: <span data-en>save the logins, then log out.</span><span data-id>simpan login, lalu logout.</span></li>
+          <li><b><span data-en>Pause 1 Session</span><span data-id>Jeda 1 Sesi</span></b>: <span data-en>skip the next logout and login once.</span><span data-id>lewati 1 kali logout dan login berikutnya.</span></li>
+          <li><b>Keep List</b>, <b>Backup</b>, <b><span data-en>History</span><span data-id>Riwayat</span></b> <span data-en>and</span><span data-id>dan</span> <b><span data-en>What Gets Deleted</span><span data-id>Yang Akan Dihapus</span></b>.</li>
+        </ul>
+        <p><span data-en>The gear at the top right opens Settings. Close the window and Amnesia keeps running as an icon in the menu bar.</span><span data-id>Ikon roda gigi di kanan atas membuka Pengaturan. Kalau jendela ditutup, Amnesia tetap jalan sebagai ikon di menu bar.</span></p>
+      </div>
+    </div>
+
+    <div class="feat">
+      <img data-shot="menu" src="screens/en/menu.png" alt="Menu bar" loading="lazy" onerror="this.style.display='none'">
+      <div>
+        <h3><span data-en>Menu bar</span><span data-id>Menu bar</span></h3>
+        <p><span data-en>Click the Amnesia icon in the menu bar for the quick panel: status, Save & Log Out, Pause, and a button to open the main window. With "Open at login" on (Settings), the icon appears by itself after every login, without a window.</span><span data-id>Klik ikon Amnesia di menu bar untuk panel cepat: status, Simpan & Logout, Jeda, dan tombol membuka jendela utama. Kalau "Buka saat login" nyala (Pengaturan), ikon ini muncul sendiri setiap login, tanpa jendela.</span></p>
+      </div>
+    </div>
+
+    <div class="feat">
+      <img data-shot="vault-full" src="screens/en/vault-full.png" alt="Profile Vault" loading="lazy" onerror="this.src=this.src.replace('vault-full','vault')">
+      <div>
+        <h3>Profile Vault</h3>
+        <p><span data-en>An encrypted safe for your app logins. It's what lets you log in to a clean Mac and have Chrome, WhatsApp, Claude and your coding tools ready in one step.</span><span data-id>Brankas terenkripsi untuk login app kamu. Inilah yang membuat Mac yang sudah bersih bisa langsung dipakai: Chrome, WhatsApp, Claude, dan alat coding siap dalam 1 langkah.</span></p>
+        <ul>
+          <li><b><span data-en>What goes in the vault</span><span data-id>Yang disimpan di vault</span></b>: <span data-en>tap the apps you want saved. New browsers that show up are not added by themselves; you pick them.</span><span data-id>klik app yang mau disimpan. Browser baru yang muncul tidak otomatis ikut; kamu yang memilih.</span></li>
+          <li><b><span data-en>Light snapshot</span><span data-id>Snapshot ringan</span></b>: <span data-en>one switch per browser. Light skips caches and the program files of Web Store extensions (they download again with Repair). Logins, bookmarks and extension settings are always saved.</span><span data-id>satu saklar per browser. Mode ringan melewati cache dan file program extension dari Web Store (diunduh ulang lewat Repair). Login, bookmark, dan pengaturan extension selalu disimpan.</span></li>
+          <li><b><span data-en>Folders in the vault</span><span data-id>Folder di vault</span></b>: <span data-en>lock documents or PDFs away. They're wiped at logout and come back with Restore.</span><span data-id>kunci dokumen atau PDF. Ikut dibersihkan saat logout dan kembali lewat Restore.</span></li>
+          <li><b><span data-en>Snapshot Now</span><span data-id>Snapshot Sekarang</span></b> <span data-en>saves without a password.</span><span data-id>menyimpan tanpa password.</span> <b><span data-en>Restore Profiles</span><span data-id>Restore Profil</span></b> <span data-en>needs the password.</span><span data-id>butuh password.</span></li>
+          <li><span data-en>Each app has its own snapshot, so saving one app never touches the others. A trash icon deletes one app's snapshot.</span><span data-id>Tiap app punya snapshot sendiri, jadi menyimpan 1 app tidak mengubah yang lain. Ikon tempat sampah menghapus snapshot 1 app.</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <img data-shot="keep" src="screens/en/keep.png" alt="Keep List" loading="lazy" onerror="this.style.display='none'">
+      <div>
+        <h3>Keep List <span data-en>& Keep folder</span><span data-id>& folder Keep</span></h3>
+        <p><span data-en>The Keep folder (~/Keep by default, you can pick another) holds files that are never wiped. The Keep List holds app data that should survive every logout untouched, like VPN apps, SSH keys or your Apple account.</span><span data-id>Folder Keep (bawaan ~/Keep, bisa pilih folder lain) berisi file yang tidak pernah dihapus. Keep List berisi data app yang harus tetap utuh setiap logout, seperti app VPN, kunci SSH, atau akun Apple.</span></p>
+        <p><span data-en>Amnesia scans your apps and suggests what to keep. Remove an item and it's wiped from the next logout on.</span><span data-id>Amnesia memindai app kamu dan memberi saran apa yang disimpan. Item yang dikeluarkan ikut dibersihkan mulai logout berikutnya.</span></p>
+      </div>
+    </div>
+
+    <div class="feat">
+      <img data-shot="preview" src="screens/en/preview.png" alt="What gets deleted" loading="lazy" onerror="this.style.display='none'">
+      <div>
+        <h3><span data-en>What Gets Deleted</span><span data-id>Yang Akan Dihapus</span></h3>
+        <p><span data-en>The full list of what the next logout would delete, grouped by meaning: your files, browser data, app data, things that come back from the vault, and macOS system data. Nothing is deleted when you open it.</span><span data-id>Daftar lengkap yang akan dihapus saat logout berikutnya, dikelompokkan menurut artinya: file kamu, data browser, data app, yang kembali dari vault, dan data sistem macOS. Membukanya tidak menghapus apa pun.</span></p>
+        <p><span data-en>With "Check before logout" on, logout, restart and shutdown wait on this page until you press Continue or Cancel.</span><span data-id>Kalau "Cek dulu sebelum logout" nyala, logout, restart, dan shutdown menunggu di halaman ini sampai kamu menekan Lanjut atau Batal.</span></p>
+      </div>
+    </div>
+
+    <div class="feat">
+      <img data-shot="backup-full" src="screens/en/backup-full.png" alt="Backup" loading="lazy" onerror="this.src=this.src.replace('backup-full','backup')">
+      <div>
+        <h3>Backup</h3>
+        <p><span data-en>An encrypted .7z copy (AES-256, file names too) of your Keep folder, chosen folders and the Profile Vault.</span><span data-id>Salinan .7z terenkripsi (AES-256, nama file juga) dari folder Keep, folder pilihan, dan Profile Vault.</span></p>
+        <ul>
+          <li><b><span data-en>Where to</span><span data-id>Tujuan</span></b>: <span data-en>USB drive, your own server over SSH (Amnesia sets up the key), Google Drive, Dropbox, OneDrive, Box or pCloud.</span><span data-id>flashdisk, server sendiri lewat SSH (Amnesia memasang kuncinya), Google Drive, Dropbox, OneDrive, Box, atau pCloud.</span></li>
+          <li><b><span data-en>Schedule</span><span data-id>Jadwal</span></b>: <span data-en>daily or weekly, with the password saved in Keychain. "Run the scheduled backup now" tests it right away.</span><span data-id>harian atau mingguan, dengan password tersimpan di Keychain. "Jalankan backup terjadwal sekarang" untuk langsung mengetesnya.</span></li>
+          <li><b><span data-en>Check a Backup File</span><span data-id>Cek File Backup</span></b>: <span data-en>proves the vault inside a backup can be opened, without touching the vault on your Mac.</span><span data-id>membuktikan vault di dalam backup bisa dibuka, tanpa menyentuh vault di Mac kamu.</span></li>
+          <li><span data-en>Every backup is a new dated file. Old backups are never deleted by Amnesia.</span><span data-id>Setiap backup jadi file baru bertanggal. Backup lama tidak pernah dihapus oleh Amnesia.</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <img data-shot="history" src="screens/en/history.png" alt="History" loading="lazy" onerror="this.style.display='none'">
+      <div>
+        <h3><span data-en>History</span><span data-id>Riwayat</span></h3>
+        <p><span data-en>What Amnesia did and when, grouped by day: wiped at logout, checked at login, snapshots (and which apps), restores, backups and failed backups. Only times and app names are kept, never file names.</span><span data-id>Apa yang dilakukan Amnesia dan kapan, dikelompokkan per hari: dibersihkan saat logout, dicek saat login, snapshot (dan app apa saja), restore, backup, dan backup yang gagal. Yang dicatat hanya waktu dan nama app, tidak pernah nama file.</span></p>
+      </div>
+    </div>
+
+    <div class="feat">
+      <img data-shot="settings-full" src="screens/en/settings-full.png" alt="Settings" loading="lazy" onerror="this.src=this.src.replace('settings-full','settings')">
+      <div>
+        <h3><span data-en>Settings</span><span data-id>Pengaturan</span></h3>
+        <ul>
+          <li><b><span data-en>Auto snapshot at logout</span><span data-id>Snapshot otomatis saat logout</span></b>: <span data-en>a normal logout, restart or shutdown first saves the apps whose data changed (at most 150 seconds), then cleans.</span><span data-id>logout, restart, atau shutdown biasa lebih dulu menyimpan app yang datanya berubah (paling lama 150 detik), baru membersihkan.</span></li>
+          <li><b><span data-en>Notification after login</span><span data-id>Notifikasi setelah login</span></b>: <span data-en>a reminder to restore your profiles.</span><span data-id>pengingat untuk Restore profil.</span></li>
+          <li><b><span data-en>Check before logout</span><span data-id>Cek dulu sebelum logout</span></b>: <span data-en>logout waits for your Continue or Cancel.</span><span data-id>logout menunggu kamu menekan Lanjut atau Batal.</span></li>
+          <li><b><span data-en>Open at login</span><span data-id>Buka saat login</span></b>: <span data-en>the menu bar icon appears by itself.</span><span data-id>ikon menu bar muncul sendiri.</span></li>
+          <li><span data-en>Keep folder, language, Full Disk Access, Move to a New Mac, the welcome tour and</span><span data-id>Folder Keep, bahasa, Akses Disk Penuh, Pindah Mac, tur perkenalan, dan</span> <b><span data-en>Uninstall Amnesia</span><span data-id>Hapus Amnesia</span></b>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <img data-shot="move" src="screens/en/move.png" alt="Move to a new Mac" loading="lazy" onerror="this.style.display='none'">
+      <div>
+        <h3><span data-en>Move to a New Mac</span><span data-id>Pindah Mac</span></h3>
+        <p><span data-en>Chrome, Claude and WhatsApp lock their logins with secret keys in the Mac's Keychain. Prepare Move saves those keys into the vault, a backup carries everything over, and on the new Mac you take the vault from the backup, restore your profiles, then Restore Keys.</span><span data-id>Chrome, Claude, dan WhatsApp mengunci login dengan kunci rahasia di Keychain Mac. Siapkan Pindah menyimpan kunci itu ke vault, backup membawa semuanya, lalu di Mac baru kamu ambil vault dari backup, Restore Profil, lalu Pulihkan Kunci.</span></p>
+      </div>
+    </div>
+
+    <h3 class="minih"><span data-en>Warnings are easy to read</span><span data-id>Peringatan mudah dibaca</span></h3>
+    <p class="sub"><span data-en>Every important popup says, in colored boxes, what will happen, what gets deleted, what stays, and what you need to do.</span><span data-id>Setiap popup penting menjelaskan dalam kotak berwarna: apa yang akan terjadi, apa yang dihapus, apa yang tetap tersimpan, dan apa yang perlu kamu lakukan.</span></p>
+    <div class="gallery pops">
+      <img data-shot="popup-turn-on" src="screens/en/popup-turn-on.png" alt="Turn on" loading="lazy" onerror="this.style.display='none'">
+      <img data-shot="popup-save-logout" src="screens/en/popup-save-logout.png" alt="Save & Log Out" loading="lazy" onerror="this.style.display='none'">
+      <img data-shot="popup-restore" src="screens/en/popup-restore.png" alt="Restore done" loading="lazy" onerror="this.style.display='none'">
+      <img data-shot="popup-last-try" src="screens/en/popup-last-try.png" alt="Last try" loading="lazy" onerror="this.style.display='none'">
+      <img data-shot="popup-uninstall" src="screens/en/popup-uninstall.png" alt="Uninstall" loading="lazy" onerror="this.style.display='none'">
     </div>
   </div>
 </section>
@@ -196,39 +330,121 @@ html[lang=id] [data-id]{display:revert}
     <h2><span data-en>Install</span><span data-id>Cara pasang</span></h2>
     <div class="card warn">
       <h3>⚠️ <span data-en>Read this before you install</span><span data-id>Baca ini sebelum memasang</span></h3>
-      <p><span data-en>Amnesia really deletes data. Once you turn it on, everything outside your Keep folder and Keep List is deleted at every logout, restart and shutdown. It doesn't go to the Trash and can't be undone. Forget the vault password and nobody can open it. Amnesia is free software, provided as is, and you use it at your own risk.</span><span data-id>Amnesia benar-benar menghapus data. Setelah aktif, semua di luar folder Keep dan Keep List dihapus setiap logout, restart dan shutdown. Tidak masuk Trash dan tidak bisa dibatalkan. Lupa password vault, tidak ada yang bisa membukanya. Amnesia adalah software gratis, diberikan apa adanya, dan risiko pemakaian ada di kamu.</span></p>
+      <p><span data-en>Amnesia really deletes data. Once you turn it on, everything outside your Keep folder and Keep List is deleted at every logout, restart and shutdown. It doesn't go to the Trash and can't be undone. Forget the vault password and nobody can open it. Amnesia is free software, provided as is, and you use it at your own risk.</span><span data-id>Amnesia benar-benar menghapus data. Setelah aktif, semua di luar folder Keep dan Keep List dihapus setiap logout, restart, dan shutdown. Tidak masuk Trash dan tidak bisa dibatalkan. Lupa password vault, tidak ada yang bisa membukanya. Amnesia adalah software gratis, diberikan apa adanya, dan risiko pemakaian ada di kamu.</span></p>
       <p><a href="https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.md"><span data-en>Read the full terms →</span></a><a href="https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.id.md"><span data-id>Baca ketentuan lengkap →</span></a></p>
     </div>
     <div class="split">
       <div class="card"><h3>Homebrew</h3>
         <div class="code"><code>brew install --cask navi-crwn/tap/amnesia</code><button class="copy" onclick="copyCmd(this)">Copy</button></div>
-        <p class="small"><span data-en>Updates come with brew upgrade.</span><span data-id>Update cukup dengan brew upgrade.</span></p></div>
+        <p class="small"><span data-en>Update later with brew upgrade (turn Amnesia off first).</span><span data-id>Update nanti dengan brew upgrade (matikan Amnesia dulu).</span></p></div>
       <div class="card"><h3><span data-en>Installer (.dmg)</span><span data-id>Installer (.dmg)</span></h3>
         <p><span data-en>Get the .dmg from <a href="https://github.com/navi-crwn/amnesia-mac/releases/latest">Releases</a>, open it, and drag Amnesia onto Applications. The app isn't signed by Apple yet, so the first time: System Settings → Privacy & Security → <b>Open Anyway</b>.</span><span data-id>Ambil .dmg dari <a href="https://github.com/navi-crwn/amnesia-mac/releases/latest">Releases</a>, buka, lalu seret Amnesia ke Applications. App ini belum ditandatangani Apple, jadi pertama kali: System Settings → Privacy & Security → <b>Open Anyway</b>.</span></p></div>
     </div>
   </div>
 </section>
 
+<section id="tutorial">
+  <div class="wrap">
+    <h2><span data-en>Step-by-step tutorial</span><span data-id>Tutorial langkah demi langkah</span></h2>
+    <p class="sub"><span data-en>From a fresh install to your first clean logout. Take your time: nothing is deleted before step 8.</span><span data-id>Dari baru dipasang sampai logout bersih pertama. Santai saja: tidak ada yang dihapus sebelum langkah 8.</span></p>
+    <ol class="tut">
+      <li>
+        <div><h3><span data-en>Open Amnesia and read the warning</span><span data-id>Buka Amnesia dan baca peringatannya</span></h3>
+        <p><span data-en>Pick your language. The tour explains that Amnesia really deletes data; tick that you understand.</span><span data-id>Pilih bahasa. Tur menjelaskan bahwa Amnesia benar-benar menghapus data; centang bahwa kamu paham.</span></p></div>
+        <img data-shot="tour-terms" src="screens/en/tour-terms.png" alt="" loading="lazy" onerror="this.style.display='none'">
+      </li>
+      <li>
+        <div><h3><span data-en>Quick check</span><span data-id>Cek dulu</span></h3>
+        <p><span data-en>Amnesia checks its engine, 7-Zip, Apple Command Line Tools and Full Disk Access. Press the buttons for anything that isn't green. Full Disk Access: System Settings → Privacy & Security → Full Disk Access → switch Amnesia on, then Quit & Reopen.</span><span data-id>Amnesia mengecek mesinnya, 7-Zip, Apple Command Line Tools, dan Akses Disk Penuh. Tekan tombolnya untuk yang belum hijau. Akses Disk Penuh: System Settings → Privacy & Security → Full Disk Access → nyalakan Amnesia, lalu Tutup & Buka Lagi.</span></p></div>
+        <img data-shot="tour-check" src="screens/en/tour-check.png" alt="" loading="lazy" onerror="this.style.display='none'">
+      </li>
+      <li>
+        <div><h3><span data-en>Pick what stays</span><span data-id>Pilih yang tetap ada</span></h3>
+        <p><span data-en>Choose your Keep folder and switch on the apps to keep (VPNs are suggested). You can change this later on the Keep List page.</span><span data-id>Pilih folder Keep dan nyalakan app yang mau disimpan (VPN sudah disarankan). Nanti bisa diubah di halaman Keep List.</span></p></div>
+        <img data-shot="keep-setup" src="screens/en/keep-setup.png" alt="" loading="lazy" onerror="this.style.display='none'">
+      </li>
+      <li>
+        <div><h3><span data-en>Create the Profile Vault</span><span data-id>Buat Profile Vault</span></h3>
+        <p><span data-en>Open Profile Vault, type a password (at least 12 characters) twice. Optional: a panic word. Write the password down somewhere safe: it can't be recovered.</span><span data-id>Buka Profile Vault, ketik password (minimal 12 karakter) dua kali. Opsional: kata panik. Catat password di tempat aman: tidak bisa dipulihkan.</span></p></div>
+        <img data-shot="vault" src="screens/en/vault.png" alt="" loading="lazy" onerror="this.style.display='none'">
+      </li>
+      <li>
+        <div><h3><span data-en>Pick apps and make the first snapshot</span><span data-id>Pilih app dan buat snapshot pertama</span></h3>
+        <p><span data-en>Click the apps to save, choose light or full for browsers, log in to those apps as usual, then press Snapshot Now.</span><span data-id>Klik app yang mau disimpan, pilih ringan atau lengkap untuk browser, login ke app itu seperti biasa, lalu tekan Snapshot Sekarang.</span></p></div>
+        <img data-shot="vault-full" src="screens/en/vault-full.png" alt="" loading="lazy" onerror="this.src=this.src.replace('vault-full','vault')">
+      </li>
+      <li>
+        <div><h3><span data-en>Back up, with the vault</span><span data-id>Backup, termasuk vault</span></h3>
+        <p><span data-en>Open Backup, pick where to, keep "Include Profile Vault" ticked, press Back Up Now. Then Check a Backup File to be sure it opens. If the vault is ever lost, this backup brings it back.</span><span data-id>Buka Backup, pilih tujuan, biarkan "Sertakan Profile Vault" tercentang, tekan Backup Sekarang. Lalu Cek File Backup untuk memastikan bisa dibuka. Kalau suatu saat vault hilang, backup inilah yang mengembalikannya.</span></p></div>
+        <img data-shot="backup" src="screens/en/backup.png" alt="" loading="lazy" onerror="this.style.display='none'">
+      </li>
+      <li>
+        <div><h3><span data-en>Look at the list</span><span data-id>Lihat daftarnya</span></h3>
+        <p><span data-en>Open What Gets Deleted. Anything there you still need? Move it into your Keep folder or add it to the Keep List.</span><span data-id>Buka Yang Akan Dihapus. Ada yang masih perlu? Pindahkan ke folder Keep atau tambahkan ke Keep List.</span></p></div>
+        <img data-shot="preview" src="screens/en/preview.png" alt="" loading="lazy" onerror="this.style.display='none'">
+      </li>
+      <li>
+        <div><h3><span data-en>Turn On</span><span data-id>Aktifkan</span></h3>
+        <p><span data-en>Press Turn On Amnesia on the home card. Read the popup: this session stays safe until you log out.</span><span data-id>Tekan Aktifkan Amnesia di kartu halaman utama. Baca popup-nya: sesi sekarang tetap aman sampai kamu logout.</span></p></div>
+        <img data-shot="popup-turn-on" src="screens/en/popup-turn-on.png" alt="" loading="lazy" onerror="this.style.display='none'">
+      </li>
+      <li>
+        <div><h3><span data-en>Every day: Save & Log Out, then Restore</span><span data-id>Setiap hari: Simpan & Logout, lalu Restore</span></h3>
+        <p><span data-en>Done for the day? Press Save & Log Out. After the next login, open Profile Vault, type the password and press Restore Profiles. If the browser was saved light, press Repair on its extensions page.</span><span data-id>Selesai kerja? Tekan Simpan & Logout. Setelah login berikutnya, buka Profile Vault, ketik password, lalu tekan Restore Profil. Kalau browser disimpan ringan, tekan Repair di halaman extension-nya.</span></p></div>
+        <img data-shot="popup-restore" src="screens/en/popup-restore.png" alt="" loading="lazy" onerror="this.style.display='none'">
+      </li>
+      <li>
+        <div><h3><span data-en>Updating Amnesia</span><span data-id>Update Amnesia</span></h3>
+        <p><span data-en>Always: press Turn Off, install the update, open Amnesia, press Turn On. Installing while Amnesia is on can be treated like a logout.</span><span data-id>Selalu: tekan Matikan, pasang update, buka Amnesia, tekan Aktifkan. Memasang saat Amnesia aktif bisa dianggap seperti logout.</span></p></div>
+      </li>
+    </ol>
+  </div>
+</section>
+
 <section id="faq">
   <div class="wrap">
     <h2>FAQ</h2>
-    <details><summary><span data-en>Is my data sent anywhere?</span><span data-id>Apakah data saya dikirim ke mana-mana?</span></summary><p><span data-en>No. Amnesia has no servers, no accounts, no tracking and no analytics. Everything runs on your Mac. Only if you set up a server or cloud backup does a locked .7z file leave your Mac, straight to the place you picked, and nobody can read it without your password.</span><span data-id>Tidak. Amnesia tidak punya server, tidak pakai akun, tidak melacak dan tidak mengumpulkan data. Semua jalan di Mac kamu. Hanya kalau kamu atur backup ke server atau cloud, file .7z terkunci keluar dari Mac, langsung ke tempat yang kamu pilih, dan tidak ada yang bisa membacanya tanpa password kamu.</span></p></details>
-    <details><summary><span data-en>Why does it ask for Full Disk Access?</span><span data-id>Kenapa minta Akses Disk Penuh?</span></summary><p><span data-en>So macOS doesn't ask about every folder (Desktop, Documents, Downloads…), and so the wipe at logout can actually reach them. You allow it once.</span><span data-id>Supaya macOS tidak tanya per folder (Desktop, Documents, Downloads…), dan supaya pembersihan saat logout benar-benar bisa menjangkaunya. Cukup izinkan sekali.</span></p></details>
-    <details><summary><span data-en>Do I need Terminal or Chrome to set up backups?</span><span data-id>Perlu Terminal atau Chrome untuk atur backup?</span></summary><p><span data-en>No. For a server, type its password once and Amnesia installs an SSH key. For Google Drive, Dropbox, OneDrive, Box or pCloud, you log in through your browser.</span><span data-id>Tidak. Untuk server, ketik password-nya sekali dan Amnesia memasang kunci SSH. Untuk Google Drive, Dropbox, OneDrive, Box atau pCloud, kamu login lewat browser.</span></p></details>
-    <details><summary><span data-en>What if I forget the vault password?</span><span data-id>Kalau lupa password vault?</span></summary><p><span data-en>Then nobody can open it, including you. Make a new vault and log in to your apps again. Still know it and want a new one? Use the Password button on the Profile Vault page.</span><span data-id>Tidak ada yang bisa membukanya, termasuk kamu. Buat vault baru dan login ulang ke app kamu. Masih ingat dan mau ganti? Pakai tombol Password di halaman Profile Vault.</span></p></details>
-    <details><summary><span data-en>Can I try it without deleting anything?</span><span data-id>Bisa coba tanpa menghapus apa-apa?</span></summary><p><span data-en>Yes. Amnesia stays off until you press Turn On. Settings → "See what would be deleted now" shows the full list first.</span><span data-id>Bisa. Amnesia tetap mati sampai kamu tekan Aktifkan. Pengaturan → "Lihat yang akan dihapus sekarang" menampilkan daftarnya dulu.</span></p></details>
+    <h3 class="minih"><span data-en>Safety</span><span data-id>Keamanan</span></h3>
+    <details><summary><span data-en>Is my data sent anywhere?</span><span data-id>Apakah data saya dikirim ke mana-mana?</span></summary><p><span data-en>No. Amnesia has no servers, no accounts, no tracking and no analytics. Everything runs on your Mac. Only if you set up a server or cloud backup does a locked .7z file leave your Mac, straight to the place you picked, and nobody can read it without your password.</span><span data-id>Tidak. Amnesia tidak punya server, tidak pakai akun, tidak melacak, dan tidak mengumpulkan data. Semua jalan di Mac kamu. Hanya kalau kamu mengatur backup ke server atau cloud, file .7z terkunci keluar dari Mac, langsung ke tempat yang kamu pilih, dan tidak ada yang bisa membacanya tanpa password kamu.</span></p></details>
+    <details><summary><span data-en>Can I try it without deleting anything?</span><span data-id>Bisa dicoba tanpa menghapus apa pun?</span></summary><p><span data-en>Yes. Amnesia stays off until you press Turn On. What Gets Deleted (or Settings → "See what would be deleted now") shows the full list first.</span><span data-id>Bisa. Amnesia tetap mati sampai kamu menekan Aktifkan. Yang Akan Dihapus (atau Pengaturan → "Lihat yang akan dihapus sekarang") menampilkan daftarnya dulu.</span></p></details>
+    <details><summary><span data-en>Where do wiped files go? Can I get them back?</span><span data-id>File yang dibersihkan ke mana? Bisa dikembalikan?</span></summary><p><span data-en>At logout they're moved into Amnesia's own folder (~/.amnesia-trash), which is emptied in the background after your next login. They don't go to the macOS Trash and can't be brought back. Anything you need goes into the Keep folder, the Keep List or the vault.</span><span data-id>Saat logout semuanya dipindah ke folder milik Amnesia (~/.amnesia-trash), yang dikosongkan di background setelah login berikutnya. Tidak masuk Trash macOS dan tidak bisa dikembalikan. Yang masih perlu, simpan di folder Keep, Keep List, atau vault.</span></p></details>
+    <details><summary><span data-en>What if the Mac crashes or loses power?</span><span data-id>Kalau Mac crash atau mati listrik?</span></summary><p><span data-en>The check at login catches it: if the last logout didn't finish, the login check does the full cleanup.</span><span data-id>Cek saat login menanganinya: kalau logout terakhir tidak selesai, cek saat login membersihkan penuh.</span></p></details>
+    <details><summary><span data-en>Why does it ask for Full Disk Access?</span><span data-id>Kenapa minta Akses Disk Penuh?</span></summary><p><span data-en>So macOS doesn't ask about every folder (Desktop, Documents, Downloads…), and so the wipe at logout can actually reach them. You allow it once.</span><span data-id>Supaya macOS tidak bertanya per folder (Desktop, Documents, Downloads…), dan supaya pembersihan saat logout benar-benar bisa menjangkaunya. Cukup izinkan sekali.</span></p></details>
+    <details><summary><span data-en>Does it need my Mac password or sudo?</span><span data-id>Apakah butuh password Mac atau sudo?</span></summary><p><span data-en>No. Amnesia only works inside your own user account and never uses sudo. macOS asks for your login password only when you save Keychain keys for a move to a new Mac.</span><span data-id>Tidak. Amnesia hanya bekerja di dalam akun kamu sendiri dan tidak pernah memakai sudo. macOS meminta password login hanya saat kamu menyimpan kunci Keychain untuk pindah ke Mac baru.</span></p></details>
+
+    <h3 class="minih">Profile Vault</h3>
+    <details><summary><span data-en>What if I forget the vault password?</span><span data-id>Kalau lupa password vault?</span></summary><p><span data-en>Then nobody can open it, including you. Make a new vault and log in to your apps again. Still know it and want a new one? Use the Password button on the Profile Vault page.</span><span data-id>Tidak ada yang bisa membukanya, termasuk kamu. Buat vault baru, lalu login ulang ke app kamu. Masih ingat dan mau ganti? Pakai tombol Password di halaman Profile Vault.</span></p></details>
+    <details><summary><span data-en>What happens after 3 wrong passwords?</span><span data-id>Apa yang terjadi kalau salah password 3 kali?</span></summary><p><span data-en>The vault is deleted for good. Before the last try Amnesia warns you. If the vault was in a backup, get it back on Move to a New Mac → Get Vault from Backup.</span><span data-id>Vault dihapus selamanya. Sebelum percobaan terakhir, Amnesia memberi peringatan. Kalau vault pernah ikut backup, ambil lagi di Pindah Mac → Ambil Vault dari Backup.</span></p></details>
+    <details><summary><span data-en>What's the difference between light and full?</span><span data-id>Apa bedanya ringan dan lengkap?</span></summary><p><span data-en>Light (browsers only) leaves out caches and the program files of Web Store extensions, so Chrome goes from about 1 GB to 150 MB. Logins, bookmarks, extension settings and extensions you installed another way are always saved. After a light Restore, press Repair on the browser's extensions page. Full saves everything except caches.</span><span data-id>Ringan (hanya browser) tidak menyimpan cache dan file program extension dari Web Store, jadi Chrome dari sekitar 1 GB jadi 150 MB. Login, bookmark, pengaturan extension, dan extension yang dipasang dengan cara lain selalu disimpan. Setelah Restore ringan, tekan Repair di halaman extension browser. Lengkap menyimpan semuanya kecuali cache.</span></p></details>
+    <details><summary><span data-en>Does Save & Log Out overwrite my old snapshots?</span><span data-id>Apakah Simpan & Logout menimpa snapshot lama?</span></summary><p><span data-en>Only for the apps it saves, and only after the new snapshot is saved successfully. Apps not in the list keep their snapshot. If saving fails, you're not logged out.</span><span data-id>Hanya untuk app yang disimpan, dan hanya setelah snapshot baru berhasil disimpan. App yang tidak ada di daftar tetap memakai snapshot lamanya. Kalau gagal menyimpan, kamu tidak di-logout.</span></p></details>
+    <details><summary><span data-en>What does the auto snapshot do?</span><span data-id>Apa fungsi snapshot otomatis?</span></summary><p><span data-en>When you log out, restart or shut down the normal way, Amnesia first saves the apps whose data changed (at most 150 seconds), then cleans. It's skipped if you just used Save & Log Out or Pause 1 Session is on. Turn it off and a normal logout cleans without saving.</span><span data-id>Saat kamu logout, restart, atau mematikan Mac dengan cara biasa, Amnesia lebih dulu menyimpan app yang datanya berubah (paling lama 150 detik), baru membersihkan. Dilewati kalau kamu baru saja menekan Simpan & Logout atau sedang Jeda 1 Sesi. Kalau dimatikan, logout biasa langsung membersihkan tanpa menyimpan.</span></p></details>
+    <details><summary><span data-en>What is the panic word?</span><span data-id>Apa itu kata panik?</span></summary><p><span data-en>An optional word you choose. Typed in the password box, it deletes the vault right away (and, if you chose so, empties the Keep folder too).</span><span data-id>Kata opsional pilihan kamu. Kalau diketik di kolom password, vault langsung dihapus (dan, kalau kamu pilih, folder Keep juga dikosongkan).</span></p></details>
+
+    <h3 class="minih">Backup</h3>
+    <details><summary><span data-en>Do I need Terminal or Chrome to set up backups?</span><span data-id>Perlu Terminal atau Chrome untuk mengatur backup?</span></summary><p><span data-en>No. For a server, type its password once and Amnesia installs an SSH key. For Google Drive, Dropbox, OneDrive, Box or pCloud, you log in through your browser.</span><span data-id>Tidak. Untuk server, ketik password-nya sekali dan Amnesia memasang kunci SSH. Untuk Google Drive, Dropbox, OneDrive, Box, atau pCloud, kamu login lewat browser.</span></p></details>
+    <details><summary><span data-en>How do I know a backup really works?</span><span data-id>Bagaimana tahu backup benar-benar bisa dipakai?</span></summary><p><span data-en>On the Backup page press Check a Backup File and pick the .7z. Amnesia opens the vault inside it in a temporary folder, shows which apps are in it, then deletes the temporary folder. Your own vault isn't touched.</span><span data-id>Di halaman Backup tekan Cek File Backup lalu pilih file .7z-nya. Amnesia membuka vault di dalamnya di folder sementara, menampilkan app apa saja yang ada, lalu menghapus folder sementara itu. Vault kamu sendiri tidak disentuh.</span></p></details>
+    <details><summary><span data-en>Does the scheduled backup work when I'm not looking?</span><span data-id>Apakah backup terjadwal jalan sendiri?</span></summary><p><span data-en>Yes, while the Amnesia icon is in the menu bar, with the password saved in Keychain. For a USB drive it waits until the drive is plugged in. You get a notification each time. "Run the scheduled backup now" tests it right away.</span><span data-id>Ya, selama ikon Amnesia ada di menu bar, dengan password tersimpan di Keychain. Untuk flashdisk, backup menunggu sampai flashdisk tercolok. Setiap kali selesai muncul notifikasi. "Jalankan backup terjadwal sekarang" untuk langsung mengetesnya.</span></p></details>
+    <details><summary><span data-en>Are old backups deleted?</span><span data-id>Apakah backup lama dihapus?</span></summary><p><span data-en>Never. Every backup is a new dated file. Delete old ones yourself when you don't need them.</span><span data-id>Tidak pernah. Setiap backup jadi file baru bertanggal. Hapus sendiri yang lama kalau sudah tidak perlu.</span></p></details>
+
+    <h3 class="minih"><span data-en>Everyday use</span><span data-id>Pemakaian sehari-hari</span></h3>
+    <details><summary><span data-en>I need my files tomorrow. What do I do?</span><span data-id>File ini masih saya perlukan besok. Bagaimana?</span></summary><p><span data-en>Move them into your Keep folder before you log out. Or, for a single day, press Pause 1 Session: the next logout and login are not wiped.</span><span data-id>Pindahkan ke folder Keep sebelum logout. Atau, untuk sehari saja, tekan Jeda 1 Sesi: logout dan login berikutnya tidak dibersihkan.</span></p></details>
+    <details><summary><span data-en>Can I cancel a logout?</span><span data-id>Bisa membatalkan logout?</span></summary><p><span data-en>Yes, with "Check before logout" on (Settings): logout, restart and shutdown wait on the What Gets Deleted page until you press Continue or Cancel.</span><span data-id>Bisa, kalau "Cek dulu sebelum logout" nyala (Pengaturan): logout, restart, dan shutdown menunggu di halaman Yang Akan Dihapus sampai kamu menekan Lanjut atau Batal.</span></p></details>
+    <details><summary><span data-en>The main window opens at login. Why?</span><span data-id>Jendela utama terbuka saat login. Kenapa?</span></summary><p><span data-en>Older versions were reopened by macOS's "Reopen windows when logging back in". Since v5.15 Amnesia only shows its menu bar icon at login.</span><span data-id>Versi lama dibuka ulang oleh fitur macOS "Reopen windows when logging back in". Sejak v5.15 Amnesia hanya menampilkan ikon menu bar saat login.</span></p></details>
+    <details><summary><span data-en>How do I update?</span><span data-id>Bagaimana cara update?</span></summary><p><span data-en>Press Turn Off, install the new version (.dmg or brew upgrade), open Amnesia, press Turn On.</span><span data-id>Tekan Matikan, pasang versi baru (.dmg atau brew upgrade), buka Amnesia, tekan Aktifkan.</span></p></details>
     <details><summary><span data-en>Can I move to a new Mac?</span><span data-id>Bisa pindah ke Mac baru?</span></summary><p><span data-en>Yes, the Move to a New Mac page walks you through it. Prepare Move saves your Keychain keys to the vault, a backup carries it over, and Restore Keys puts them back on the new Mac.</span><span data-id>Bisa, halaman Pindah Mac memandu langkahnya. Siapkan Pindah menyimpan kunci Keychain ke vault, backup membawanya, lalu Pulihkan Kunci memasangnya di Mac baru.</span></p></details>
-    <details><summary><span data-en>How do I uninstall it?</span><span data-id>Cara menghapus Amnesia?</span></summary><p><span data-en>Open Settings in the app and press Uninstall Amnesia. Dragged it to the Trash? That's safe too: Amnesia turns itself off and wipes nothing. Prefer Terminal? Paste <code>bash ~/.amnesia/uninstall.sh</code>. It turns Amnesia off safely, removes the app and keeps your vault (add <code>--all</code> to delete that too). With Homebrew: <code>brew uninstall --cask amnesia</code>.</span><span data-id>Buka Pengaturan di app lalu tekan Hapus Amnesia. Terlanjur dibuang ke Trash? Itu juga aman: Amnesia mematikan dirinya sendiri dan tidak membersihkan apa pun. Lebih suka Terminal? Tempel <code>bash ~/.amnesia/uninstall.sh</code>. Script ini mematikan Amnesia dengan aman, menghapus app dan menyimpan vault kamu (tambah <code>--all</code> untuk ikut menghapusnya). Lewat Homebrew: <code>brew uninstall --cask amnesia</code>.</span></p></details>
+
+    <h3 class="minih"><span data-en>Uninstall</span><span data-id>Menghapus Amnesia</span></h3>
+    <details><summary><span data-en>How do I uninstall it?</span><span data-id>Cara menghapus Amnesia?</span></summary><p><span data-en>Open Settings and press Uninstall Amnesia. It turns Amnesia off for good and moves the app to the Trash. A checkbox lets you delete the vault, snapshots, Keep List and settings too (moved to the Trash as well). Your Keep folder is never touched. Prefer Terminal? <code>bash ~/.amnesia/uninstall.sh</code> (add <code>--all</code> to delete the vault too). With Homebrew: <code>brew uninstall --cask amnesia</code>.</span><span data-id>Buka Pengaturan lalu tekan Hapus Amnesia. Amnesia dimatikan untuk seterusnya dan app dipindah ke Trash. Ada kotak centang untuk ikut menghapus vault, snapshot, Keep List, dan pengaturan (juga dipindah ke Trash). Folder Keep tidak pernah disentuh. Lebih suka Terminal? <code>bash ~/.amnesia/uninstall.sh</code> (tambah <code>--all</code> untuk ikut menghapus vault). Lewat Homebrew: <code>brew uninstall --cask amnesia</code>.</span></p></details>
+    <details><summary><span data-en>What if I just drag it to the Trash?</span><span data-id>Kalau app cuma diseret ke Trash?</span></summary><p><span data-en>That's safe too. If Amnesia is open, it notices, turns itself off and tells you. If it isn't, the login agent checks at the next logout, wipes nothing and removes itself.</span><span data-id>Itu juga aman. Kalau Amnesia sedang terbuka, ia tahu, mematikan dirinya sendiri, lalu memberi tahu kamu. Kalau tidak terbuka, agent login mengecek saat logout berikutnya, tidak membersihkan apa pun, lalu menghapus dirinya sendiri.</span></p></details>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <p><a href="https://github.com/navi-crwn/amnesia-mac">GitHub</a> · <a href="https://github.com/navi-crwn/amnesia-mac/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.md">Terms</a> · MIT License</p>
+    <p><a href="https://github.com/navi-crwn/amnesia-mac">GitHub</a> · <a href="https://github.com/navi-crwn/amnesia-mac/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.md">Terms</a> · <a href="https://github.com/navi-crwn/amnesia-mac/blob/main/LICENSE">MIT License</a> · © 2026 navi-crwn</p>
     <p><span data-en>Made for personal use. Use it wisely: Amnesia really does delete your data.</span><span data-id>Dibuat untuk pemakaian pribadi. Pakai dengan bijak: Amnesia benar-benar menghapus data.</span></p>
   </div>
 </footer>
-
 <script>
 function setLang(l){
   document.documentElement.lang = l;
