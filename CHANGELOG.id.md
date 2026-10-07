@@ -10,7 +10,10 @@ Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 ### Diubah
 - **Landing page baru** (navi-crwn.github.io/amnesia-mac). Desain gelap dengan animasi saat di-scroll: kata "everything" di judul pecah jadi partikel, meja Mac penuh file dibersihkan saat **Log Out** ditekan sementara Keep, Vault, Keep List dan Apps tetap ada dan menyala hijau, Profile Vault terkunci sambil inisial app terbang masuk, timeline harian tergambar sendiri, dan `.7z` backup tersambung ke semua tujuan. Semua isi lama tetap ada dalam bahasa Inggris dan Indonesia: fitur, yang dihapus vs. yang tetap, tur fitur dengan screenshot, cara pasang, tutorial 10 langkah, glosarium, dan 27 jawaban FAQ. Peringatan penghapusan dan link Ketentuan ada di bagian atas dan di bagian Pasang.
 - Tetap bisa dipakai tanpa animasi: kalau "Reduce motion" nyala, JavaScript mati, atau library animasi gagal dimuat, halaman menampilkan semuanya dalam keadaan akhir. Tanpa pelacakan atau analytics.
-- File baru: `docs/assets/css/site.css`, `docs/assets/js/site.js` dan `docs/assets/js/scenes/` (hero, desk, story). Animasi memakai GSAP dan Lenis dari jsDelivr (versi dikunci). App-nya sendiri tidak berubah.
+- **Update (v2): app dijelaskan per bagian.** Tur screenshot diganti jendela utama Amnesia yang digambar ulang dengan gaya website. Saat di-scroll, jendelanya terpecah: satu tombol diangkat sementara yang lain menjauh, penjelasannya muncul di sampingnya, dan titik-titik di kiri menunjukkan posisi kamu (11 bagian: Beranda, menu bar, Profile Vault, Simpan & Logout, Jeda, Keep List, Yang Akan Dihapus, Backup, Riwayat, Pengaturan, Pindah Mac). Di akhir semuanya menyatu lagi. Di HP, tiap penjelasan menampilkan bagiannya sendiri.
+- Adegan meja tidak terasa macet lagi: file muncul sambil di-scroll, Logout langsung jalan, bagian yang ditahan lebih pendek, dan ada garis progres. Teksnya lebih panjang dan menjelaskan apa saja yang dikumpulkan Mac setiap hari.
+- Glosarium dipindah tepat setelah tur app, dan tiap istilah (Selective Amnesia, Global Amnesia, Memory Recall) punya grid kecil beranimasi.
+- File baru: `docs/assets/css/site.css`, `docs/assets/js/site.js` dan `docs/assets/js/scenes/` (hero, desk, puzzle, story). Animasi memakai GSAP dan Lenis dari jsDelivr (versi dikunci). App-nya sendiri tidak berubah.
 
 ## v5.17.1 — 2026-10-07
 

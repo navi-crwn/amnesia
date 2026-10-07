@@ -10,7 +10,10 @@ You can see the version number in the app too (next to the title and at the bott
 ### Changed
 - **New landing page** (navi-crwn.github.io/amnesia-mac). Dark design with scroll animations: the headline word "everything" breaks into particles, a Mac desk full of files is wiped when **Log Out** is pressed while Keep, Vault, Keep List and Apps stay and glow green, the Profile Vault locks while app initials fly in, the daily timeline draws itself and the backup `.7z` connects to every destination. All old content is still there in English and Indonesian: features, wiped vs. stays, the feature tour with screenshots, install, the 10-step tutorial, the glossary and all 27 FAQ answers. The deletion warning and the Terms link are in the hero and in Install.
 - Works without animations too: with "Reduce motion" on, with JavaScript off, or if the animation library can't load, the page shows everything in its final state. No tracking or analytics.
-- New files: `docs/assets/css/site.css`, `docs/assets/js/site.js` and `docs/assets/js/scenes/` (hero, desk, story). Animations use GSAP and Lenis from jsDelivr (pinned versions). The app itself did not change.
+- **Update (v2): the app explained piece by piece.** The screenshot tour is replaced by the Amnesia main window drawn in the website style. Scroll and it comes apart: one button at a time lifts out while the rest breaks away, with its explanation next to it and a dot rail showing where you are (11 parts: Home, menu bar, Profile Vault, Save & Log Out, Pause, Keep List, What Gets Deleted, Backup, History, Settings, Move to a New Mac). At the end it snaps back together. On phones each explanation shows its own piece.
+- The desk scene no longer feels stuck: the files appear while you scroll in, Log Out starts right away, the pinned part is shorter and a progress line shows how far it is. Its text is longer and explains what a Mac collects every day.
+- The glossary sits right after the app tour, and each word (Selective Amnesia, Global Amnesia, Memory Recall) has a small animated grid.
+- New files: `docs/assets/css/site.css`, `docs/assets/js/site.js` and `docs/assets/js/scenes/` (hero, desk, puzzle, story). Animations use GSAP and Lenis from jsDelivr (pinned versions). The app itself did not change.
 
 ## v5.17.1 — 2026-10-07
 

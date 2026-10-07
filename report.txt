@@ -176,8 +176,9 @@ HAPUS  ~/Downloads/amnesia-v5.16.zip
 HAPUS  ~/Downloads/amnesia-v5.17.1-r2.zip
 HAPUS  ~/Downloads/amnesia-v5.17.zip
 HAPUS  ~/Downloads/amnesia-v5.zip
+HAPUS  ~/Downloads/amnesia-website-v1-r2.zip
 HAPUS  ~/Downloads/m2-res_1080p.mp4
 HAPUS  ~/.Trash/.DS_Store
 HAPUS  ~/.Trash/Amnesia.app
 HAPUS  ~/.Trash/amnesia-lama-20261007-0103
---- dry-run (logout): 182 items would be deleted. Nothing was deleted. ---
+--- dry-run (logout): 183 items would be deleted. Nothing was deleted. ---

@@ -1,7 +1,7 @@
 /* 03 to 09: smaller scenes.
    stays (strike + fade), vault (apps fly in, lock closes, password types),
    daily (line draws), backup (lines draw), privacy (pills pop),
-   tour (screenshots straighten from 3D), install (command types itself). */
+   glossary (tiny grids), install (command types itself). */
 (function () {
   'use strict';
   var S = window.AmnesiaScenes = window.AmnesiaScenes || {};
@@ -87,21 +87,21 @@
         gsap.from(priv.querySelectorAll('.feats > div'), { opacity: 0, y: 20, duration: .6, stagger: .05, ease: 'power3.out', scrollTrigger: once(priv.querySelector('.feats'), 'top 80%') });
       }
 
-      // ---- 08 tour: screenshots straighten as they arrive ----
-      mm.add('(min-width: 821px)', function () {
-        document.querySelectorAll('.tour-list .feat').forEach(function (f, i) {
-          var img = f.querySelector('.shotbox img');
-          if (!img) return;
-          gsap.fromTo(img,
-            { rotateY: i % 2 ? -18 : 18, rotateX: 8, scale: .9, opacity: .4 },
-            { rotateY: 0, rotateX: 0, scale: 1, opacity: 1, ease: 'none', scrollTrigger: { trigger: f, start: 'top 90%', end: 'center 60%', scrub: .6 } });
-        });
-      });
-      gsap.utils.toArray('.tour-list .feat > div:not(.shotbox)').forEach(function (el) {
-        gsap.from(el, { y: 30, opacity: 0, duration: .8, ease: 'power3.out', scrollTrigger: once(el, 'top 85%') });
+      // ---- 09 glossary: three tiny grids show the three kinds of forgetting ----
+      document.querySelectorAll('.mini').forEach(function (m) {
+        var sq = m.querySelectorAll('i'), kind = m.dataset.kind, t = gsap.timeline({ repeat: -1, repeatDelay: 1.2, paused: true });
+        if (kind === 'sel') {
+          var gone = [].filter.call(sq, function (_, i) { return i % 4 !== 0; });
+          t.to(gone, { scale: 0, opacity: 0, duration: .4, stagger: .06, ease: 'power2.in' }).to(gone, { scale: 1, opacity: 1, duration: .4, stagger: .04, delay: 1 });
+        } else if (kind === 'glob') {
+          t.to(sq, { backgroundColor: '#ef4444', duration: .3, stagger: .03 }).to(sq, { scale: 0, opacity: 0, duration: .35, stagger: .03 }, '+=.3').to(sq, { scale: 1, opacity: 1, backgroundColor: 'rgba(239,68,68,.35)', duration: .3, delay: 1 });
+        } else {
+          t.from(sq, { x: function () { return gsap.utils.random(-40, 40); }, y: function () { return gsap.utils.random(-30, 30); }, opacity: 0, duration: .6, stagger: .06, ease: 'power3.out' }).to({}, { duration: 1 });
+        }
+        ScrollTrigger.create({ trigger: m, start: 'top 90%', end: 'bottom 10%', onToggle: function (self) { self.isActive ? t.play() : t.pause(); } });
       });
 
-      // ---- 09 install: the command types itself ----
+      // ---- 10 install: the command types itself ----
       document.querySelectorAll('.term.type code').forEach(function (c) {
         var tw = typeIn(c, { paused: true });
         ScrollTrigger.create({ trigger: c, start: 'top 85%', once: true, onEnter: function () { tw.play(); } });

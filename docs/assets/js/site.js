@@ -74,7 +74,7 @@
 
   // generic reveal for section heads and cards
   var mm = gsap.matchMedia();
-  ['hero', 'desk', 'story'].forEach(function (k) {
+  ['hero', 'desk', 'puzzle', 'story'].forEach(function (k) {
     if (Scenes[k]) Scenes[k].init(mm, lenis);
   });
 
