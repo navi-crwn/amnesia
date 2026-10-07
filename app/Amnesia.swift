@@ -1457,8 +1457,8 @@ func alertWindow() -> NSWindow? {
 @MainActor
 func runAlert(_ a: NSAlert) -> NSApplication.ModalResponse {
     NSApp.activate(ignoringOtherApps: true)
-    // v5.18: tombol utama berwarna website (indigo, merah kalau berbahaya)
-    if let b = a.buttons.first { b.bezelColor = b.hasDestructiveAction ? Th.nsRed : Th.nsIndigo }
+    // v5.18.1: JANGAN set bezelColor di tombol NSAlert: di macOS 26 tombol utamanya jadi tidak terlihat.
+    // Tombol utama popup memakai warna aksen Mac (bawaan sistem).
     if Shots.on { return a.runModal() }
     // v5.13: jendela belum terbuka (hanya ikon menu bar) → buka dulu, supaya popup bisa menempel di sana
     if alertWindow() == nil, let open = Opener.open {
@@ -2283,12 +2283,6 @@ enum Th {
         NSColor(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
                 blue: CGFloat(hex & 0xFF) / 255, alpha: a)
     }
-    /// versi NSColor (untuk tombol NSAlert)
-    static func nsDyn(_ dark: UInt32, _ light: UInt32) -> NSColor {
-        NSColor(name: nil) { ap in ap.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? Th.ns(dark) : Th.ns(light) }
-    }
-    static let nsIndigo = nsDyn(0x6366F1, 0x4F46E5)
-    static let nsRed = nsDyn(0xEF4444, 0xDC2626)
     /// warna yang berganti sendiri: `dark` di mode gelap, `light` di mode terang
     static func dyn(_ dark: UInt32, _ light: UInt32, _ da: CGFloat = 1, _ la: CGFloat = 1) -> Color {
         Color(nsColor: NSColor(name: nil) { ap in
@@ -6475,7 +6469,7 @@ enum Shots {
                     }
                     Text(ok).font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
                         .frame(maxWidth: .infinity).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(Th.indigo))
+                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.accentColor))
                 }
             }
             .padding(20)

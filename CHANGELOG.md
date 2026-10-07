@@ -5,6 +5,11 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.18.1 — 2026-10-07
+
+### Fixed
+- **The main popup button was invisible** (for example Turn Off or Turn On Amnesia, only Cancel showed). v5.18 gave that button the indigo website color, and on macOS 26 that made it disappear. The main button is back and uses your Mac's accent color again, like before v5.18. The colored boxes inside popups stay in the website colors.
+
 ## v5.18 — 2026-10-07
 
 ### Changed

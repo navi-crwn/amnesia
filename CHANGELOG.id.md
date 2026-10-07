@@ -5,6 +5,11 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.18.1 — 2026-10-07
+
+### Diperbaiki
+- **Tombol utama popup tidak terlihat** (misalnya Matikan atau Aktifkan Amnesia, hanya Batal yang muncul). Di v5.18 tombol itu diberi warna indigo website, dan di macOS 26 justru membuatnya hilang. Sekarang tombol utamanya muncul lagi dengan warna aksen Mac kamu, seperti sebelum v5.18. Kotak berwarna di dalam popup tetap memakai warna website.
+
 ## v5.18 — 2026-10-07
 
 ### Diubah
