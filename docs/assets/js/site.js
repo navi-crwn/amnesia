@@ -71,31 +71,107 @@
     t.innerHTML += t.innerHTML;
   });
 
-  // ---------- GitHub numbers (stars, forks, latest version) ----------
+  // ---------- GitHub numbers (version, languages, commits, releases…) ----------
   // Read straight from the public GitHub API by the visitor's browser. No cookies,
   // no referrer, cached for an hour. If it fails, the built-in values stay.
+  // The star count is never shown, only the "Star this repo" button.
   (function () {
-    var KEY = 'gh-repo', repo = 'https://api.github.com/repos/navi-crwn/amnesia-mac';
-    function fmt(n) { return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k' : String(n); }
-    function apply(d) {
-      if (typeof d.stars === 'number') document.querySelectorAll('[data-gh=stars]').forEach(function (e) { e.textContent = fmt(d.stars); });
-      if (typeof d.forks === 'number') document.querySelectorAll('[data-gh=forks]').forEach(function (e) { e.textContent = fmt(d.forks); });
-      if (d.version) document.querySelectorAll('[data-gh=version]').forEach(function (e) { e.textContent = d.version; });
+    var KEY = 'gh-repo-v2', repo = 'https://api.github.com/repos/navi-crwn/amnesia-mac';
+    var COLORS = ['var(--orange)', 'var(--green)', 'var(--cyan)', 'var(--indigo)', 'var(--pink)', 'var(--violet)'];
+    var data = null;
+    function all(sel, f) { document.querySelectorAll('[data-gh=' + sel + ']').forEach(f); }
+    function num(n) { return typeof n === 'number' ? n.toLocaleString(root.lang === 'id' ? 'id-ID' : 'en-US') : null; }
+    function day(iso) {
+      return new Date(iso).toLocaleDateString(root.lang === 'id' ? 'id-ID' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     }
+    function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+    function apply(d) {
+      if (d.version) all('version', function (e) { e.textContent = d.version; });
+      [['commits', d.commits], ['releases', d.releases], ['contributors', d.contributors]].forEach(function (x) {
+        var v = num(x[1]); if (v) all(x[0], function (e) { e.textContent = v; });
+      });
+      if (d.pushed) all('pushed', function (e) { e.textContent = day(d.pushed); });
+      if (d.days && d.days.length) all('since', function (e) {
+        var n = d.days.reduce(function (a, x) { return a + x[1]; }, 0);
+        var since = day(d.days[0][0] + 'T12:00:00Z');
+        e.textContent = root.lang === 'id' ? n + ' commit sejak ' + since : n + (n === 1 ? ' commit' : ' commits') + ' since ' + since;
+      });
+      if (d.langs && d.langs.length) {
+        all('langbar', function (e) {
+          e.textContent = '';
+          d.langs.forEach(function (l, i) { var s = el('i'); s.style.width = l[1] + '%'; s.style.setProperty('--c', COLORS[i % COLORS.length]); e.appendChild(s); });
+          e.hidden = false;
+        });
+        all('langs', function (e) {
+          e.textContent = '';
+          d.langs.forEach(function (l, i) {
+            var s = el('span'), dot = el('i'); dot.style.setProperty('--c', COLORS[i % COLORS.length]);
+            s.appendChild(dot); s.appendChild(document.createTextNode(l[0] + ' ')); s.appendChild(el('small', null, l[1].toFixed(1) + '%'));
+            e.appendChild(s);
+          });
+          e.hidden = false;
+        });
+        all('langs-mini', function (e) {
+          e.textContent = '';
+          d.langs.slice(0, 2).forEach(function (l, i) {
+            var s = el('span'), dot = el('i'); dot.style.setProperty('--c', COLORS[i]);
+            s.appendChild(dot); s.appendChild(document.createTextNode(l[0])); e.appendChild(s);
+          });
+        });
+      }
+    }
+    function done(d) {
+      data = UI.gh = d; apply(d);
+      document.dispatchEvent(new CustomEvent('amnesia:gh', { detail: d }));
+    }
+    document.addEventListener('amnesia:lang', function () { if (data) apply(data); });
+
     var c = null;
-    try { c = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
-    if (c && Date.now() - c.t < 3600e3) { apply(c); return; }
+    try { c = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+    if (c && Date.now() - c.t < 3600e3) { done(c); return; }
     if (!window.fetch) return;
     var opt = { credentials: 'omit', referrerPolicy: 'no-referrer', headers: { Accept: 'application/vnd.github+json' } };
+    function get(path) {
+      return fetch(repo + path, opt).then(function (r) {
+        if (!r.ok) return { json: null, link: '' };
+        return r.json().then(function (j) { return { json: j, link: r.headers.get('Link') || '' }; });
+      }).catch(function () { return { json: null, link: '' }; });
+    }
+    // a list asked for 1 per page: the last page number in the Link header is the total
+    function count(res) {
+      if (!res.json) return undefined;
+      var m = /[?&]page=(\d+)>;\s*rel="last"/.exec(res.link);
+      return m ? +m[1] : res.json.length;
+    }
     Promise.all([
-      fetch(repo, opt).then(function (r) { return r.ok ? r.json() : {}; }),
-      fetch(repo + '/releases/latest', opt).then(function (r) { return r.ok ? r.json() : {}; })
-    ]).then(function (res) {
-      var d = { t: Date.now(), stars: res[0].stargazers_count, forks: res[0].forks_count, version: res[1].tag_name };
-      if (d.version && d.version[0] !== 'v') d.version = 'v' + d.version;
-      apply(d);
-      try { sessionStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
-    }).catch(function () {});
+      get(''), get('/releases/latest'), get('/languages'), get('/commits?per_page=100'),
+      get('/commits?per_page=1'), get('/releases?per_page=1'), get('/contributors?per_page=1&anon=1')
+    ]).then(function (r) {
+      var d = { t: Date.now() };
+      if (r[0].json) d.pushed = r[0].json.pushed_at;
+      if (r[1].json && r[1].json.tag_name) d.version = (r[1].json.tag_name[0] === 'v' ? '' : 'v') + r[1].json.tag_name;
+      if (r[2].json) {
+        var tot = 0, k;
+        for (k in r[2].json) tot += r[2].json[k];
+        d.langs = Object.keys(r[2].json).map(function (k) { return [k, r[2].json[k] * 100 / (tot || 1)]; })
+          .filter(function (l) { return l[1] >= 0.5; });
+      }
+      if (r[3].json && r[3].json.length) {
+        // commits per day, from the oldest commit in the list (max 84 days back) to today
+        var per = {};
+        r[3].json.forEach(function (x) { var t = ((x.commit || {}).author || {}).date; if (t) per[t.slice(0, 10)] = (per[t.slice(0, 10)] || 0) + 1; });
+        var keys = Object.keys(per).sort(), end = new Date(), start = new Date(keys[0] + 'T00:00:00Z');
+        if ((end - start) / 864e5 > 83) start = new Date(end - 83 * 864e5);
+        d.days = [];
+        for (var t = new Date(start.toISOString().slice(0, 10) + 'T00:00:00Z'); t <= end; t = new Date(+t + 864e5)) {
+          var ks = t.toISOString().slice(0, 10); d.days.push([ks, per[ks] || 0]);
+        }
+      }
+      d.commits = count(r[4]); d.releases = count(r[5]); d.contributors = count(r[6]);
+      if (!r[0].json && !r[1].json) return; // GitHub didn't answer: keep the built-in values
+      done(d);
+      try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
+    });
   })();
 
   // ---------- bento: a light that follows the cursor ----------

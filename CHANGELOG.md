@@ -28,6 +28,16 @@ You can see the version number in the app too (next to the title and at the bott
   - **Running text** between the features and the app tour.
   - **New footer:** logo and tagline, a repo card (MIT, version, stars), Product / Source / Legal columns and a trademark note.
   - New files: `docs/assets/js/scenes/tutorial.js` and `docs/assets/js/scenes/shield3d.js` (three.js 0.186.1 from jsDelivr). The website no longer uses screenshots.
+- **Update (v4): open source front and center.**
+  - **Hero:** its own backdrop (a lit dot grid with a soft brand light), a **floating pill menu bar**, a **Star this repo** button next to Download, and a small repo card (name, Public, MIT, version, main languages).
+  - **Star counts are gone everywhere** (hero badge, Install badges, GitHub card, footer). Only the "Star this repo" button stays.
+  - **New section 01 "Built in the open":** Star / Fork / Open an issue buttons and a big repo card with a language bar and License, Latest release, Commits, Releases, Contributors and Last push, read live from the GitHub API (no cookies, no referrer, cached for 1 hour). The other sections are now numbered 02 to 12.
+  - **3D "Every commit" chart:** one column per day on a grid of tiles, as tall as that day's commits. Hover or tap a column for the date. If GitHub can't be reached, a link to the commits shows instead.
+  - **3D safe in Profile Vault:** the dial turns a combination, the handle turns and the rim lights up green, in the middle of the ring of apps.
+  - **FAQ:** "Still stuck?" is now one full-width row under both columns.
+  - **Indonesian text rewritten** across the site (about 140 sentences) so it reads naturally instead of like a translation. Button names from the app stay the same.
+  - **Fix:** in the app tour, the dots under the text no longer stay on the last step after jumping back up the page.
+  - New file: `docs/assets/js/scenes/objects3d.js`.
 
 ## v5.17.1 — 2026-10-07
 

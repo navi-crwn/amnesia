@@ -28,6 +28,16 @@ Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
   - **Running text** di antara fitur dan tur app.
   - **Footer baru:** logo dan tagline, kartu repo (MIT, versi, bintang), kolom Produk / Sumber / Legal, dan catatan merek dagang.
   - File baru: `docs/assets/js/scenes/tutorial.js` dan `docs/assets/js/scenes/shield3d.js` (three.js 0.186.1 dari jsDelivr). Website tidak memakai screenshot lagi.
+- **Update (v4): open source jadi sorotan.**
+  - **Hero:** latar belakang sendiri (grid titik dengan cahaya lembut warna brand), **menu bar pil yang melayang**, tombol **Kasih star repo ini** di sebelah Download, dan kartu repo kecil (nama, Public, MIT, versi, bahasa utama).
+  - **Jumlah bintang tidak ditampilkan lagi di mana pun** (badge hero, badge Install, kartu GitHub, footer). Yang tersisa hanya tombol "Kasih star repo ini".
+  - **Bagian baru 01 "Dibuat secara terbuka":** tombol Star / Fork / Buka issue dan kartu repo besar berisi bar bahasa serta Lisensi, Rilis terbaru, Commit, Rilis, Kontributor, dan Update terakhir, dibaca langsung dari GitHub API (tanpa cookie, tanpa referrer, disimpan 1 jam). Bagian lain sekarang bernomor 02 sampai 12.
+  - **Grafik 3D "Semua commit":** satu kolom per hari di atas grid ubin, tingginya sesuai jumlah commit hari itu. Arahkan kursor atau ketuk kolom untuk melihat tanggalnya. Kalau GitHub tidak bisa dihubungi, yang muncul link ke daftar commit.
+  - **Brankas 3D di Profile Vault:** dial berputar memasukkan kombinasi, gagang berputar, dan cincinnya menyala hijau, di tengah lingkaran app.
+  - **FAQ:** "Masih bingung?" sekarang satu baris penuh di bawah kedua kolom.
+  - **Teks bahasa Indonesia ditulis ulang** di seluruh website (sekitar 140 kalimat) supaya terasa natural, bukan seperti terjemahan. Nama tombol dari app tetap sama.
+  - **Perbaikan:** di tur app, titik-titik di bawah teks tidak lagi tertinggal di langkah terakhir setelah loncat kembali ke atas.
+  - File baru: `docs/assets/js/scenes/objects3d.js`.
 
 ## v5.17.1 — 2026-10-07
 

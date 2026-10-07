@@ -1,6 +1,7 @@
 HAPUS  ~/Library/Application Support/BraveSoftware
 HAPUS  ~/Library/Application Support/CrashReporter
 HAPUS  ~/Library/Application Support/DifferentialPrivacy
+HAPUS  ~/Library/Application Support/FaceTime
 HAPUS  ~/Library/Application Support/FileProvider
 HAPUS  ~/Library/Application Support/Google/Chrome
 HAPUS  ~/Library/Application Support/Google/RLZ
@@ -182,6 +183,7 @@ HAPUS  ~/Library/Group Containers/group.com.apple.energykit
 HAPUS  ~/Library/Group Containers/group.com.apple.feedback
 HAPUS  ~/Library/Group Containers/group.com.apple.feedbacklogger
 HAPUS  ~/Library/Group Containers/group.com.apple.findmy.findmylocateagent
+HAPUS  ~/Library/Group Containers/group.com.apple.fskit.settings
 HAPUS  ~/Library/Group Containers/group.com.apple.helpviewer.content
 HAPUS  ~/Library/Group Containers/group.com.apple.icloud.searchpartyuseragent
 HAPUS  ~/Library/Group Containers/group.com.apple.liveactivitiesd
@@ -198,12 +200,14 @@ HAPUS  ~/Library/Group Containers/group.com.apple.secure-control-center-preferen
 HAPUS  ~/Library/Group Containers/group.com.apple.shortcuts
 HAPUS  ~/Library/Group Containers/group.com.apple.siri.ASR.shared
 HAPUS  ~/Library/Group Containers/group.com.apple.siri.GMSSELFIngestor
+HAPUS  ~/Library/Group Containers/group.com.apple.siri.referenceResolution
 HAPUS  ~/Library/Group Containers/group.com.apple.siri.sirisuggestions
 HAPUS  ~/Library/Group Containers/group.com.apple.siri.userfeedbacklearning
 HAPUS  ~/Library/Group Containers/group.com.apple.spotlight
 HAPUS  ~/Library/Group Containers/group.com.apple.storekit
 HAPUS  ~/Library/Group Containers/group.com.apple.studentd
 HAPUS  ~/Library/Group Containers/group.com.apple.swtransparency
+HAPUS  ~/Library/Group Containers/group.com.apple.telephonyutilities.callservicesd
 HAPUS  ~/Library/Group Containers/group.com.apple.tips
 HAPUS  ~/Library/Group Containers/group.com.apple.tipsnext
 HAPUS  ~/Library/Group Containers/group.com.apple.transparency
@@ -250,6 +254,7 @@ HAPUS  ~/Library/Caches/com.apple.AvatarKit
 HAPUS  ~/Library/Caches/com.apple.CloudTelemetry
 HAPUS  ~/Library/Caches/com.apple.DictionaryServices
 HAPUS  ~/Library/Caches/com.apple.FeatureAccessAgent
+HAPUS  ~/Library/Caches/com.apple.HomeKit
 HAPUS  ~/Library/Caches/com.apple.Safari
 HAPUS  ~/Library/Caches/com.apple.Spotlight
 HAPUS  ~/Library/Caches/com.apple.akd
@@ -261,6 +266,7 @@ HAPUS  ~/Library/Caches/com.apple.appstoreagent
 HAPUS  ~/Library/Caches/com.apple.businessservicesd
 HAPUS  ~/Library/Caches/com.apple.cache_delete
 HAPUS  ~/Library/Caches/com.apple.commerce
+HAPUS  ~/Library/Caches/com.apple.containermanagerd
 HAPUS  ~/Library/Caches/com.apple.ctcategories.service
 HAPUS  ~/Library/Caches/com.apple.dataaccess.dataaccessd
 HAPUS  ~/Library/Caches/com.apple.duetexpertd
@@ -269,6 +275,7 @@ HAPUS  ~/Library/Caches/com.apple.feedbacklogger
 HAPUS  ~/Library/Caches/com.apple.findmy.findmylocateagent
 HAPUS  ~/Library/Caches/com.apple.geoanalyticsd
 HAPUS  ~/Library/Caches/com.apple.helpd
+HAPUS  ~/Library/Caches/com.apple.homed
 HAPUS  ~/Library/Caches/com.apple.iTunes
 HAPUS  ~/Library/Caches/com.apple.icloudwebd
 HAPUS  ~/Library/Caches/com.apple.itunescloudd
@@ -280,9 +287,11 @@ HAPUS  ~/Library/Caches/com.apple.preferencepanes.usercache
 HAPUS  ~/Library/Caches/com.apple.proactive.eventtracker
 HAPUS  ~/Library/Caches/com.apple.python
 HAPUS  ~/Library/Caches/com.apple.remindd
+HAPUS  ~/Library/Caches/com.apple.sirittsd
 HAPUS  ~/Library/Caches/com.apple.storekitagent
 HAPUS  ~/Library/Caches/com.apple.systemsettings.menucache
 HAPUS  ~/Library/Caches/com.apple.tipsd
+HAPUS  ~/Library/Logs/Assistant
 HAPUS  ~/Library/Logs/Baseband
 HAPUS  ~/Library/Logs/Claude
 HAPUS  ~/Library/Logs/CrashReporter
@@ -310,10 +319,12 @@ HAPUS  ~/Downloads/amnesia-v5.17.zip
 HAPUS  ~/Downloads/amnesia-v5.zip
 HAPUS  ~/Downloads/amnesia-website-v1-r2.zip
 HAPUS  ~/Downloads/amnesia-website-v2.zip
+HAPUS  ~/Downloads/amnesia-website-v3.zip
+HAPUS  ~/Downloads/bheart.mid
 HAPUS  ~/Downloads/m2-res_1080p.mp4
 HAPUS  ~/Downloads/salt.md · the open-source workspace for people and agents.html
 HAPUS  ~/Downloads/salt.md · the open-source workspace for people and agents_files
 HAPUS  ~/.Trash/.DS_Store
 HAPUS  ~/.Trash/Amnesia.app
 HAPUS  ~/.Trash/amnesia-lama-20261007-0103
---- dry-run (logout): 318 items would be deleted. Nothing was deleted. ---
+--- dry-run (logout): 329 items would be deleted. Nothing was deleted. ---

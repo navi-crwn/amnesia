@@ -47,10 +47,11 @@
         pieces.forEach(function (p) { aims[p.dataset.p] = aim(p); });
         var tl = gsap.timeline({
           defaults: { ease: 'power3.inOut', duration: .5 },
+          // follow the timeline itself (not the scroll), so the dots stay right while scrub catches up
+          onUpdate: function () { mark(); },
           scrollTrigger: {
             trigger: box, start: 'top top', end: '+=' + (steps.length * 50) + '%',
-            scrub: 1, pin: true, anticipatePin: 1,
-            onUpdate: function () { mark(); }
+            scrub: 1, pin: true, anticipatePin: 1
           }
         });
 
