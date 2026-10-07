@@ -2356,6 +2356,24 @@ struct PillLabel<L: View>: View {
     }
 }
 
+/// v5.17.1: ScrollView dengan sedikit ruang di dalamnya. Tanpa ini, garis/bayangan/cincin fokus
+/// tombol dan kotak yang menempel ke pinggir terpotong (terutama saat di-hover).
+/// Padding negatif di luar membuat tata letak tetap sama seperti ScrollView biasa.
+struct RoomyScroll<Content: View>: View {
+    var vertical = true
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ScrollView {
+            content
+                .padding(.horizontal, 10)
+                .padding(.vertical, vertical ? 8 : 0)
+        }
+        .padding(.horizontal, -10)
+        .padding(.vertical, vertical ? -8 : 0)
+    }
+}
+
 struct Pill: ButtonStyle {
     var colors: [Color]
     func makeBody(configuration: Configuration) -> some View {
@@ -2677,7 +2695,7 @@ struct MainView: View {
     }
 
     private var home: some View {
-        ScrollView {
+        RoomyScroll {
         VStack(spacing: 12) {
             HStack(spacing: 10) {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 40, height: 40)
@@ -2813,7 +2831,7 @@ struct VaultView: View {
     static let bigMB = 500.0
 
     var body: some View {
-        ScrollView {
+        RoomyScroll {
             VStack(spacing: 14) {
                 PageHeader(title: "Profile Vault", icon: "lock.rectangle.stack.fill", colors: Pal.vault, back: back)
                 if let v = m.vault {
@@ -3553,7 +3571,7 @@ struct HistoryView: View {
     @State private var events: [HistEvent] = []
 
     var body: some View {
-        ScrollView {
+        RoomyScroll {
             VStack(spacing: 14) {
                 PageHeader(title: T("History", "Riwayat"), icon: "clock.arrow.circlepath", colors: Pal.gray, back: back)
                 Text(T("What Amnesia did and when: cleanups, snapshots, restores and backups. Only the time and the app "
@@ -3626,7 +3644,7 @@ struct MoveView: View {
     @State private var backupPw = ""
 
     var body: some View {
-        ScrollView {
+        RoomyScroll {
             VStack(spacing: 14) {
                 PageHeader(title: T("Move to a New Mac", "Pindah Mac"), icon: "arrow.left.arrow.right", colors: Pal.backup, back: back)
                 Card {
@@ -3814,7 +3832,7 @@ struct KeepView: View {
                          "Yang ada di sini TIDAK dihapus saat logout. Folder Keep kamu dan ~/.amnesia selalu aman."))
                 .frame(maxWidth: .infinity, alignment: .leading)
             KeepFolderCard()
-            ScrollView {
+            RoomyScroll(vertical: false) {
                 LazyVStack(spacing: 8) {
                     AppleKeepCard { entries = Keep.entries() }
                     ForEach(entries.filter { !applePaths.contains($0) }, id: \.self) { e in row(e) }
@@ -4125,7 +4143,7 @@ struct AppPickList: View {
     @State private var sizes: [String: String] = [:]
 
     var body: some View {
-        ScrollView {
+        RoomyScroll(vertical: false) {
             LazyVStack(spacing: 6) {
                 ForEach(apps) { a in row(a) }
             }
@@ -4746,6 +4764,7 @@ struct RestoreFilesSheet: View {
         }
         .padding(22)
         .frame(width: 520)
+        .tint(Pal.ink)
         .onAppear { roots = job.items.filter { r in !job.items.contains { r.path.hasPrefix($0.path + "/") } } }
     }
 
@@ -4929,7 +4948,7 @@ struct BackupView: View {
     }
 
     var body: some View {
-        ScrollView {
+        RoomyScroll {
             VStack(spacing: 14) {
                 PageHeader(title: "Backup", icon: "externaldrive.fill", colors: Pal.backup, back: back)
                     .overlay(alignment: .trailing) {
@@ -5734,7 +5753,7 @@ struct SettingsView: View {
     @State private var atLogin = Setting.openAtLogin.isOn
 
     var body: some View {
-        ScrollView {
+        RoomyScroll {
             VStack(spacing: 14) {
                 PageHeader(title: T("Settings", "Pengaturan"), icon: "gearshape.fill", colors: Pal.gray, back: back)
                 language
@@ -5944,7 +5963,7 @@ struct PreviewView: View {
                     Button { m.updateReport() } label: { Label(T("Refresh", "Muat ulang"), systemImage: "arrow.clockwise") }
                         .buttonStyle(.plain).font(.system(size: 11, weight: .semibold)).disabled(m.reportBusy)
                 }
-                ScrollView {
+                RoomyScroll(vertical: false) {
                     LazyVStack(spacing: 8) {
                         ForEach(shown) { grp in group(grp) }
                         if hiddenCount > 0 {

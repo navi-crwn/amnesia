@@ -5,6 +5,12 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.17.1 — 2026-10-07
+
+### Fixed
+- **Buttons and tiles no longer get cut off at the edges.** On every page (home, Profile Vault, Backup, Settings, History, Move Mac, the Keep List and the What Gets Deleted list), anything touching the left or right edge had its border, shadow or focus ring clipped, most visible when you hovered a tile in the right column. The scroll areas now leave a little room inside, and the layout looks the same as before.
+- **Restore Files window** uses the Amnesia indigo for its main button instead of your Mac's accent color, so it matches the rest of the app.
+
 ## v5.17 — 2026-10-07
 
 ### Added

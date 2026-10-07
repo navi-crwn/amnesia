@@ -14,6 +14,7 @@ HAPUS  ~/Library/Containers/com.apple.Safari
 HAPUS  ~/Library/Containers/com.apple.Safari.CacheDeleteExtension
 HAPUS  ~/Library/Containers/com.apple.Safari.SafariLinkExtension
 HAPUS  ~/Library/Containers/com.apple.SafariPlatformSupport.Helper
+HAPUS  ~/Library/Containers/com.apple.ScreenTimeAgent
 HAPUS  ~/Library/Containers/com.apple.TV.TVCacheExtension
 HAPUS  ~/Library/Containers/com.apple.UsageTrackingAgent
 HAPUS  ~/Library/Containers/com.apple.WindowManager.controls
@@ -30,6 +31,9 @@ HAPUS  ~/Library/Containers/com.apple.lighthouse.BiomeSELFIngestor
 HAPUS  ~/Library/Containers/com.apple.lighthouse.IFTelemetrySELFIngestor
 HAPUS  ~/Library/Containers/com.apple.lighthouse.IFTranscriptSELFIngestor
 HAPUS  ~/Library/Containers/com.apple.lighthouse.SAExtensionOrchestrator
+HAPUS  ~/Library/Containers/com.apple.mediaanalysisd
+HAPUS  ~/Library/Containers/com.apple.photoanalysisd
+HAPUS  ~/Library/Containers/com.apple.photolibraryd
 HAPUS  ~/Library/Containers/com.apple.quicklook.QuickLookUIService
 HAPUS  ~/Library/Containers/com.apple.quicklook.ui.helper
 HAPUS  ~/Library/Containers/com.apple.routined
@@ -50,7 +54,9 @@ HAPUS  ~/Library/Group Containers/group.com.apple.FamilyControls
 HAPUS  ~/Library/Group Containers/group.com.apple.FileProvider.DomainCaching
 HAPUS  ~/Library/Group Containers/group.com.apple.ManagedSettings
 HAPUS  ~/Library/Group Containers/group.com.apple.PegasusConfiguration
+HAPUS  ~/Library/Group Containers/group.com.apple.ScreenTime
 HAPUS  ~/Library/Group Containers/group.com.apple.amsondevicestoraged
+HAPUS  ~/Library/Group Containers/group.com.apple.appstoreagent
 HAPUS  ~/Library/Group Containers/group.com.apple.contacts
 HAPUS  ~/Library/Group Containers/group.com.apple.controlcenter
 HAPUS  ~/Library/Group Containers/group.com.apple.corerepair
@@ -61,6 +67,7 @@ HAPUS  ~/Library/Group Containers/group.com.apple.helpviewer.content
 HAPUS  ~/Library/Group Containers/group.com.apple.icloud.searchpartyuseragent
 HAPUS  ~/Library/Group Containers/group.com.apple.liveactivitiesd
 HAPUS  ~/Library/Group Containers/group.com.apple.mobiletimerd
+HAPUS  ~/Library/Group Containers/group.com.apple.photolibraryd.private
 HAPUS  ~/Library/Group Containers/group.com.apple.portrait.BackgroundReplacement
 HAPUS  ~/Library/Group Containers/group.com.apple.replayd
 HAPUS  ~/Library/Group Containers/group.com.apple.replicatord
@@ -95,6 +102,7 @@ HAPUS  ~/Library/Preferences/com.amnesia.shots.plist
 HAPUS  ~/Library/Preferences/com.google.Keystone.Agent.plist
 HAPUS  ~/Library/Preferences/diagnostics_agent.plist
 HAPUS  ~/Library/Preferences/familycircled.plist
+HAPUS  ~/Library/Preferences/no_backup
 HAPUS  ~/Library/Preferences/pbs.plist
 HAPUS  ~/Library/Preferences/systemgroup.com.apple.icloud.searchpartyd.sharedsettings.plist
 HAPUS  ~/Library/Suggestions
@@ -120,6 +128,7 @@ HAPUS  ~/Library/Caches/com.apple.amsengagementd
 HAPUS  ~/Library/Caches/com.apple.ap.adprivacyd
 HAPUS  ~/Library/Caches/com.apple.appleaccountd
 HAPUS  ~/Library/Caches/com.apple.appstoreagent
+HAPUS  ~/Library/Caches/com.apple.cache_delete
 HAPUS  ~/Library/Caches/com.apple.commerce
 HAPUS  ~/Library/Caches/com.apple.ctcategories.service
 HAPUS  ~/Library/Caches/com.apple.dataaccess.dataaccessd
@@ -140,6 +149,7 @@ HAPUS  ~/Library/Caches/com.apple.python
 HAPUS  ~/Library/Caches/com.apple.storekitagent
 HAPUS  ~/Library/Caches/com.apple.systemsettings.menucache
 HAPUS  ~/Library/Caches/com.apple.tipsd
+HAPUS  ~/Library/Logs/Baseband
 HAPUS  ~/Library/Logs/Claude
 HAPUS  ~/Library/Logs/CrashReporter
 HAPUS  ~/Library/Logs/DiagnosticReports
@@ -148,9 +158,11 @@ HAPUS  ~/Desktop/Amnesia.app
 HAPUS  ~/Desktop/Keep
 HAPUS  ~/Desktop/Screenshot 2026-10-07 at 13.20.26.png
 HAPUS  ~/Downloads/amnesia-v5.16.zip
+HAPUS  ~/Downloads/amnesia-v5.17.1-r2.zip
 HAPUS  ~/Downloads/amnesia-v5.17.zip
 HAPUS  ~/Downloads/amnesia-v5.zip
 HAPUS  ~/Downloads/m2-res_1080p.mp4
 HAPUS  ~/.Trash/.DS_Store
 HAPUS  ~/.Trash/Amnesia.app
---- dry-run (logout): 155 item akan dihapus. Tidak ada yang dihapus. ---
+HAPUS  ~/.Trash/amnesia-lama-20261007-0103
+--- dry-run (logout): 167 items would be deleted. Nothing was deleted. ---

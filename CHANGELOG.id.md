@@ -5,6 +5,12 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.17.1 — 2026-10-07
+
+### Diperbaiki
+- **Tombol dan kotak tidak terpotong lagi di pinggir.** Di semua halaman (beranda, Profile Vault, Backup, Pengaturan, Riwayat, Pindah Mac, Keep List dan daftar Yang Akan Dihapus), apa pun yang menempel ke pinggir kiri atau kanan terpotong garis, bayangan atau cincin fokusnya, paling kelihatan saat kotak di kolom kanan di-hover. Sekarang area scroll memberi sedikit ruang di dalamnya, dan tata letaknya tetap sama.
+- **Jendela Pulihkan File** memakai warna indigo Amnesia untuk tombol utamanya, bukan warna aksen Mac kamu, supaya serasi dengan bagian app lainnya.
+
 ## v5.17 — 2026-10-07
 
 ### Baru
