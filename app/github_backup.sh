@@ -22,6 +22,8 @@ pause_once
 __pycache__/
 app/build/
 app/shots/
+video/vo/
+video/out/
 .DS_Store
 keep.conf
 settings.conf

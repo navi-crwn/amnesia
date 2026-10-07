@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Amnesia intro video</title>
+<!-- Video perkenalan Amnesia (item 76). Gaya sama dengan website v4.
+     Parameter URL:
+       ?cut=60|30|15     versi (default 60)
+       &lang=en|id       bahasa judul + teks voiceover (default en)
+       &ar=h|v           h = 1920x1080 (16:9), v = 1080x1920 (9:16) (default h)
+       &play             putar langsung di browser (tanpa ini timeline diam, dipakai render.js)
+       &t=12.5           lompat ke detik tertentu (untuk gambar adegan)
+       &nocap            tanpa teks voiceover di bawah
+     Naskah (waktu, judul, voiceover) ada di script.js. -->
+<style>
+:root{
+  --ground:#07070a;--panel:#0e0f14;--panel-2:#13141b;
+  --line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.14);
+  --text:#e5e7eb;--muted:#8b90a0;
+  --cyan:#22d3ee;--indigo:#6366f1;--pink:#ec4899;--green:#10b981;--red:#ef4444;--orange:#f97316;--violet:#a78bfa;
+  --grad:linear-gradient(120deg,var(--cyan),var(--indigo) 50%,var(--pink));
+  --sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,"DejaVu Sans Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#000;overflow:hidden}
+#stage{position:relative;overflow:hidden;background:var(--ground);color:var(--text);font-family:var(--sans);transform-origin:0 0}
+#stage.h{width:1920px;height:1080px}
+#stage.v{width:1080px;height:1920px}
+
+/* latar: grid titik + cahaya indigo / cyan, seperti hero website */
+.bg{position:absolute;inset:0;pointer-events:none}
+.bg .dots{position:absolute;inset:-40px;background-image:radial-gradient(rgba(255,255,255,.085) 1.4px,transparent 1.6px);background-size:34px 34px;
+  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000 30%,transparent 80%);mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000 30%,transparent 80%)}
+.bg .ga{position:absolute;width:1100px;height:1100px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.30),transparent 62%);right:-300px;top:-420px}
+.bg .gb{position:absolute;width:1000px;height:1000px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.13),transparent 62%);left:-320px;bottom:-460px}
+
+/* judul besar + area gambar + teks voiceover */
+.hl{position:absolute;left:0;right:0;text-align:center;font-weight:800;letter-spacing:-.035em;line-height:1.02}
+.h .hl{top:70px;font-size:84px}
+.v .hl{top:230px;font-size:92px}
+.hl span{position:absolute;left:0;right:0;opacity:0}
+.v .hl span{left:70px;right:70px}
+.hl span.g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.viz{position:absolute;left:0;right:0}
+.h .viz{top:190px;bottom:130px}
+.v .viz{top:520px;bottom:360px}
+.box{position:absolute;left:50%;top:50%;width:1200px;height:640px;margin:-320px 0 0 -600px;opacity:0;visibility:hidden}
+.cap{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.h .cap{bottom:56px}
+.v .cap{bottom:170px;padding:0 60px}
+.cap span{position:absolute;left:0;right:0;bottom:0;opacity:0;display:flex;justify-content:center}
+.cap i{font-style:normal;display:inline-block;max-width:1500px;padding:14px 28px;border-radius:16px;background:rgba(7,7,10,.66);border:1px solid var(--line);
+  font-weight:500;color:#f2f3f7;letter-spacing:-.005em}
+.h .cap i{font-size:34px;line-height:1.3}
+.v .cap i{font-size:40px;line-height:1.3;max-width:960px}
+.nocap .cap{display:none}
+
+/* ikon */
+svg.i{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px}
+.pill{display:inline-flex;align-items:center;gap:10px;border-radius:999px;padding:10px 20px;font-weight:600;font-size:22px}
+.cursor{position:absolute;width:38px;height:38px;left:0;top:0;opacity:0;z-index:20;filter:drop-shadow(0 4px 8px rgba(0,0,0,.6))}
+.ring{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;border:3px solid var(--indigo);opacity:0;z-index:19}
+
+/* logo */
+.g-logo{display:flex;flex-direction:column;align-items:center;justify-content:center}
+.g-logo img{width:230px;height:230px;filter:drop-shadow(0 30px 60px rgba(99,102,241,.45))}
+.g-logo .t{font-size:150px;font-weight:800;letter-spacing:-.05em;margin-top:26px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1}
+.g-logo .s{font-size:36px;color:var(--muted);margin-top:14px;font-weight:500}
+
+/* meja: ikon file */
+.desk-win{position:absolute;inset:0;border-radius:24px;background:linear-gradient(180deg,#101119,#0b0b10);border:1px solid var(--line-2);overflow:hidden}
+.menubar{position:absolute;left:0;right:0;top:0;height:46px;display:flex;align-items:center;gap:22px;padding:0 22px;background:rgba(255,255,255,.04);border-bottom:1px solid var(--line);font-size:18px;color:var(--muted)}
+.menubar b{color:var(--text)}
+.menubar .lo{margin-left:auto;padding:6px 16px;border-radius:999px;background:rgba(239,68,68,.16);border:1px solid rgba(239,68,68,.4);color:#fca5a5;font-weight:600}
+.tile{position:absolute;width:150px;height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border-radius:20px;opacity:0}
+.tile .ic{width:76px;height:76px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:40px}
+.tile .nm{font-size:17px;color:#cfd2dc;max-width:150px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.kept{border:2px solid transparent}
+.tag{position:absolute;padding:6px 14px;border-radius:999px;font-size:17px;font-weight:600;white-space:nowrap;opacity:0;z-index:5}
+.px{position:absolute;width:10px;height:10px;border-radius:3px;opacity:0}
+
+/* Keep */
+.keep-l{position:absolute;left:70px;top:70px;width:440px;height:500px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}
+.keep-l .big{width:220px;height:220px;border-radius:48px;background:rgba(16,185,129,.16);border:2px solid rgba(16,185,129,.5);display:flex;align-items:center;justify-content:center;font-size:120px;color:var(--green);box-shadow:0 0 80px rgba(16,185,129,.25)}
+.keep-l .p{font:600 34px var(--mono)}
+.keep-l .q{font-size:22px;color:var(--muted);text-align:center}
+.keep-r{position:absolute;right:70px;top:60px;width:560px;padding:30px 34px}
+.keep-r h4{margin:0 0 18px;font-size:26px;display:flex;align-items:center;gap:12px}
+.krow{display:flex;align-items:center;gap:16px;padding:15px 0;border-top:1px solid var(--line);font-size:24px;opacity:0}
+.krow .ck{margin-left:auto;color:var(--green);font-size:28px}
+.krow .ic{font-size:26px;color:var(--muted)}
+
+/* vault */
+.safe{position:absolute;left:50%;top:44%;width:330px;height:330px;margin:-165px 0 0 -165px}
+.safe .body{position:absolute;inset:0;border-radius:64px;background:linear-gradient(160deg,#1b1c27,#0d0e14);border:2px solid var(--line-2);box-shadow:0 40px 100px rgba(0,0,0,.6),0 0 0 10px rgba(99,102,241,.06)}
+.safe .rim{position:absolute;inset:18px;border-radius:50px;border:2px solid rgba(99,102,241,.35)}
+.safe svg.dial{position:absolute;left:50%;top:50%;width:200px;height:200px;margin:-100px 0 0 -100px}
+.safe .lk span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.safe .lk .l{opacity:0;color:var(--indigo)}
+.safe .lk{position:absolute;right:-26px;top:-26px;width:76px;height:76px;border-radius:24px;background:var(--panel-2);border:2px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--muted)}
+.app{position:absolute;width:132px;height:132px;border-radius:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-weight:700;opacity:0}
+.app b{font-size:46px;line-height:1}
+.app small{font-size:15px;font-weight:600;opacity:.9}
+.vcap{position:absolute;left:0;right:0;bottom:22px;text-align:center;font-size:24px;color:var(--muted);opacity:0}
+.vcap b{color:var(--text)}
+.btn{position:absolute;left:50%;transform:translateX(-50%);padding:16px 34px;border-radius:14px;font-size:24px;font-weight:700;white-space:nowrap;opacity:0}
+.btn.solid{background:var(--indigo);color:#fff;box-shadow:0 10px 30px rgba(99,102,241,.4)}
+.ok{position:absolute;padding:6px 14px;border-radius:999px;background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.45);color:#6ee7b7;font-size:17px;font-weight:600;opacity:0;white-space:nowrap}
+
+/* jendela app (gaya v5.18) */
+.win{position:absolute;left:50%;top:0;width:620px;height:640px;margin-left:-310px;border-radius:22px;background:#09090d;border:1px solid var(--line-2);overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.6)}
+.win .tb{height:40px;display:flex;align-items:center;gap:9px;padding:0 16px}
+.win .tb i{width:13px;height:13px;border-radius:50%;background:#3a3b45}
+.win .in{padding:6px 28px 0}
+.win .hd{display:flex;align-items:center;gap:14px}
+.win .hd img{width:46px;height:46px}
+.win .hd .n{font-size:27px;font-weight:800}
+.win .hd .vb{font-size:13px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--grad);color:#fff;margin-left:8px;vertical-align:4px}
+.win .hd .sub{font-size:15px;color:var(--muted)}
+.win .gear{margin-left:auto;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted)}
+.st{position:relative;margin-top:18px;border-radius:20px;padding:18px;border:1px solid var(--line-2);background:rgba(255,255,255,.05)}
+.st .on{position:absolute;inset:-1px;border-radius:20px;background:linear-gradient(135deg,rgba(16,185,129,.24),rgba(16,185,129,.06));border:1px solid rgba(16,185,129,.35);opacity:0}
+.st .row{position:relative;display:flex;gap:14px;align-items:center}
+.st .ci{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;flex:none;position:relative}
+.st .ci .a,.st .ci .b{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.st .ci .a{background:rgba(255,255,255,.05);border:1px solid var(--line-2);color:var(--muted)}
+.st .ci .b{background:rgba(16,185,129,.25);border:1px solid rgba(16,185,129,.35);color:var(--green);opacity:0}
+.st .tt{position:relative;height:50px;flex:1}
+.st .tt div{position:absolute;inset:0}
+.st .tt b{display:block;font-size:22px}
+.st .tt small{font-size:14px;color:var(--muted)}
+.st .tt .y{opacity:0}
+.st .pw{position:relative;margin-top:14px;height:44px}
+.st .pw div{position:absolute;inset:0;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:17px;font-weight:700}
+.st .pw .x{background:var(--indigo);color:#fff;box-shadow:0 8px 20px rgba(99,102,241,.35)}
+.st .pw .y{background:rgba(16,185,129,.18);border:1px solid rgba(16,185,129,.3);opacity:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.gt{display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid var(--line)}
+.gt .ib{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+.gt b{display:block;font-size:15px}
+.gt small{font-size:12px;color:var(--muted)}
+.auto{position:absolute;bottom:0;display:flex;flex-direction:column;gap:14px}
+.auto div{padding:10px 18px;border-radius:999px;background:var(--panel);border:1px solid var(--line-2);font-size:19px;display:flex;gap:10px;align-items:center;opacity:0;white-space:nowrap}
+.auto div b{color:var(--green)}
+
+/* backup */
+.bk-src{position:absolute;left:90px;top:50%;margin-top:-80px;width:380px;height:160px;padding:26px;display:flex;gap:20px;align-items:center;opacity:0}
+.bk-src .ic{width:96px;height:96px;border-radius:24px;background:rgba(236,72,153,.15);border:1px solid rgba(236,72,153,.35);color:var(--pink);font-size:50px;display:flex;align-items:center;justify-content:center;flex:none}
+.bk-src b{display:block;font:600 22px var(--mono)}
+.bk-src small{font-size:17px;color:var(--muted)}
+.bk-dst{position:absolute;right:90px;width:330px;height:120px;padding:22px;display:flex;gap:18px;align-items:center;opacity:0}
+.bk-dst .ic{width:72px;height:72px;border-radius:20px;font-size:38px;display:flex;align-items:center;justify-content:center;flex:none}
+.bk-dst b{display:block;font-size:24px}
+.bk-dst small{font-size:16px;color:var(--muted)}
+.bk-dst .ck{margin-left:auto;color:var(--green);font-size:30px;opacity:0}
+svg.lines{position:absolute;inset:0;width:1200px;height:640px;overflow:visible}
+.pk{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--pink);box-shadow:0 0 18px var(--pink);opacity:0}
+
+/* open source */
+.repo{position:absolute;left:50%;top:40px;width:820px;margin-left:-410px;padding:34px 38px;opacity:0}
+.repo .t{display:flex;align-items:center;gap:14px;font-size:30px}
+.repo .t b{font-weight:800}
+.repo .pub{font-size:16px;padding:4px 12px;border-radius:999px;border:1px solid var(--line-2);color:var(--muted)}
+.repo p{font-size:22px;color:var(--muted);margin:16px 0 22px}
+.lbar{display:flex;height:12px;border-radius:99px;overflow:hidden;gap:3px}
+.lbar i{display:block;height:100%}
+.langs{display:flex;gap:22px;margin-top:14px;font-size:17px;color:var(--muted)}
+.langs span{display:flex;gap:8px;align-items:center}
+.langs span i{width:11px;height:11px;border-radius:50%;display:block}
+.meta{display:flex;gap:30px;margin-top:22px;font-size:19px;color:var(--muted)}
+.meta b{color:var(--text)}
+.ob{position:absolute;top:420px;display:flex;gap:18px;left:50%;transform:translateX(-50%)}
+.ob div{padding:16px 30px;border-radius:14px;font-size:24px;font-weight:700;display:flex;gap:10px;align-items:center;opacity:0;white-space:nowrap}
+
+/* Mac dipinjam / hilang */
+.lap{position:absolute;width:620px;height:430px;opacity:0}
+.lap .scr{position:absolute;left:0;right:0;top:0;height:400px;border-radius:22px 22px 8px 8px;border:10px solid #1c1d26;background:radial-gradient(ellipse at 70% 0%,rgba(99,102,241,.22),transparent 60%),#0b0c12;overflow:hidden}
+.lap .base{position:absolute;left:-40px;right:-40px;bottom:0;height:24px;border-radius:4px 4px 16px 16px;background:linear-gradient(#2a2b35,#16171e)}
+.lap .mb{height:26px;background:rgba(255,255,255,.05);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 14px;font-size:13px;color:var(--muted)}
+.lap .cen{position:absolute;inset:26px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.lap .av{width:96px;height:96px;border-radius:50%;background:rgba(255,255,255,.07);border:2px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-size:52px;color:var(--muted)}
+.lap .nm{font-size:22px;font-weight:600}
+.lap .fld{width:250px;height:40px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid var(--line-2);font-size:22px;letter-spacing:.3em;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.lap .clean{position:absolute;inset:26px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;opacity:0}
+.lap .clean b{font-size:30px}
+.lap .clean small{font-size:18px;color:var(--muted)}
+.lap .q{position:absolute;inset:26px 0 0;display:flex;align-items:center;justify-content:center;font-size:150px;color:rgba(239,68,68,.75);font-weight:800;opacity:0}
+.chips{position:absolute;display:flex;flex-direction:column;gap:14px}
+.chip{display:flex;align-items:center;gap:14px;padding:14px 20px;border-radius:16px;background:var(--panel);border:1px solid var(--line-2);font-size:22px;opacity:0;white-space:nowrap}
+.chip .s{margin-left:auto;font-size:17px;font-weight:700;padding:4px 12px;border-radius:999px}
+.chip .ic{font-size:26px;display:flex}
+.hand{position:absolute;padding:10px 18px;border-radius:999px;font-size:19px;font-weight:600;opacity:0;white-space:nowrap}
+.tip{position:absolute;font-size:19px;color:var(--muted);opacity:0;white-space:nowrap}
+.tip b{color:var(--text)}
+/* kata panik */
+.pf{position:absolute;left:50%;width:520px;margin-left:-260px;opacity:0}
+.pf label{display:block;font-size:18px;color:var(--muted);margin-bottom:8px}
+.pf .in{height:58px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line-2);display:flex;align-items:center;padding:0 18px;font:500 26px var(--mono);letter-spacing:.2em}
+.boom{position:absolute;left:0;right:0;text-align:center;font-size:48px;font-weight:800;color:#f87171;opacity:0}
+.boom small{display:block;font-size:22px;font-weight:500;color:var(--muted);margin-top:6px}
+.shard{position:absolute;width:16px;height:16px;border-radius:4px;background:#ef4444;opacity:0}
+
+/* CTA */
+.cta-logo{position:absolute;left:50%;top:0;width:150px;height:150px;margin-left:-75px;opacity:0}
+.term{position:absolute;left:50%;top:190px;width:980px;margin-left:-490px;border-radius:20px;background:#0b0c11;border:1px solid var(--line-2);overflow:hidden;opacity:0}
+.term .tb{height:40px;display:flex;gap:9px;align-items:center;padding:0 16px;border-bottom:1px solid var(--line)}
+.term .tb i{width:13px;height:13px;border-radius:50%;background:#3a3b45}
+.term .c{padding:26px 30px;font:500 28px var(--mono);white-space:pre}
+.term .c .pr{color:var(--green)}
+.term .c .k{display:inline-block;width:14px;height:30px;background:var(--text);vertical-align:-5px;margin-left:2px}
+.url{position:absolute;left:0;right:0;top:400px;text-align:center;font-size:44px;font-weight:700;opacity:0}
+.url span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.warn{position:absolute;left:0;right:0;top:500px;text-align:center;font-size:22px;color:#d4d6de;opacity:0}
+.warn b{color:var(--orange)}
+
+/* vertikal: kotak gambar lebih tinggi, isi disusun ulang sedikit */
+.v .box{width:1000px;height:1100px;margin:-550px 0 0 -500px}
+.v svg.lines{width:1000px;height:1100px}
+
+</style>
+</head>
+<body>
+<div id="stage" class="h">
+  <div class="bg"><div class="dots"></div><div class="ga"></div><div class="gb"></div></div>
+  <div class="hl" id="hl"></div>
+  <div class="viz" id="viz">
+    <div class="box g-logo" id="g-logo">
+      <img src="logo.png" alt="">
+      <div class="t">Amnesia</div>
+      <div class="s" data-en="for macOS · free & open source" data-id="untuk macOS · gratis & open source"></div>
+    </div>
+    <div class="box" id="g-desk"><div class="desk-win"><div class="menubar"><b></b><b>Finder</b><span>File</span><span>Edit</span><span>View</span><span class="lo" data-en="Log Out…" data-id="Log Out…"></span></div></div></div>
+    <div class="box" id="g-lend"></div>
+    <div class="box" id="g-lost"></div>
+    <div class="box" id="g-keep"></div>
+    <div class="box" id="g-vault"></div>
+    <div class="box" id="g-app"></div>
+    <div class="box" id="g-backup"></div>
+    <div class="box" id="g-oss"></div>
+    <div class="box" id="g-cta"></div>
+  </div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script src="script.js"></script>
+<script>
+(() => {
+const Q = new URLSearchParams(location.search);
+const CUT = Q.get('cut') || '60', LANG = Q.get('lang') === 'id' ? 1 : 0, V = Q.get('ar') === 'v';
+const $ = s => document.querySelector(s), stage = $('#stage');
+stage.className = V ? 'v' : 'h';
+if (Q.has('nocap')) stage.classList.add('nocap');
+const L = (en, id) => LANG ? id : en;
+document.querySelectorAll('[data-en]').forEach(e => e.textContent = L(e.dataset.en, e.dataset.id));
+document.documentElement.lang = LANG ? 'id' : 'en';
+
+// tampilan pas di jendela browser (render.js memakai ukuran asli)
+const W = V ? 1080 : 1920, H = V ? 1920 : 1080;
+function fit() { if (Q.has('raw')) return; const k = Math.min(innerWidth / W, innerHeight / H); stage.style.transform = k < 1 ? `scale(${k})` : ''; }
+addEventListener('resize', fit); fit();
+
+// angka acak yang selalu sama (frame video harus sama setiap render)
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+// ikon garis sederhana (dibuat sendiri)
+const P = {
+  doc: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>',
+  img: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/>',
+  folder: '<path d="M3 7.5V18a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-8l-2-2.5H4a1 1 0 0 0-1 1z"/>',
+  down: '<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  cookie: '<path d="M20.5 12.5A8.5 8.5 0 1 1 11.5 3.5a3 3 0 0 0 4 3.5 3 3 0 0 0 5 5.5z"/><circle cx="9" cy="10" r=".9"/><circle cx="14" cy="15" r=".9"/><circle cx="9" cy="15.5" r=".9"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M16 7l2.5 2.5M14 9l2 2"/>',
+  play: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  checkc: '<circle cx="12" cy="12" r="9"/><path d="m8 12.3 2.8 2.8L16.5 9.5"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+  unlock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 7.6-1.7"/>',
+  pin: '<path d="M9 3h6l-1 6 3 3H7l3-3zM12 12v9"/>',
+  shield: '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  xshield: '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/><path d="m9.5 9.5 5 5M14.5 9.5l-5 5"/>',
+  power: '<path d="M12 3v8M7 6.5a7 7 0 1 0 10 0"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  vault: '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5V7M12 17v-1.5"/>',
+  logout: '<path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h9"/>',
+  pause: '<path d="M9 6v12M15 6v12"/>',
+  drive: '<rect x="3" y="13" width="18" height="7" rx="2"/><path d="M5 13 7.5 5h9L19 13M17 16.5h.01"/>',
+  hist: '<path d="M3.5 12a8.5 8.5 0 1 0 2.5-6M3.5 4v4h4"/><path d="M12 8v4l3 2"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  usb: '<rect x="7" y="9" width="10" height="12" rx="2"/><path d="M9 9V3h6v6M10.5 5.5h.01M13.5 5.5h.01"/>',
+  server: '<rect x="3.5" y="4" width="17" height="7" rx="2"/><rect x="3.5" y="13" width="17" height="7" rx="2"/><path d="M7.5 7.5h.01M7.5 16.5h.01"/>',
+  cloud: '<path d="M7 18.5a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9.5z"/>',
+  archive: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v2M12 7v2M12 11v2"/><rect x="10" y="14" width="4" height="4" rx="1"/>',
+  star: '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+  fork: '<circle cx="6" cy="5" r="2"/><circle cx="18" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><path d="M6 7v2a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7M12 12v5"/>',
+  code: '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
+  font: '<path d="M5 19 11 5h2l6 14M8 14h8"/>',
+  user: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+  flame: '<path d="M12 21a6 6 0 0 0 6-6c0-4-3-6-3-9-2 1-4 3.5-4 6-1-1-1.5-2-1.5-3C7.5 10.5 6 12.5 6 15a6 6 0 0 0 6 6z"/>',
+};
+const ic = n => `<svg class="i" viewBox="0 0 24 24">${P[n]}</svg>`;
+const cursorSVG = '<svg viewBox="0 0 24 24" width="38" height="38"><path d="M4 3l7 17 2.4-7.1L20.5 11z" fill="#fff" stroke="#111" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+function cursor(box) {
+  const c = document.createElement('div'); c.className = 'cursor'; c.innerHTML = cursorSVG; box.appendChild(c);
+  const r = document.createElement('div'); r.className = 'ring'; box.appendChild(r);
+  return { c, r };
+}
+const C = { cyan: '34,211,238', indigo: '99,102,241', pink: '236,72,153', green: '16,185,129', orange: '249,115,22', red: '239,68,68', violet: '167,139,250', muted: '139,144,160' };
+const tint = (c, a = .15, b = .35) => `background:rgba(${C[c]},${a});border:1px solid rgba(${C[c]},${b});color:rgb(${C[c]})`;
+
+// ---------- isi tiap kelompok gambar ----------
+const BW = V ? 1000 : 1200, BH = V ? 1100 : 640;
+const ZW = V ? 1.42 : 1, ZS = V ? 1.3 : 1, ZK = V ? 1.25 : 1;   // vertikal: jendela app, brankas dan Keep List diperbesar
+// kotak gambar diperbesar sampai pas dengan area gambar
+const vz = $('#viz'), BK = Math.min(vz.offsetWidth / BW, vz.offsetHeight / BH); document.querySelectorAll('.box').forEach(b => gsap.set(b, { scale: BK }));
+
+// meja: 15 ikon, 2 di antaranya disimpan (Keep, Projects)
+const deskItems = [
+  ['doc', 'Report_final.pdf', 'cyan'], ['img', 'IMG_2041.jpg', 'pink'], ['down', 'Downloads', 'indigo'],
+  ['clock', L('Browser history', 'Riwayat browser'), 'cyan', 'hist'], ['cookie', 'Cookies', 'orange', 'cookie'], ['folder', 'Keep', 'green', 'keep'],
+  ['key', L('Saved logins', 'Login tersimpan'), 'violet', 'login'], ['play', 'Zoom_call.mp4', 'pink'], ['doc', 'invoice.xlsx', 'green'],
+  ['folder', 'Caches', 'muted', 'temp'], ['folder', 'Projects', 'indigo', 'keep'], ['img', 'Screenshot.png', 'cyan'],
+  ['chat', L('Messages', 'Pesan'), 'green'], ['doc', 'tmp_8F2A', 'muted', 'temp'], ['down', 'setup.dmg', 'orange', 'dl'],
+];
+const desk = $('#g-desk'), dwin = desk.querySelector('.desk-win');
+const cols = V ? 3 : 5, gx = V ? 290 : 220, gy = V ? 185 : 180;
+const ox = (BW - (cols - 1) * gx) / 2 - 75, oy = V ? 110 : 80;
+const tiles = deskItems.map((d, i) => {
+  const t = document.createElement('div'); t.className = 'tile' + (d[3] === 'keep' ? ' kept' : '');
+  const x = ox + (i % cols) * gx, y = oy + Math.floor(i / cols) * gy;
+  t.style.left = x + 'px'; t.style.top = y + 'px';
+  t.innerHTML = `<div class="ic" style="${tint(d[2])}">${ic(d[0])}</div><div class="nm">${d[1]}</div>`;
+  dwin.appendChild(t); return { el: t, x: x + 75, y: y + 75, kind: d[3] };
+});
+const tagDefs = [[3, L('History', 'Riwayat'), 'cyan'], [4, 'Cookies', 'orange'], [14, L('Downloads', 'Unduhan'), 'indigo'], [6, L('Logins', 'Login'), 'violet'], [9, L('Temp files', 'File sementara'), 'red'], [13, L('Temp files', 'File sementara'), 'red'], [12, L('Chats', 'Chat'), 'green']];
+const tags = tagDefs.map(([i, txt, c]) => {
+  const g = document.createElement('div'); g.className = 'tag'; g.textContent = txt; g.setAttribute('style', tint(c, .2, .5));
+  g.style.left = (tiles[i].x - 40) + 'px'; g.style.top = (tiles[i].y - 100) + 'px'; dwin.appendChild(g); return g;
+});
+const dcur = cursor(dwin);
+const lo = desk.querySelector('.lo');
+// partikel untuk ikon yang dihapus
+const px = [];
+tiles.forEach(t => { if (t.kind === 'keep') return; for (let k = 0; k < 12; k++) { const p = document.createElement('div'); p.className = 'px'; p.style.left = (t.x - 5) + 'px'; p.style.top = (t.y - 15) + 'px';
+  p.style.background = ['#22d3ee', '#6366f1', '#ec4899', '#8b90a0'][k % 4]; dwin.appendChild(p); px.push({ p, dx: (rnd() - .5) * 260, dy: (rnd() - .5) * 220 - 60, r: rnd() * 180 }); } });
+
+// Keep
+$('#g-keep').innerHTML = `
+  <div class="keep-l"><div class="big">${ic('folder')}</div><div class="p">~/Keep</div>
+    <div class="q">${L('Drop anything here.<br>It is never wiped.', 'Taruh apa saja di sini.<br>Tidak pernah dihapus.')}</div></div>
+  <div class="keep-r card"><h4><span style="color:var(--green)">${ic('pin')}</span> Keep List</h4>
+    ${[['folder', 'Projects'], ['doc', L('Notes', 'Catatan')], ['font', 'Fonts'], ['key', L('Apple account & data', 'Akun & data Apple')], ['code', L('Dev settings you pick', 'Pengaturan dev pilihanmu')]]
+      .map(r => `<div class="krow"><span class="ic">${ic(r[0])}</span>${r[1]}<span class="ck">${ic('checkc')}</span></div>`).join('')}
+  </div>`;
+if (V) { const kl = $('#g-keep .keep-l'), kr = $('#g-keep .keep-r'); kl.style.cssText = 'left:280px;top:20px;width:440px;height:440px'; kr.style.cssText = 'left:220px;right:auto;top:500px;width:560px'; }
+
+// vault
+const vault = $('#g-vault');
+const ticks = Array.from({ length: 24 }, (_, i) => `<line x1="100" y1="${i % 6 ? 18 : 12}" x2="100" y2="26" transform="rotate(${i * 15} 100 100)" stroke="rgba(255,255,255,${i % 6 ? .25 : .6})" stroke-width="3" stroke-linecap="round"/>`).join('');
+vault.innerHTML = `
+  <div class="safe"><div class="body"></div><div class="rim"></div>
+    <svg class="dial" viewBox="0 0 200 200"><circle cx="100" cy="100" r="92" fill="#11121a" stroke="rgba(99,102,241,.45)" stroke-width="3"/>
+      <g class="dg">${ticks}<circle cx="100" cy="100" r="44" fill="#191a25" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
+      <path d="M100 56v88M56 100h88" stroke="rgba(255,255,255,.35)" stroke-width="7" stroke-linecap="round"/><circle cx="100" cy="100" r="14" fill="#6366f1"/></g></svg>
+    <div class="lk"><span class="u">${ic('unlock')}</span><span class="l">${ic('lock')}</span></div></div>
+  <div class="vcap">${L('Encrypted with <b>AES-256</b> · opened only with <b>your password</b>', 'Dienkripsi <b>AES-256</b> · hanya terbuka dengan <b>password kamu</b>')}</div>
+  <div class="btn solid" style="top:${V ? 760 : 470}px">${L('Restore Profiles', 'Pulihkan Profil')}</div>`;
+const apps = [['C', 'Chrome', 'cyan'], ['A', 'Claude', 'orange'], ['W', 'WhatsApp', 'green'], ['O', 'OpenCode', 'violet'], ['G', 'Gemini', 'indigo']];
+const sx = BW / 2, sy = BH * .44;
+const appEls = apps.map((a, i) => {
+  const e = document.createElement('div'); e.className = 'app'; e.setAttribute('style', tint(a[2], .16, .45)); e.innerHTML = `<b>${a[0]}</b><small>${a[1]}</small>`; vault.appendChild(e);
+  const posH = [[70, 40], [250, 250], [70, 440], [BW - 202, 40], [BW - 382, 250]];
+  const start = V ? { x: (BW - 5 * 170) / 2 + i * 170 + 19, y: 20 } : { x: posH[i][0], y: posH[i][1] };
+  const end = { x: (BW - 5 * 150) / 2 + i * 150 + 9, y: V ? 880 : 490 };
+  const ok = document.createElement('div'); ok.className = 'ok'; ok.innerHTML = L('Signed in', 'Sudah login'); ok.style.left = (end.x + 66) + 'px'; ok.style.top = (end.y - 40) + 'px'; vault.appendChild(ok);
+  e.style.left = start.x + 'px'; e.style.top = start.y + 'px';
+  return { e, start, end, ok };
+});
+const vcur = cursor(vault);
+
+// jendela app (v5.18)
+const tilesApp = [['vault', 'Profile Vault', L('Snapshot today', 'Snapshot hari ini'), 'indigo'], ['logout', L('Save & Log Out', 'Simpan & Logout'), L('Save, then log out', 'Simpan, lalu logout'), 'cyan'],
+  ['pause', L('Pause 1 Session', 'Jeda 1 Sesi'), L('Skip once', 'Lewati 1 kali'), 'orange'], ['pin', 'Keep List', L('62 items never wiped', '62 item tidak dihapus'), 'green'],
+  ['drive', 'Backup', L('USB, server or cloud', 'Flashdisk, server, cloud'), 'pink'], ['hist', L('History', 'Riwayat'), L('Cleanups & backups', 'Pembersihan & backup'), 'muted']];
+$('#g-app').innerHTML = `
+  <div class="win"><div class="tb"><i></i><i></i><i></i></div><div class="in">
+    <div class="hd"><img src="logo.png" alt=""><div><div class="n">Amnesia<span class="vb">v5.18</span></div><div class="sub">${L('Your Mac forgets everything, except what you choose.', 'Mac kamu lupa semuanya, kecuali yang kamu pilih.')}</div></div><div class="gear">${ic('gear')}</div></div>
+    <div class="st"><div class="on"></div><div class="row"><div class="ci"><div class="a">${ic('xshield')}</div><div class="b">${ic('shield')}</div></div>
+      <div class="tt"><div class="x"><b>${L('Amnesia is Off', 'Amnesia Mati')}</b><small>${L('Nothing is wiped. Turn it on to protect this Mac.', 'Tidak ada yang dibersihkan.')}</small></div>
+        <div class="y"><b>${L('Amnesia is On', 'Amnesia Aktif')}</b><small>${L('Wiped at logout, restart & shutdown.', 'Dibersihkan saat logout, restart & shutdown.')}</small></div></div></div>
+      <div class="pw"><div class="x">${ic('power')} ${L('Turn On Amnesia', 'Aktifkan Amnesia')}</div><div class="y">${ic('power')} ${L('Turn Off Amnesia', 'Matikan Amnesia')}</div></div></div>
+    <div class="grid">${tilesApp.map(t => `<div class="gt"><div class="ib" style="${tint(t[3], .14, .26)}">${ic(t[0])}</div><div><b>${t[1]}</b><small>${t[2]}</small></div></div>`).join('')}</div>
+  </div></div>
+  <div class="auto">${[L('Log out', 'Logout'), 'Restart', 'Shutdown', L('Login check', 'Cek saat login')].map(s => `<div>${s} <b>${ic('check')}</b> ${L('auto', 'otomatis')}</div>`).join('')}</div>`;
+const autoBox = $('#g-app .auto');
+if (V) { autoBox.style.cssText = 'left:0;right:0;bottom:40px;flex-direction:row;flex-wrap:wrap;justify-content:center'; $('#g-app .win').style.top = '60px'; }
+else autoBox.style.cssText = 'right:20px;bottom:120px';
+const acur = cursor($('#g-app'));
+gsap.set('#g-app .win', { scale: ZW, transformOrigin: '50% 0' }); gsap.set('#g-vault .safe', { scale: ZS }); gsap.set('#g-keep .keep-r', { scale: ZK, transformOrigin: '50% 0' });
+
+// backup
+const dsts = [['usb', L('USB drive', 'Flashdisk'), L('Plug in, back up', 'Colok, backup'), 'orange'], ['server', L('Your server', 'Server kamu'), 'SSH · rsync', 'indigo'], ['cloud', 'Cloud', 'Google Drive · rclone', 'cyan']];
+const bk = $('#g-backup');
+bk.innerHTML = `<svg class="lines" viewBox="0 0 ${BW} ${BH}"></svg>
+  <div class="bk-src card"><div class="ic">${ic('archive')}</div><div><b>amnesia_backup.7z</b><small>${L('Encrypted · your files', 'Terenkripsi · file kamu')}</small></div></div>
+  ${dsts.map(d => `<div class="bk-dst card"><div class="ic" style="${tint(d[3])}">${ic(d[0])}</div><div><b>${d[1]}</b><small>${d[2]}</small></div><span class="ck">${ic('checkc')}</span></div>`).join('')}`;
+const src = bk.querySelector('.bk-src'), dstEls = [...bk.querySelectorAll('.bk-dst')], svgL = bk.querySelector('svg');
+let srcPt, dstPts;
+if (V) {
+  src.style.cssText = `left:${(BW - 380) / 2}px;top:40px;margin:0`;
+  dstEls.forEach((d, i) => d.style.cssText = `left:${(BW - 330) / 2}px;right:auto;top:${520 + i * 190}px`);
+  srcPt = { x: BW / 2, y: 200 }; dstPts = dstEls.map((_, i) => ({ x: BW / 2 + (i - 1) * 120, y: 520 + i * 190 }));
+} else {
+  dstEls.forEach((d, i) => d.style.top = (60 + i * 200) + 'px');
+  srcPt = { x: 470, y: BH / 2 }; dstPts = dstEls.map((_, i) => ({ x: BW - 420, y: 120 + i * 200 }));
+}
+const paths = dstPts.map(p => {
+  const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  l.setAttribute('x1', srcPt.x); l.setAttribute('y1', srcPt.y); l.setAttribute('x2', p.x); l.setAttribute('y2', p.y);
+  l.setAttribute('stroke', 'rgba(236,72,153,.55)'); l.setAttribute('stroke-width', 3); l.setAttribute('stroke-dasharray', '1000'); l.setAttribute('stroke-dashoffset', '1000');
+  svgL.appendChild(l); return l;
+});
+const pks = dstPts.map(() => { const k = document.createElement('div'); k.className = 'pk'; bk.appendChild(k); return k; });
+
+// open source
+const langs = [['Swift', 52, '#f97316'], ['Shell', 19, '#10b981'], ['HTML', 10, '#ec4899'], ['Python', 8, '#6366f1'], ['JavaScript', 7, '#eab308'], ['CSS', 4, '#22d3ee']];
+$('#g-oss').innerHTML = `
+  <div class="repo card"><div class="t"><span style="color:var(--muted)">${ic('code')}</span><span>navi-crwn / <b>amnesia-mac</b></span><span class="pub">Public</span></div>
+    <p>${L('Amnesic user profile for macOS: your Mac forgets everything, except what you choose.', 'Profil amnesia untuk macOS: Mac kamu lupa semuanya, kecuali yang kamu pilih.')}</p>
+    <div class="lbar">${langs.map(l => `<i style="width:${l[1]}%;background:${l[2]}"></i>`).join('')}</div>
+    <div class="langs">${langs.map(l => `<span><i style="background:${l[2]}"></i>${l[0]}</span>`).join('')}</div>
+    <div class="meta"><span><b>MIT</b> ${L('license', 'lisensi')}</span><span>${L('Latest', 'Terbaru')} <b>v5.18</b></span><span>${L('No tracking', 'Tanpa pelacakan')}</span></div></div>
+  <div class="ob"><div style="${tint('indigo', .9, .9)};color:#fff">${ic('star')} ${L('Star this repo', 'Kasih star repo ini')}</div><div style="${tint('muted', .12, .3)};color:var(--text)">${ic('fork')} Fork</div></div>`;
+if (V) { $('#g-oss .repo').style.cssText = 'width:900px;margin-left:-450px;top:120px'; $('#g-oss .ob').style.top = '640px'; }
+
+// Mac dipinjam / hilang: gambar laptop + daftar
+function laptop(box, x, y) {
+  const l = document.createElement('div'); l.className = 'lap'; l.style.left = x + 'px'; l.style.top = y + 'px';
+  l.innerHTML = `<div class="scr"><div class="mb"><b style="color:var(--text)"></b>Finder</div>
+    <div class="cen"><div class="av">${ic('user')}</div><div class="nm">${L('You', 'Kamu')}</div><div class="fld">••••••</div></div>
+    <div class="clean"><span style="font-size:60px;color:var(--green);display:flex">${ic('checkc')}</span><b>${L('Clean desktop', 'Desktop bersih')}</b><small>${L('No history · no logins · no recent files', 'Tanpa riwayat · tanpa login · tanpa file terakhir')}</small></div>
+    <div class="q">?</div></div><div class="base"></div>`;
+  box.appendChild(l); return l;
+}
+function chips(box, rows, css) {
+  const c = document.createElement('div'); c.className = 'chips'; c.style.cssText = css;
+  c.innerHTML = rows.map(r => `<div class="chip"><span class="ic" style="color:rgb(${C[r[2]]})">${ic(r[0])}</span>${r[1]}<span class="s" style="${tint(r[4] || 'red', .16, .4)}">${r[3]}</span></div>`).join('');
+  box.appendChild(c); return [...c.children];
+}
+const GONE = L('gone', 'hilang'), EMPTY = L('empty', 'kosong');
+const lendBox = $('#g-lend'), lostBox = $('#g-lost');
+const lapL = laptop(lendBox, V ? 190 : 60, V ? 40 : 110), lapX = laptop(lostBox, V ? 190 : 60, V ? 40 : 110);
+const lendChips = chips(lendBox, [['clock', L('Browser history', 'Riwayat browser'), 'cyan', GONE], ['key', L('Saved logins', 'Login tersimpan'), 'violet', GONE],
+  ['doc', L('Recent files', 'File terakhir'), 'pink', GONE], ['chat', L('Chats', 'Chat'), 'green', GONE], ['vault', 'Profile Vault', 'indigo', L('locked', 'terkunci'), 'indigo']],
+  V ? 'left:220px;top:560px;width:560px' : 'left:760px;top:90px;width:400px');
+const hand = document.createElement('div'); hand.className = 'hand'; hand.setAttribute('style', tint('green', .16, .45));
+hand.innerHTML = L('→ hand it over', '→ serahkan'); hand.style.left = V ? '400px' : '290px'; hand.style.top = V ? '490px' : '575px'; lendBox.appendChild(hand);
+const lostChips = chips(lostBox, [['clock', L('History', 'Riwayat'), 'cyan', EMPTY], ['key', L('Logins & cookies', 'Login & cookie'), 'violet', EMPTY],
+  ['down', L('Downloads', 'Unduhan'), 'orange', EMPTY], ['vault', 'Profile Vault', 'indigo', 'AES-256', 'indigo']],
+  V ? 'left:220px;top:560px;width:560px' : 'left:760px;top:110px;width:400px');
+const tip = document.createElement('div'); tip.className = 'tip';
+tip.innerHTML = L('Tip: turn on <b>FileVault</b> and a short screen lock too.', 'Tips: nyalakan juga <b>FileVault</b> dan kunci layar otomatis.');
+tip.style.cssText = V ? 'left:0;right:0;text-align:center;top:1000px' : 'left:760px;top:470px'; lostBox.appendChild(tip);
+
+// kata panik (di kotak vault)
+const pf = document.createElement('div'); pf.className = 'pf'; pf.style.top = (V ? 740 : 440) + 'px';
+pf.innerHTML = `<label>${L('Profile Vault password', 'Password Profile Vault')}</label><div class="in"><span class="pt"></span><span style="display:inline-block;width:3px;height:30px;background:var(--text);margin-left:3px"></span></div>`;
+vault.appendChild(pf);
+const boom = document.createElement('div'); boom.className = 'boom'; boom.style.top = (V ? 560 : 300) + 'px';
+boom.innerHTML = `${L('Vault destroyed', 'Vault dihancurkan')}<small>${L('Optional: empty the Keep folder too', 'Opsional: kosongkan folder Keep juga')}</small>`;
+vault.appendChild(boom);
+const shards = Array.from({ length: 26 }, () => { const e = document.createElement('div'); e.className = 'shard'; e.style.left = (sx - 8) + 'px'; e.style.top = (sy - 8) + 'px';
+  vault.appendChild(e); return { e, dx: (rnd() - .5) * 700, dy: (rnd() - .5) * 500, r: rnd() * 360 }; });
+
+// CTA
+$('#g-cta').innerHTML = `<img class="cta-logo" src="logo.png" alt="">
+  <div class="term"><div class="tb"><i></i><i></i><i></i></div><div class="c"><span class="pr">$</span> <span class="ty"></span><span class="k"></span></div></div>
+  <div class="url"><span>navi-crwn.github.io/amnesia-mac</span></div>
+  <div class="warn"><b>⚠</b> ${L('Amnesia deletes data on purpose. Read the Terms first.', 'Amnesia sengaja menghapus data. Baca Syarat & Ketentuan dulu.')}</div>`;
+const CMD = 'brew install --cask navi-crwn/tap/amnesia';
+if (V) { $('#g-cta .term').style.cssText = 'width:940px;margin-left:-470px;top:240px'; $('#g-cta .term .c').style.fontSize = '24px'; $('#g-cta .url').style.cssText = 'top:480px;font-size:46px'; $('#g-cta .warn').style.cssText = 'top:600px;font-size:26px;padding:0 60px'; $('#g-cta .cta-logo').style.top = '40px'; }
+
+// ---------- timeline ----------
+const tl = gsap.timeline({ paused: true });
+const hl = $('#hl'), cap = $('#cap');
+const shown = new Set();
+let at = 0, prevGroup = null;
+const groupOf = { logo: 'logo', desk: 'desk', labels: 'desk', wipe: 'desk', lend: 'lend', lost: 'lost', keep: 'keep', vault: 'vault', restore: 'vault', panic: 'vault', app: 'app', backup: 'backup', oss: 'oss', cta: 'cta' };
+const done = {};   // langkah yang sudah terjadi di versi ini (supaya adegan bisa berdiri sendiri)
+
+// posisi tengah elemen di dalam kotak gambar (untuk kursor)
+function rel(el, box) { const a = el.getBoundingClientRect(), b = box.getBoundingClientRect(), k = b.width / box.offsetWidth;
+  return { x: (a.left + a.width / 2 - b.left) / k, y: (a.top + a.height / 2 - b.top) / k }; }
+function click(cur, x, y, t, from) {
+  if (from) tl.set(cur.c, { x: from.x, y: from.y, opacity: 1 }, t - .9);
+  tl.to(cur.c, { x, y, opacity: 1, duration: .8, ease: 'power2.inOut' }, t - .8)
+    .to(cur.c, { scale: .85, duration: .08, yoyo: true, repeat: 1 }, t)
+    .fromTo(cur.r, { x: x + 4, y: y + 4, scale: .4, opacity: .9 }, { scale: 1.4, opacity: 0, duration: .5, ease: 'power2.out', immediateRender: false }, t);
+}
+function showDesk(t, quick) {
+  if (done.deskIn) return; done.deskIn = true;
+  tiles.forEach((d, i) => tl.fromTo(d.el, { opacity: 0, scale: .6, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: .45, ease: 'back.out(1.7)' }, t + (quick ? i * .04 : .2 + i * .18)));
+}
+function showTags(t, span) {
+  if (done.tags) return; done.tags = true;
+  tags.forEach((g, i) => tl.fromTo(g, { opacity: 0, y: 14, scale: .9 }, { opacity: 1, y: 0, scale: 1, duration: .35, ease: 'back.out(2)' }, t + i * (span / tags.length)));
+}
+
+const scenes = {
+  logo(t, d) {
+    const g = $('#g-logo');
+    tl.fromTo(g.querySelector('img'), { scale: .5, opacity: 0, rotate: -12 }, { scale: 1, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.6)' }, t + .1)
+      .fromTo(g.querySelector('.t'), { opacity: 0, y: 30, letterSpacing: '0.04em' }, { opacity: 1, y: 0, letterSpacing: '-0.05em', duration: 1, ease: 'power3.out' }, t + .45)
+      .fromTo(g.querySelector('.s'), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .6 }, t + .9)
+      .to(g.querySelector('img'), { y: -10, duration: d - 1, ease: 'sine.inOut' }, t + 1.1);
+  },
+  desk(t, d) { showDesk(t, d < 4); },
+  labels(t, d) { showDesk(t, true); showTags(t + (done.deskQuick ? .2 : .6), Math.min(3, d - 1.2)); },
+  wipe(t, d) {
+    showDesk(t, true);
+    const lr = rel(lo, desk); lr.x -= 10; lr.y -= 8;
+    const k = d < 5 ? .7 : 1;
+    click(dcur, lr.x, lr.y, t + 1.0 * k, { x: BW / 2, y: BH / 2 });
+    tl.to(lo, { scale: 1.08, duration: .1, yoyo: true, repeat: 1 }, t + 1.0 * k)
+      .to(tags, { opacity: 0, y: -10, duration: .3 }, t + 1.15 * k);
+    const w = t + 1.25 * k;
+    tiles.forEach((d2, i) => {
+      if (d2.kind === 'keep') {
+        tl.to(d2.el, { borderColor: 'rgba(16,185,129,.7)', boxShadow: '0 0 50px rgba(16,185,129,.35)', background: 'rgba(16,185,129,.08)', duration: .5 }, w + .2);
+      } else tl.to(d2.el, { opacity: 0, scale: .3, filter: 'blur(6px)', duration: .45, ease: 'power2.in' }, w + i * .05);
+    });
+    px.forEach((q, i) => tl.fromTo(q.p, { opacity: 1, x: 0, y: 0, rotate: 0 }, { opacity: 0, x: q.dx, y: q.dy, rotate: q.r, duration: 1.1, ease: 'power2.out', immediateRender: false }, w + Math.floor(i / 12) * .05 + .15));
+    tl.to(dcur.c, { opacity: 0, duration: .3 }, w + .6);
+    // yang tersimpan pindah ke tengah
+    const kept = tiles.filter(x => x.kind === 'keep');
+    kept.forEach((x, i) => tl.to(x.el, { x: BW / 2 - x.x + (i - .5) * 190, y: BH / 2 - x.y + 20, duration: .8, ease: 'power3.inOut' }, w + 1.3 * k));
+  },
+  keep(t, d) {
+    const g = $('#g-keep');
+    tl.fromTo(g.querySelector('.keep-l .big'), { scale: .6, opacity: 0 }, { scale: 1, opacity: 1, duration: .6, ease: 'back.out(1.6)' }, t + .1)
+      .fromTo(g.querySelectorAll('.keep-l .p,.keep-l .q'), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: .4, stagger: .12 }, t + .4)
+      .fromTo(g.querySelector('.keep-r'), { opacity: 0, x: 40, scale: ZK, transformOrigin: '50% 0' }, { opacity: 1, x: 0, scale: ZK, duration: .5 }, t + .3)
+      .fromTo(g.querySelectorAll('.krow'), { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: .35, stagger: Math.min(.45, (d - 1.5) / 5) }, t + .7);
+  },
+  vault(t, d) {
+    const g = $('#g-vault'), dial = g.querySelector('.dg'), lk = g.querySelector('.lk');
+    tl.fromTo(g.querySelector('.safe'), { scale: .7 * ZS, opacity: 0 }, { scale: ZS, opacity: 1, duration: .6, ease: 'back.out(1.5)' }, t + .05);
+    appEls.forEach((a, i) => {
+      tl.fromTo(a.e, { opacity: 0, scale: .6 }, { opacity: 1, scale: 1, duration: .35, ease: 'back.out(2)' }, t + .4 + i * .12)
+        .to(a.e, { x: sx - a.start.x - 66, y: sy - a.start.y - 66, scale: .25, opacity: 0, duration: .7, ease: 'power3.in' }, t + 1.9 + i * .22);
+    });
+    const lockAt = t + 1.9 + apps.length * .22 + .6;
+    tl.to(dial, { rotation: 300, svgOrigin: '100 100', duration: 1.4, ease: 'power2.inOut' }, lockAt - .3)
+      .to(dial, { rotation: 200, svgOrigin: '100 100', duration: .8, ease: 'power2.inOut' }, lockAt + 1.1)
+      .to(lk.querySelector('.u'), { opacity: 0, duration: .15 }, lockAt + .9)
+      .to(lk.querySelector('.l'), { opacity: 1, duration: .15 }, lockAt + .9)
+      .to(lk, { color: '#6366f1', borderColor: 'rgba(99,102,241,.6)', scale: 1.12, duration: .25, yoyo: true, repeat: 1 }, lockAt + .9)
+      .fromTo(g.querySelector('.vcap'), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .5 }, lockAt + .4);
+    done.vaultIn = true;
+  },
+  restore(t, d) {
+    const g = $('#g-vault'), b = g.querySelector('.btn'), lk = g.querySelector('.lk');
+    if (!done.vaultIn) tl.set(g.querySelector('.safe'), { opacity: 1 }, t);
+    tl.to(g.querySelector('.vcap'), { opacity: 0, duration: .3 }, t)
+      .fromTo(b, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .4 }, t + .1);
+    const bx = BW / 2 - 8, by = (V ? 760 : 470) + 22;
+    click(vcur, bx, by, t + 1.2, { x: bx + 260, y: by + 150 });
+    tl.to(lk.querySelector('.l'), { opacity: 0, duration: .15 }, t + 1.3)
+      .to(lk.querySelector('.u'), { opacity: 1, duration: .15 }, t + 1.3)
+      .to(b, { opacity: 0, duration: .3 }, t + 1.6)
+      .to(vcur.c, { opacity: 0, duration: .3 }, t + 1.6);
+    appEls.forEach((a, i) => {
+      tl.fromTo(a.e, { x: sx - a.start.x - 66, y: sy - a.start.y - 66, scale: .25, opacity: 0 },
+        { x: a.end.x - a.start.x, y: a.end.y - a.start.y, scale: 1, opacity: 1, duration: .7, ease: 'power3.out', immediateRender: false }, t + 1.5 + i * .14)
+        .fromTo(a.ok, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: .3, immediateRender: false }, t + 2.3 + i * .14);
+    });
+  },
+  lend(t, d) {
+    const cen = lapL.querySelector('.cen'), cl = lapL.querySelector('.clean'), pt = lapL.querySelector('.fld');
+    tl.fromTo(lapL, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .5, ease: 'power3.out' }, t)
+      .fromTo(pt, { opacity: .3 }, { opacity: 1, duration: .15, repeat: 3, yoyo: true }, t + .5)
+      .to(cen, { opacity: 0, scale: .95, duration: .3 }, t + 1.3)
+      .fromTo(cl, { opacity: 0, scale: 1.05 }, { opacity: 1, scale: 1, duration: .4, immediateRender: false }, t + 1.5)
+      .fromTo(lendChips, { opacity: 0, x: V ? 0 : 30, y: V ? 20 : 0 }, { opacity: 1, x: 0, y: 0, duration: .35, stagger: Math.min(.35, (d - 2.5) / 5) }, t + 1.2)
+      .fromTo(hand, { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: .4 }, t + Math.min(d - 1, 3.2))
+      .to(lapL, { x: V ? 0 : 40, duration: .6, ease: 'power2.inOut' }, t + Math.min(d - .9, 3.3));
+  },
+  lost(t, d) {
+    const cen = lapX.querySelector('.cen'), q = lapX.querySelector('.q');
+    tl.fromTo(lapX, { opacity: 0, rotate: -4, y: 20 }, { opacity: 1, rotate: -4, y: 0, duration: .5 }, t)
+      .to(cen, { opacity: .25, duration: .3 }, t + .6)
+      .fromTo(q, { opacity: 0, scale: .6 }, { opacity: 1, scale: 1, duration: .4, ease: 'back.out(2)', immediateRender: false }, t + .7)
+      .to(q, { x: 12, duration: .08, repeat: 5, yoyo: true }, t + 1.1)
+      .fromTo(lostChips, { opacity: 0, x: V ? 0 : 30, y: V ? 20 : 0 }, { opacity: 1, x: 0, y: 0, duration: .35, stagger: Math.min(.4, (d - 2.5) / 4) }, t + 1.1)
+      .fromTo(tip, { opacity: 0 }, { opacity: 1, duration: .5 }, t + Math.min(d - 1.2, 3.4));
+  },
+  panic(t, d) {
+    const g = $('#g-vault'), safe = g.querySelector('.safe'), body = safe.querySelector('.body'), pt = pf.querySelector('.pt');
+    tl.to(appEls.map(a => a.e).concat(appEls.map(a => a.ok)), { opacity: 0, duration: .3 }, t)
+      .to(g.querySelector('.vcap'), { opacity: 0, duration: .2 }, t)
+      .fromTo(pf, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .35 }, t + .2);
+    const word = '••••••••••', o = { n: 0 };
+    tl.fromTo(o, { n: 0 }, { n: word.length, duration: 1.1, ease: 'none', onUpdate: () => { pt.textContent = word.slice(0, Math.round(o.n)); } }, t + .5)
+      .to(pf.querySelector('.in'), { borderColor: 'rgba(239,68,68,.7)', duration: .2 }, t + 1.7)
+      .to(body, { borderColor: 'rgba(239,68,68,.8)', boxShadow: '0 0 90px rgba(239,68,68,.55)', duration: .3 }, t + 1.8)
+      .to(safe, { x: 8, duration: .05, repeat: 7, yoyo: true }, t + 1.9)
+      .to(safe, { opacity: 0, scale: ZS * 1.25, filter: 'blur(10px)', duration: .45, ease: 'power2.in' }, t + 2.35)
+      .to(pf, { opacity: 0, duration: .3 }, t + 2.4);
+    shards.forEach((q, i) => tl.fromTo(q.e, { opacity: 1, x: 0, y: 0, rotate: 0 }, { opacity: 0, x: q.dx, y: q.dy, rotate: q.r, duration: 1.1, ease: 'power2.out', immediateRender: false }, t + 2.45 + (i % 5) * .02));
+    tl.fromTo(boom, { opacity: 0, scale: .8 }, { opacity: 1, scale: 1, duration: .45, ease: 'back.out(2)' }, t + 2.8);
+  },
+  app(t, d) {
+    const g = $('#g-app'), st = g.querySelector('.st');
+    tl.fromTo(g.querySelector('.win'), { opacity: 0, y: 30, scale: .96 * ZW, transformOrigin: '50% 0' }, { opacity: 1, y: 0, scale: ZW, duration: .6, ease: 'power3.out' }, t + .05);
+    const b = rel(st.querySelector('.pw'), g); b.x -= 8; b.y -= 8;
+    const on = t + (d < 5 ? 1.3 : 1.6);
+    click(acur, b.x, b.y, on, { x: b.x + 300, y: b.y + 260 });
+    tl.to(st.querySelector('.on'), { opacity: 1, duration: .5 }, on + .05)
+      .to(st.querySelector('.ci .b'), { opacity: 1, duration: .4 }, on + .05)
+      .to(st.querySelectorAll('.tt .x,.pw .x'), { opacity: 0, duration: .3 }, on + .05)
+      .to(st.querySelectorAll('.tt .y,.pw .y'), { opacity: 1, duration: .4 }, on + .15)
+      .to(acur.c, { opacity: 0, duration: .3 }, on + .6)
+      .fromTo(g.querySelectorAll('.auto div'), { opacity: 0, x: V ? 0 : 30, y: V ? 20 : 0 }, { opacity: 1, x: 0, y: 0, duration: .35, stagger: .22 }, on + .7);
+  },
+  backup(t, d) {
+    tl.fromTo(src, { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: .5 }, t + .05)
+      .fromTo(dstEls, { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: .4, stagger: .15 }, t + .3);
+    paths.forEach((p, i) => {
+      const s = t + 1.1 + i * .5;
+      tl.to(p, { attr: { 'stroke-dashoffset': 0 }, duration: .7, ease: 'power2.inOut' }, s)
+        .fromTo(pks[i], { left: srcPt.x, top: srcPt.y, opacity: 0 }, { opacity: 1, duration: .1 }, s + .2)
+        .to(pks[i], { left: dstPts[i].x, top: dstPts[i].y, duration: .8, ease: 'power1.inOut' }, s + .25)
+        .to(pks[i], { opacity: 0, scale: 2, duration: .25 }, s + 1.05)
+        .fromTo(dstEls[i].querySelector('.ck'), { opacity: 0, scale: .5 }, { opacity: 1, scale: 1, duration: .3, ease: 'back.out(2)' }, s + 1.05);
+    });
+  },
+  oss(t, d) {
+    const g = $('#g-oss');
+    tl.fromTo(g.querySelector('.repo'), { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .6, ease: 'power3.out' }, t + .05)
+      .fromTo(g.querySelectorAll('.lbar i'), { scaleX: 0, transformOrigin: '0 50%' }, { scaleX: 1, duration: .5, stagger: .08 }, t + .5)
+      .fromTo(g.querySelectorAll('.ob div'), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .4, stagger: .15 }, t + 1.2);
+  },
+  cta(t, d) {
+    const g = $('#g-cta'), ty = g.querySelector('.ty'), k = g.querySelector('.k');
+    const typeDur = Math.min(1.8, d * .35);
+    tl.fromTo(g.querySelector('.cta-logo'), { opacity: 0, scale: .7 }, { opacity: 1, scale: 1, duration: .5, ease: 'back.out(1.6)' }, t + .05)
+      .fromTo(g.querySelector('.term'), { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .45 }, t + .25);
+    const o = { n: 0 };
+    tl.fromTo(o, { n: 0 }, { n: CMD.length, duration: typeDur, ease: 'none', onUpdate: () => { ty.textContent = CMD.slice(0, Math.round(o.n)); } }, t + .6)
+      .fromTo(g.querySelector('.url'), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: .5 }, t + .7 + typeDur)
+      .fromTo(g.querySelector('.warn'), { opacity: 0 }, { opacity: 1, duration: .5 }, t + 1.1 + typeDur);
+    for (let i = 0; i < d * 2; i++) tl.set(k, { opacity: i % 2 ? 0 : 1 }, t + i * .5);
+  },
+};
+
+// teks judul + voiceover per adegan, kelompok gambar masuk / keluar
+const cut = SCRIPT.cuts[CUT] || SCRIPT.cuts[60];
+cut.forEach(([id, d, en, idn], n) => {
+  const t = at, g = groupOf[id], box = $('#g-' + g);
+  if (g !== prevGroup) {
+    if (prevGroup) tl.to('#g-' + prevGroup, { opacity: 0, scale: BK * .98, duration: .35, ease: 'power2.in' }, t - .02).set('#g-' + prevGroup, { visibility: 'hidden' }, t + .34);
+    tl.set(box, { visibility: 'visible' }, t).fromTo(box, { opacity: 0, scale: BK * 1.02 }, { opacity: 1, scale: BK, duration: .45, ease: 'power2.out', immediateRender: false }, t + .2);
+    prevGroup = g;
+  }
+  const hs = document.createElement('span'); hs.textContent = SCRIPT.headline[id][LANG]; if (id === 'logo') hs.style.display = 'none';
+  if (['wipe', 'oss', 'cta'].includes(id)) hs.className = 'g';
+  hl.appendChild(hs);
+  const last = n === cut.length - 1;
+  tl.fromTo(hs, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .5, ease: 'power3.out', immediateRender: false }, t + .15);
+  if (!last) tl.to(hs, { opacity: 0, y: -16, duration: .3 }, t + d - .3);
+  const cs = document.createElement('span'); cs.innerHTML = `<i>${LANG ? idn : en}</i>`; cap.appendChild(cs);
+  tl.fromTo(cs, { opacity: 0 }, { opacity: 1, duration: .3, immediateRender: false }, t + .1);
+  if (!last) tl.to(cs, { opacity: 0, duration: .25 }, t + d - .25);
+  scenes[id](t + .2, d - .2);
+  at += d;
+});
+const DUR = at;
+tl.to({}, { duration: Math.max(0, DUR - tl.duration()) }, 0);
+// kalau ada animasi yang lewat batas, potong di DUR
+window.TL = tl; window.DURATION = DUR;
+window.SCENES = cut.map(([id, d], i) => ({ id, start: cut.slice(0, i).reduce((s, c) => s + c[1], 0), dur: d }));
+tl.seek(0);
+if (Q.has('t')) tl.seek(+Q.get('t'));
+if (Q.has('play')) tl.play(0);
+window.READY = true;
+})();
+</script>
+</body>
+</html>

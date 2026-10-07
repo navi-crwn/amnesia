@@ -58,6 +58,11 @@ You can see the version number in the app too (next to the title and at the bott
   - **Indonesian text rewritten** across the site (about 140 sentences) so it reads naturally instead of like a translation. Button names from the app stay the same.
   - **Fix:** in the app tour, the dots under the text no longer stay on the last step after jumping back up the page.
   - New file: `docs/assets/js/scenes/objects3d.js`.
+- **Update (v5): "If you know, you know" 😉.**
+  - **New block in "Your data stays yours"** for people who'd rather not explain: Lending your Mac?, Lost or stolen?, "Just open it real quick." (the panic word) and Nosy family?, each a short card with a wink.
+  - A small terminal line `$ amnesia --forget-everything # pun intended` and honest fine print: protection only applies after you log out, lock your screen, and the panic word can't be undone. FileVault is still recommended because ~/Keep is not encrypted.
+  - **Final section:** new line under the title, "Download it, then forget everything. Pun intended."
+  - Video (item 76) draft 3: the closing voiceover lines now end with "Then forget everything. Pun intended." and the panic scene reads "Forced to open it? Type your panic word instead."
 
 ## v5.17.1 — 2026-10-07
 

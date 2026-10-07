@@ -41,7 +41,9 @@ HAPUS  ~/Library/Containers/com.apple.PeopleViewService
 HAPUS  ~/Library/Containers/com.apple.PlatformSSO.AccessKey
 HAPUS  ~/Library/Containers/com.apple.PlatformSSOToken
 HAPUS  ~/Library/Containers/com.apple.PressAndHold
+HAPUS  ~/Library/Containers/com.apple.Preview
 HAPUS  ~/Library/Containers/com.apple.QuickLookUIFramework.QLPreviewGenerationExtension
+HAPUS  ~/Library/Containers/com.apple.QuickTimePlayerX
 HAPUS  ~/Library/Containers/com.apple.RAQLPreviewExtension
 HAPUS  ~/Library/Containers/com.apple.RAQLThumbnailExtension
 HAPUS  ~/Library/Containers/com.apple.Safari
@@ -156,6 +158,7 @@ HAPUS  ~/Library/Containers/com.apple.voicebankingd
 HAPUS  ~/Library/Containers/com.apple.weather
 HAPUS  ~/Library/Containers/com.apple.weather.widget
 HAPUS  ~/Library/Containers/com.microsoft.rdc.macos.qlx
+HAPUS  ~/Library/Group Containers/com.apple.PreviewLegacySignaturesConversion
 HAPUS  ~/Library/Group Containers/com.apple.bird
 HAPUS  ~/Library/Group Containers/com.apple.icloudwebd
 HAPUS  ~/Library/Group Containers/com.apple.poirot.poirot_tool
@@ -170,6 +173,7 @@ HAPUS  ~/Library/Group Containers/group.com.apple.FamilyControls
 HAPUS  ~/Library/Group Containers/group.com.apple.FileProvider.DomainCaching
 HAPUS  ~/Library/Group Containers/group.com.apple.ManagedSettings
 HAPUS  ~/Library/Group Containers/group.com.apple.PegasusConfiguration
+HAPUS  ~/Library/Group Containers/group.com.apple.ScreenContinuityServices
 HAPUS  ~/Library/Group Containers/group.com.apple.ScreenTime
 HAPUS  ~/Library/Group Containers/group.com.apple.SiriTTS
 HAPUS  ~/Library/Group Containers/group.com.apple.accessibility.voicebanking
@@ -193,6 +197,7 @@ HAPUS  ~/Library/Group Containers/group.com.apple.mobiletimerd
 HAPUS  ~/Library/Group Containers/group.com.apple.photolibraryd.private
 HAPUS  ~/Library/Group Containers/group.com.apple.poirot.MessagesAnalyticsWorker
 HAPUS  ~/Library/Group Containers/group.com.apple.portrait.BackgroundReplacement
+HAPUS  ~/Library/Group Containers/group.com.apple.private.translation
 HAPUS  ~/Library/Group Containers/group.com.apple.replayd
 HAPUS  ~/Library/Group Containers/group.com.apple.replicatord
 HAPUS  ~/Library/Group Containers/group.com.apple.scopedbookmarkagent
@@ -228,6 +233,7 @@ HAPUS  ~/.zsh_sessions
 HAPUS  ~/Library/Application Support/com.apple.sharedfilelist
 HAPUS  ~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV2
 HAPUS  ~/Library/Preferences/ContextStoreAgent.plist
+HAPUS  ~/Library/Preferences/TokenBucketRateLimiter.plist
 HAPUS  ~/Library/Preferences/com.amnesia.controlpanel.plist
 HAPUS  ~/Library/Preferences/com.amnesia.shots.plist
 HAPUS  ~/Library/Preferences/com.brave.Browser.plist
@@ -277,6 +283,7 @@ HAPUS  ~/Library/Caches/com.apple.geoanalyticsd
 HAPUS  ~/Library/Caches/com.apple.helpd
 HAPUS  ~/Library/Caches/com.apple.homed
 HAPUS  ~/Library/Caches/com.apple.iTunes
+HAPUS  ~/Library/Caches/com.apple.iTunesCloud
 HAPUS  ~/Library/Caches/com.apple.icloudwebd
 HAPUS  ~/Library/Caches/com.apple.itunescloudd
 HAPUS  ~/Library/Caches/com.apple.managedappdistributionagent
@@ -291,6 +298,7 @@ HAPUS  ~/Library/Caches/com.apple.sirittsd
 HAPUS  ~/Library/Caches/com.apple.storekitagent
 HAPUS  ~/Library/Caches/com.apple.systemsettings.menucache
 HAPUS  ~/Library/Caches/com.apple.tipsd
+HAPUS  ~/Library/Caches/com.apple.translationd
 HAPUS  ~/Library/Logs/Assistant
 HAPUS  ~/Library/Logs/Baseband
 HAPUS  ~/Library/Logs/Claude
@@ -327,7 +335,8 @@ HAPUS  ~/Downloads/bheart.mid
 HAPUS  ~/Downloads/m2-res_1080p.mp4
 HAPUS  ~/Downloads/salt.md · the open-source workspace for people and agents.html
 HAPUS  ~/Downloads/salt.md · the open-source workspace for people and agents_files
+HAPUS  ~/Downloads/storyboard-60id-v.png
 HAPUS  ~/.Trash/.DS_Store
 HAPUS  ~/.Trash/Amnesia.app
 HAPUS  ~/.Trash/amnesia-lama-20261007-0103
---- dry-run (logout): 332 items would be deleted. Nothing was deleted. ---
+--- dry-run (logout): 341 items would be deleted. Nothing was deleted. ---

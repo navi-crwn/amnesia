@@ -1,0 +1,176 @@
+{
+ "15": [
+  {
+   "scene": "desk",
+   "start": 0,
+   "dur": 3,
+   "en": "Your Mac remembers everything.",
+   "id": "Mac kamu mengingat semuanya."
+  },
+  {
+   "scene": "wipe",
+   "start": 3,
+   "dur": 4,
+   "en": "Amnesia makes it forget, every logout.",
+   "id": "Amnesia membuatnya lupa, setiap logout."
+  },
+  {
+   "scene": "lost",
+   "start": 7,
+   "dur": 4,
+   "en": "Lost, stolen or borrowed? Nothing to find.",
+   "id": "Hilang, dicuri, atau dipinjam? Tak ada yang bisa ditemukan."
+  },
+  {
+   "scene": "cta",
+   "start": 11,
+   "dur": 4,
+   "en": "Amnesia. Forget everything. Pun intended.",
+   "id": "Amnesia. Lupakan semuanya. Pun intended."
+  }
+ ],
+ "30": [
+  {
+   "scene": "logo",
+   "start": 0,
+   "dur": 2,
+   "en": "This is Amnesia.",
+   "id": "Ini Amnesia."
+  },
+  {
+   "scene": "labels",
+   "start": 2,
+   "dur": 4,
+   "en": "Your Mac keeps history, cookies, downloads and logins.",
+   "id": "Mac kamu menyimpan riwayat, cookie, unduhan, dan login."
+  },
+  {
+   "scene": "wipe",
+   "start": 6,
+   "dur": 5,
+   "en": "Amnesia wipes it all, every time you log out.",
+   "id": "Amnesia menghapus semuanya, setiap kamu logout."
+  },
+  {
+   "scene": "lend",
+   "start": 11,
+   "dur": 5,
+   "en": "Lending your Mac? Log out and back in. It is clean.",
+   "id": "Mac mau dipinjam? Logout lalu login lagi. Sudah bersih."
+  },
+  {
+   "scene": "lost",
+   "start": 16,
+   "dur": 5,
+   "en": "Lost or stolen? Nothing left to find.",
+   "id": "Hilang atau dicuri? Tidak ada yang bisa ditemukan."
+  },
+  {
+   "scene": "keep",
+   "start": 21,
+   "dur": 4,
+   "en": "Except what you choose to keep.",
+   "id": "Kecuali yang kamu pilih untuk disimpan."
+  },
+  {
+   "scene": "cta",
+   "start": 25,
+   "dur": 5,
+   "en": "Free on GitHub. Then forget everything. Pun intended.",
+   "id": "Gratis di GitHub. Lalu lupakan semuanya. Pun intended."
+  }
+ ],
+ "60": [
+  {
+   "scene": "logo",
+   "start": 0,
+   "dur": 3,
+   "en": "Meet Amnesia. Privacy for your Mac.",
+   "id": "Kenalan dengan Amnesia. Privasi untuk Mac kamu."
+  },
+  {
+   "scene": "desk",
+   "start": 3,
+   "dur": 4,
+   "en": "Every day, your Mac quietly remembers what you do.",
+   "id": "Setiap hari, Mac kamu diam-diam mengingat semua yang kamu lakukan."
+  },
+  {
+   "scene": "labels",
+   "start": 7,
+   "dur": 4,
+   "en": "History, cookies, downloads, saved logins, chats.",
+   "id": "Riwayat, cookie, unduhan, login tersimpan, chat."
+  },
+  {
+   "scene": "wipe",
+   "start": 11,
+   "dur": 5,
+   "en": "With Amnesia on, it is all wiped every time you log out.",
+   "id": "Dengan Amnesia, semuanya dihapus setiap kamu logout."
+  },
+  {
+   "scene": "lend",
+   "start": 16,
+   "dur": 5,
+   "en": "Someone needs your Mac? Log out, log back in, and hand it over clean.",
+   "id": "Ada yang mau pinjam Mac kamu? Logout, login lagi, dan serahkan dalam keadaan bersih."
+  },
+  {
+   "scene": "lost",
+   "start": 21,
+   "dur": 6,
+   "en": "Lost or stolen after you logged out? There is nothing left to find, and your vault stays encrypted.",
+   "id": "Hilang atau dicuri setelah kamu logout? Tidak ada yang tersisa, dan vault kamu tetap terenkripsi."
+  },
+  {
+   "scene": "keep",
+   "start": 27,
+   "dur": 5,
+   "en": "Only what you choose to keep stays: your Keep folder and Keep List.",
+   "id": "Yang tetap ada hanya pilihanmu: folder Keep dan Keep List."
+  },
+  {
+   "scene": "vault",
+   "start": 32,
+   "dur": 6,
+   "en": "App logins wait in Profile Vault, locked with your password.",
+   "id": "Login app menunggu di Profile Vault, dikunci dengan password kamu."
+  },
+  {
+   "scene": "restore",
+   "start": 38,
+   "dur": 4,
+   "en": "Back in? Restore them with one click.",
+   "id": "Sudah login lagi? Kembalikan dengan satu klik."
+  },
+  {
+   "scene": "panic",
+   "start": 42,
+   "dur": 5,
+   "en": "Forced to open it? Type your panic word instead. The vault is gone.",
+   "id": "Dipaksa membukanya? Ketik kata panik saja. Vault langsung hilang."
+  },
+  {
+   "scene": "app",
+   "start": 47,
+   "dur": 4,
+   "en": "Turn it on once. The rest is automatic.",
+   "id": "Aktifkan sekali. Sisanya otomatis."
+  },
+  {
+   "scene": "oss",
+   "start": 51,
+   "dur": 4,
+   "en": "Free and open source.",
+   "id": "Gratis dan open source."
+  },
+  {
+   "scene": "cta",
+   "start": 55,
+   "dur": 5,
+   "en": "Get Amnesia on GitHub. Then forget everything. Pun intended.",
+   "id": "Unduh Amnesia di GitHub. Lalu lupakan semuanya. Pun intended."
+  }
+ ]
+}

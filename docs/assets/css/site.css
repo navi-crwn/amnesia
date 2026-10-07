@@ -881,3 +881,26 @@ html:not(.motion) .ico.keep .halo{opacity:.7}
 html:not(.js) .tw-view{height:auto}
 html:not(.js) .tw-body{width:auto;height:auto;transform:none}
 html:not(.js) .tp[data-page="0"]{position:relative}
+
+/* ---------- v5: "if you know, you know" privacy block in section 08 ---------- */
+.iyk{margin-top:clamp(80px,10vw,120px)}
+.iyk .head .label{display:flex;align-items:center;gap:8px}
+.iyk .wink{display:inline-block;transform-origin:50% 60%;animation:wink 5s ease-in-out infinite}
+@keyframes wink{0%,86%,100%{transform:rotate(0)}90%{transform:rotate(-14deg) scale(1.15)}94%{transform:rotate(8deg)}}
+.iyk-h{font:800 clamp(30px,4.4vw,52px)/1.05 var(--sans);letter-spacing:-.035em;margin-top:10px}
+.iyk-h em{font-style:normal;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+.iyk-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:36px}
+.iyk-grid .cell{display:grid;gap:10px;align-content:start}
+.iyk-grid h4{font-size:18px;letter-spacing:-.01em}
+.iyk-grid p{color:var(--muted);font-size:15px}
+.iyk-grid p b{color:var(--text)}
+.iyk-hot{background:linear-gradient(135deg,color-mix(in srgb,var(--red) 10%,var(--panel)),var(--panel))!important;border-color:color-mix(in srgb,var(--red) 30%,var(--line))!important}
+.iyk-term{margin-top:22px;font:500 15px/1.4 var(--mono);color:var(--text);padding:14px 18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);display:inline-block;max-width:100%;overflow-wrap:anywhere}
+.iyk-term .pr{color:var(--green);margin-right:6px}
+.iyk-term .cm{color:var(--muted)}
+.iyk-note{margin-top:16px;display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--warn-text);max-width:760px}
+.iyk-note svg{width:18px;height:18px;flex:none;color:var(--orange);margin-top:1px}
+@media (max-width:900px){.iyk-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.iyk-grid{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:reduce){.iyk .wink{animation:none}}
+.final .pun{margin-top:14px;color:var(--muted);font-size:clamp(16px,1.6vw,19px)}

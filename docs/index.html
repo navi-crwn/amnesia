@@ -409,6 +409,30 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <span class="pill panic"><i class="dot"></i><span data-en><span class="glitch" data-text="Panic word">Panic word</span></span><span data-id><span class="glitch" data-text="Kata panik">Kata panik</span></span></span>
     </div>
 
+    <!-- v5: privasi untuk yang paham (OPSEC), nada santai -->
+    <div class="iyk" id="iykyk">
+      <div class="head">
+        <p class="label"><span data-en>If you know, you know</span><span data-id>Yang paham, paham</span> <span class="wink" aria-hidden="true">😉</span></p>
+        <h3 class="iyk-h"><span data-en>For people who'd rather <em>not explain.</em></span><span data-id>Buat kamu yang malas <em>ditanya-tanya.</em></span></h3>
+      </div>
+      <div class="bento iyk-grid">
+        <div class="cell"><div class="i-ico" style="--c:var(--cyan)"><svg viewBox="0 0 24 24"><use href="#i-laptop"/></svg></div>
+          <h4><span data-en>Lending your Mac?</span><span data-id>Mac mau dipinjam?</span></h4>
+          <p><span data-en>Log out, log back in, hand it over. Browser history, logins, recent files and chats are already gone. Your vault stays locked.</span><span data-id>Logout, login lagi, serahkan. Riwayat browser, login, file terakhir, dan chat sudah hilang. Vault tetap terkunci.</span></p></div>
+        <div class="cell"><div class="i-ico" style="--c:var(--orange)"><svg viewBox="0 0 24 24"><use href="#i-warn"/></svg></div>
+          <h4><span data-en>Lost or stolen?</span><span data-id>Hilang atau dicuri?</span></h4>
+          <p><span data-en>After a logout your history, logins and chats are already gone, and the vault is AES-256. Turn on FileVault too, so your Keep folder is encrypted on the disk.</span><span data-id>Setelah logout, riwayat, login, dan chat sudah hilang, dan vault terkunci AES-256. Nyalakan juga FileVault, supaya folder Keep ikut terenkripsi di disk.</span></p></div>
+        <div class="cell iyk-hot"><div class="i-ico" style="--c:var(--red)"><svg viewBox="0 0 24 24"><use href="#i-lock"/></svg></div>
+          <h4><span data-en>"Just open it real quick."</span><span data-id>"Coba buka sebentar."</span></h4>
+          <p><span data-en>Logging in shows an empty desktop. Asked for the vault password too? Type your <b>panic word</b> instead. The vault is gone, and the Keep folder too if you chose so. No drama.</span><span data-id>Login hanya menampilkan desktop kosong. Diminta password vault juga? Ketik <b>kata panik</b> saja. Vault langsung hilang, folder Keep juga kalau kamu memilihnya. Tanpa drama.</span></p></div>
+        <div class="cell"><div class="i-ico" style="--c:var(--pink)"><svg viewBox="0 0 24 24"><use href="#i-eye"/></svg></div>
+          <h4><span data-en>Nosy family?</span><span data-id>Keluarga kepo?</span></h4>
+          <p><span data-en>Your browser history doesn't survive a logout. Nobody needs to know about that 3 a.m. shopping spree.</span><span data-id>Riwayat browser tidak selamat dari logout. Belanja jam 3 pagi itu cukup jadi rahasia kamu.</span></p></div>
+      </div>
+      <p class="iyk-term"><span class="pr">$</span> amnesia --forget-everything <span class="cm"><span data-en># pun intended</span><span data-id># pun intended</span></span></p>
+      <p class="iyk-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span data-en>Honest fine print: Amnesia protects you <b>after a logout</b>. While you're logged in, your Mac is as open as always, so lock your screen. And the panic word can't be undone.</span><span data-id>Catatan jujur: Amnesia melindungi kamu <b>setelah logout</b>. Selama masih login, Mac kamu terbuka seperti biasa, jadi kunci layarnya. Dan kata panik tidak bisa dibatalkan.</span></p>
+    </div>
+
     <div class="head" id="features" style="margin-top:clamp(96px,12vw,140px)">
       <h2><span data-en>Clean every day. <em>Nothing lost.</em></span><span data-id>Bersih setiap hari. <em>Tanpa kehilangan apa pun.</em></span></h2>
       <p class="lead"><span data-en>Everything Amnesia can do, at a glance. Scroll down to take the app apart button by button, then follow the tutorial.</span><span data-id>Semua yang bisa dilakukan Amnesia, dalam sekali lihat. Scroll ke bawah untuk membedah app-nya tombol demi tombol, lalu ikuti tutorialnya.</span></p>
@@ -1027,6 +1051,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   <div class="wrap" style="position:relative">
     <div class="shield3d small" data-shield3d="final" aria-hidden="true"><img src="logo.png" alt="" width="160" height="160" loading="lazy"></div>
     <h2><span data-en>Start every day <em>clean.</em></span><span data-id>Setiap hari, <em>mulai dari bersih.</em></span></h2>
+    <p class="pun"><span data-en>Download it, then forget everything. Pun intended.</span><span data-id>Download, lalu lupakan semuanya. Pun intended.</span></p>
     <div class="cta">
       <a class="btn main" href="https://github.com/navi-crwn/amnesia-mac/releases/latest"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg><span data-en>Download for Mac</span><span data-id>Download untuk Mac</span></a>
       <a class="btn ghost" href="https://github.com/navi-crwn/amnesia-mac"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github"/></svg>GitHub</a>

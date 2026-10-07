@@ -58,6 +58,11 @@ Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
   - **Teks bahasa Indonesia ditulis ulang** di seluruh website (sekitar 140 kalimat) supaya terasa natural, bukan seperti terjemahan. Nama tombol dari app tetap sama.
   - **Perbaikan:** di tur app, titik-titik di bawah teks tidak lagi tertinggal di langkah terakhir setelah loncat kembali ke atas.
   - File baru: `docs/assets/js/scenes/objects3d.js`.
+- **Update (v5): "Yang paham, paham" 😉.**
+  - **Blok baru di "Data kamu tetap milikmu"** untuk kamu yang malas ditanya-tanya: Mac mau dipinjam?, Hilang atau dicuri?, "Coba buka sebentar." (kata panik) dan Keluarga kepo?, masing-masing kartu singkat dengan kedipan mata.
+  - Baris terminal kecil `$ amnesia --forget-everything # pun intended` dan catatan jujur: perlindungan baru berlaku setelah kamu logout, kunci layar kamu, dan kata panik tidak bisa dibatalkan. FileVault tetap disarankan karena ~/Keep tidak dienkripsi.
+  - **Bagian penutup:** baris baru di bawah judul, "Download, lalu lupakan semuanya. Pun intended."
+  - Video (item 76) draft 3: kalimat voiceover penutup sekarang diakhiri "Lalu lupakan semuanya. Pun intended." dan adegan panik berbunyi "Dipaksa membukanya? Ketik kata panik saja."
 
 ## v5.17.1 — 2026-10-07
 
