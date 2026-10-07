@@ -1457,6 +1457,8 @@ func alertWindow() -> NSWindow? {
 @MainActor
 func runAlert(_ a: NSAlert) -> NSApplication.ModalResponse {
     NSApp.activate(ignoringOtherApps: true)
+    // v5.18: tombol utama berwarna website (indigo, merah kalau berbahaya)
+    if let b = a.buttons.first { b.bezelColor = b.hasDestructiveAction ? Th.nsRed : Th.nsIndigo }
     if Shots.on { return a.runModal() }
     // v5.13: jendela belum terbuka (hanya ikon menu bar) → buka dulu, supaya popup bisa menempel di sana
     if alertWindow() == nil, let open = Opener.open {
@@ -1512,12 +1514,12 @@ enum PopKind {
 
     var color: Color {
         switch self {
-        case .happens: return .blue
-        case .deleted: return .red
-        case .kept: return .green
-        case .todo: return .indigo
-        case .warn: return .orange
-        case .note: return .gray
+        case .happens: return Th.cyan
+        case .deleted: return Th.red
+        case .kept: return Th.green
+        case .todo: return Th.indigo
+        case .warn: return Th.orange
+        case .note: return Th.muted
         }
     }
 
@@ -1583,9 +1585,9 @@ struct PopupBody: View {
                 }
                 .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(s.kind.color.opacity(0.12)))
-                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(s.kind.color.opacity(0.35), lineWidth: 1))
+                .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(s.kind.color.opacity(0.11)))
+                .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .strokeBorder(s.kind.color.opacity(0.32), lineWidth: 1))
             }
         }
         .frame(width: width, alignment: .leading)
@@ -1694,9 +1696,9 @@ enum AState {
 
     var colors: [Color] {
         switch self {
-        case .active: return [Color(hex: 0x34D399), Color(hex: 0x059669)]
-        case .paused: return [Color(hex: 0xFBBF24), Color(hex: 0xD97706)]
-        case .off: return [Color(hex: 0x94A3B8), Color(hex: 0x64748B)]
+        case .active: return [Th.green, Th.green]
+        case .paused: return [Th.orange, Th.orange]
+        case .off: return [Th.muted, Th.muted]
         }
     }
 }
@@ -2274,30 +2276,93 @@ extension Color {
     }
 }
 
-/// v5.17: warna lebih kalem. 1 warna utama (indigo) untuk semua fitur, sisanya hanya warna yang punya arti:
-/// hijau = aman/aktif, kuning = jeda/hati-hati, merah = hapus, abu-abu = tombol biasa.
+/// v5.18: warna dan permukaan sama dengan website (navi-crwn.github.io/amnesia-mac).
+/// Tiap warna punya versi gelap dan terang, ikut tampilan Mac (Appearance) otomatis.
+enum Th {
+    private static func ns(_ hex: UInt32, _ a: CGFloat = 1) -> NSColor {
+        NSColor(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+                blue: CGFloat(hex & 0xFF) / 255, alpha: a)
+    }
+    /// versi NSColor (untuk tombol NSAlert)
+    static func nsDyn(_ dark: UInt32, _ light: UInt32) -> NSColor {
+        NSColor(name: nil) { ap in ap.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? Th.ns(dark) : Th.ns(light) }
+    }
+    static let nsIndigo = nsDyn(0x6366F1, 0x4F46E5)
+    static let nsRed = nsDyn(0xEF4444, 0xDC2626)
+    /// warna yang berganti sendiri: `dark` di mode gelap, `light` di mode terang
+    static func dyn(_ dark: UInt32, _ light: UInt32, _ da: CGFloat = 1, _ la: CGFloat = 1) -> Color {
+        Color(nsColor: NSColor(name: nil) { ap in
+            ap.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? Th.ns(dark, da) : Th.ns(light, la)
+        })
+    }
+    // palet website: cyan, indigo, pink untuk fitur; hijau / oranye / merah hanya untuk status
+    static let cyan = dyn(0x22D3EE, 0x0891B2)
+    static let indigo = dyn(0x6366F1, 0x4F46E5)
+    static let pink = dyn(0xEC4899, 0xDB2777)
+    static let violet = dyn(0xA78BFA, 0x7C3AED)
+    static let green = dyn(0x10B981, 0x059669)
+    static let orange = dyn(0xF97316, 0xEA580C)
+    static let red = dyn(0xEF4444, 0xDC2626)
+    static let muted = dyn(0x8B90A0, 0x5A5F70)
+    // permukaan
+    static let ground = dyn(0x07070A, 0xF7F7FB)            // latar jendela
+    static let panel = dyn(0x0E0F14, 0xFFFFFF)             // kartu
+    static let tile = dyn(0xFFFFFF, 0xFFFFFF, 0.035, 1)    // kotak di halaman utama
+    static let tint = dyn(0xFFFFFF, 0x101228, 0.05, 0.05)  // tombol & kolom biasa
+    static let line = dyn(0xFFFFFF, 0x101228, 0.08, 0.09)
+    static let line2 = dyn(0xFFFFFF, 0x101228, 0.14, 0.16)
+    static let glowIndigo = dyn(0x6366F1, 0x4F46E5, 0.18, 0.10)
+    static let glowCyan = dyn(0x22D3EE, 0x0891B2, 0.10, 0.07)
+    /// gradasi merek (badge versi): cyan → indigo → pink
+    static let brand = [cyan, indigo, pink]
+}
+
+/// Warna per fitur, sama seperti di website. v5.17 memakai 1 warna (indigo) untuk semua; v5.18 kembali
+/// berwarna tapi tetap tenang: ikon di latar tipis, dan hijau / oranye / merah hanya untuk status.
 enum Pal {
-    static let accent = [Color(hex: 0x818CF8), Color(hex: 0x6366F1)]
-    static let ink = Color(hex: 0x6366F1)      // teks/tombol kecil berwarna
+    static let accent = [Th.indigo, Th.indigo]
+    static let ink = Th.indigo      // teks/tombol kecil berwarna
     static let vault = accent
-    static let logout = accent
-    static let keep = accent
-    static let backup = accent
-    static let pause = [Color(hex: 0xFBBF24), Color(hex: 0xF59E0B)]
-    static let on = [Color(hex: 0x34D399), Color(hex: 0x10B981)]
-    static let danger = [Color(hex: 0xF87171), Color(hex: 0xEF4444)]
-    static let gray = [Color(hex: 0x9CA3AF), Color(hex: 0x6B7280)]
+    static let logout = [Th.cyan, Th.cyan]
+    static let keep = [Th.green, Th.green]
+    static let backup = [Th.pink, Th.pink]
+    static let preview = [Th.violet, Th.violet]
+    static let pause = [Th.orange, Th.orange]
+    static let on = [Th.green, Th.green]
+    static let danger = [Th.red, Th.red]
+    static let gray = [Th.muted, Th.muted]
 }
 
 struct Backdrop: View {
     var body: some View {
         ZStack {
-            Color(nsColor: .windowBackgroundColor)
-            // v5.17: 1 cahaya indigo tipis saja (dulu 3 warna: biru, pink, ungu)
-            Circle().fill(Color(hex: 0x6366F1).opacity(0.14)).frame(width: 420, height: 420)
-                .blur(radius: 110).offset(x: -160, y: -260)
+            Th.ground
+            // v5.18: seperti hero website: cahaya indigo kanan atas, cyan kiri bawah
+            Circle().fill(Th.glowIndigo).frame(width: 440, height: 440)
+                .blur(radius: 110).offset(x: 170, y: -280)
+            Circle().fill(Th.glowCyan).frame(width: 380, height: 380)
+                .blur(radius: 110).offset(x: -190, y: 320)
         }
         .ignoresSafeArea()
+    }
+}
+
+/// v5.18: permukaan kartu seperti website: panel + garis tipis.
+struct Surface: ViewModifier {
+    var radius: CGFloat = 18
+    var fill: Color = Th.panel
+    func body(content: Content) -> some View {
+        content
+            .background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(fill))
+            .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(Th.line, lineWidth: 1))
+    }
+}
+
+extension View {
+    func surface(_ radius: CGFloat = 18, fill: Color = Th.panel) -> some View { modifier(Surface(radius: radius, fill: fill)) }
+    /// tombol bulat kecil (kembali, pengaturan)
+    func roundButtonFace() -> some View {
+        background(Circle().fill(Th.tint)).overlay(Circle().strokeBorder(Th.line2, lineWidth: 1))
     }
 }
 
@@ -2307,11 +2372,13 @@ struct IconBadge: View {
     var size: CGFloat = 40
 
     var body: some View {
-        // v5.17: latar warna tipis + ikon berwarna (dulu gradasi penuh + bayangan): lebih tenang dilihat
+        // v5.18: seperti ikon di website: latar warna 14%, garis warna 26%, ikon berwarna
         let tint = colors.last ?? .accentColor
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
-                .fill(tint.opacity(0.15))
+                .fill(tint.opacity(0.14))
+            RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
+                .strokeBorder(tint.opacity(0.26), lineWidth: 1)
             Image(systemName: icon)
                 .font(.system(size: size * 0.45, weight: .semibold))
                 .foregroundStyle(tint)
@@ -2328,7 +2395,7 @@ struct Card<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) { content }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.regularMaterial))
+            .surface(18)
     }
 }
 
@@ -2339,17 +2406,23 @@ struct PillLabel<L: View>: View {
     @Environment(\.isEnabled) private var enabled
 
     var body: some View {
-        // v5.17: tombol abu-abu = tombol biasa (latar netral, teks hitam/putih sesuai tema);
-        // tombol mati = latar netral dan teks redup, supaya tetap terbaca (dulu putih di atas warna pucat)
+        // v5.18: 3 jenis tombol seperti website:
+        // - utama (indigo) dan hapus (merah): warna penuh, teks putih
+        // - warna fitur (cyan, pink, hijau, oranye): latar warna tipis + garis warna, teks hitam/putih
+        // - abu-abu / mati: latar netral + garis, teks biasa (mati = redup)
         let plain = colors == Pal.gray || !enabled
+        let solid = !plain && (colors == Pal.accent || colors == Pal.danger)
+        let c = colors.last ?? .accentColor
         label
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(plain ? AnyShapeStyle(enabled ? Color.primary : Color.secondary) : AnyShapeStyle(Color.white))
+            .foregroundStyle(solid ? AnyShapeStyle(Color.white) : AnyShapeStyle(enabled ? Color.primary : Color.secondary))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
             .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(plain ? AnyShapeStyle(Color.primary.opacity(0.08))
-                            : AnyShapeStyle(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))))
+                .fill(plain ? Th.tint : (solid ? c : c.opacity(0.16))))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(plain ? Th.line2 : (solid ? Color.clear : c.opacity(0.34)), lineWidth: 1))
+            .shadow(color: solid ? c.opacity(0.28) : .clear, radius: 8, y: 3)
             .opacity(pressed ? 0.8 : 1)
             .scaleEffect(pressed ? 0.98 : 1)
             .contentShape(Rectangle())
@@ -2394,7 +2467,8 @@ struct Field: View {
             }
             .textFieldStyle(.plain)
             .padding(9)
-            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color.primary.opacity(0.06)))
+            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Th.tint))
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Th.line2, lineWidth: 1))
         }
     }
 }
@@ -2411,13 +2485,13 @@ struct PageHeader: View {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 13, weight: .bold))
                     .frame(width: 28, height: 28)
-                    .background(Circle().fill(.regularMaterial))
+                    .roundButtonFace()
             }
             .buttonStyle(.plain)
             .keyboardShortcut(.cancelAction)
             .help(T("Back", "Kembali"))
             IconBadge(icon: icon, colors: colors, size: 30)
-            Text(title).font(.system(size: 20, weight: .bold, design: .rounded))
+            Text(title).font(.system(size: 20, weight: .bold))
             Spacer()
         }
     }
@@ -2454,9 +2528,9 @@ struct MatchNote: View {
     var body: some View {
         if !b.isEmpty {
             if a == b {
-                Note(text: T("Both match.", "Sudah sama."), icon: "checkmark.circle.fill", color: .green)
+                Note(text: T("Both match.", "Sudah sama."), icon: "checkmark.circle.fill", color: Th.green)
             } else {
-                Note(text: T("They don't match yet.", "Belum sama dengan yang di atas."), icon: "xmark.circle.fill", color: .red)
+                Note(text: T("They don't match yet.", "Belum sama dengan yang di atas."), icon: "xmark.circle.fill", color: Th.red)
             }
         }
     }
@@ -2520,20 +2594,26 @@ struct HeroCard: View {
     let lastClean: String
     var power: (() -> Void)? = nil      // v5.16: tombol Aktifkan / Matikan ada di kartu status
 
+    // v5.18: gaya kartu status website: warna status tipis, bukan blok warna penuh
+    private var c: Color { state.colors.last ?? Th.green }
+    private var on: Bool { state != .off }
+
     var body: some View {
         // v5.17: lebih ringkas (ikon, judul, jarak lebih kecil) supaya semua kotak di bawahnya muat di jendela
         VStack(alignment: .leading, spacing: 12) {
         HStack(spacing: 12) {
             ZStack {
-                Circle().fill(Color.white.opacity(0.22)).frame(width: 46, height: 46)
+                Circle().fill(on ? c.opacity(0.25) : Th.tint).frame(width: 46, height: 46)
+                Circle().strokeBorder(on ? c.opacity(0.35) : Th.line2, lineWidth: 1).frame(width: 46, height: 46)
                 Image(systemName: state.icon).font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(on ? c : Th.muted)
             }
             VStack(alignment: .leading, spacing: 3) {
-                Text(state.title).font(.system(size: 19, weight: .bold, design: .rounded))
-                Text(state.subtitle).font(.system(size: 12)).opacity(0.92)
+                Text(state.title).font(.system(size: 19, weight: .bold)).foregroundStyle(.primary)
+                Text(state.subtitle).font(.system(size: 12)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Label(lastClean, systemImage: "clock.fill").font(.system(size: 11, weight: .medium))
-                    .opacity(0.85).padding(.top, 1)
+                    .foregroundStyle(.secondary).padding(.top, 1)
             }
             Spacer(minLength: 0)
         }
@@ -2544,8 +2624,10 @@ struct HeroCard: View {
                         .font(.system(size: 13, weight: .bold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 7)
-                        .background(Capsule().fill(Color.white.opacity(state == .off ? 0.95 : 0.22)))
-                        .foregroundStyle(state == .off ? (state.colors.last ?? .green) : .white)
+                        .background(Capsule().fill(on ? c.opacity(0.18) : Th.indigo))
+                        .overlay(Capsule().strokeBorder(on ? c.opacity(0.30) : Color.clear, lineWidth: 1))
+                        .foregroundStyle(on ? Color.primary : Color.white)
+                        .shadow(color: on ? .clear : Th.indigo.opacity(0.35), radius: 8, y: 3)
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -2553,11 +2635,13 @@ struct HeroCard: View {
                                     : T("Stop the automatic wiping", "Hentikan pembersihan otomatis"))
             }
         }
-        .foregroundStyle(.white)
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
-            .fill(LinearGradient(colors: state.colors, startPoint: .topLeading, endPoint: .bottomTrailing)))
-        .shadow(color: (state.colors.last ?? .black).opacity(0.22), radius: 10, y: 5)
+            .fill(on ? AnyShapeStyle(LinearGradient(colors: [c.opacity(0.24), c.opacity(0.06)],
+                                                   startPoint: .topLeading, endPoint: .bottomTrailing))
+                     : AnyShapeStyle(Th.tint)))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
+            .strokeBorder(on ? c.opacity(0.35) : Th.line2, lineWidth: 1))
         .animation(.easeInOut(duration: 0.3), value: state)
     }
 }
@@ -2586,10 +2670,11 @@ struct Tile: View {
             }
             .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
             .padding(10)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.regularMaterial))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(hover ? (colors.last ?? .accentColor).opacity(0.6) : Color.primary.opacity(0.06), lineWidth: 1))
-            .shadow(color: .black.opacity(hover ? 0.12 : 0.05), radius: hover ? 12 : 6, y: hover ? 6 : 3)
+            // v5.18: kotak fitur seperti website: isi tipis + garis halus, garis berwarna saat disorot
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Th.tile))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(hover ? (colors.last ?? Th.indigo).opacity(0.6) : Th.line, lineWidth: 1))
+            .shadow(color: (colors.last ?? Th.indigo).opacity(hover ? 0.18 : 0), radius: hover ? 12 : 0, y: hover ? 5 : 0)
             .scaleEffect(hover && enabled ? 1.02 : 1)
             .opacity(enabled ? 1 : 0.45)
             .contentShape(Rectangle())
@@ -2633,7 +2718,7 @@ struct MainView: View {
                     Color.black.opacity(0.25)
                     VStack(spacing: 12) {
                         if let p = m.progress {
-                            Text("\(Int(p * 100))%").font(.system(size: 22, weight: .bold, design: .rounded))
+                            Text("\(Int(p * 100))%").font(.system(size: 22, weight: .bold))
                                 .monospacedDigit()
                             ProgressView(value: p).frame(width: 260)
                         } else {
@@ -2664,13 +2749,14 @@ struct MainView: View {
                     }
                     .frame(maxWidth: 340)
                     .padding(28)
-                    .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(.regularMaterial))
+                    .surface(20)
                 }
                 .ignoresSafeArea()
                 .transition(.opacity)
             }
         }
         .frame(width: 480, height: 690)
+        .tint(Th.indigo)
         .background(WindowKeeper())
         .animation(.easeInOut(duration: 0.2), value: m.page)
         .animation(.easeInOut(duration: 0.2), value: m.onboarded)
@@ -2701,11 +2787,11 @@ struct MainView: View {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 40, height: 40)
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text("Amnesia").font(.system(size: 22, weight: .heavy, design: .rounded))
+                        Text("Amnesia").font(.system(size: 22, weight: .heavy))
                         Text("v\(appVersion)").font(.system(size: 11, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 7).padding(.vertical, 2)
-                            .background(Capsule().fill(LinearGradient(colors: Pal.accent,
+                            .background(Capsule().fill(LinearGradient(colors: Th.brand,
                                                                       startPoint: .leading, endPoint: .trailing)))
                     }
                     Text(T("Your Mac forgets everything, except what you choose.",
@@ -2718,7 +2804,7 @@ struct MainView: View {
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: 16, weight: .semibold))
                         .frame(width: 36, height: 36)
-                        .background(Circle().fill(.regularMaterial))
+                        .roundButtonFace()
                 }
                 .buttonStyle(.plain)
                 .help(T("Settings", "Pengaturan"))
@@ -2746,7 +2832,7 @@ struct MainView: View {
             }
             Button { m.page = .preview } label: {
                 HStack(spacing: 10) {
-                    IconBadge(icon: "eye.fill", colors: Pal.logout, size: 36)
+                    IconBadge(icon: "eye.fill", colors: Pal.preview, size: 36)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(T("What Gets Deleted", "Yang Akan Dihapus")).font(.system(size: 15, weight: .semibold))
                         Text(previewSub).font(.system(size: 12)).foregroundStyle(.secondary)
@@ -2755,7 +2841,7 @@ struct MainView: View {
                     Image(systemName: "chevron.right").foregroundStyle(.secondary)
                 }
                 .padding(12)
-                .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.regularMaterial))
+                .surface(18, fill: Th.tile)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -2792,7 +2878,7 @@ func vaultAppIcon(_ name: String) -> some View {
         return AnyView(Image(nsImage: NSWorkspace.shared.icon(forFile: path)).resizable().interpolation(.high))
     }
     return AnyView(Image(systemName: name.hasPrefix("~/") ? "folder.fill" : "terminal.fill")
-        .font(.system(size: 18)).foregroundStyle(.indigo))
+        .font(.system(size: 18)).foregroundStyle(Th.indigo))
 }
 
 func mbText(_ mb: Double) -> String {
@@ -2836,7 +2922,7 @@ struct VaultView: View {
                 PageHeader(title: "Profile Vault", icon: "lock.rectangle.stack.fill", colors: Pal.vault, back: back)
                 if let v = m.vault {
                     if !v.ok {
-                        Card { Note(text: v.error ?? T("Error", "Error"), icon: "exclamationmark.triangle.fill", color: .red) }
+                        Card { Note(text: v.error ?? T("Error", "Error"), icon: "exclamationmark.triangle.fill", color: Th.red) }
                     } else if v.exists != true {
                         setup(v)
                     } else {
@@ -2873,7 +2959,7 @@ struct VaultView: View {
             Note(text: T("The password CANNOT be recovered if you forget it. You can change it later.",
                          "Password TIDAK bisa dipulihkan kalau lupa. Nanti bisa diganti."),
                  icon: "exclamationmark.triangle.fill",
-                 color: .orange)
+                 color: Th.orange)
             Field(label: T("Vault password (min. \(v.min ?? 12) characters)",
                            "Password vault (min. \(v.min ?? 12) karakter)"), text: $pw)
             if !pw.isEmpty {
@@ -2915,7 +3001,7 @@ struct VaultView: View {
                     let p = man.per_app?[a]
                     HStack(spacing: 8) {
                         Image(systemName: a.hasPrefix("~/") ? "folder.fill" : "app.badge.checkmark.fill")
-                            .font(.system(size: 11)).foregroundStyle(.indigo).frame(width: 16)
+                            .font(.system(size: 11)).foregroundStyle(Th.indigo).frame(width: 16)
                         Text(a).font(.system(size: 12, weight: .semibold)).lineLimit(1).truncationMode(.middle)
                         Spacer(minLength: 6)
                         Text(p?.time ?? man.time).font(.system(size: 11)).foregroundStyle(.secondary).monospacedDigit()
@@ -2924,7 +3010,7 @@ struct VaultView: View {
                                 .frame(width: 64, alignment: .trailing)
                         }
                         Button { deleteSnapshots(only: a) } label: {
-                            Image(systemName: "trash").font(.system(size: 11)).foregroundStyle(.red)
+                            Image(systemName: "trash").font(.system(size: 11)).foregroundStyle(Th.red)
                         }
                         .buttonStyle(.plain).help(T("Delete only this snapshot", "Hapus snapshot ini saja"))
                     }
@@ -2942,7 +3028,7 @@ struct VaultView: View {
             Card {
                 Note(text: T("\(left) tries left. If all of them are wrong, the vault is DELETED FOREVER.",
                              "Kesempatan tinggal \(left) kali. Kalau semuanya salah, vault DIHAPUS PERMANEN."),
-                     icon: "exclamationmark.octagon.fill", color: .red)
+                     icon: "exclamationmark.octagon.fill", color: Th.red)
             }
         }
         Card {
@@ -2992,7 +3078,7 @@ struct VaultView: View {
         if !apps.isEmpty {
             Card {
                 HStack(spacing: 8) {
-                    Image(systemName: "leaf.fill").foregroundStyle(.green)
+                    Image(systemName: "leaf.fill").foregroundStyle(Th.green)
                     Text(T("Light snapshot", "Snapshot ringan")).font(.system(size: 13, weight: .semibold))
                 }
                 MoreText(T("For browsers. Light skips the browser's caches and the program files of Web Store extensions, so the "
@@ -3062,7 +3148,7 @@ struct VaultView: View {
                 ForEach(apps, id: \.self) { a in appTile(a, on: !isOff(a)) }
             }
             if !big.isEmpty || totalMB >= 1024 {
-                Note(text: slowText(totalMB, big), icon: "hourglass", color: .orange)
+                Note(text: slowText(totalMB, big), icon: "hourglass", color: Th.orange)
             }
         }
     }
@@ -3090,7 +3176,7 @@ struct VaultView: View {
                 ZStack(alignment: .topTrailing) {
                     vaultAppIcon(a).frame(width: 28, height: 28)
                     if on {
-                        Image(systemName: "checkmark.circle.fill").font(.system(size: 12)).foregroundStyle(.white, .indigo)
+                        Image(systemName: "checkmark.circle.fill").font(.system(size: 12)).foregroundStyle(.white, Th.indigo)
                             .offset(x: 6, y: -4)
                     }
                 }
@@ -3098,8 +3184,8 @@ struct VaultView: View {
                 Text(sizeText(a)).font(.system(size: 10)).foregroundStyle(.secondary).monospacedDigit()
             }
             .frame(maxWidth: .infinity, minHeight: 74)
-            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(on ? Color.indigo.opacity(0.18) : Color.primary.opacity(0.05)))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.indigo : Color.clear, lineWidth: 1.5))
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(on ? Th.indigo.opacity(0.18) : Color.primary.opacity(0.05)))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Th.indigo : Color.clear, lineWidth: 1.5))
             .opacity(on ? 1 : 0.65)
             .contentShape(Rectangle())
         }
@@ -3120,23 +3206,23 @@ struct VaultView: View {
                 .fixedSize(horizontal: false, vertical: true)
             ForEach(folders, id: \.self) { f in
                 HStack(spacing: 8) {
-                    Image(systemName: "folder.fill").foregroundStyle(.teal)
+                    Image(systemName: "folder.fill").foregroundStyle(Th.cyan)
                     Text("~/" + f).font(.system(size: 12, design: .monospaced)).lineLimit(1).truncationMode(.middle)
                     Spacer()
                     Text(sizeText("~/" + f)).font(.system(size: 11)).foregroundStyle(.secondary)
-                    Button { removeFolder(f) } label: { Image(systemName: "minus.circle.fill").foregroundStyle(.red) }
+                    Button { removeFolder(f) } label: { Image(systemName: "minus.circle.fill").foregroundStyle(Th.red) }
                         .buttonStyle(.plain).help(T("Remove from the vault", "Keluarkan dari vault"))
                 }
                 if (sizes["~/" + f] ?? 0) >= 1024 {
                     Note(text: T("This folder is big: snapshots and restores of it take a while, and the vault grows by its size.",
                                  "Folder ini besar: snapshot dan restore-nya makan waktu, dan vault bertambah sebesar itu."),
-                         icon: "hourglass", color: .orange)
+                         icon: "hourglass", color: Th.orange)
                 }
             }
             Button { addFolder() } label: {
                 Label(T("Add a folder…", "Tambah folder…"), systemImage: "plus.circle.fill")
             }
-            .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(.indigo)
+            .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(Th.indigo)
         }
     }
 
@@ -3196,7 +3282,7 @@ struct VaultView: View {
                 Image(systemName: "chevron.right").foregroundStyle(.secondary)
             }
             .padding(14)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.regularMaterial))
+            .surface(18, fill: Th.tile)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -3242,7 +3328,7 @@ struct VaultView: View {
                 Field(label: T("Step 1: current password", "Langkah 1: password sekarang"), text: $oldPw)
                     .onSubmit { checkOld() }
                 Note(text: T("If the current password is wrong, it counts as 1 failed try.", "Kalau password sekarang salah, itu dihitung 1 percobaan gagal."),
-                     icon: "exclamationmark.triangle.fill", color: .orange)
+                     icon: "exclamationmark.triangle.fill", color: Th.orange)
                 HStack {
                     Button(T("Cancel", "Batal")) { showPassword = false }.keyboardShortcut(.cancelAction)
                     Spacer()
@@ -3251,7 +3337,7 @@ struct VaultView: View {
                         .disabled(oldPw.isEmpty || checking)
                 }
             } else {
-                Note(text: T("The current password is correct.", "Password sekarang benar."), icon: "checkmark.circle.fill", color: .green)
+                Note(text: T("The current password is correct.", "Password sekarang benar."), icon: "checkmark.circle.fill", color: Th.green)
                 Field(label: T("Step 2: new password (min. \(minLen) characters)", "Langkah 2: password baru (min. \(minLen) karakter)"),
                       text: $newPw)
                 if !newPw.isEmpty {
@@ -3259,9 +3345,9 @@ struct VaultView: View {
                 }
                 if !newPw.isEmpty && newPw == oldPw {
                     Note(text: T("The new password must be different from the current one.", "Password baru harus beda dengan password sekarang."),
-                         icon: "xmark.circle.fill", color: .red)
+                         icon: "xmark.circle.fill", color: Th.red)
                 } else if !newPw.isEmpty && newPw.count < minLen {
-                    Note(text: T("Needs at least \(minLen) characters.", "Minimal \(minLen) karakter."), icon: "info.circle.fill", color: .orange)
+                    Note(text: T("Needs at least \(minLen) characters.", "Minimal \(minLen) karakter."), icon: "info.circle.fill", color: Th.orange)
                 } else {
                     MatchNote(a: newPw, b: newPw2)
                 }
@@ -3532,31 +3618,31 @@ enum History {
         case "clean":
             let n = w.count > 1 ? w[1] : "?"
             return w.first == "login"
-                ? ev("checkmark.shield.fill", .teal, T("Checked at login", "Dicek saat login"), T("\(n) items cleaned", "\(n) item dibersihkan"))
-                : ev("sparkles", .blue, T("Wiped at logout", "Dibersihkan saat logout"), T("\(n) items", "\(n) item"))
+                ? ev("checkmark.shield.fill", Th.cyan, T("Checked at login", "Dicek saat login"), T("\(n) items cleaned", "\(n) item dibersihkan"))
+                : ev("sparkles", Th.cyan, T("Wiped at logout", "Dibersihkan saat logout"), T("\(n) items", "\(n) item"))
         case "paused":
-            return ev("pause.circle.fill", .orange, data == "login" ? T("Login not wiped (paused)", "Login tidak dibersihkan (dijeda)")
+            return ev("pause.circle.fill", Th.orange, data == "login" ? T("Login not wiped (paused)", "Login tidak dibersihkan (dijeda)")
                                                                     : T("Logout not wiped (paused)", "Logout tidak dibersihkan (dijeda)"))
         case "snapshot":
             let auto = data.hasPrefix("auto:")
-            return ev("camera.fill", .indigo, auto ? T("Auto snapshot", "Snapshot otomatis") : T("Snapshot", "Snapshot"),
+            return ev("camera.fill", Th.indigo, auto ? T("Auto snapshot", "Snapshot otomatis") : T("Snapshot", "Snapshot"),
                       auto ? String(data.dropFirst(5)) : data)
         case "restore":
-            return ev("arrow.counterclockwise.circle.fill", .green, T("Profiles restored", "Profil dikembalikan"), data)
+            return ev("arrow.counterclockwise.circle.fill", Th.green, T("Profiles restored", "Profil dikembalikan"), data)
         case "backup":
             let auto = w.first == "1", vault = w.count > 1 && w[1] == "1", mb = w.count > 2 ? w[2] : "?"
             return ev("externaldrive.fill.badge.checkmark", Pal.ink,
                       auto ? T("Scheduled backup done", "Backup terjadwal berhasil") : T("Backup done", "Backup berhasil"),
                       "\(mb) MB" + (vault ? T(", vault included", ", termasuk vault") : ""))
         case "restorefiles":
-            return ev("arrow.uturn.backward.circle.fill", .green, T("Files restored from a backup", "File dipulihkan dari backup"),
+            return ev("arrow.uturn.backward.circle.fill", Th.green, T("Files restored from a backup", "File dipulihkan dari backup"),
                       T("\(data) items back in their place", "\(data) item kembali ke tempatnya"))
         case "backupfail":
-            return ev("exclamationmark.triangle.fill", .red,
+            return ev("exclamationmark.triangle.fill", Th.red,
                       data == "1" ? T("Scheduled backup failed", "Backup terjadwal gagal") : T("Backup failed", "Backup gagal"),
                       T("Details on the Backup page", "Detailnya di halaman Backup"))
         case "doomsday":
-            return ev("flame.fill", .red, T("Vault deleted", "Vault dihapus"),
+            return ev("flame.fill", Th.red, T("Vault deleted", "Vault dihapus"),
                       data == "keep" ? T("Too many wrong passwords or the panic word was typed. Keep folder emptied too",
                                          "Password salah terlalu banyak atau kata panik diketik. Folder Keep ikut dikosongkan")
                                      : T("Too many wrong passwords or the panic word was typed", "Password salah terlalu banyak atau kata panik diketik"))
@@ -3681,7 +3767,7 @@ struct MoveView: View {
     private func step(_ n: String, _ t: String, _ sub: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text(n).font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
-                .frame(width: 22, height: 22).background(Circle().fill(Color.pink))
+                .frame(width: 22, height: 22).background(Circle().fill(Th.pink))
             VStack(alignment: .leading, spacing: 1) {
                 Text(t).font(.system(size: 13, weight: .semibold))
                 Text(sub).font(.system(size: 11)).foregroundStyle(.secondary)
@@ -3696,7 +3782,7 @@ struct MoveView: View {
             Text(T("On the old Mac", "Di Mac lama")).font(.system(size: 13, weight: .semibold))
             if let k = v.keys {
                 Note(text: T("Keys saved \(k.time): ", "Kunci tersimpan \(k.time): ") + k.apps.joined(separator: ", "),
-                     icon: "checkmark.circle.fill", color: .green)
+                     icon: "checkmark.circle.fill", color: Th.green)
             }
             HStack(spacing: 10) {
                 Button { exportKeys() } label: { Label(T("Prepare Move", "Siapkan Pindah"), systemImage: "key.fill") }
@@ -3864,19 +3950,19 @@ struct KeepView: View {
             && !dir.boolValue
         return HStack(spacing: 10) {
             Image(systemName: isKey ? "key.fill" : (isFile ? "doc.fill" : "folder.fill"))
-                .foregroundStyle(isKey ? Color.orange : Color.teal)
+                .foregroundStyle(isKey ? Th.orange : Th.cyan)
             Text(shown)
                 .font(.system(size: 12, design: .monospaced))
                 .lineLimit(1).truncationMode(.middle)
             Spacer()
             Button { remove(e) } label: {
-                Image(systemName: "minus.circle.fill").foregroundStyle(.red)
+                Image(systemName: "minus.circle.fill").foregroundStyle(Th.red)
             }
             .buttonStyle(.plain)
             .help(T("Remove from Keep List", "Keluarkan dari Keep List"))
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.regularMaterial))
+        .surface(10, fill: Th.tile)
     }
 
     private func remove(_ e: String) {
@@ -4169,7 +4255,7 @@ struct AppPickList: View {
                     HStack(spacing: 5) {
                         Text(a.name).font(.system(size: 13, weight: .semibold))
                         if a.inVault {
-                            Image(systemName: "lock.rectangle.stack.fill").font(.system(size: 10)).foregroundStyle(.indigo)
+                            Image(systemName: "lock.rectangle.stack.fill").font(.system(size: 10)).foregroundStyle(Th.indigo)
                                 .help(T("The Profile Vault can save this app's logins", "Profile Vault bisa menyimpan login app ini"))
                         }
                     }
@@ -4184,7 +4270,7 @@ struct AppPickList: View {
             if on { details(a) }
         }
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.regularMaterial))
+        .surface(12, fill: Th.tile)
     }
 
     /// Apa saja yang disimpan dari app ini: jenis data, lokasinya, dan ukurannya.
@@ -4193,7 +4279,7 @@ struct AppPickList: View {
             ForEach(a.paths, id: \.self) { p in
                 let k = pathKind(p)
                 HStack(spacing: 8) {
-                    Image(systemName: k.icon).font(.system(size: 10)).foregroundStyle(.teal).frame(width: 14)
+                    Image(systemName: k.icon).font(.system(size: 10)).foregroundStyle(Th.cyan).frame(width: 14)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(k.label).font(.system(size: 11, weight: .semibold))
                         Text("~/" + p).font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
@@ -4273,7 +4359,7 @@ struct KeepSetupView: View {
     var body: some View {
         VStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(T("What should stay?", "Apa yang tetap disimpan?")).font(.system(size: 26, weight: .heavy, design: .rounded))
+                Text(T("What should stay?", "Apa yang tetap disimpan?")).font(.system(size: 26, weight: .heavy))
                 Text(T("These apps are on your Mac. Switch on the ones that should keep their data; we already "
                        + "switched on VPNs and password managers. Switch one on to see exactly what's kept.",
                        "Ini app yang ada di Mac kamu. Nyalakan yang datanya mau disimpan; VPN dan password manager "
@@ -4369,7 +4455,7 @@ struct OnboardingView: View {
             .transition(.opacity)
             HStack(spacing: 6) {
                 ForEach(0...last, id: \.self) { i in
-                    Capsule().fill(i == step ? Color.indigo : Color.primary.opacity(0.15))
+                    Capsule().fill(i == step ? Th.indigo : Color.primary.opacity(0.15))
                         .frame(width: i == step ? 18 : 7, height: 7)
                 }
             }
@@ -4395,7 +4481,7 @@ struct OnboardingView: View {
 
     private func title(_ t: String, _ sub: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(t).font(.system(size: 30, weight: .heavy, design: .rounded))
+            Text(t).font(.system(size: 30, weight: .heavy))
             Text(sub).font(.system(size: 15)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -4419,7 +4505,7 @@ struct OnboardingView: View {
         VStack(spacing: 16) {
             Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 128, height: 128)
             Text(T("Welcome to Amnesia", "Selamat datang di Amnesia"))
-                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                .font(.system(size: 32, weight: .heavy))
             Text(T("Your Mac forgets everything every time you log out, except the stuff you choose to keep. "
                    + "This quick tour sets it up with you. Nothing gets deleted until you say so.",
                    "Mac kamu lupa semuanya setiap logout, kecuali yang kamu pilih untuk disimpan. "
@@ -4472,7 +4558,7 @@ struct OnboardingView: View {
             Button { NSWorkspace.shared.open(URL(string: termsURL)!) } label: {
                 Label(T("Read the full terms", "Baca ketentuan lengkap"), systemImage: "arrow.up.right.square")
             }
-            .buttonStyle(.plain).font(.system(size: 14, weight: .semibold)).foregroundStyle(.indigo)
+            .buttonStyle(.plain).font(.system(size: 14, weight: .semibold)).foregroundStyle(Th.indigo)
         }
     }
 
@@ -4534,7 +4620,7 @@ struct OnboardingView: View {
             if Engine.sevenz == nil {
                 Note(text: T("7-Zip is missing. Run in Terminal: brew install sevenzip",
                              "7-Zip belum ada. Jalankan di Terminal: brew install sevenzip"),
-                     icon: "exclamationmark.triangle.fill", color: .orange)
+                     icon: "exclamationmark.triangle.fill", color: Th.orange)
             }
             Button { recheck += 1 } label: { Label(T("Check again", "Cek lagi"), systemImage: "arrow.clockwise") }
                 .buttonStyle(.plain).font(.system(size: 14, weight: .semibold))
@@ -4544,7 +4630,7 @@ struct OnboardingView: View {
     private func status(_ ok: Bool, _ t: String, _ sub: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: ok ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .font(.system(size: 24)).foregroundStyle(ok ? .green : .red)
+                .font(.system(size: 24)).foregroundStyle(ok ? Th.green : Th.red)
             VStack(alignment: .leading, spacing: 2) {
                 Text(t).font(.system(size: 16, weight: .semibold))
                 Text(sub).font(.system(size: 13.5)).foregroundStyle(.secondary)
@@ -4594,7 +4680,7 @@ struct OnboardingView: View {
             ForEach(0..<detail.count, id: \.self) { i in
                 let d = detail[i]
                 HStack(spacing: 8) {
-                    Image(systemName: "folder.fill").font(.system(size: 10)).foregroundStyle(.teal).frame(width: 14)
+                    Image(systemName: "folder.fill").font(.system(size: 10)).foregroundStyle(Th.cyan).frame(width: 14)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(d.0).font(.system(size: 12.5, weight: .semibold))
                         Text(d.1).font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
@@ -4606,7 +4692,7 @@ struct OnboardingView: View {
             }
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.regularMaterial))
+        .surface(14, fill: Th.tile)
     }
 
     // 6. Profile Vault
@@ -4626,7 +4712,7 @@ struct OnboardingView: View {
             }
             Note(text: T("Panic word: set a word that destroys the vault right away if you ever type it.",
                          "Kata panik: atur 1 kata yang langsung memusnahkan vault kalau kamu mengetiknya."),
-                 icon: "flame.fill", color: .orange)
+                 icon: "flame.fill", color: Th.orange)
         }
     }
 
@@ -4648,7 +4734,7 @@ struct OnboardingView: View {
             }
             Note(text: T("Amnesia stays OFF until you press Turn On. Take your time.",
                          "Amnesia tetap MATI sampai kamu tekan Aktifkan. Santai saja."),
-                 icon: "power", color: .green)
+                 icon: "power", color: Th.green)
         }
     }
 }
@@ -4752,7 +4838,7 @@ struct RestoreFilesSheet: View {
             .frame(minHeight: 160, maxHeight: 320)
             Note(text: T("Anything already in that place is moved to ~/.amnesia/before-restore first, nothing is overwritten.",
                          "Yang sudah ada di tempat itu dipindah dulu ke ~/.amnesia/before-restore, tidak ada yang ditimpa."),
-                 icon: "checkmark.shield.fill", color: .green)
+                 icon: "checkmark.shield.fill", color: Th.green)
             HStack {
                 Button(T("Cancel", "Batal")) { close() }.keyboardShortcut(.cancelAction)
                 Spacer()
@@ -4964,7 +5050,7 @@ struct BackupView: View {
                     Card {
                         Note(text: backupText(status),
                              icon: status.contains("OK:") ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
-                             color: status.contains("OK:") ? .green : .red)
+                             color: status.contains("OK:") ? Th.green : Th.red)
                     }
                 }
                 Card {
@@ -5019,7 +5105,7 @@ struct BackupView: View {
                     if !withVault {
                         Note(text: T("Without this, a lost vault (for example 3 wrong passwords) cannot be brought back.",
                                      "Tanpa ini, vault yang hilang (misalnya salah password 3x) tidak bisa dikembalikan."),
-                             icon: "exclamationmark.triangle.fill", color: .orange)
+                             icon: "exclamationmark.triangle.fill", color: Th.orange)
                     }
                 }
                 Card {
@@ -5037,7 +5123,7 @@ struct BackupView: View {
                     Note(text: T("The .7z file is locked with AES-256, file names too. Without the password, "
                                  + "nobody can open it.",
                                  "File .7z dikunci AES-256, nama file di dalamnya juga. Tanpa password, backup "
-                                 + "tidak bisa dibuka."), icon: "exclamationmark.triangle.fill", color: .orange)
+                                 + "tidak bisa dibuka."), icon: "exclamationmark.triangle.fill", color: Th.orange)
                 }
                 Card {
                     Text(T("Schedule", "Jadwal")).font(.system(size: 13, weight: .semibold))
@@ -5134,7 +5220,7 @@ struct BackupView: View {
         if drives.isEmpty {
             Note(text: T("No external drive found. Plug in an SSD/USB drive, then press ↻.",
                          "Tidak ada drive eksternal. Colok SSD/flashdisk lalu tekan ↻."),
-                 icon: "externaldrive.badge.xmark", color: .red)
+                 icon: "externaldrive.badge.xmark", color: Th.red)
         } else {
             Picker("", selection: $drive) {
                 ForEach(drives) { d in Text("\(d.name)  ·  \(d.free)").tag(d.name) }
@@ -5152,7 +5238,7 @@ struct BackupView: View {
         }
         if portNumber == nil {
             Note(text: T("The port is a number from 1 to 65535 (usually 22).", "Port berupa angka 1 sampai 65535 (biasanya 22)."),
-                 icon: "xmark.circle.fill", color: .red)
+                 icon: "xmark.circle.fill", color: Th.red)
         }
         Field(label: T("Server password (only the first time, never saved)",
                        "Password server (hanya pertama kali, tidak disimpan)"), text: $sshPw)
@@ -5201,7 +5287,7 @@ struct BackupView: View {
                              + "Drive folder and the Google Drive app uploads it.",
                              "Ketemu, login sebagai \(g.account). Tidak perlu login lagi: Amnesia menaruh backup di folder "
                              + "Google Drive dan app Google Drive yang mengunggahnya."),
-                     icon: "checkmark.circle.fill", color: .green)
+                     icon: "checkmark.circle.fill", color: Th.green)
             } else if gState == "checking" {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
@@ -5213,12 +5299,12 @@ struct BackupView: View {
                                  + "then press Check Again.",
                                  "Google Drive sudah login, tapi belum siap (masih sinkron). Tunggu sampai selesai, "
                                  + "lalu tekan Cek Lagi."),
-                         icon: "hourglass", color: .orange)
+                         icon: "hourglass", color: Th.orange)
                 } else if !googleDriveInstalled() {
                     Note(text: T("The Google Drive app isn't installed. It's free from Google. Or pick another service, "
                                  + "or Connect directly.",
                                  "App Google Drive belum terpasang. Gratis dari Google. Atau pilih layanan lain, atau Hubungkan langsung."),
-                         icon: "exclamationmark.triangle.fill", color: .orange)
+                         icon: "exclamationmark.triangle.fill", color: Th.orange)
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     Text(T("1. Open the Google Drive app and sign in.", "1. Buka app Google Drive dan login."))
@@ -5246,7 +5332,7 @@ struct BackupView: View {
             if connected.contains(remote) {
                 Note(text: user[remote].map { T("Connected as \($0).", "Terhubung sebagai \($0).") }
                      ?? T("\(provider.name) is connected.", "\(provider.name) sudah terhubung."),
-                     icon: "checkmark.circle.fill", color: .green)
+                     icon: "checkmark.circle.fill", color: Th.green)
             }
             Button { setupCloud() } label: {
                 Label(connected.contains(remote) ? T("Reconnect \(provider.name)", "Hubungkan ulang \(provider.name)")
@@ -5801,7 +5887,7 @@ struct SettingsView: View {
                     Card {
                         Note(text: T("Give Amnesia Full Disk Access once, so macOS stops asking about every folder.",
                                      "Beri Amnesia Akses Disk Penuh sekali, supaya macOS tidak tanya per folder."),
-                             icon: "lock.open.fill", color: .orange)
+                             icon: "lock.open.fill", color: Th.orange)
                         Note(text: T("Pressed \"Limit Access\" or \"Don't Allow\" by mistake? Open Privacy Settings → "
                                      + "Full Disk Access, switch Amnesia on, then Quit & Reopen.",
                                      "Terlanjur menekan \"Limit Access\" atau \"Don't Allow\"? Buka Pengaturan Privasi → "
@@ -5947,12 +6033,12 @@ struct PreviewView: View {
                     Note(text: T("\(a.title) is on hold so you can check first. Your Keep folder (\(KeepDir.shown)), "
                                  + "the Keep List and the Profile Vault stay safe.",
                                  "\(a.title) ditahan sebentar supaya kamu bisa cek dulu. Folder Keep (\(KeepDir.shown)), "
-                                 + "Keep List dan Profile Vault tetap aman."), icon: "hand.raised.fill", color: .orange)
+                                 + "Keep List dan Profile Vault tetap aman."), icon: "hand.raised.fill", color: Th.orange)
                 }
             }
             if m.report != nil {
                 HStack {
-                    Text(T("\(total) items", "\(total) item")).font(.system(size: 20, weight: .bold, design: .rounded))
+                    Text(T("\(total) items", "\(total) item")).font(.system(size: 20, weight: .bold))
                     Spacer()
                     Text(T("click a group for details", "klik kelompok untuk detail")).font(.system(size: 11)).foregroundStyle(.secondary)
                 }
@@ -6025,7 +6111,7 @@ struct PreviewView: View {
                     VStack(alignment: .trailing, spacing: 2) {
                         Text("\(grp.items.count)").font(.system(size: 12, weight: .bold))
                             .padding(.horizontal, 8).padding(.vertical, 2)
-                            .background(Capsule().fill(Color.pink.opacity(0.15)))
+                            .background(Capsule().fill(Th.pink.opacity(0.15)))
                         if let sz = sizes[grp.id], !sz.isEmpty {
                             Text(sz).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
                         }
@@ -6049,7 +6135,7 @@ struct PreviewView: View {
             }
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.regularMaterial))
+        .surface(12, fill: Th.tile)
     }
 
     /// 1 baris: ikon + nama yang jelas. Path lengkap muncul saat disorot atau diklik.
@@ -6125,9 +6211,9 @@ struct MenuTile: View {
             .frame(maxWidth: .infinity, minHeight: 74, alignment: .topLeading)
             .padding(10)
             .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.primary.opacity(hover && enabled ? 0.10 : 0.05)))
+                .fill(hover && enabled ? Th.tint : Th.tile))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(colors[0].opacity(hover && enabled ? 0.6 : 0), lineWidth: 1))
+                .strokeBorder(hover && enabled ? colors[0].opacity(0.6) : Th.line, lineWidth: 1))
             .opacity(enabled ? 1 : 0.4)
             .contentShape(Rectangle())
         }
@@ -6153,7 +6239,8 @@ struct InfoChip: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(color.opacity(0.12)))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(color.opacity(0.11)))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(color.opacity(0.30), lineWidth: 1))
     }
 }
 
@@ -6168,32 +6255,38 @@ struct MenuPanel: View {
         return T("No snapshot yet", "Belum ada snapshot")
     }
 
+    private var sc: Color { m.state.colors.last ?? Th.green }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // kartu status berwarna
+            // kartu status (v5.18: gaya website, warna status tipis)
             HStack(spacing: 12) {
                 ZStack {
-                    Circle().fill(Color.white.opacity(0.25)).frame(width: 46, height: 46)
+                    Circle().fill(m.state == .off ? Th.tint : sc.opacity(0.25)).frame(width: 46, height: 46)
+                    Circle().strokeBorder(m.state == .off ? Th.line2 : sc.opacity(0.35), lineWidth: 1).frame(width: 46, height: 46)
                     Image(systemName: m.state.icon).font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(m.state == .off ? Th.muted : sc)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(m.state.title).font(.system(size: 17, weight: .bold, design: .rounded))
-                    Text(m.lastClean).font(.system(size: 11, weight: .medium)).opacity(0.9)
+                    Text(m.state.title).font(.system(size: 17, weight: .bold)).foregroundStyle(.primary)
+                    Text(m.lastClean).font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
             }
-            .foregroundStyle(.white)
             .padding(14)
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(LinearGradient(colors: m.state.colors, startPoint: .topLeading, endPoint: .bottomTrailing)))
-            .shadow(color: (m.state.colors.last ?? .black).opacity(0.35), radius: 10, y: 5)
+                .fill(m.state == .off ? AnyShapeStyle(Th.tint)
+                      : AnyShapeStyle(LinearGradient(colors: [sc.opacity(0.24), sc.opacity(0.06)],
+                                                     startPoint: .topLeading, endPoint: .bottomTrailing))))
+            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(m.state == .off ? Th.line2 : sc.opacity(0.35), lineWidth: 1))
 
             HStack(spacing: 8) {
                 InfoChip(icon: "lock.rectangle.stack.fill", label: "Snapshot vault", value: vaultValue,
-                         color: Color(hex: 0x6366F1))
+                         color: Th.indigo)
                 InfoChip(icon: "pin.fill", label: "Keep List", value: T("\(Keep.entries().count) items", "\(Keep.entries().count) item"),
-                         color: Color(hex: 0x14B8A6))
+                         color: Th.green)
             }
 
             if let b = m.busy {
@@ -6237,6 +6330,7 @@ struct MenuPanel: View {
         }
         .padding(14)
         .frame(width: 320)
+        .tint(Th.indigo)
         .onAppear {
             m.refresh()
             m.refreshVault()
@@ -6381,7 +6475,7 @@ enum Shots {
                     }
                     Text(ok).font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
                         .frame(maxWidth: .infinity).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.accentColor))
+                        .background(RoundedRectangle(cornerRadius: 6).fill(Th.indigo))
                 }
             }
             .padding(20)

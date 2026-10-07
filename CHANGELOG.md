@@ -5,6 +5,21 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.18 — 2026-10-07
+
+### Changed
+- **The app now looks like the website.** Same colors, same surfaces, in both dark and light mode (it follows your Mac's Appearance setting by itself).
+  - **Background:** near-black (or soft white in light mode) with a faint indigo light top right and a cyan light bottom left, like the website hero.
+  - **Cards and panels** are flat with a thin border instead of frosted glass. Round buttons (Back, Settings) and text fields get the same thin border.
+  - **Feature colors are back, but calm:** Profile Vault indigo, Save & Log Out cyan, Pause orange, Keep List green, Backup pink, History gray, What Gets Deleted violet. Icons sit on a light tint of their color instead of a solid block.
+  - **Home tiles** get a colored border and soft glow when you hover them.
+  - **Status card** (home and menu bar panel): a light green tint when Amnesia is On, orange when Paused, neutral when Off. The text is no longer white on a full-color block. Turn On is a solid indigo button; Turn Off is a tinted button.
+  - **Buttons:** the main button (indigo) and delete buttons (red) are solid with white text, feature buttons are tinted with a colored border, gray buttons are neutral.
+  - **Popups:** the colored boxes use the website colors (What will happen cyan, What gets deleted red, These stay saved green, What you need to do indigo, Be careful orange, Good to know gray), and the main popup button is indigo (red when it deletes something) instead of your Mac's accent color.
+  - **Small icons and notes** across all pages (History, Profile Vault, Keep List, Backup, Settings) use the same palette instead of the standard system colors.
+  - The version badge next to the title uses the brand gradient (cyan, indigo, pink). Titles use the normal system font instead of the rounded one, like the website.
+- Nothing else changed: same pages, same buttons, same behavior.
+
 ## Website — 2026-10-07
 
 ### Changed

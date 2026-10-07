@@ -316,10 +316,12 @@ HAPUS  ~/Downloads/Wiki_ the complete salt.md documentation_files
 HAPUS  ~/Downloads/amnesia-v5.16.zip
 HAPUS  ~/Downloads/amnesia-v5.17.1-r2.zip
 HAPUS  ~/Downloads/amnesia-v5.17.zip
+HAPUS  ~/Downloads/amnesia-v5.18.zip
 HAPUS  ~/Downloads/amnesia-v5.zip
 HAPUS  ~/Downloads/amnesia-website-v1-r2.zip
 HAPUS  ~/Downloads/amnesia-website-v2.zip
 HAPUS  ~/Downloads/amnesia-website-v3.zip
+HAPUS  ~/Downloads/amnesia-website-v4.zip
 HAPUS  ~/Downloads/bheart.mid
 HAPUS  ~/Downloads/m2-res_1080p.mp4
 HAPUS  ~/Downloads/salt.md · the open-source workspace for people and agents.html
@@ -327,4 +329,4 @@ HAPUS  ~/Downloads/salt.md · the open-source workspace for people and agents_fi
 HAPUS  ~/.Trash/.DS_Store
 HAPUS  ~/.Trash/Amnesia.app
 HAPUS  ~/.Trash/amnesia-lama-20261007-0103
---- dry-run (logout): 329 items would be deleted. Nothing was deleted. ---
+--- dry-run (logout): 331 items would be deleted. Nothing was deleted. ---

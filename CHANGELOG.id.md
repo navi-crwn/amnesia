@@ -5,6 +5,21 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.18 — 2026-10-07
+
+### Diubah
+- **Tampilan app sekarang sama dengan website.** Warna dan permukaannya sama, di mode gelap maupun terang (otomatis mengikuti pengaturan Appearance di Mac kamu).
+  - **Latar:** hampir hitam (atau putih lembut di mode terang) dengan cahaya indigo tipis di kanan atas dan cyan di kiri bawah, seperti bagian atas website.
+  - **Kartu dan panel** sekarang datar dengan garis tipis, bukan kaca buram. Tombol bulat (Kembali, Pengaturan) dan kolom isian juga memakai garis tipis yang sama.
+  - **Warna per fitur kembali, tapi tetap kalem:** Profile Vault indigo, Simpan & Logout cyan, Jeda oranye, Keep List hijau, Backup pink, Riwayat abu-abu, Yang Akan Dihapus ungu. Ikon diletakkan di atas warna tipis, bukan kotak warna penuh.
+  - **Kotak di beranda** memunculkan garis berwarna dan cahaya lembut saat disorot kursor.
+  - **Kartu status** (beranda dan panel menu bar): hijau tipis saat Amnesia Aktif, oranye saat Dijeda, netral saat Mati. Teksnya tidak lagi putih di atas blok warna penuh. Tombol Aktifkan berwarna indigo penuh; tombol Matikan berwarna tipis.
+  - **Tombol:** tombol utama (indigo) dan tombol hapus (merah) berwarna penuh dengan teks putih, tombol fitur berwarna tipis dengan garis warna, tombol abu-abu netral.
+  - **Popup:** kotak berwarnanya memakai warna website (Yang akan terjadi cyan, Yang akan dihapus merah, Tetap tersimpan hijau, Yang perlu kamu lakukan indigo, Perhatikan oranye, Perlu diketahui abu-abu), dan tombol utama popup berwarna indigo (merah kalau menghapus sesuatu), bukan warna aksen Mac kamu.
+  - **Ikon kecil dan catatan** di semua halaman (Riwayat, Profile Vault, Keep List, Backup, Pengaturan) memakai palet yang sama, bukan warna bawaan sistem.
+  - Label versi di samping judul memakai gradasi merek (cyan, indigo, pink). Judul memakai huruf sistem biasa, bukan huruf bulat, seperti website.
+- Selain tampilan tidak ada yang berubah: halaman, tombol dan cara kerjanya tetap sama.
+
 ## Website — 2026-10-07
 
 ### Diubah
