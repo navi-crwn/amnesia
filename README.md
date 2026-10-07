@@ -120,7 +120,7 @@ git clone https://github.com/navi-crwn/amnesia-mac.git ~/.amnesia
 bash ~/.amnesia/app/build.sh
 ```
 
-**Uninstalling:** press *Turn Off* in the app first, then delete the app. Your vault and settings live in `~/.amnesia`.
+**Uninstalling:** open Settings and press *Uninstall Amnesia*. Your vault and settings stay in `~/.amnesia`.
 
 ## First-time setup
 
@@ -182,10 +182,11 @@ Press *Turn Off* in the app. Your Mac stops being wiped until you turn it back o
 
 ## Uninstall
 
-> [!IMPORTANT]
-> Don't just drag Amnesia to the Trash. Its login agent would stay behind and keep running at every login.
+The easy way: open **Settings** in the app and press **Uninstall Amnesia**. It turns Amnesia off for good and moves the app to the Trash. Your vault, Keep List and settings in `~/.amnesia` stay, and your Keep folder is never touched.
 
-Paste this in Terminal:
+Dragged Amnesia to the Trash anyway? That's safe too: Amnesia notices, turns itself off and wipes nothing anymore.
+
+Prefer Terminal? Paste this:
 
 ```bash
 bash ~/.amnesia/uninstall.sh

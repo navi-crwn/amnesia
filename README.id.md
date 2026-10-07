@@ -120,7 +120,7 @@ git clone https://github.com/navi-crwn/amnesia-mac.git ~/.amnesia
 bash ~/.amnesia/app/build.sh
 ```
 
-**Mau uninstall:** tekan *Matikan* di app dulu, baru hapus app-nya. Vault dan setting kamu ada di `~/.amnesia`.
+**Mau uninstall:** buka Pengaturan lalu tekan *Hapus Amnesia*. Vault dan setting kamu tetap ada di `~/.amnesia`.
 
 ## Cara pakai pertama kali
 
@@ -182,10 +182,11 @@ Tekan *Matikan* di app. Mac berhenti dibersihkan sampai kamu aktifkan lagi.
 
 ## Cara hapus
 
-> [!IMPORTANT]
-> Jangan cuma buang Amnesia ke Trash. Agent login-nya akan tertinggal dan tetap jalan setiap login.
+Cara paling gampang: buka **Pengaturan** di app lalu tekan **Hapus Amnesia**. Amnesia dimatikan untuk seterusnya dan app-nya dipindah ke Trash. Vault, Keep List dan pengaturan di `~/.amnesia` tetap ada, dan folder Keep kamu tidak pernah disentuh.
 
-Tempel ini di Terminal:
+Terlanjur menyeret Amnesia ke Trash? Itu juga aman: Amnesia tahu, mematikan dirinya sendiri dan tidak membersihkan apa pun lagi.
+
+Lebih suka Terminal? Tempel ini:
 
 ```bash
 bash ~/.amnesia/uninstall.sh

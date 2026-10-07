@@ -5,6 +5,20 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.15 — 2026-10-07
+
+### Fixed
+- **Only the menu bar icon at login, no window.** If you tick "Reopen windows when logging back in" when you log out, macOS opened Amnesia again at login with its main window showing. Amnesia now tells macOS not to reopen it that way, and its window is no longer brought back automatically. At login it's started by "Open at login", in the menu bar only.
+
+### Added
+- **Uninstall button** in Settings: *Uninstall Amnesia*. It turns Amnesia off for good (the login agent and the "Open at login" item are removed first, so nothing gets wiped), empties `~/.amnesia-trash` and moves the app to the Trash. Your vault, Keep List and settings in `~/.amnesia` stay, and so does your Keep folder. No Terminal needed. If you installed with Homebrew, the popup tells you to use `brew uninstall --cask amnesia` instead.
+- **Safe when the app is dragged to the Trash.** While Amnesia is open, it checks every few seconds whether its app is still in Applications. If it was moved to the Trash, it turns itself off right away and tells you how to finish (empty the Trash) or undo it (Put Back, open, Turn On).
+- **The login agent checks too.** At logout it first checks that the Amnesia app still exists. If the app was deleted or is in the Trash, it wipes nothing and removes itself, so it never runs again. This works even when the app wasn't open.
+
+### Changed
+- README and the website explain the new uninstall button.
+- New test in `test_clean.sh`: the agent cleans at logout while the app exists, and does nothing when the app is gone or in the Trash.
+
 ## v5.14 — 2026-10-07
 
 ### Faster logout and login

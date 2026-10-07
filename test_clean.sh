@@ -81,4 +81,22 @@ AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" login >/dev/null 2>&1
 gone "Downloads/f.txt"; grep -q "clean login: light=0" "$T/.amnesia/trace.log" || { echo "FAILED: full login after interrupted logout"; fail=1; }
 ! grep -q "f.txt\|e.txt" "$T/.amnesia/trace.log" || { echo "FAILED: trace.log contains file names"; fail=1; }
 
+# v5.15: agent.sh membersihkan saat logout hanya kalau app masih ada (dibuang ke Trash = tidak membersihkan)
+G="$T/agenthome"; mkdir -p "$G/.amnesia" "$G/Library/LaunchAgents" "$G/Amnesia.app"
+cp "$DIR/agent.sh" "$G/.amnesia/"
+printf '#!/bin/bash\ntouch "$HOME/cleaned"\n' > "$G/.amnesia/clean.sh"
+agent_logout() {   # $1 = letak app untuk agent
+    touch "$G/.amnesia/.just_activated" "$G/Library/LaunchAgents/com.amnesia.agent.plist" \
+          "$G/Library/LaunchAgents/com.amnesia.menubar.plist"
+    HOME="$G" AMNESIA_APP="$1" bash "$G/.amnesia/agent.sh" & local pid=$!
+    sleep 1; kill -TERM $pid; wait $pid 2>/dev/null
+}
+agent_logout "$G/Amnesia.app"
+[ -f "$G/cleaned" ] || { echo "FAILED: agent did not clean while the app exists"; fail=1; }
+rm -f "$G/cleaned"; agent_logout "$G/Gone.app"
+[ ! -f "$G/cleaned" ] || { echo "FAILED: agent cleaned although the app is gone"; fail=1; }
+[ ! -f "$G/Library/LaunchAgents/com.amnesia.agent.plist" ] || { echo "FAILED: agent not turned off after app removed"; fail=1; }
+rm -f "$G/cleaned"; agent_logout "$G/.Trash/Amnesia.app"
+[ ! -f "$G/cleaned" ] || { echo "FAILED: agent cleaned although the app is in the Trash"; fail=1; }
+
 [ $fail = 0 ] && echo "OK: all clean.sh tests passed" || exit 1

@@ -375,6 +375,8 @@ enum Agent {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/bin/bash")
         p.arguments = [P.a + "/agent.sh"]
+        // v5.15: agent.sh tahu letak app. App dibuang ke Trash → saat logout tidak membersihkan apa pun.
+        p.environment = ProcessInfo.processInfo.environment.merging(["AMNESIA_APP": Bundle.main.bundlePath]) { $1 }
         do { try p.run() } catch { exit(1) }
         // sinyal diabaikan SETELAH agent.sh jalan (kalau sebelumnya, trap di bash tidak berfungsi)
         var sources: [DispatchSourceSignal] = []
@@ -1580,7 +1582,7 @@ final class Model: ObservableObject {
             self.updateReport()
         }
         timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refresh() }
+            Task { @MainActor in self?.refresh(); self?.checkTrashed() }
         }
         // cek jadwal backup: 2 menit setelah app jalan, lalu tiap 10 menit
         backupTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
@@ -1831,6 +1833,87 @@ final class Model: ObservableObject {
         try? fm.removeItem(atPath: P.plist)
         sh(P.launchctl, ["bootout", "\(P.domain)/\(P.label)"])
         try? fm.removeItem(atPath: P.pause)
+    }
+
+    // --- uninstall (v5.15) ---
+
+    private var trashedShown = false
+
+    /// Hanya app yang terpasang di Applications (bukan dari .dmg atau Downloads).
+    private var installedApp: Bool {
+        let b = Bundle.main.bundlePath
+        return !b.contains("/AppTranslocation/") && (b.hasPrefix("/Applications/") || b.hasPrefix(P.realHome + "/Applications/"))
+    }
+
+    /// Mematikan semua yang jalan otomatis, sama seperti uninstall.sh. Vault & pengaturan di ~/.amnesia tetap ada.
+    private func turnOffForGood() {
+        let fm = FileManager.default
+        // plist dihapus DULU: agent yang dihentikan melihatnya dan keluar tanpa membersihkan apa pun
+        for f in [P.plist, P.oldPlist, Agent.LoginItem.plist] { try? fm.removeItem(atPath: f) }
+        for l in [P.label, P.oldLabel, Agent.LoginItem.label] { sh(P.launchctl, ["bootout", "\(P.domain)/\(l)"]) }
+        try? fm.removeItem(atPath: P.pause)
+        // sisa pembersihan yang belum selesai dihapus di background (tempat sampah milik Amnesia sendiri)
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/bin/rm")
+        p.arguments = ["-rf", P.home + "/.amnesia-trash"]
+        try? p.run()
+    }
+
+    private func quitNow() {
+        allowQuit = true
+        NSApp.terminate(nil)
+    }
+
+    /// Tombol "Uninstall Amnesia" di Pengaturan.
+    func uninstall() {
+        let brew = ["/opt/homebrew/Caskroom/amnesia", "/usr/local/Caskroom/amnesia"]
+            .contains { FileManager.default.fileExists(atPath: $0) }
+        let brewNote = brew ? T("\n\nInstalled with Homebrew? Then run this in Terminal instead: brew uninstall --cask amnesia",
+                                "\n\nPasang lewat Homebrew? Jalankan ini di Terminal saja: brew uninstall --cask amnesia") : ""
+        guard confirm(T("Uninstall Amnesia?", "Hapus Amnesia?"),
+                      T("Amnesia turns off for good (nothing gets wiped anymore) and the app goes to the Trash.\n\n"
+                        + "Kept: your vault, Keep List and settings in ~/.amnesia, and your Keep folder (\(KeepDir.shown)). "
+                        + "Install again later and everything is still there.\n\n"
+                        + "Want the vault gone too? Run this in Terminal afterwards: bash ~/.amnesia/uninstall.sh --all",
+                        "Amnesia dimatikan untuk seterusnya (tidak ada lagi yang dibersihkan) dan app-nya dipindah ke Trash.\n\n"
+                        + "Tetap disimpan: vault, Keep List dan pengaturan di ~/.amnesia, juga folder Keep (\(KeepDir.shown)). "
+                        + "Kalau nanti pasang lagi, semuanya masih ada.\n\n"
+                        + "Mau vault ikut dihapus? Setelah ini jalankan di Terminal: bash ~/.amnesia/uninstall.sh --all")
+                        + brewNote,
+                      ok: T("Uninstall", "Hapus"), danger: true) else { return }
+        trace("uninstall from Settings")
+        turnOffForGood()
+        guard installedApp else { quitNow(); return }
+        NSWorkspace.shared.recycle([Bundle.main.bundleURL]) { _, err in
+            Task { @MainActor in
+                if err != nil {
+                    info(T("Amnesia is turned off", "Amnesia sudah dimatikan"),
+                         T("Amnesia won't wipe anything anymore. Moving the app to the Trash didn't work, so drag "
+                           + "Amnesia from Applications to the Trash yourself.",
+                           "Amnesia tidak akan membersihkan apa pun lagi. App-nya gagal dipindah ke Trash, jadi seret "
+                           + "Amnesia dari Applications ke Trash sendiri."))
+                }
+                self.quitNow()
+            }
+        }
+    }
+
+    /// App dibuang ke Trash saat sedang jalan: matikan dulu supaya logout berikutnya tidak membersihkan apa pun.
+    func checkTrashed() {
+        guard !trashedShown, installedApp, !FileManager.default.fileExists(atPath: Bundle.main.bundlePath) else { return }
+        trashedShown = true
+        trace("app moved to the Trash: turning off")
+        turnOffForGood()
+        info(T("Amnesia was moved to the Trash", "Amnesia dipindah ke Trash"),
+             T("To be safe, Amnesia turned itself off: nothing gets wiped anymore.\n\n"
+               + "Your vault, Keep List and settings stay in ~/.amnesia, and your Keep folder is untouched. "
+               + "Empty the Trash to finish.\n\n"
+               + "Moved it by mistake? In the Trash, right-click Amnesia → Put Back, open it and press Turn On.",
+               "Supaya aman, Amnesia mematikan dirinya sendiri: tidak ada lagi yang dibersihkan.\n\n"
+               + "Vault, Keep List dan pengaturan tetap ada di ~/.amnesia, folder Keep tidak disentuh. "
+               + "Kosongkan Trash untuk menyelesaikan.\n\n"
+               + "Tidak sengaja? Di Trash, klik kanan Amnesia → Put Back, buka lagi lalu tekan Turn On."))
+        quitNow()
     }
 
     // --- jeda ---
@@ -4698,6 +4781,13 @@ struct SettingsView: View {
                     Label(T("Show the welcome tour again", "Tampilkan tur perkenalan lagi"), systemImage: "sparkles")
                 }
                 .buttonStyle(Pill(colors: Pal.vault))
+                Button { m.uninstall() } label: {
+                    Label(T("Uninstall Amnesia", "Hapus Amnesia"), systemImage: "trash.fill")
+                }
+                .buttonStyle(Pill(colors: Pal.danger))
+                .disabled(m.busy != nil)
+                .help(T("Turns Amnesia off safely and moves the app to the Trash. Your vault is kept.",
+                        "Mematikan Amnesia dengan aman dan memindah app ke Trash. Vault tetap disimpan."))
                 PrivacyNote().padding(.horizontal, 4)
             }
         }
@@ -5314,6 +5404,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // v5.15: "Buka ulang jendela saat login" milik macOS tidak membuka Amnesia lagi (dengan jendela).
+        // Saat login Amnesia dibuka oleh "Open at login", hanya di menu bar.
+        NSApp.disableRelaunchOnLogin()
         if Shots.on { Task { await Shots.run() } }
     }
 
@@ -5375,6 +5468,7 @@ struct AmnesiaApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .defaultLaunchBehavior(background || Shots.on ? .suppressed : .presented)
+        .restorationBehavior(.disabled)      // v5.15: jendela tidak dikembalikan otomatis saat app dibuka
 
         MenuBarExtra(isInserted: .constant(!Shots.on)) {
             MenuPanel().environmentObject(model)

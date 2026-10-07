@@ -13,10 +13,25 @@ PY=/opt/homebrew/bin/python3; [ -x "$PY" ] || PY=/usr/bin/python3
 setting() { ! grep -qx "$1=0" "$A/settings.conf" 2>/dev/null; }
 trace() { echo "$(date '+%F %T') agent: $*" >> "$A/trace.log" 2>/dev/null; }   # jam + langkah, tanpa nama file
 
+# v5.15: letak app (diberikan oleh app saat menjalankan agent ini). App dibuang ke Trash atau dihapus
+# tanpa uninstall = jangan bersihkan apa pun, dan matikan agent untuk seterusnya.
+APP="${AMNESIA_APP:-}"
+app_gone() {
+    [ -n "$APP" ] || return 1
+    case "$APP" in */.Trash/*) return 0 ;; esac
+    [ -d "$APP" ] && return 1
+    sleep 2; [ ! -d "$APP" ]            # cek sekali lagi: jangan salah baca saat app sedang dipasang ulang
+}
+
 on_exit() {
     # plist sudah dihapus = Amnesia dimatikan dari app, bukan logout -> jangan bersihkan
     trap ':' TERM INT HUP               # sinyal kedua tidak boleh memulai pembersihan dua kali
     [ -f "$PLIST" ] || { trace "stopped (Amnesia turned off)"; exit 0; }
+    if app_gone; then
+        trace "stopped (app removed, nothing wiped)"
+        rm -f "$PLIST" "$HOME/Library/LaunchAgents/com.amnesia.menubar.plist"
+        exit 0
+    fi
     trace "logout signal"
     # Snapshot otomatis: hanya kalau vault ada, tidak sedang dijeda, dan belum ada snapshot 10 menit terakhir
     # (misalnya baru saja lewat tombol Simpan & Logout).

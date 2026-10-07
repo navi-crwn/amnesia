@@ -5,6 +5,20 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.15 — 2026-10-07
+
+### Diperbaiki
+- **Saat login hanya ikon menu bar, tanpa jendela.** Kalau kamu mencentang "Reopen windows when logging back in" waktu logout, macOS membuka ulang Amnesia saat login lengkap dengan jendela utamanya. Sekarang Amnesia minta macOS tidak membukanya ulang dengan cara itu, dan jendelanya tidak dikembalikan otomatis. Saat login Amnesia dibuka oleh "Buka saat login", hanya di menu bar.
+
+### Ditambahkan
+- **Tombol uninstall** di Pengaturan: *Hapus Amnesia*. Amnesia dimatikan untuk seterusnya (agent login dan item "Buka saat login" dihapus lebih dulu, jadi tidak ada yang dibersihkan), `~/.amnesia-trash` dikosongkan, lalu app dipindah ke Trash. Vault, Keep List dan pengaturan di `~/.amnesia` tetap ada, begitu juga folder Keep. Tidak perlu Terminal. Kalau dipasang lewat Homebrew, popup-nya menyarankan `brew uninstall --cask amnesia`.
+- **Aman kalau app diseret ke Trash.** Selama Amnesia terbuka, ia mengecek tiap beberapa detik apakah app-nya masih ada di Applications. Kalau dipindah ke Trash, Amnesia langsung mematikan dirinya sendiri dan menjelaskan cara menyelesaikan (kosongkan Trash) atau membatalkan (Put Back, buka, Turn On).
+- **Agent login ikut mengecek.** Saat logout, agent mengecek dulu apakah app Amnesia masih ada. Kalau app sudah dihapus atau ada di Trash, tidak ada yang dibersihkan dan agent menghapus dirinya sendiri, jadi tidak jalan lagi. Ini berlaku walau app sedang tidak terbuka.
+
+### Diubah
+- README dan website menjelaskan tombol uninstall yang baru.
+- Tes baru di `test_clean.sh`: agent membersihkan saat logout kalau app masih ada, dan tidak melakukan apa pun kalau app sudah hilang atau ada di Trash.
+
 ## v5.14 — 2026-10-07
 
 ### Logout dan login lebih cepat
