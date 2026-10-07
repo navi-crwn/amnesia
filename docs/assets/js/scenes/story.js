@@ -1,7 +1,8 @@
-/* 03 to 09: smaller scenes.
-   stays (strike + fade), vault (apps fly in, lock closes, password types),
-   daily (line draws), backup (lines draw), privacy (pills pop),
-   glossary (tiny grids), install (command types itself). */
+/* 03 to 11: smaller scenes.
+   stays (list first, then the strike follows the scroll), vault (apps fly in,
+   lock closes, password types), daily (line draws), backup (lines draw),
+   privacy (pills pop), popups (bento cards rise), install (command types
+   itself, output prints, the app drags into Applications), FAQ cards. */
 (function () {
   'use strict';
   var S = window.AmnesiaScenes = window.AmnesiaScenes || {};
@@ -26,11 +27,15 @@
       var stays = document.getElementById('stays');
       if (stays) {
         stays.querySelector('.head').dataset.scene = 1;
-        var tl3 = gsap.timeline({ scrollTrigger: once(stays.querySelector('.ledger'), 'top 70%') });
-        tl3.from(stays.querySelectorAll('.col'), { y: 40, opacity: 0, duration: .7, stagger: .12, ease: 'power3.out' })
-          .to(stays.querySelectorAll('.col.gone .strike'), { scaleX: 1, duration: .45, stagger: .15, ease: 'power2.inOut' }, '+=.1')
-          .to(stays.querySelectorAll('.col.gone li'), { opacity: .45, duration: .4, stagger: .15 }, '<.2')
-          .from(stays.querySelectorAll('.col.safe li'), { x: -12, opacity: 0, duration: .5, stagger: .1, ease: 'power3.out' }, '<');
+        // the list arrives first...
+        gsap.from(stays.querySelectorAll('.col'), { y: 40, opacity: 0, duration: .7, stagger: .12, ease: 'power3.out', scrollTrigger: once(stays.querySelector('.ledger'), 'top 85%') });
+        gsap.from(stays.querySelectorAll('.col.safe li'), { x: -12, opacity: 0, duration: .5, stagger: .1, ease: 'power3.out', scrollTrigger: once(stays.querySelector('.col.safe'), 'top 75%') });
+        // ...and the strike-through only runs once the "wiped" list sits well inside the screen,
+        // line by line as you keep scrolling
+        var gone = stays.querySelector('.col.gone');
+        gsap.timeline({ scrollTrigger: { trigger: gone, start: 'top 52%', end: 'bottom 48%', scrub: .6 } })
+          .to(gone.querySelectorAll('.strike'), { scaleX: 1, duration: .5, stagger: .35, ease: 'power2.inOut' })
+          .to(gone.querySelectorAll('li'), { opacity: .45, duration: .4, stagger: .35 }, .25);
         gsap.from(stays.querySelector('.head'), { y: 30, opacity: 0, duration: .8, ease: 'power3.out', scrollTrigger: once(stays) });
       }
 
@@ -87,25 +92,50 @@
         gsap.from(priv.querySelectorAll('.feats > div'), { opacity: 0, y: 20, duration: .6, stagger: .05, ease: 'power3.out', scrollTrigger: once(priv.querySelector('.feats'), 'top 80%') });
       }
 
-      // ---- 09 glossary: three tiny grids show the three kinds of forgetting ----
-      document.querySelectorAll('.mini').forEach(function (m) {
-        var sq = m.querySelectorAll('i'), kind = m.dataset.kind, t = gsap.timeline({ repeat: -1, repeatDelay: 1.2, paused: true });
-        if (kind === 'sel') {
-          var gone = [].filter.call(sq, function (_, i) { return i % 4 !== 0; });
-          t.to(gone, { scale: 0, opacity: 0, duration: .4, stagger: .06, ease: 'power2.in' }).to(gone, { scale: 1, opacity: 1, duration: .4, stagger: .04, delay: 1 });
-        } else if (kind === 'glob') {
-          t.to(sq, { backgroundColor: '#ef4444', duration: .3, stagger: .03 }).to(sq, { scale: 0, opacity: 0, duration: .35, stagger: .03 }, '+=.3').to(sq, { scale: 1, opacity: 1, backgroundColor: 'rgba(239,68,68,.35)', duration: .3, delay: 1 });
-        } else {
-          t.from(sq, { x: function () { return gsap.utils.random(-40, 40); }, y: function () { return gsap.utils.random(-30, 30); }, opacity: 0, duration: .6, stagger: .06, ease: 'power3.out' }).to({}, { duration: 1 });
-        }
-        ScrollTrigger.create({ trigger: m, start: 'top 90%', end: 'bottom 10%', onToggle: function (self) { self.isActive ? t.play() : t.pause(); } });
+      // ---- 08 popups: bento cards rise, then their colored boxes slide in ----
+      var pops = document.querySelector('.bento.pops');
+      if (pops) {
+        pops.querySelectorAll('.cell').forEach(function (c, i) {
+          c.dataset.scene = 1;
+          var t = gsap.timeline({ scrollTrigger: once(c, 'top 88%') });
+          t.from(c, { y: 40, opacity: 0, duration: .7, ease: 'power3.out', delay: (i % 3) * .08 })
+            .from(c.querySelectorAll('.ps, .legend li, .pop-chk, .pop-btns'), { x: -14, opacity: 0, duration: .45, stagger: .08, ease: 'power2.out' }, '-=.35');
+        });
+      }
+
+      // ---- 11 FAQ + install cards ----
+      gsap.utils.toArray('.faq .cell, .installs .cell').forEach(function (c, i) {
+        c.dataset.scene = 1;
+        gsap.from(c, { y: 34, opacity: 0, duration: .7, ease: 'power3.out', delay: (i % 2) * .08, scrollTrigger: once(c, 'top 90%') });
       });
 
-      // ---- 10 install: the command types itself ----
+      // ---- 09 install: the command types itself, then brew prints its output ----
       document.querySelectorAll('.term.type code').forEach(function (c) {
-        var tw = typeIn(c, { paused: true });
-        ScrollTrigger.create({ trigger: c, start: 'top 85%', once: true, onEnter: function () { tw.play(); } });
+        var out = c.closest('.shell') && c.closest('.shell').querySelectorAll('.sh-out span');
+        var t = gsap.timeline({ paused: true }).add(typeIn(c, {}));
+        if (out && out.length) {
+          gsap.set(out, { opacity: 0 });
+          t.to(out, { opacity: 1, duration: .05, stagger: .45, ease: 'none' }, '+=.3');
+        }
+        ScrollTrigger.create({ trigger: c, start: 'top 85%', once: true, onEnter: function () { t.play(); } });
       });
+      gsap.from('.badges .bdg', { y: 14, opacity: 0, duration: .5, stagger: .07, ease: 'back.out(1.6)', scrollTrigger: once('.badges', 'top 90%') });
+      // the app icon drags itself into Applications, again and again while visible
+      var dmg = document.querySelector('.i-dmg .dmgwin');
+      if (dmg) {
+        var ghost = dmg.querySelector('.dm-ghost'), app = dmg.querySelector('.dm-app img'), dst = dmg.querySelector('.dm-dst svg');
+        var drag = gsap.timeline({ repeat: -1, repeatDelay: 1, paused: true });
+        drag.call(function () {
+          var w = dmg.getBoundingClientRect(), a = app.getBoundingClientRect(), d = dst.getBoundingClientRect();
+          gsap.set(ghost, { left: a.left - w.left, top: a.top - w.top, x: 0, y: 0, scale: 1, opacity: 0 });
+          ghost._dx = d.left - a.left; ghost._dy = d.top - a.top;
+        })
+          .to(ghost, { opacity: .85, duration: .25 })
+          .to(ghost, { x: function () { return ghost._dx; }, y: function () { return ghost._dy; }, duration: 1.1, ease: 'power2.inOut' })
+          .to(ghost, { scale: .4, opacity: 0, duration: .3 })
+          .fromTo(dst, { scale: 1 }, { scale: 1.15, duration: .15, yoyo: true, repeat: 1, transformOrigin: '50% 50%' }, '<');
+        ScrollTrigger.create({ trigger: dmg, start: 'top 95%', end: 'bottom 5%', onToggle: function (self) { self.isActive ? drag.play() : drag.pause(); } });
+      }
     }
   };
 })();

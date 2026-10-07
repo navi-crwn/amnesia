@@ -14,6 +14,20 @@ You can see the version number in the app too (next to the title and at the bott
 - The desk scene no longer feels stuck: the files appear while you scroll in, Log Out starts right away, the pinned part is shorter and a progress line shows how far it is. Its text is longer and explains what a Mac collects every day.
 - The glossary sits right after the app tour, and each word (Selective Amnesia, Global Amnesia, Memory Recall) has a small animated grid.
 - New files: `docs/assets/css/site.css`, `docs/assets/js/site.js` and `docs/assets/js/scenes/` (hero, desk, puzzle, story). Animations use GSAP and Lenis from jsDelivr (pinned versions). The app itself did not change.
+- **Update (v3): premium from top to bottom.**
+  - **Light mode.** The whole site has a light version, the inverse of dark. It follows your Mac or phone setting, and the sun/moon button in the navbar switches it (remembered).
+  - **3D logo.** The Amnesia shield in the hero is now real 3D (three.js): the gradient tile, the shield with its keyhole and the three dots drifting away. It turns toward your cursor, with glass shards floating around it. The closing section has a second one. Phones get a lighter version, Reduce motion shows one still frame, and without WebGL the flat logo stays.
+  - **Arrows, dots and ← →** on the desk scene, the app tour and the tutorial, so you don't have to scroll to move between slides.
+  - **Desk (01/02):** the text is already there when the icons appear and only leaves after they are wiped. **What stays (03):** the red strike-through waits until the list is on screen, line by line.
+  - **App tour (08):** 10 parts instead of 11 (Move to a New Mac is now in Settings), shorter text that fits a 1280×720 laptop, the window is already whole when the pin starts, a cursor glides to each part and clicks it, and the gear now looks like a gear with a "Settings" label.
+  - **Popups** are drawn in the website style (no more white screenshots) in a bento grid: Turn On, Save & Log Out, Restore done, Last try and Uninstall, plus a color legend.
+  - **Glossary section removed.** Selective Amnesia, Global Amnesia and Memory Recall now appear right where they apply (logout, vault, backup, settings, tutorial).
+  - **Install:** Homebrew card with the command typing itself and brew's output, a .dmg card where the app drags itself into Applications, a GitHub card with live stars, forks and latest version, requirements and the update order. Badges for stars, release, license and macOS. The numbers come straight from the public GitHub API in your browser, cached for an hour, with no cookies or tracking.
+  - **Tutorial** works like a screen recording: each of the 10 steps plays in a drawn Amnesia window (cursor moves, clicks, types, popups open), with a detailed explanation and tips next to it. On desktop scrolling moves through the steps; numbered dots jump to any step.
+  - **Bento grids with a light that follows the cursor** for features, popups, install and FAQ. FAQ is grouped into cards (Safety, Profile Vault, Backup, Everyday use, Uninstall).
+  - **Running text** between the features and the app tour.
+  - **New footer:** logo and tagline, a repo card (MIT, version, stars), Product / Source / Legal columns and a trademark note.
+  - New files: `docs/assets/js/scenes/tutorial.js` and `docs/assets/js/scenes/shield3d.js` (three.js 0.186.1 from jsDelivr). The website no longer uses screenshots.
 
 ## v5.17.1 — 2026-10-07
 

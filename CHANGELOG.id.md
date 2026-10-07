@@ -14,6 +14,20 @@ Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 - Adegan meja tidak terasa macet lagi: file muncul sambil di-scroll, Logout langsung jalan, bagian yang ditahan lebih pendek, dan ada garis progres. Teksnya lebih panjang dan menjelaskan apa saja yang dikumpulkan Mac setiap hari.
 - Glosarium dipindah tepat setelah tur app, dan tiap istilah (Selective Amnesia, Global Amnesia, Memory Recall) punya grid kecil beranimasi.
 - File baru: `docs/assets/css/site.css`, `docs/assets/js/site.js` dan `docs/assets/js/scenes/` (hero, desk, puzzle, story). Animasi memakai GSAP dan Lenis dari jsDelivr (versi dikunci). App-nya sendiri tidak berubah.
+- **Update (v3): rapi dari atas sampai bawah.**
+  - **Light mode.** Seluruh website punya versi terang, kebalikan dari versi gelap. Otomatis mengikuti pengaturan Mac atau HP, dan tombol matahari/bulan di navbar untuk menggantinya (diingat).
+  - **Logo 3D.** Shield Amnesia di bagian atas sekarang 3D sungguhan (three.js): kotak gradasi, shield dengan lubang kunci, dan tiga titik yang melayang pergi. Logonya menghadap ke arah kursor, dikelilingi pecahan kaca yang melayang. Bagian penutup punya satu lagi. Di HP versinya lebih ringan, dengan Reduce motion hanya 1 gambar diam, dan tanpa WebGL logo biasa tetap tampil.
+  - **Tombol panah, titik, dan ← →** di adegan meja, tur app, dan tutorial, jadi tidak harus scroll untuk pindah slide.
+  - **Meja (01/02):** teksnya sudah ada saat ikon muncul dan baru hilang setelah ikon dihapus. **Yang tetap ada (03):** coretan merah menunggu sampai daftarnya tampil di layar, baris demi baris.
+  - **Tur app (08):** 10 bagian, bukan 11 (Pindah Mac sekarang di Pengaturan), teks lebih pendek supaya muat di laptop 1280×720, jendelanya sudah utuh saat mulai ditahan, kursor bergerak ke tiap bagian lalu mengkliknya, dan ikon roda gigi sekarang jelas bentuknya dengan label "Pengaturan".
+  - **Popup** digambar ulang dengan gaya website (bukan screenshot putih lagi) dalam susunan bento: Aktifkan, Simpan & Logout, Restore selesai, Percobaan terakhir, dan Hapus Amnesia, plus keterangan arti warna.
+  - **Bagian Glosarium dihapus.** Selective Amnesia, Global Amnesia, dan Memory Recall sekarang muncul langsung di penjelasan yang cocok (logout, vault, backup, pengaturan, tutorial).
+  - **Pasang:** kartu Homebrew dengan perintah yang mengetik sendiri dan output brew, kartu .dmg yang menyeret app ke Applications, kartu GitHub dengan jumlah bintang, fork, dan versi terbaru, kebutuhan sistem, dan urutan update. Badge bintang, rilis, lisensi, dan macOS. Angkanya diambil langsung dari API publik GitHub oleh browser kamu, disimpan 1 jam, tanpa cookie atau pelacakan.
+  - **Tutorial** seperti rekaman layar: 10 langkahnya diputar di jendela Amnesia yang digambar (kursor bergerak, klik, mengetik, popup terbuka), dengan penjelasan detail dan tips di sampingnya. Di desktop, scroll memindah langkah; titik bernomor untuk lompat ke langkah mana saja.
+  - **Susunan bento dengan cahaya yang mengikuti kursor** untuk fitur, popup, pasang, dan FAQ. FAQ dikelompokkan dalam kartu (Keamanan, Profile Vault, Backup, Sehari-hari, Menghapus Amnesia).
+  - **Running text** di antara fitur dan tur app.
+  - **Footer baru:** logo dan tagline, kartu repo (MIT, versi, bintang), kolom Produk / Sumber / Legal, dan catatan merek dagang.
+  - File baru: `docs/assets/js/scenes/tutorial.js` dan `docs/assets/js/scenes/shield3d.js` (three.js 0.186.1 dari jsDelivr). Website tidak memakai screenshot lagi.
 
 ## v5.17.1 — 2026-10-07
 
