@@ -27,7 +27,13 @@ MIN_PASSWORD = 12
 # quit=None: program Terminal (CLI), tidak perlu ditutup.
 APPS = {
     "Chrome": {"quit": "Google Chrome",
-               "paths": ["Library/Application Support/Google/Chrome"]},
+               "paths": ["Library/Application Support/Google/Chrome"],
+               # mode ringan (VAULT_LIGHT, default nyala): file program extension & model Chrome tidak disimpan.
+               # Login (Cookies, Login Data, Local Storage, IndexedDB, Local Extension Settings) tetap disimpan.
+               # Setelah restore, Chrome mengunduh ulang extension dari Web Store (tombol Repair kalau diminta).
+               "light": ["Extensions", "ScriptCache", "optimization_guide_model_store", "OptGuideOnDeviceModel",
+                         "OnDeviceHeadSuggestModel", "WasmTtsEngine", "Safe Browsing", "screen_ai",
+                         "GraphiteDawnCache", "BrowserMetrics", "BrowserMetrics-spare.pma"]},
     "Claude": {"quit": "Claude",
                "paths": ["Library/Application Support/Claude"]},
     "OpenCode": {"quit": "OpenCode",
@@ -51,6 +57,10 @@ APPS = {
 EXCLUDE = ["Cache", "Code Cache", "GPUCache", "CacheStorage", "ShaderCache", "GrShaderCache",
            "DawnCache", "DawnGraphiteCache", "DawnWebGPUCache", "component_crx_cache",
            "Crashpad", "vm_bundles", "CachedData", "CachedExtensionVSIXs", ".DS_Store"]
+
+# Restore tidak menghapus data app yang ada sekarang: dipindah ke sini dulu (hanya restore terakhir).
+# Ada di Library/Caches, jadi ikut dibersihkan di logout berikutnya (tidak jadi jejak permanen).
+BEFORE_RESTORE = os.path.join(HOME, "Library", "Caches", "Amnesia", "before-restore")
 
 F_PUB = os.path.join(VAULT, "public.pem")
 F_APPDIR = os.path.join(VAULT, "apps")          # v5.10: 1 arsip per app (apps/<id>.7z + .key), tidak saling menimpa
@@ -394,7 +404,8 @@ def snapshot(names=None):
             start, end = 2 + 96 * done / total, 2 + 96 * (done + weight[n]) / total
             step = f"save {i + 1}/{len(names)} {n}"
             _progress(start, step)
-            args = ["a", "-t7z", "-mx=3", "-mhe=on", "-p", new_arc] + app_paths(n) + [f"-xr!{x}" for x in EXCLUDE]
+            skip = EXCLUDE + (items().get(n, {}).get("light", []) if _setting("VAULT_LIGHT", "1") != "0" else [])
+            args = ["a", "-t7z", "-mx=3", "-mhe=on", "-p", new_arc] + app_paths(n) + [f"-xr!{x}" for x in skip]
             r = _7z_progress(args, key, cwd=HOME, start=start, end=end, step=step)
             if r.returncode not in (0, 1):          # 1 = warning (mis. file terkunci), arsip tetap jadi
                 raise VaultError(T(f"Snapshot of {n} failed:\n", f"Snapshot {n} gagal:\n") + r.stderr[-300:])
@@ -482,7 +493,13 @@ def _unlock_many(password, keyfiles):
                 doomsday(False, f"{failed}x password salah")
                 raise VaultError("DOOMSDAY")
             _write_json(F_ATTEMPTS, {"failed": failed})
-            raise VaultError(T(f"Wrong password. Tries left: {MAX_ATTEMPTS - failed}", f"Password salah. Sisa percobaan: {MAX_ATTEMPTS - failed}"))
+            left = MAX_ATTEMPTS - failed
+            if left == 1:
+                raise VaultError(T("Wrong password. Tries left: 1. LAST TRY: one more wrong password DELETES the vault "
+                                   "for good. Stop and check your password notes first.",
+                                   "Password salah. Sisa percobaan: 1. PERCOBAAN TERAKHIR: salah sekali lagi = vault "
+                                   "DIHAPUS PERMANEN. Berhenti dulu dan cek catatan password kamu."))
+            raise VaultError(T(f"Wrong password. Tries left: {left}", f"Password salah. Sisa percobaan: {left}"))
         _write_json(F_ATTEMPTS, {"failed": 0})
         keys = []
         for kf in keyfiles:
@@ -537,14 +554,16 @@ def restore(password):
         _progress(92, f"swap 1/1 {names[0]}")
         quit_apps(names)
         with _no_cancel():                           # mulai di sini: data lama diganti, tidak boleh terpotong
+            # data app yang sekarang DIPINDAH (bukan dihapus) ke BEFORE_RESTORE; isi restore sebelumnya dibuang
+            shutil.rmtree(BEFORE_RESTORE, ignore_errors=True)
             for n in names:
                 src = os.path.join(F_STAGE, "legacy" if n in legacy else _slug(n))
                 for p in app_paths(n):
                     full = os.path.join(HOME, p)
-                    if os.path.isdir(full) and not os.path.islink(full):
-                        shutil.rmtree(full, ignore_errors=True)
-                    elif os.path.lexists(full):
-                        os.remove(full)
+                    if os.path.lexists(full):
+                        old = os.path.join(BEFORE_RESTORE, p)
+                        os.makedirs(os.path.dirname(old), exist_ok=True)
+                        shutil.move(full, old)
                 for pat in items().get(n, {}).get("paths", []):
                     for f in sorted(glob.glob(os.path.join(glob.escape(src), pat))):
                         target = os.path.join(HOME, os.path.relpath(f, src))

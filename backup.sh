@@ -51,7 +51,9 @@ for f in "${F[@]}"; do
     case "$f" in @keep) f="${KD%/}" ;; "~/"?*) f="${f#\~/}" ;; esac   # selain itu: relatif ke home, atau path lengkap
     [ -n "$f" ] && [ -e "$f" ] && items+=("$f")
 done
-[ "$(cfg BACKUP_VAULT)" = 1 ] && [ -d .amnesia/vault ] && items+=(.amnesia/vault)
+# vault ikut di-backup kecuali dimatikan (BACKUP_VAULT=0): tanpa salinan ini, vault yang terhapus tidak bisa kembali
+WITHVAULT=0
+[ "$(cfg BACKUP_VAULT)" != 0 ] && [ -d .amnesia/vault ] && { items+=(.amnesia/vault); WITHVAULT=1; }
 [ ${#items[@]} -gt 0 ] || fail "$(t "nothing to back up" "tidak ada folder untuk di-backup")"
 
 NAME="amnesia_backup_$(date +%Y%m%d_%H%M).7z"
@@ -204,5 +206,6 @@ echo "$SHA  $WHERE/$NAME" >> "$A/backup_checksums.txt"
 TO="$(t to ke)"
 echo "$(date '+%F %T') OK: $NAME (${SIZE} MB) $TO $WHERE" > "$A/backup.log"
 touch "$A/backup.ok"                                  # dipakai app untuk jadwal backup
+[ "$WITHVAULT" = 1 ] && touch "$A/backup.vault.ok"   # app: vault sudah pernah ikut backup
 notify "$(t "Backup done" "Backup selesai"): ${SIZE} MB $TO $WHERE"
 echo "OK: $NAME (${SIZE} MB) $TO $WHERE"

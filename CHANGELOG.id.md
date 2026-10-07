@@ -5,6 +5,22 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.13 — 2026-10-07
+
+### Diperbaiki
+- **Shutdown tetap jalan walaupun Amnesia sudah mencoba menahannya.** Saat ada popup Amnesia yang terbuka (misalnya "password salah"), macOS harus menunggu popup ditutup dulu sebelum Amnesia bisa menjawab permintaan shutdown. Saat itu macOS sudah berhenti menunggu, jadi "Batal" dari Amnesia datang terlambat. Sekarang popup tidak lagi menahan Amnesia: logout, restart atau shutdown langsung dijawab walau ada popup terbuka. Kalau jendela utama tertutup, Amnesia membukanya dulu supaya popup bisa menempel di sana.
+- **Restore Profil menghapus data app yang ada di Mac tepat sebelum restore.** Sekarang data itu dipindah (tidak dihapus) ke `~/Library/Caches/Amnesia/before-restore`, dan hasil Restore memberi tahu letaknya. Folder itu ada sampai logout berikutnya.
+
+### Ditambahkan
+- **Peringatan "PERCOBAAN TERAKHIR".** Kalau tinggal 1 kali percobaan password, Amnesia bertanya dulu: salah sekali lagi = vault terhapus selamanya. Muncul sebelum Restore Profil, cek password di Ganti Password, simpan Kata Panik dan Pulihkan Kunci. Pesan password salah juga menulis "PERCOBAAN TERAKHIR" saat tinggal 1 kali.
+- **Turn On mengecek apakah vault sudah ada di backup.** Kalau kamu punya vault yang belum pernah ikut backup, Turn On memberi peringatan dulu dan menawarkan pindah ke halaman Backup. "Tetap Aktifkan" tetap bisa dipilih.
+- **Buka saat login** (Pengaturan, nyala dari awal). Amnesia jalan sendiri di menu bar setiap kamu login, juga saat sedang dimatikan. Memakai item login kecil terpisah (`com.amnesia.menubar`) yang hanya membuka app dan tidak pernah menghapus apa pun. Berlaku mulai login berikutnya. `uninstall.sh` ikut menghapusnya.
+- **Snapshot Chrome ringan** (Pengaturan, nyala dari awal). Vault melewati file program extension dan cache besar Chrome (Extensions, ScriptCache, file model AI, daftar Safe Browsing dan sejenisnya). Di Mac biasa ukurannya turun dari sekitar 1 GB ke 150 MB, jadi snapshot dan restore jauh lebih cepat. Login, bookmark, riwayat, password dan pengaturan di dalam extension tetap disimpan. Setelah Restore, Chrome mengunduh ulang extension dari Web Store (butuh internet, beberapa menit). Extension yang bukan dari Web Store tidak kembali. Matikan pilihan ini kalau mau menyimpan profil Chrome lengkap.
+
+### Diubah
+- **Backup otomatis menyertakan Profile Vault.** Pilihannya sekarang bernama "Sertakan Profile Vault (login app yang tersimpan, terenkripsi)". Label lama "(untuk Pindah Mac)" membuatnya terkesan hanya untuk pindah ke Mac baru, sehingga vault bisa hilang tanpa salinan. Kalau dicentang mati, ada peringatan bahwa vault yang hilang tidak bisa dikembalikan. Kalau sebelumnya kamu mematikannya, pilihan itu tetap mati.
+- Backup yang menyertakan vault meninggalkan penanda kecil (`~/.amnesia/backup.vault.ok`), yang dipakai Turn On untuk pengecekan di atas.
+
 ## v5.12 — 2026-10-07
 
 ### Diperbaiki

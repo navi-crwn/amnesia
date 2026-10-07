@@ -47,9 +47,10 @@ if [ $YES = 0 ]; then
 fi
 
 echo "1/4 $(t "Turning off the login agent..." "Mematikan agent login...")"
-rm -f "$LA/com.amnesia.agent.plist" "$LA/com.amnesia.loginreset.plist"   # FIRST: so stopping it doesn't wipe
+rm -f "$LA/com.amnesia.agent.plist" "$LA/com.amnesia.loginreset.plist" "$LA/com.amnesia.menubar.plist"   # FIRST: so stopping it doesn't wipe
 launchctl bootout "$U/com.amnesia.agent" 2>/dev/null
 launchctl bootout "$U/com.amnesia.loginreset" 2>/dev/null
+launchctl bootout "$U/com.amnesia.menubar" 2>/dev/null
 sleep 2
 
 echo "2/4 $(t "Stopping anything still running..." "Menghentikan yang masih jalan...")"

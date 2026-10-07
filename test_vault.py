@@ -21,6 +21,8 @@ try:
     PW = "password-panjang-123"
     mk("Library/Application Support/Google/Chrome/Default/Cookies", "login-gmail")
     mk("Library/Application Support/Google/Chrome/Default/Cache/big", "cache")
+    mk("Library/Application Support/Google/Chrome/Default/Extensions/abc/1.0/main.js", "extension-code")
+    mk("Library/Application Support/Google/Chrome/Default/Local Extension Settings/abc/000003.log", "ext-login")
     mk("Library/Application Support/Claude/config.json", "login-claude")
     mk(".local/share/opencode/auth.json", "token-opencode")
     mk(".claude.json", "token-claude-code")
@@ -46,6 +48,19 @@ try:
     assert open(os.path.join(T, ".claude.json")).read() == "token-claude-code"
     assert open(os.path.join(T, "Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite")).read() == "chat-wa"
     assert not os.path.exists(os.path.join(T, "Library/Application Support/Google/Chrome/Default/Cache"))
+    # mode ringan (default): program extension tidak ikut, data/login extension ikut
+    assert not os.path.exists(os.path.join(T, "Library/Application Support/Google/Chrome/Default/Extensions"))
+    assert open(os.path.join(T, "Library/Application Support/Google/Chrome/Default/Local Extension Settings/abc/000003.log")).read() == "ext-login"
+    # restore TIDAK menghapus data yang ada sekarang: dipindah ke Library/Caches/Amnesia/before-restore
+    mk("Library/Application Support/Claude/config.json", "login-baru-belum-disimpan")
+    v.restore(PW)
+    assert open(os.path.join(T, "Library/Application Support/Claude/config.json")).read() == "login-claude"
+    assert open(os.path.join(v.BEFORE_RESTORE, "Library/Application Support/Claude/config.json")).read() == "login-baru-belum-disimpan"
+    # percobaan terakhir diberi peringatan keras
+    expect_error(lambda: v.restore("salah-salah-salah"), "Tries left: 2")
+    expect_error(lambda: v.restore("salah-salah-salah"), "LAST TRY")
+    v.restore(PW)
+    assert v.attempts() == 0
     # Pindah Mac: kunci Keychain palsu
     store = {("Chrome Safe Storage", "Chrome"): "kunci-chrome", ("Claude Safe Storage", "Claude Key"): "kunci-claude"}
     v._keychain_secrets = lambda: [{"svc": s, "acct": a, "secret": k} for (s, a), k in store.items()]

@@ -5,6 +5,22 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.13 — 2026-10-07
+
+### Fixed
+- **Shutdown went ahead even though Amnesia tried to stop it.** When a pop-up from Amnesia was open (for example "wrong password"), macOS had to wait until the pop-up was closed before Amnesia could answer the shutdown. By then macOS had already stopped waiting, so the "Cancel" came too late. Pop-ups no longer block Amnesia: a logout, restart or shutdown is answered right away, even with a pop-up open. If the main window is closed, Amnesia opens it first so the pop-up can sit on it.
+- **Restore Profiles deleted the app data that was on the Mac right before the restore.** It is now moved (not deleted) to `~/Library/Caches/Amnesia/before-restore`, and the Restore result tells you where. That folder stays until the next logout.
+
+### Added
+- **"LAST TRY" warning.** When only 1 password try is left, Amnesia asks first: one more wrong password deletes the vault forever. This shows before Restore Profiles, the password check in Change Password, saving a Panic Word and Restore Keys. The wrong-password message also says "LAST TRY" when only 1 try is left.
+- **Turn On checks that the vault has a backup.** If you have a vault that was never part of a backup, Turn On warns you first and offers to go to the Backup page. "Turn On Anyway" is still possible.
+- **Open at login** (Settings, on by default). Amnesia starts by itself in the menu bar every time you log in, also while it is turned off. It uses a small separate login item (`com.amnesia.menubar`) that only opens the app; it never wipes anything. Takes effect from the next login. `uninstall.sh` removes it too.
+- **Light Chrome snapshot** (Settings, on by default). The vault skips Chrome's extension program files and big caches (Extensions, ScriptCache, AI model files, Safe Browsing lists and similar). On a typical Mac that is about 1 GB → 150 MB, so snapshots and restores are much faster. Logins, bookmarks, history, passwords and the settings inside extensions are kept. After Restore, Chrome downloads the extensions again from the Web Store (needs internet, a few minutes). Extensions that did not come from the Web Store do not come back. Turn it off to keep the full Chrome profile.
+
+### Changed
+- **Backups include the Profile Vault by default.** The option is now called "Include Profile Vault (your saved app logins, encrypted)". The old label "(for moving Macs)" made it look like it was only for moving to a new Mac, which is how a vault got lost without any copy. If you untick it, a warning explains that a lost vault then cannot be brought back. If you had unticked it before, it stays unticked.
+- A backup that included the vault leaves a small marker (`~/.amnesia/backup.vault.ok`), which Turn On uses for the check above.
+
 ## v5.12 — 2026-10-07
 
 ### Fixed
