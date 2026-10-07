@@ -88,8 +88,11 @@ fi
 
 echo "4/4  Removing old Amnesia copies & installing the new one..."
 pkill -f amnesia_app.py 2>/dev/null || true     # app lama (Tk)
-pkill -x Amnesia 2>/dev/null || true            # semua Amnesia yang sedang jalan
-pkill -x amnesia 2>/dev/null || true
+# Semua Amnesia yang sedang jalan, KECUALI agent (Amnesia --agent). Agent yang dihentikan mengira Mac
+# sedang logout dan langsung membersihkan sesi (bug v5.13, 7 Okt). Agent lama boleh terus jalan.
+for pid in $(pgrep -x Amnesia 2>/dev/null) $(pgrep -x amnesia 2>/dev/null); do
+  ps -o args= -p "$pid" 2>/dev/null | grep -q -- "--agent" || kill "$pid" 2>/dev/null || true
+done
 sleep 1
 # semua salinan Amnesia.app lama (hasil cari Spotlight + lokasi yang dikenal), kecuali hasil build ini
 { mdfind "kMDItemCFBundleIdentifier == 'com.amnesia.controlpanel'" 2>/dev/null || true

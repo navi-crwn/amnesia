@@ -5,6 +5,11 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.13.1 — 2026-10-07
+
+### Diperbaiki
+- **Memasang update saat Amnesia AKTIF membersihkan sesi yang sedang dipakai.** Saat memasang, `build.sh` menghentikan semua proses Amnesia, termasuk agent di background yang menjalankan pembersihan saat logout. Agent yang dihentikan tidak bisa membedakannya dari logout sungguhan, jadi ia menyimpan snapshot vault lalu membersihkan sesi (login Chrome dan data lain di luar Keep List dan folder Keep) padahal kamu masih login. Sekarang `build.sh` membiarkan agent tetap jalan dan hanya menutup app di menu bar.
+
 ## v5.13 — 2026-10-07
 
 ### Diperbaiki

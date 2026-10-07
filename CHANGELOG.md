@@ -5,6 +5,11 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.13.1 — 2026-10-07
+
+### Fixed
+- **Installing an update while Amnesia was ON wiped the current session.** While installing, `build.sh` stopped every running Amnesia process, including the background agent that runs the wipe at logout. When the agent is stopped it can't tell the difference from a real logout, so it saved the vault snapshot and wiped the session (Chrome logins and other data outside the Keep List and Keep folder) while you were still logged in. `build.sh` now leaves the agent running and only stops the menu bar app.
+
 ## v5.13 — 2026-10-07
 
 ### Fixed

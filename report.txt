@@ -1,0 +1,73 @@
+HAPUS  ~/Library/Application Support/CrashReporter
+HAPUS  ~/Library/Application Support/FileProvider
+HAPUS  ~/Library/Application Support/Google/Chrome
+HAPUS  ~/Library/Application Support/Google/RLZ
+HAPUS  ~/Library/Containers/com.apple.Family
+HAPUS  ~/Library/Containers/com.apple.FamilyControlsAgent
+HAPUS  ~/Library/Containers/com.apple.Safari
+HAPUS  ~/Library/Containers/com.apple.SafariFoundation.CredentialProviderExtensionHelper
+HAPUS  ~/Library/Containers/com.apple.SafariPlatformSupport.Helper
+HAPUS  ~/Library/Containers/com.apple.ScreenTimeAgent
+HAPUS  ~/Library/Containers/com.apple.assessmentagent
+HAPUS  ~/Library/Containers/com.apple.quicklook.QuickLookUIService
+HAPUS  ~/Library/Containers/com.apple.speech.SpeechSynthesisServerXPC
+HAPUS  ~/Library/Group Containers/group.com.apple.DeviceActivity
+HAPUS  ~/Library/Group Containers/group.com.apple.FamilyControls
+HAPUS  ~/Library/Group Containers/group.com.apple.FileProvider.DomainCaching
+HAPUS  ~/Library/Group Containers/group.com.apple.PegasusConfiguration
+HAPUS  ~/Library/Group Containers/group.com.apple.ScreenTime
+HAPUS  ~/Library/Group Containers/group.com.apple.amsondevicestoraged
+HAPUS  ~/Library/Group Containers/group.com.apple.coreservices.useractivityd
+HAPUS  ~/Library/Group Containers/group.com.apple.fskit.settings
+HAPUS  ~/Library/Group Containers/group.com.apple.helpviewer.content
+HAPUS  ~/Library/Group Containers/group.com.apple.liveactivitiesd
+HAPUS  ~/Library/Group Containers/group.com.apple.mlhost
+HAPUS  ~/Library/Group Containers/group.com.apple.mobiletimerd
+HAPUS  ~/Library/Group Containers/group.com.apple.portrait.BackgroundReplacement
+HAPUS  ~/Library/Group Containers/group.com.apple.replicatord
+HAPUS  ~/Library/Group Containers/group.com.apple.secure-control-center-preferences
+HAPUS  ~/Library/Group Containers/group.com.apple.shortcuts
+HAPUS  ~/Library/Group Containers/group.com.apple.storekit
+HAPUS  ~/Library/Group Containers/group.com.apple.tips
+HAPUS  ~/Library/HTTPStorages
+KEYCHAIN  anydesk.inst_id
+KEYCHAIN-WEB  github.com
+HAPUS  ~/.zsh_history
+HAPUS  ~/.claude.json
+HAPUS  ~/.claude
+HAPUS  ~/.config/gh
+HAPUS  ~/.local/state
+HAPUS  ~/.npm
+HAPUS  ~/.zsh_sessions
+HAPUS  ~/Library/Application Support/com.apple.sharedfilelist
+HAPUS  ~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV2
+HAPUS  ~/Library/Preferences/ContextStoreAgent.plist
+HAPUS  ~/Library/Preferences/com.amnesia.controlpanel.plist
+HAPUS  ~/Library/Preferences/com.google.Keystone.Agent.plist
+HAPUS  ~/Library/Preferences/familycircled.plist
+HAPUS  ~/Library/Preferences/no_backup
+HAPUS  ~/Library/Suggestions
+HAPUS  ~/Library/Caches/CloudKit
+HAPUS  ~/Library/Caches/FamilyCircle
+HAPUS  ~/Library/Caches/Google
+HAPUS  ~/Library/Caches/com.anthropic.claudefordesktop
+HAPUS  ~/Library/Caches/com.anthropic.claudefordesktop.ShipIt
+HAPUS  ~/Library/Caches/com.apple.AppleMediaServices
+HAPUS  ~/Library/Caches/com.apple.Spotlight
+HAPUS  ~/Library/Caches/com.apple.duetexpertd
+HAPUS  ~/Library/Caches/com.apple.feedbacklogger
+HAPUS  ~/Library/Caches/com.apple.helpd
+HAPUS  ~/Library/Caches/com.apple.itunescloudd
+HAPUS  ~/Library/Caches/com.apple.nsservicescache.plist
+HAPUS  ~/Library/Caches/com.apple.nsurlsessiond
+HAPUS  ~/Library/Caches/com.apple.parsecd
+HAPUS  ~/Library/Caches/com.apple.proactive.eventtracker
+HAPUS  ~/Library/Caches/com.apple.storekitagent
+HAPUS  ~/Library/Caches/com.apple.tipsd
+HAPUS  ~/Library/Caches/google-sdks-events
+HAPUS  ~/Library/Logs/Baseband
+HAPUS  ~/Library/Logs/Claude
+HAPUS  ~/Desktop/Amnesia.app
+HAPUS  ~/Desktop/Keep
+HAPUS  ~/Downloads/amnesia-v5.zip
+--- dry-run (logout): 72 items would be deleted. Nothing was deleted. ---
