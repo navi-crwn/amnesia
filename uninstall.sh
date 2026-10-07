@@ -66,6 +66,8 @@ if [ $KEEPAPP = 0 ]; then
     fi
     rm -rf /Applications/Amnesia.app "$HOME/Applications/Amnesia.app"
 fi
+# tempat sampah Amnesia (sisa pembersihan yang belum selesai dihapus di background)
+rm -rf "$HOME/.amnesia-trash"
 if [ $ALL = 1 ]; then
     r="$(ask "$(t "Type DELETE to also erase ~/.amnesia (vault included):" "Ketik HAPUS untuk ikut menghapus ~/.amnesia (termasuk vault):")")"
     if [ "$r" = "DELETE" ] || [ "$r" = "HAPUS" ]; then

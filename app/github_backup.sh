@@ -25,6 +25,9 @@ app/build/
 keep.conf
 settings.conf
 backup.ok
+backup.vault.ok
+clean.done
+crash/
 bin/
 .engine_version
 *.md

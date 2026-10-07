@@ -23,6 +23,11 @@ try:
     mk("Library/Application Support/Google/Chrome/Default/Cache/big", "cache")
     mk("Library/Application Support/Google/Chrome/Default/Extensions/abc/1.0/main.js", "extension-code")
     mk("Library/Application Support/Google/Chrome/Default/Local Extension Settings/abc/000003.log", "ext-login")
+    # abc dari Web Store (bisa diunduh ulang), xyz dipasang manual (harus tetap ikut snapshot)
+    mk("Library/Application Support/Google/Chrome/Default/Secure Preferences",
+       '{"extensions": {"settings": {"abc": {"from_webstore": true}, "xyz": {"from_webstore": false}}}}')
+    mk("Library/Application Support/Google/Chrome/Default/Extensions/xyz/2.0/manual.js", "manual-ext")
+    mk("Library/Application Support/Google/Chrome/Default/Extensions/xyz/2.0/manifest.json", '{"name": "manual"}')
     mk("Library/Application Support/Claude/config.json", "login-claude")
     mk(".local/share/opencode/auth.json", "token-opencode")
     mk(".claude.json", "token-claude-code")
@@ -34,6 +39,11 @@ try:
     raw = open(v._app_files("Chrome")[0], "rb").read()
     assert b"login-gmail" not in raw and b"Cookies" not in raw
     sz = v.sizes()
+    # ukuran yang ditampilkan mengikuti mode ringan: extension Web Store (abc) tidak dihitung
+    big = os.path.join(T, "Library/Application Support/Google/Chrome/Default/Extensions/abc/1.0/big.bin")
+    open(big, "wb").write(b"x" * 3 * 1048576)
+    assert v.sizes()["Chrome"] < 1, v.sizes()
+    os.remove(big)
     assert set(sz) == {"Chrome", "Claude", "OpenCode", "Claude Code", "WhatsApp"} and all(x >= 0 for x in sz.values())
     # simulasi amnesia: data hilang
     shutil.rmtree(os.path.join(T, "Library")); shutil.rmtree(os.path.join(T, ".local")); os.remove(os.path.join(T, ".claude.json"))
@@ -49,7 +59,14 @@ try:
     assert open(os.path.join(T, "Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite")).read() == "chat-wa"
     assert not os.path.exists(os.path.join(T, "Library/Application Support/Google/Chrome/Default/Cache"))
     # mode ringan (default): program extension tidak ikut, data/login extension ikut
-    assert not os.path.exists(os.path.join(T, "Library/Application Support/Google/Chrome/Default/Extensions"))
+    assert not os.path.exists(os.path.join(T, "Library/Application Support/Google/Chrome/Default/Extensions/abc"))
+    assert open(os.path.join(T, "Library/Application Support/Google/Chrome/Default/Extensions/xyz/2.0/manual.js")).read() == "manual-ext"
+    assert v._load_manifest()["Chrome"]["light"] and not v._load_manifest()["Claude"]["light"]
+    # snapshot otomatis (--changed): app yang tidak berubah dilewati, yang berubah disimpan lagi
+    import time as _t
+    assert v.snapshot(changed=True) == []
+    _t.sleep(1.1); mk("Library/Application Support/Claude/new.txt", "baru")
+    assert v.snapshot(changed=True) == ["Claude"]
     assert open(os.path.join(T, "Library/Application Support/Google/Chrome/Default/Local Extension Settings/abc/000003.log")).read() == "ext-login"
     # restore TIDAK menghapus data yang ada sekarang: dipindah ke Library/Caches/Amnesia/before-restore
     mk("Library/Application Support/Claude/config.json", "login-baru-belum-disimpan")

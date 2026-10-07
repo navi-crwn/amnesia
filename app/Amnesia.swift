@@ -37,6 +37,21 @@ enum P {
 
 let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
 
+/// v5.14: catatan langkah di ~/.amnesia/trace.log (jam + langkah, tanpa nama file), untuk melacak masalah logout.
+func trace(_ msg: String) {
+    let f = DateFormatter()
+    f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+    let line = "\(f.string(from: Date())) app \(appVersion): \(msg)\n"
+    let path = P.a + "/trace.log"
+    if let h = FileHandle(forWritingAtPath: path) {
+        h.seekToEndOfFile()
+        h.write(Data(line.utf8))
+        try? h.close()
+    } else {
+        try? line.write(toFile: path, atomically: true, encoding: .utf8)
+    }
+}
+
 // MARK: - Bahasa (English utama, Bahasa Indonesia tambahan). Disimpan di settings.conf: LANG=en|id
 
 enum Lang: String, CaseIterable {
@@ -152,10 +167,12 @@ struct VaultReply: Decodable {
     let patterns: [String: [String]]?
     let sizes: [String: Double]?
     let checks: [RestoreCheck]?
+    /// v5.14: app yang snapshot-nya mode ringan (extension Web Store tidak ikut)
+    let light: [String]?
 
     static func fail(_ msg: String) -> VaultReply {
         VaultReply(ok: false, error: msg, exists: nil, manifest: nil, attempts: nil, max: nil, min: nil, apps: nil,
-                   keys: nil, skip: nil, folders: nil, patterns: nil, sizes: nil, checks: nil)
+                   keys: nil, skip: nil, folders: nil, patterns: nil, sizes: nil, checks: nil, light: nil)
     }
 }
 
@@ -1666,6 +1683,7 @@ final class Model: ObservableObject {
     /// Lanjutkan logout/restart/shutdown yang tadi ditahan.
     func continueQuit() {
         guard let a = pending else { return }
+        trace("continue \(a) pressed")
         pending = nil
         page = .home
         allowQuit = true
@@ -1753,6 +1771,23 @@ final class Model: ObservableObject {
                     return
                 }
             }
+            // v5.14: vault ada tapi belum ada snapshot → login app bisa hilang di logout pertama
+            if vault?.exists == true, vault?.manifest == nil {
+                let auto = Setting.autoSnapshot.isOn
+                guard confirm(T("Your vault has no snapshot yet", "Vault kamu belum punya snapshot"),
+                              auto ? T("Auto snapshot is on, so your app logins are saved at your first logout. "
+                                       + "To be safe, you can also press Snapshot Now in Profile Vault first.",
+                                       "Snapshot otomatis menyala, jadi login app kamu disimpan saat logout pertama. "
+                                       + "Supaya lebih aman, kamu juga bisa tekan Snapshot Sekarang di Profile Vault dulu.")
+                                   : T("Auto snapshot is off. Without a snapshot, your app logins are DELETED at the next "
+                                       + "logout. Press Snapshot Now in Profile Vault first.",
+                                       "Snapshot otomatis mati. Tanpa snapshot, login app kamu IKUT TERHAPUS saat logout "
+                                       + "berikutnya. Tekan Snapshot Sekarang di Profile Vault dulu."),
+                              ok: T("Turn On Anyway", "Tetap Aktifkan"), danger: !auto) else {
+                    page = .vault
+                    return
+                }
+            }
             guard confirm(T("Turn on Amnesia?", "Aktifkan Amnesia?"),
                           T("From the next logout on, everything outside the Keep List and your Keep folder (\(KeepDir.shown)) will be "
                             + "DELETED at logout/restart/shutdown, then checked again at login.\n\n"
@@ -1821,7 +1856,7 @@ final class Model: ObservableObject {
                  T("Create a vault first in Profile Vault.", "Buat vault dulu di menu Profile Vault."))
             return
         }
-        let apps = v.apps ?? []
+        let apps = (v.apps ?? []).filter { !(v.skip ?? []).contains($0) }   // hanya app yang nyala di vault
         guard !apps.isEmpty else {
             info(T("Save & Log Out", "Simpan & Logout"),
                  T("There is no app data to save on this Mac yet.", "Belum ada data app yang bisa disimpan di Mac ini."))
@@ -2758,6 +2793,19 @@ struct VaultView: View {
                            + "WhatsApp Web and Telegram Web.",
                            "Cek sendiri (login web tidak bisa dicek otomatis): buka Chrome lalu lihat Gmail, "
                            + "WhatsApp Web dan Telegram Web."))
+        }
+        if (r.light ?? []).contains("Chrome") {
+            lines.append("")
+            lines.append(T("Chrome extensions from the Web Store were not in this light snapshot. To get them back:\n"
+                           + "1. Open Chrome and type chrome://extensions in the address bar.\n"
+                           + "2. Press Repair on each extension. Its settings and logins stay.\n"
+                           + "3. No Repair button? Quit Chrome (Cmd+Q), open it again and look once more.\n"
+                           + "Don't use Remove: that also deletes the extension's settings.",
+                           "Extension Chrome dari Web Store tidak ikut di snapshot ringan ini. Cara mengembalikannya:\n"
+                           + "1. Buka Chrome, ketik chrome://extensions di address bar.\n"
+                           + "2. Tekan Repair di tiap extension. Pengaturan dan login di dalamnya tetap ada.\n"
+                           + "3. Tidak ada tombol Repair? Tutup Chrome (Cmd+Q), buka lagi, lalu cek sekali lagi.\n"
+                           + "Jangan pakai Remove: pengaturan extension ikut terhapus."))
         }
         lines.append("")
         lines.append(T("The app data that was on this Mac before the restore was moved (not deleted) to "
@@ -4613,12 +4661,12 @@ struct SettingsView: View {
                       + "Berlaku mulai login berikutnya."),
                     "power.circle.fill", Pal.keep, $atLogin) { Setting.openAtLogin.set($0); Agent.LoginItem.sync() }
                 row(T("Light Chrome snapshot", "Snapshot Chrome ringan"),
-                    T("Skips Chrome's extension program files and caches (about 1 GB → 150 MB). Logins, bookmarks and "
-                      + "extension settings are kept. After Restore, Chrome downloads the extensions again from the "
-                      + "Web Store (needs internet). Extensions not from the Web Store do not come back.",
-                      "Melewati file program extension dan cache Chrome (sekitar 1 GB → 150 MB). Login, bookmark dan "
-                      + "pengaturan extension tetap disimpan. Setelah Restore, Chrome mengunduh ulang extension dari "
-                      + "Web Store (butuh internet). Extension yang bukan dari Web Store tidak kembali."),
+                    T("Skips Chrome's caches and the program files of Web Store extensions (about 1 GB → 150 MB). "
+                      + "Logins, bookmarks, extension settings and extensions not from the Web Store are kept. After "
+                      + "Restore, press Repair in chrome://extensions to download the Web Store ones again.",
+                      "Melewati cache Chrome dan file program extension dari Web Store (sekitar 1 GB → 150 MB). Login, "
+                      + "bookmark, pengaturan extension dan extension yang bukan dari Web Store tetap disimpan. Setelah "
+                      + "Restore, tekan Repair di chrome://extensions untuk mengunduh ulang yang dari Web Store."),
                     "leaf.fill", Pal.vault, $light) { Setting.vaultLight.set($0) }
                 Button { m.page = .preview } label: {
                     Label(T("See what would be deleted now", "Lihat yang akan dihapus sekarang"), systemImage: "list.bullet.rectangle")
@@ -4918,6 +4966,7 @@ struct PreviewView: View {
     }
 
     private func cancel() {
+        if let a = m.pending { trace("cancel \(a) pressed") }
         m.pending = nil
         back()
     }
@@ -5272,7 +5321,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if Shots.running { return .terminateCancel }   // mode screenshot belum selesai
         let m = Model.shared
-        if m.allowQuit { return .terminateNow }
+        if m.allowQuit { trace("quit allowed (continue pressed or own logout)"); return .terminateNow }
         let reason = NSAppleEventManager.shared().currentAppleEvent?
             .attributeDescriptor(forKeyword: AEKeyword(kAEQuitReason))?.typeCodeValue ?? 0
         let action: QuitAction?
@@ -5284,8 +5333,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         // Tidak ditahan kalau: bukan logout, Amnesia mati/jeda, fitur dimatikan, atau jendela tidak bisa dibuka.
         guard let a = action, m.state == .active, Setting.preview.isOn, let open = Opener.open else {
+            let what = action.map { String(describing: $0) } ?? "app quit"
+            let check = Setting.preview.isOn ? "on" : "off"
+            let win = Opener.open == nil ? "no" : "yes"
+            trace("quit request \(what): not held (state \(m.state), check \(check), window \(win))")
             return .terminateNow
         }
+        trace("quit request \(a): held, showing What Gets Deleted")
         m.pending = a
         m.page = .preview
         open()

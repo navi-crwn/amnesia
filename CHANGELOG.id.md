@@ -5,6 +5,26 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.14 — 2026-10-07
+
+### Logout dan login lebih cepat
+- **Logout memindah, tidak menghapus satu per satu.** Semua yang dibersihkan sekarang dipindah ke tempat sampah milik Amnesia (`~/.amnesia-trash`) di disk yang sama. Memindah itu instan, mau 1 GB atau 100 GB, jadi logout tidak makin lama walau data kerja makin besar. Penghapusan sebenarnya jalan setelah login berikutnya, pelan-pelan di background (prioritas rendah), jadi Mac tidak terasa lambat. Isi folder itu tidak muncul di mana pun (Spotlight melewatinya). Kalau pemindahan gagal, item langsung dihapus seperti dulu.
+- **Cek saat login lebih ringan.** Logout meninggalkan penanda kecil kalau selesai dengan rapi. Kalau penanda ada, cek saat login melewati langkah Keychain. Kalau logout terputus (crash, dimatikan paksa), cek saat login membersihkan penuh seperti dulu.
+- **Snapshot otomatis hanya menyimpan app yang berubah.** Saat logout, app yang datanya tidak berubah sejak snapshot terakhirnya dilewati. Snapshot otomatis juga dibatasi 150 detik: kalau lebih lama, dibatalkan dengan rapi (snapshot lama tetap ada) supaya pembersihan selalu sempat jalan.
+
+### Ditambahkan
+- **Peringatan kalau vault belum punya snapshot** saat kamu tekan Turn On. Kalau snapshot otomatis mati, ada peringatan bahwa login app akan terhapus saat logout berikutnya, lalu kamu diarahkan ke Profile Vault.
+- **Cara Repair extension Chrome** di hasil Restore, muncul kalau snapshot Chrome-nya versi ringan: buka `chrome://extensions`, tekan Repair di tiap extension, tutup dan buka lagi Chrome kalau tombolnya belum ada, dan jangan pakai Remove.
+- **Catatan langkah untuk melacak masalah** di `~/.amnesia/trace.log`: hanya jam dan nama langkah (sinyal logout, mulai/selesai snapshot, tiap tahap pembersihan, permintaan logout yang ditahan atau dilepas app, tombol Lanjut/Batal). Tanpa nama file. Hanya menyimpan beberapa ratus baris terakhir.
+- **Laporan crash Amnesia disimpan** di `~/.amnesia/crash` (5 terbaru) sebelum folder log dibersihkan.
+- **Batas waktu untuk langkah pembersihan** yang bisa macet (perintah Keychain, reset cache sistem), supaya satu perintah yang macet tidak menahan logout.
+
+### Diubah
+- **Snapshot Chrome ringan tetap menyimpan extension yang bukan dari Web Store.** Hanya extension dari Web Store yang dilewati (Chrome bisa mengunduhnya lagi lewat Repair). Extension yang kamu pasang dengan cara lain tetap ikut snapshot, jadi tidak hilang.
+- **Save & Log Out hanya menyebut app yang nyala** di Profile Vault (sejak dulu yang disimpan memang hanya itu, tapi pertanyaannya menyebut semua app).
+- `uninstall.sh` juga mengosongkan `~/.amnesia-trash`.
+- **Ukuran tiap app di Profile Vault mengikuti snapshot ringan.** Dulu Chrome tetap menunjukkan ukuran penuhnya (sekitar 1 GB), padahal snapshot ringan menyimpan jauh lebih sedikit. Sekarang angkanya tidak menghitung yang dilewati mode ringan, jadi cocok dengan yang benar-benar masuk vault.
+
 ## v5.13.1 — 2026-10-07
 
 ### Diperbaiki

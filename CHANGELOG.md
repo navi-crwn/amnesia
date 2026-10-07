@@ -5,6 +5,26 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.14 — 2026-10-07
+
+### Faster logout and login
+- **Logout moves, it doesn't delete one by one.** Everything that gets wiped is now moved into Amnesia's own trash folder (`~/.amnesia-trash`) on the same disk. Moving is instant, whether it's 1 GB or 100 GB, so logout no longer gets slower as your work grows. The real delete runs after your next login, slowly in the background (low priority), so the Mac doesn't feel slow. Nothing in that folder shows up anywhere (Spotlight skips it). If moving fails, the item is deleted right away like before.
+- **Lighter check at login.** Logout leaves a small marker when it finished properly. If the marker is there, the login check skips the Keychain step. If the logout was cut off (a crash, a forced power-off), the login check does the full cleanup like before.
+- **Auto snapshot only saves apps that changed.** At logout, an app whose data didn't change since its last snapshot is skipped. The auto snapshot also has a limit of 150 seconds: if it takes longer, it is cancelled cleanly (the old snapshot stays) so the cleanup always gets its turn.
+
+### Added
+- **Warning when the vault has no snapshot yet** when you press Turn On. If auto snapshot is off, it warns that your app logins will be deleted at the next logout, and takes you to Profile Vault.
+- **How to repair Chrome extensions** in the Restore result, shown when the Chrome snapshot was a light one: open `chrome://extensions`, press Repair on each one, quit and reopen Chrome if the button isn't there, and don't use Remove.
+- **Step log for tracking problems** in `~/.amnesia/trace.log`: only the time and the step name (logout signal, snapshot start/end, each cleanup stage, logout requests the app held or let through, Continue/Cancel). No file names. It keeps the last few hundred lines.
+- **Amnesia crash reports are kept** in `~/.amnesia/crash` (newest 5) before the logs folder is wiped.
+- **Time limits on cleanup steps** that could hang (Keychain commands, system cache resets), so one stuck command can't hold up the logout.
+
+### Changed
+- **Light Chrome snapshot keeps extensions that are not from the Web Store.** Only Web Store extensions are skipped (Chrome can download those again with Repair). Extensions you installed another way stay in the snapshot, so they don't get lost.
+- **Save & Log Out lists only the apps that are switched on** in Profile Vault (it already saved only those, but the question listed every app).
+- `uninstall.sh` also empties `~/.amnesia-trash`.
+- **The size shown for each app in Profile Vault follows the light snapshot.** Before, Chrome still showed its full size (about 1 GB) even though the light snapshot saves much less. Now the number leaves out what light mode skips, so it matches what really goes into the vault.
+
 ## v5.13.1 — 2026-10-07
 
 ### Fixed

@@ -67,4 +67,18 @@ printf 'KEEP_DIR=~/\n' > "$T/.amnesia/settings.conf"; mk "Downloads/d.txt"
 AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
 gone "Downloads/d.txt"; here "Keep"
 
+# v5.14: logout MEMINDAH ke tempat sampah (cepat), login menghapusnya; login ringan kalau logout selesai
+rm -f "$T/.amnesia/settings.conf"; mk "Downloads/e.txt"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+gone "Downloads/e.txt"; here ".amnesia/clean.done"
+ls "$T/.amnesia-trash"/*/*/e.txt >/dev/null 2>&1 || { echo "FAILED: not moved to trash"; fail=1; }
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" login >/dev/null 2>&1
+gone ".amnesia-trash"; gone ".amnesia/clean.done"
+grep -q "clean login: light=1" "$T/.amnesia/trace.log" || { echo "FAILED: light login not used"; fail=1; }
+# logout terputus (tanpa clean.done) -> login membersihkan penuh
+mk "Downloads/f.txt"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" login >/dev/null 2>&1
+gone "Downloads/f.txt"; grep -q "clean login: light=0" "$T/.amnesia/trace.log" || { echo "FAILED: full login after interrupted logout"; fail=1; }
+! grep -q "f.txt\|e.txt" "$T/.amnesia/trace.log" || { echo "FAILED: trace.log contains file names"; fail=1; }
+
 [ $fail = 0 ] && echo "OK: all clean.sh tests passed" || exit 1

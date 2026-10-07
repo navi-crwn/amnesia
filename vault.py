@@ -28,9 +28,10 @@ MIN_PASSWORD = 12
 APPS = {
     "Chrome": {"quit": "Google Chrome",
                "paths": ["Library/Application Support/Google/Chrome"],
-               # mode ringan (VAULT_LIGHT, default nyala): file program extension & model Chrome tidak disimpan.
-               # Login (Cookies, Login Data, Local Storage, IndexedDB, Local Extension Settings) tetap disimpan.
-               # Setelah restore, Chrome mengunduh ulang extension dari Web Store (tombol Repair kalau diminta).
+               # mode ringan (VAULT_LIGHT, default nyala): cache & model Chrome tidak disimpan, juga program
+               # extension yang dari Web Store (Chrome mengunduh ulang lewat tombol Repair). Extension lain tetap
+               # disimpan (tidak bisa diunduh ulang). Login (Cookies, Login Data, Local Storage, IndexedDB,
+               # Local Extension Settings) selalu disimpan.
                "light": ["Extensions", "ScriptCache", "optimization_guide_model_store", "OptGuideOnDeviceModel",
                          "OnDeviceHeadSuggestModel", "WasmTtsEngine", "Safe Browsing", "screen_ai",
                          "GraphiteDawnCache", "BrowserMetrics", "BrowserMetrics-spare.pma"]},
@@ -301,8 +302,10 @@ def chosen_apps():
     return [n for n in installed_apps() if n not in skip]
 
 
-def _size(paths):
-    """Ukuran (byte) tanpa cache, sama seperti yang masuk snapshot."""
+def _size(paths, light=(), exact=()):
+    """Ukuran (byte) tanpa cache, sama seperti yang masuk snapshot (mode ringan ikut dihitung)."""
+    skip = set(EXCLUDE) | set(light)
+    skip_full = {os.path.join(HOME, x) for x in exact}
     total = 0
     for p in paths:
         full = os.path.join(HOME, p)
@@ -310,9 +313,9 @@ def _size(paths):
             total += os.lstat(full).st_size
             continue
         for root, dirs, files in os.walk(full):
-            dirs[:] = [d for d in dirs if d not in EXCLUDE]
+            dirs[:] = [d for d in dirs if d not in skip and os.path.join(root, d) not in skip_full]
             for f in files:
-                if f not in EXCLUDE:
+                if f not in skip:
                     try:
                         total += os.lstat(os.path.join(root, f)).st_size
                     except OSError:
@@ -322,7 +325,7 @@ def _size(paths):
 
 def sizes():
     """Ukuran tiap app (MB), untuk ditampilkan sebelum snapshot."""
-    return {n: round(_size(app_paths(n)) / 1048576, 1) for n in installed_apps()}
+    return {n: round(_size(app_paths(n), *_light_skip(n)) / 1048576, 1) for n in installed_apps()}
 
 
 # ---------------- buat vault ----------------
@@ -378,15 +381,83 @@ def quit_apps(names):
     time.sleep(1)
 
 
-def snapshot(names=None):
+WEBSTORE = "clients2.google.com/service/update2/crx"
+
+
+def _webstore_ext(ext_dir, settings):
+    """Extension ini dari Chrome Web Store (bisa diunduh ulang)?"""
+    s = settings.get(os.path.basename(ext_dir)) or {}
+    if s.get("from_webstore") is True or WEBSTORE in str((s.get("manifest") or {}).get("update_url", "")):
+        return True
+    for m in glob.glob(os.path.join(glob.escape(ext_dir), "*", "manifest.json")):
+        try:
+            with open(m, encoding="utf-8") as f:
+                if WEBSTORE in str(json.load(f).get("update_url", "")):
+                    return True
+        except (OSError, ValueError, AttributeError):
+            pass
+    return False
+
+
+def _light_skip(n):
+    """Mode ringan: (nama folder yang dilewati di mana saja, path persis yang dilewati).
+    Program extension dari Web Store dilewati; extension lain tetap ikut snapshot."""
+    light = items().get(n, {}).get("light", [])
+    if not light or _setting("VAULT_LIGHT", "1") == "0":
+        return [], []
+    exact = []
+    if "Extensions" in light:
+        for base in app_paths(n):
+            for ext in glob.glob(os.path.join(glob.escape(os.path.join(HOME, base)), "*", "Extensions")):
+                settings = {}
+                for f in ("Preferences", "Secure Preferences"):
+                    try:
+                        with open(os.path.join(os.path.dirname(ext), f), encoding="utf-8") as fh:
+                            for k, v in ((json.load(fh).get("extensions") or {}).get("settings") or {}).items():
+                                if isinstance(v, dict):
+                                    settings.setdefault(k, {}).update(v)
+                    except (OSError, ValueError, AttributeError):
+                        pass
+                for eid in sorted(os.listdir(ext)):
+                    if _webstore_ext(os.path.join(ext, eid), settings):
+                        exact.append(os.path.relpath(os.path.join(ext, eid), HOME))
+    return [x for x in light if x != "Extensions"], exact
+
+
+def _newest(n):
+    """Waktu perubahan terbaru di data app ini (untuk snapshot otomatis: lewati app yang tidak berubah)."""
+    t = 0
+    for rel in app_paths(n):
+        full = os.path.join(HOME, rel)
+        try:
+            t = max(t, os.lstat(full).st_mtime)
+        except OSError:
+            continue
+        for root, dirs, files in os.walk(full):
+            for x in dirs + files:
+                try:
+                    t = max(t, os.lstat(os.path.join(root, x)).st_mtime)
+                except OSError:
+                    pass
+    return t
+
+
+def snapshot(names=None, changed=False):
     """Simpan app ke vault, 1 arsip per app. Tidak butuh password.
-    Hanya app yang dipilih yang diperbarui; snapshot app lain tetap ada."""
+    Hanya app yang dipilih yang diperbarui; snapshot app lain tetap ada.
+    changed=True (snapshot otomatis saat logout): app yang tidak berubah sejak snapshot terakhirnya dilewati."""
     if not exists():
         raise VaultError(T("No vault yet.", "Vault belum dibuat."))
     names = [n for n in (names or chosen_apps()) if app_paths(n)]
+    if changed:
+        per0 = _load_manifest()
+        names = [n for n in names if not per0.get(n, {}).get("ts") or _newest(n) > per0[n]["ts"]
+                 or not os.path.exists(_app_files(n)[0])]
+        if not names:
+            return []
     if not names:
         raise VaultError(T("There is no app data to snapshot.", "Tidak ada data app yang bisa di-snapshot."))
-    weight = {n: max(_size(app_paths(n)), 1) for n in names}
+    weight = {n: max(_size(app_paths(n), *_light_skip(n)), 1) for n in names}
     total = sum(weight.values())
     _progress(0, f"quit 1/{len(names)} {names[0]}")
     quit_apps(names)
@@ -404,8 +475,10 @@ def snapshot(names=None):
             start, end = 2 + 96 * done / total, 2 + 96 * (done + weight[n]) / total
             step = f"save {i + 1}/{len(names)} {n}"
             _progress(start, step)
-            skip = EXCLUDE + (items().get(n, {}).get("light", []) if _setting("VAULT_LIGHT", "1") != "0" else [])
-            args = ["a", "-t7z", "-mx=3", "-mhe=on", "-p", new_arc] + app_paths(n) + [f"-xr!{x}" for x in skip]
+            light, exact = _light_skip(n)
+            ts = time.time()
+            args = (["a", "-t7z", "-mx=3", "-mhe=on", "-p", new_arc] + app_paths(n)
+                    + [f"-xr!{x}" for x in EXCLUDE + light] + [f"-x!{x}" for x in exact])
             r = _7z_progress(args, key, cwd=HOME, start=start, end=end, step=step)
             if r.returncode not in (0, 1):          # 1 = warning (mis. file terkunci), arsip tetap jadi
                 raise VaultError(T(f"Snapshot of {n} failed:\n", f"Snapshot {n} gagal:\n") + r.stderr[-300:])
@@ -415,7 +488,7 @@ def snapshot(names=None):
             with _no_cancel():                       # arsip & kuncinya selalu diganti berpasangan
                 os.replace(new_arc, arc)
                 os.replace(new_key, keyf)
-                per[n] = {"time": time.strftime("%Y-%m-%d %H:%M"),
+                per[n] = {"time": time.strftime("%Y-%m-%d %H:%M"), "ts": ts, "light": bool(exact),
                           "size_mb": round(os.path.getsize(arc) / 1048576, 1)}
                 _save_manifest(per)
         finally:
@@ -753,10 +826,12 @@ def _cli(argv, stdin):
         pw, panic = line(), line()
         create(pw, panic, full)
     elif cmd == "snapshot":
-        out = {"apps": snapshot(argv[2:] or None)}
+        args = [a for a in argv[2:] if not a.startswith("--")]
+        out = {"apps": snapshot(args or None, changed="--changed" in argv[2:])}
     elif cmd == "restore":
         names, checks = restore(line())
-        out = {"apps": names, "checks": checks}
+        per = _load_manifest()
+        out = {"apps": names, "checks": checks, "light": [n for n in names if per.get(n, {}).get("light")]}
     elif cmd == "delsnap":
         delete_snapshot(argv[2:] or None)
     elif cmd == "passwd":
