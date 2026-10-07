@@ -125,6 +125,7 @@ html[lang=id] [data-id]{display:revert}
       <div class="nav-links">
         <a href="#features"><span data-en>Features</span><span data-id>Fitur</span></a>
         <a href="#tutorial"><span data-en>Tutorial</span><span data-id>Tutorial</span></a>
+        <a href="#glossary"><span data-en>Glossary</span><span data-id>Glosarium</span></a>
         <a href="#faq">FAQ</a>
       </div>
       <div class="nav-r">
@@ -237,7 +238,7 @@ html[lang=id] [data-id]{display:revert}
     </div>
 
     <div class="feat">
-      <img data-shot="vault-full" src="screens/en/vault-full.png" alt="Profile Vault" loading="lazy" onerror="this.src=this.src.replace('vault-full','vault')">
+      <img data-shot="vault" src="screens/en/vault.png" alt="Profile Vault" loading="lazy">
       <div>
         <h3>Profile Vault</h3>
         <p><span data-en>An encrypted safe for your app logins. It's what lets you log in to a clean Mac and have Chrome, WhatsApp, Claude and your coding tools ready in one step.</span><span data-id>Brankas terenkripsi untuk login app kamu. Inilah yang membuat Mac yang sudah bersih bisa langsung dipakai: Chrome, WhatsApp, Claude, dan alat coding siap dalam 1 langkah.</span></p>
@@ -270,7 +271,7 @@ html[lang=id] [data-id]{display:revert}
     </div>
 
     <div class="feat">
-      <img data-shot="backup-full" src="screens/en/backup-full.png" alt="Backup" loading="lazy" onerror="this.src=this.src.replace('backup-full','backup')">
+      <img data-shot="backup" src="screens/en/backup.png" alt="Backup" loading="lazy">
       <div>
         <h3>Backup</h3>
         <p><span data-en>An encrypted .7z copy (AES-256, file names too) of your Keep folder, chosen folders and the Profile Vault.</span><span data-id>Salinan .7z terenkripsi (AES-256, nama file juga) dari folder Keep, folder pilihan, dan Profile Vault.</span></p>
@@ -279,6 +280,7 @@ html[lang=id] [data-id]{display:revert}
           <li><b><span data-en>Schedule</span><span data-id>Jadwal</span></b>: <span data-en>daily or weekly, with the password saved in Keychain. "Run the scheduled backup now" tests it right away.</span><span data-id>harian atau mingguan, dengan password tersimpan di Keychain. "Jalankan backup terjadwal sekarang" untuk langsung mengetesnya.</span></li>
           <li><b><span data-en>Check a Backup File</span><span data-id>Cek File Backup</span></b>: <span data-en>proves the vault inside a backup can be opened, without touching the vault on your Mac.</span><span data-id>membuktikan vault di dalam backup bisa dibuka, tanpa menyentuh vault di Mac kamu.</span></li>
           <li><span data-en>Every backup is a new dated file. Old backups are never deleted by Amnesia.</span><span data-id>Setiap backup jadi file baru bertanggal. Backup lama tidak pernah dihapus oleh Amnesia.</span></li>
+          <li><span data-en>Restore Files puts chosen files from a backup back where they came from. Anything already there is moved aside first, never overwritten.</span><span data-id>Pulihkan File mengembalikan file pilihan dari backup ke tempat asalnya. File yang sudah ada dipindah dulu, tidak pernah ditimpa.</span></li>
         </ul>
       </div>
     </div>
@@ -292,7 +294,7 @@ html[lang=id] [data-id]{display:revert}
     </div>
 
     <div class="feat">
-      <img data-shot="settings-full" src="screens/en/settings-full.png" alt="Settings" loading="lazy" onerror="this.src=this.src.replace('settings-full','settings')">
+      <img data-shot="settings" src="screens/en/settings.png" alt="Settings" loading="lazy">
       <div>
         <h3><span data-en>Settings</span><span data-id>Pengaturan</span></h3>
         <ul>
@@ -371,7 +373,7 @@ html[lang=id] [data-id]{display:revert}
       <li>
         <div><h3><span data-en>Pick apps and make the first snapshot</span><span data-id>Pilih app dan buat snapshot pertama</span></h3>
         <p><span data-en>Click the apps to save, choose light or full for browsers, log in to those apps as usual, then press Snapshot Now.</span><span data-id>Klik app yang mau disimpan, pilih ringan atau lengkap untuk browser, login ke app itu seperti biasa, lalu tekan Snapshot Sekarang.</span></p></div>
-        <img data-shot="vault-full" src="screens/en/vault-full.png" alt="" loading="lazy" onerror="this.src=this.src.replace('vault-full','vault')">
+        <img data-shot="vault" src="screens/en/vault.png" alt="" loading="lazy">
       </li>
       <li>
         <div><h3><span data-en>Back up, with the vault</span><span data-id>Backup, termasuk vault</span></h3>
@@ -401,6 +403,18 @@ html[lang=id] [data-id]{display:revert}
   </div>
 </section>
 
+<section id="glossary">
+  <div class="wrap">
+    <h2><span data-en>Glossary</span><span data-id>Glosarium</span></h2>
+    <p class="sub"><span data-en>Three words borrowed from medicine, so you know exactly what kind of forgetting happens.</span><span data-id>Tiga istilah yang dipinjam dari dunia medis, supaya jelas lupa yang seperti apa yang terjadi.</span></p>
+    <div class="grid">
+      <div class="card"><div class="ic" style="background:#e0e7ff">🧠</div><h3>Selective Amnesia</h3><p><span data-en>The normal cleanup at every logout, restart and shutdown. Everything is forgotten except what you chose: the Keep List, your Keep folder and the Profile Vault.</span><span data-id>Pembersihan biasa setiap logout, restart, dan shutdown. Semuanya dilupakan kecuali yang kamu pilih: Keep List, folder Keep, dan Profile Vault.</span></p></div>
+      <div class="card"><div class="ic" style="background:#fee2e2">🕳️</div><h3>Global Amnesia</h3><p><span data-en>Everything is gone with no way back: the panic button (3 wrong vault passwords or the panic word), Uninstall with "also delete the vault" ticked, or a cleanup while you have no snapshot and no backup.</span><span data-id>Semuanya hilang tanpa jalan kembali: tombol darurat (salah password vault 3 kali atau kata panik), Hapus Amnesia dengan "hapus juga vault" dicentang, atau pembersihan saat belum ada snapshot dan backup.</span></p></div>
+      <div class="card"><div class="ic" style="background:#dcfce7">💡</div><h3>Memory Recall</h3><p><span data-en>Bringing memories back: Restore Profiles from the vault, Get Vault from Backup, Move Mac, and Restore Files, which puts files from a backup back where they were.</span><span data-id>Memanggil kembali ingatan: Restore Profil dari vault, Ambil Vault dari Backup, Pindah Mac, dan Pulihkan File yang mengembalikan file dari backup ke tempat asalnya.</span></p></div>
+    </div>
+  </div>
+</section>
+
 <section id="faq">
   <div class="wrap">
     <h2>FAQ</h2>
@@ -424,6 +438,10 @@ html[lang=id] [data-id]{display:revert}
     <details><summary><span data-en>Do I need Terminal or Chrome to set up backups?</span><span data-id>Perlu Terminal atau Chrome untuk mengatur backup?</span></summary><p><span data-en>No. For a server, type its password once and Amnesia installs an SSH key. For Google Drive, Dropbox, OneDrive, Box or pCloud, you log in through your browser.</span><span data-id>Tidak. Untuk server, ketik password-nya sekali dan Amnesia memasang kunci SSH. Untuk Google Drive, Dropbox, OneDrive, Box, atau pCloud, kamu login lewat browser.</span></p></details>
     <details><summary><span data-en>How do I know a backup really works?</span><span data-id>Bagaimana tahu backup benar-benar bisa dipakai?</span></summary><p><span data-en>On the Backup page press Check a Backup File and pick the .7z. Amnesia opens the vault inside it in a temporary folder, shows which apps are in it, then deletes the temporary folder. Your own vault isn't touched.</span><span data-id>Di halaman Backup tekan Cek File Backup lalu pilih file .7z-nya. Amnesia membuka vault di dalamnya di folder sementara, menampilkan app apa saja yang ada, lalu menghapus folder sementara itu. Vault kamu sendiri tidak disentuh.</span></p></details>
     <details><summary><span data-en>Does the scheduled backup work when I'm not looking?</span><span data-id>Apakah backup terjadwal jalan sendiri?</span></summary><p><span data-en>Yes, while the Amnesia icon is in the menu bar, with the password saved in Keychain. For a USB drive it waits until the drive is plugged in. You get a notification each time. "Run the scheduled backup now" tests it right away.</span><span data-id>Ya, selama ikon Amnesia ada di menu bar, dengan password tersimpan di Keychain. Untuk flashdisk, backup menunggu sampai flashdisk tercolok. Setiap kali selesai muncul notifikasi. "Jalankan backup terjadwal sekarang" untuk langsung mengetesnya.</span></p></details>
+    <details><summary><span data-en>How do I get files back from a backup?</span><span data-id>Bagaimana mengembalikan file dari backup?</span></summary><p><span data-en>Backup → Restore Files: pick the .7z, tick the folders or files, then press Restore to Original Place. Amnesia remembers where each folder came from (also on an external drive). Anything already there is moved to ~/.amnesia/before-restore first, nothing is overwritten. Drive not plugged in? Use To Another Folder.</span><span data-id>Backup → Pulihkan File: pilih file .7z, centang folder atau file-nya, lalu tekan Pulihkan ke Lokasi Asal. Amnesia ingat asal tiap folder (juga yang di drive eksternal). Yang sudah ada di tempat itu dipindah dulu ke ~/.amnesia/before-restore, tidak ada yang ditimpa. Drive belum dicolok? Pakai Ke Folder Lain.</span></p></details>
+    <details><summary><span data-en>Why can't I open a backup by double-clicking it?</span><span data-id>Kenapa backup tidak bisa dibuka dengan klik dua kali?</span></summary><p><span data-en>The backup is locked with AES-256, and even its list of file names is encrypted. The Mac's built-in Archive Utility can't open that. Use Restore Files in Amnesia, the free app Keka, or Terminal: ~/.amnesia/bin/7zz x file.7z (type the password when it asks, don't put it in the command).</span><span data-id>Backup dikunci AES-256, bahkan daftar nama file-nya ikut dikunci. Archive Utility bawaan Mac tidak bisa membukanya. Pakai Pulihkan File di Amnesia, app gratis Keka, atau Terminal: ~/.amnesia/bin/7zz x file.7z (ketik password saat diminta, jangan ditulis di perintah).</span></p></details>
+    <details><summary><span data-en>Check a Backup File says the backup has no vault. Is it broken?</span><span data-id>Cek File Backup bilang backup tidak berisi vault. Apakah rusak?</span></summary><p><span data-en>No. It was made with Include Profile Vault off (or before v5.13). Your files in it are fine. If the password is wrong, the message says so separately.</span><span data-id>Tidak. Backup itu dibuat saat Sertakan Profile Vault mati (atau sebelum v5.13). File lain di dalamnya tetap aman. Kalau password-nya yang salah, pesannya akan menyebut itu secara terpisah.</span></p></details>
+    <details><summary><span data-en>The scheduled backup asked for my Mac password. Why?</span><span data-id>Backup terjadwal meminta password Mac. Kenapa?</span></summary><p><span data-en>macOS asks once when an older Amnesia saved the backup password in Keychain. Press Always Allow. From v5.17 Amnesia saves it again as its own, so it won't ask again.</span><span data-id>macOS bertanya sekali kalau password backup disimpan oleh versi Amnesia yang lama. Tekan Always Allow. Mulai v5.17 Amnesia menyimpannya ulang sebagai miliknya, jadi tidak bertanya lagi.</span></p></details>
     <details><summary><span data-en>Are old backups deleted?</span><span data-id>Apakah backup lama dihapus?</span></summary><p><span data-en>Never. Every backup is a new dated file. Delete old ones yourself when you don't need them.</span><span data-id>Tidak pernah. Setiap backup jadi file baru bertanggal. Hapus sendiri yang lama kalau sudah tidak perlu.</span></p></details>
 
     <h3 class="minih"><span data-en>Everyday use</span><span data-id>Pemakaian sehari-hari</span></h3>

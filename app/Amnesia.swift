@@ -439,7 +439,7 @@ func folderSize(_ rel: String) -> String {
         : [base]
     let out = sh("/usr/bin/du", ["-sk"] + paths, timeout: 20).out
     let kb = out.split(separator: "\n").compactMap { Int($0.split(separator: "\t").first ?? "") }.reduce(0, +)
-    return ByteCountFormatter.string(fromByteCount: Int64(kb) * 1024, countStyle: .file)
+    return bytesText(Int64(kb) * 1024)
 }
 
 func keepMatches(_ path: String, _ entries: [String]) -> Bool {
@@ -952,7 +952,7 @@ func pathsSize(_ rels: [String]) -> String {
         kb += sh("/usr/bin/du", ["-sk"] + part, timeout: 60).out.split(separator: "\n")
             .compactMap { Int($0.split(separator: "\t").first ?? "") }.reduce(0, +)
     }
-    return ByteCountFormatter.string(fromByteCount: Int64(kb) * 1024, countStyle: .file)
+    return bytesText(Int64(kb) * 1024)
 }
 
 enum QuitAction {
@@ -1008,12 +1008,21 @@ enum Secret {
     }
 
     static func get() -> String? {
+        if Shots.mandul { return nil }   // salinan screenshot tidak menyentuh Keychain asli
         var q = base
         q[kSecReturnData as String] = true
         q[kSecMatchLimit as String] = kSecMatchLimitOne
         var out: AnyObject?
-        guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let d = out as? Data else { return nil }
-        return String(data: d, encoding: .utf8)
+        guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let d = out as? Data,
+              let pw = String(data: d, encoding: .utf8) else { return nil }
+        // v5.17: item yang dibuat oleh versi Amnesia lama (tanda tangan lain) membuat macOS minta password login Mac
+        // setiap kali dibaca, juga saat backup terjadwal. Setelah sekali berhasil dibaca, simpan ulang supaya
+        // versi ini yang jadi pemiliknya dan backup terjadwal tidak tertahan menunggu password lagi.
+        let ver = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+        if UserDefaults.standard.string(forKey: "secretOwner") != ver, set(pw) {
+            UserDefaults.standard.set(ver, forKey: "secretOwner")
+        }
+        return pw
     }
 
     /// Cek ada atau tidak, tanpa membaca isinya (tidak memicu dialog izin).
@@ -1025,13 +1034,17 @@ enum Secret {
 
     @discardableResult
     static func set(_ pw: String) -> Bool {
+        if Shots.mandul { return false }
         SecItemDelete(base as CFDictionary)
         var q = base
         q[kSecValueData as String] = Data(pw.utf8)
-        return SecItemAdd(q as CFDictionary, nil) == errSecSuccess
+        let ok = SecItemAdd(q as CFDictionary, nil) == errSecSuccess
+        if ok { UserDefaults.standard.set(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
+                                          forKey: "secretOwner") }
+        return ok
     }
 
-    static func delete() { SecItemDelete(base as CFDictionary) }
+    static func delete() { if !Shots.mandul { SecItemDelete(base as CFDictionary) } }
 }
 
 /// Layanan cloud yang bisa dihubungkan cukup dengan login di browser (lewat rclone).
@@ -1321,7 +1334,7 @@ func backupStepText(_ stage: String, _ done: Double, _ total: Double, _ speed: D
     case "copy", "upload":
         var t = stage == "copy" ? T("2/2 Copying…", "2/2 Menyalin…") : T("2/2 Uploading…", "2/2 Mengunggah…")
         if speed > 0 {
-            t += " · " + ByteCountFormatter.string(fromByteCount: Int64(speed), countStyle: .file) + "/s"
+            t += " · " + bytesText(Int64(speed)) + "/s"
             if total > done { t += " · " + etaText((total - done) / speed) }
         }
         return t
@@ -1367,6 +1380,51 @@ func runBackup(_ pw: String, auto: Bool = false, job: JobBox? = nil,
 /// Buang awalan "FAILED: " / "GAGAL: " dari pesan script.
 func stripFail(_ s: String) -> String {
     s.replacingOccurrences(of: "FAILED: ", with: "").replacingOccurrences(of: "GAGAL: ", with: "")
+}
+
+/// v5.17: "2026-10-07 13:03:01" -> "hari ini 13:03" / "kemarin 22:15" / "2026-10-05 09:00".
+func whenText(_ date: String, _ time: String) -> String {
+    let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
+    let hm = String(time.prefix(5))
+    guard let d = f.date(from: date) else { return date + " " + hm }
+    let cal = Calendar.current
+    if cal.isDateInToday(d) { return T("today", "hari ini") + " " + hm }
+    if cal.isDateInYesterday(d) { return T("yesterday", "kemarin") + " " + hm }
+    return date + " " + hm
+}
+
+/// v5.17: baris clean.log ("2026-10-07 13:03:01 logout: 1284 items wiped", bahasa apa pun) jadi kalimat
+/// dalam bahasa app yang sedang dipakai.
+func cleanText(_ log: String) -> String {
+    let w = log.split(separator: " ").map(String.init)
+    guard w.count >= 4, w[2].hasSuffix(":"), let n = Int(w[3]) else {
+        return log.isEmpty ? T("Never wiped yet", "Belum pernah dibersihkan") : T("Last: ", "Terakhir: ") + log
+    }
+    let mode = String(w[2].dropLast())
+    let at = mode == "logout" ? T("at logout", "saat logout") : mode == "login" ? T("checked at login", "dicek saat login")
+        : T("by hand", "manual")
+    return T("Last cleanup: \(whenText(w[0], w[1])), \(at), \(n) items",
+             "Terakhir dibersihkan: \(whenText(w[0], w[1])), \(at), \(n) item")
+}
+
+/// v5.17: baris backup.log jadi kalimat dalam bahasa app ("OK: nama (214 MB) to/ke tujuan" atau "FAILED: ...").
+func backupText(_ log: String) -> String {
+    let w = log.split(separator: " ", maxSplits: 3).map(String.init)
+    guard w.count == 4 else { return log }
+    let when = whenText(w[0], w[1])
+    if w[2] == "OK:" {
+        // "<nama>.7z (<n> MB) to|ke <tujuan>"
+        let rest = w[3]
+        if let open = rest.range(of: " ("), let close = rest.range(of: " MB) "),
+           let mb = Double(rest[open.upperBound..<close.lowerBound]) {
+            let tail = rest[close.upperBound...]
+            let dest = tail.split(separator: " ", maxSplits: 1).dropFirst().first.map(String.init) ?? ""
+            return T("Last backup: \(when), \(mbText(mb)) to \(dest)", "Backup terakhir: \(when), \(mbText(mb)) ke \(dest)")
+        }
+        return T("Last backup: \(when)", "Backup terakhir: \(when)")
+    }
+    let msg = stripFail(w[2] + " " + w[3])
+    return T("Last backup failed (\(when)): \(msg)", "Backup terakhir gagal (\(when)): \(msg)")
 }
 
 func lastBackupStatus() -> String {
@@ -1636,9 +1694,9 @@ enum AState {
 
     var colors: [Color] {
         switch self {
-        case .active: return [Color(hex: 0x34D399), Color(hex: 0x0EA5E9)]
-        case .paused: return [Color(hex: 0xFBBF24), Color(hex: 0xF97316)]
-        case .off: return [Color(hex: 0xFB7185), Color(hex: 0xDB2777)]
+        case .active: return [Color(hex: 0x34D399), Color(hex: 0x059669)]
+        case .paused: return [Color(hex: 0xFBBF24), Color(hex: 0xD97706)]
+        case .off: return [Color(hex: 0x94A3B8), Color(hex: 0x64748B)]
         }
     }
 }
@@ -1786,7 +1844,7 @@ final class Model: ObservableObject {
         if s != state { state = s }
         let log = (try? String(contentsOfFile: P.cleanLog, encoding: .utf8))?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let lc = log.isEmpty ? T("Never wiped yet", "Belum pernah dibersihkan") : T("Last: ", "Terakhir: ") + log
+        let lc = cleanText(log)
         if lc != lastClean { lastClean = lc }
     }
 
@@ -2216,14 +2274,18 @@ extension Color {
     }
 }
 
+/// v5.17: warna lebih kalem. 1 warna utama (indigo) untuk semua fitur, sisanya hanya warna yang punya arti:
+/// hijau = aman/aktif, kuning = jeda/hati-hati, merah = hapus, abu-abu = tombol biasa.
 enum Pal {
-    static let vault = [Color(hex: 0xA78BFA), Color(hex: 0x6366F1)]
-    static let logout = [Color(hex: 0x38BDF8), Color(hex: 0x2563EB)]
-    static let pause = [Color(hex: 0xFBBF24), Color(hex: 0xF97316)]
-    static let keep = [Color(hex: 0x34D399), Color(hex: 0x14B8A6)]
-    static let backup = [Color(hex: 0xF472B6), Color(hex: 0xE11D48)]
-    static let on = [Color(hex: 0x4ADE80), Color(hex: 0x16A34A)]
-    static let danger = [Color(hex: 0xF87171), Color(hex: 0xDC2626)]
+    static let accent = [Color(hex: 0x818CF8), Color(hex: 0x6366F1)]
+    static let ink = Color(hex: 0x6366F1)      // teks/tombol kecil berwarna
+    static let vault = accent
+    static let logout = accent
+    static let keep = accent
+    static let backup = accent
+    static let pause = [Color(hex: 0xFBBF24), Color(hex: 0xF59E0B)]
+    static let on = [Color(hex: 0x34D399), Color(hex: 0x10B981)]
+    static let danger = [Color(hex: 0xF87171), Color(hex: 0xEF4444)]
     static let gray = [Color(hex: 0x9CA3AF), Color(hex: 0x6B7280)]
 }
 
@@ -2231,12 +2293,9 @@ struct Backdrop: View {
     var body: some View {
         ZStack {
             Color(nsColor: .windowBackgroundColor)
-            Circle().fill(Color(hex: 0x22D3EE).opacity(0.35)).frame(width: 360, height: 360)
-                .blur(radius: 90).offset(x: -170, y: -260)
-            Circle().fill(Color(hex: 0xEC4899).opacity(0.28)).frame(width: 340, height: 340)
-                .blur(radius: 90).offset(x: 180, y: 40)
-            Circle().fill(Color(hex: 0x6366F1).opacity(0.30)).frame(width: 380, height: 380)
-                .blur(radius: 100).offset(x: -120, y: 300)
+            // v5.17: 1 cahaya indigo tipis saja (dulu 3 warna: biru, pink, ungu)
+            Circle().fill(Color(hex: 0x6366F1).opacity(0.14)).frame(width: 420, height: 420)
+                .blur(radius: 110).offset(x: -160, y: -260)
         }
         .ignoresSafeArea()
     }
@@ -2248,15 +2307,16 @@ struct IconBadge: View {
     var size: CGFloat = 40
 
     var body: some View {
+        // v5.17: latar warna tipis + ikon berwarna (dulu gradasi penuh + bayangan): lebih tenang dilihat
+        let tint = colors.last ?? .accentColor
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
-                .fill(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing))
+                .fill(tint.opacity(0.15))
             Image(systemName: icon)
                 .font(.system(size: size * 0.45, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(tint)
         }
         .frame(width: size, height: size)
-        .shadow(color: (colors.last ?? .black).opacity(0.35), radius: 6, y: 3)
     }
 }
 
@@ -2265,8 +2325,8 @@ struct Card<Content: View>: View {
     init(@ViewBuilder _ content: () -> Content) { self.content = content() }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) { content }
-            .padding(16)
+        VStack(alignment: .leading, spacing: 10) { content }
+            .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.regularMaterial))
     }
@@ -2279,14 +2339,18 @@ struct PillLabel<L: View>: View {
     @Environment(\.isEnabled) private var enabled
 
     var body: some View {
+        // v5.17: tombol abu-abu = tombol biasa (latar netral, teks hitam/putih sesuai tema);
+        // tombol mati = latar netral dan teks redup, supaya tetap terbaca (dulu putih di atas warna pucat)
+        let plain = colors == Pal.gray || !enabled
         label
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(plain ? AnyShapeStyle(enabled ? Color.primary : Color.secondary) : AnyShapeStyle(Color.white))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
             .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing)))
-            .opacity(enabled ? (pressed ? 0.8 : 1) : 0.4)
+                .fill(plain ? AnyShapeStyle(Color.primary.opacity(0.08))
+                            : AnyShapeStyle(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))))
+            .opacity(pressed ? 0.8 : 1)
             .scaleEffect(pressed ? 0.98 : 1)
             .contentShape(Rectangle())
     }
@@ -2327,15 +2391,15 @@ struct PageHeader: View {
         HStack(spacing: 12) {
             Button(action: back) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 14, weight: .bold))
-                    .frame(width: 32, height: 32)
+                    .font(.system(size: 13, weight: .bold))
+                    .frame(width: 28, height: 28)
                     .background(Circle().fill(.regularMaterial))
             }
             .buttonStyle(.plain)
             .keyboardShortcut(.cancelAction)
             .help(T("Back", "Kembali"))
-            IconBadge(icon: icon, colors: colors, size: 36)
-            Text(title).font(.system(size: 22, weight: .bold, design: .rounded))
+            IconBadge(icon: icon, colors: colors, size: 30)
+            Text(title).font(.system(size: 20, weight: .bold, design: .rounded))
             Spacer()
         }
     }
@@ -2384,12 +2448,50 @@ struct Note: View {
     let text: String
     var icon = "info.circle.fill"
     var color = Color.secondary
+    var more = false            // v5.17: true = tampilkan 2 baris dulu + "Baca selengkapnya…"
+    @State private var open = false
 
     var body: some View {
-        Label(text, systemImage: icon)
+        Label {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(text).lineLimit(more && !open ? 2 : nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                if more { MoreButton(open: $open) }
+            }
+        } icon: { Image(systemName: icon) }
             .font(.system(size: 12, weight: .medium))
             .foregroundStyle(color)
             .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// v5.17: tombol kecil "Baca selengkapnya… / Tutup" untuk penjelasan panjang.
+struct MoreButton: View {
+    @Binding var open: Bool
+    var body: some View {
+        Button { withAnimation(.easeOut(duration: 0.15)) { open.toggle() } } label: {
+            Text(open ? T("Show less", "Tutup") : T("Read more…", "Baca selengkapnya…"))
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Pal.accent.last ?? .accentColor)
+        }
+        .buttonStyle(.plain)
+        .help(open ? T("Hide the details", "Sembunyikan penjelasan") : T("Show the full explanation", "Tampilkan penjelasan lengkap"))
+    }
+}
+
+/// v5.17: penjelasan panjang dipotong jadi 2 baris dulu, dengan "Baca selengkapnya…".
+/// Font dan warnanya mengikuti modifier yang dipasang di luar (seperti Text biasa).
+struct MoreText: View {
+    let text: String
+    var lines = 2
+    @State private var open = false
+    init(_ text: String, lines: Int = 2) { self.text = text; self.lines = lines }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(text).lineLimit(open ? nil : lines).fixedSize(horizontal: false, vertical: true)
+            if text.count > 90 * lines / 2 { MoreButton(open: $open) }
+        }
     }
 }
 
@@ -2401,18 +2503,19 @@ struct HeroCard: View {
     var power: (() -> Void)? = nil      // v5.16: tombol Aktifkan / Matikan ada di kartu status
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-        HStack(spacing: 16) {
+        // v5.17: lebih ringkas (ikon, judul, jarak lebih kecil) supaya semua kotak di bawahnya muat di jendela
+        VStack(alignment: .leading, spacing: 12) {
+        HStack(spacing: 12) {
             ZStack {
-                Circle().fill(Color.white.opacity(0.25)).frame(width: 64, height: 64)
-                Image(systemName: state.icon).font(.system(size: 30, weight: .bold))
+                Circle().fill(Color.white.opacity(0.22)).frame(width: 46, height: 46)
+                Image(systemName: state.icon).font(.system(size: 22, weight: .bold))
             }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(state.title).font(.system(size: 24, weight: .bold, design: .rounded))
-                Text(state.subtitle).font(.system(size: 13.5)).opacity(0.92)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(state.title).font(.system(size: 19, weight: .bold, design: .rounded))
+                Text(state.subtitle).font(.system(size: 12)).opacity(0.92)
                     .fixedSize(horizontal: false, vertical: true)
-                Label(lastClean, systemImage: "clock.fill").font(.system(size: 12, weight: .medium))
-                    .opacity(0.85).padding(.top, 2)
+                Label(lastClean, systemImage: "clock.fill").font(.system(size: 11, weight: .medium))
+                    .opacity(0.85).padding(.top, 1)
             }
             Spacer(minLength: 0)
         }
@@ -2420,9 +2523,9 @@ struct HeroCard: View {
                 Button(action: power) {
                     Label(state == .off ? T("Turn On Amnesia", "Aktifkan Amnesia") : T("Turn Off Amnesia", "Matikan Amnesia"),
                           systemImage: "power")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 13, weight: .bold))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 9)
+                        .padding(.vertical, 7)
                         .background(Capsule().fill(Color.white.opacity(state == .off ? 0.95 : 0.22)))
                         .foregroundStyle(state == .off ? (state.colors.last ?? .green) : .white)
                         .contentShape(Capsule())
@@ -2433,10 +2536,10 @@ struct HeroCard: View {
             }
         }
         .foregroundStyle(.white)
-        .padding(18)
-        .background(RoundedRectangle(cornerRadius: 24, style: .continuous)
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
             .fill(LinearGradient(colors: state.colors, startPoint: .topLeading, endPoint: .bottomTrailing)))
-        .shadow(color: (state.colors.last ?? .black).opacity(0.4), radius: 16, y: 8)
+        .shadow(color: (state.colors.last ?? .black).opacity(0.22), radius: 10, y: 5)
         .animation(.easeInOut(duration: 0.3), value: state)
     }
 }
@@ -2454,20 +2557,20 @@ struct Tile: View {
         Button(action: action) {
             // ikon di kiri, teks di kanan: lebih padat, teks lebih besar, tanpa ruang kosong
             HStack(alignment: .center, spacing: 10) {
-                IconBadge(icon: icon, colors: colors, size: 36)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
+                IconBadge(icon: icon, colors: colors, size: 32)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
                         .minimumScaleFactor(0.85)
-                    Text(sub).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2)
+                    Text(sub).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, minHeight: 66, alignment: .leading)
-            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+            .padding(10)
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.regularMaterial))
             .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(colors[0].opacity(hover ? 0.7 : 0.15), lineWidth: 1))
+                .strokeBorder(hover ? (colors.last ?? .accentColor).opacity(0.6) : Color.primary.opacity(0.06), lineWidth: 1))
             .shadow(color: .black.opacity(hover ? 0.12 : 0.05), radius: hover ? 12 : 6, y: hover ? 6 : 3)
             .scaleEffect(hover && enabled ? 1.02 : 1)
             .opacity(enabled ? 1 : 0.45)
@@ -2575,21 +2678,21 @@ struct MainView: View {
 
     private var home: some View {
         ScrollView {
-        VStack(spacing: 14) {
-            HStack(spacing: 12) {
-                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 48, height: 48)
+        VStack(spacing: 12) {
+            HStack(spacing: 10) {
+                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 40, height: 40)
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text("Amnesia").font(.system(size: 26, weight: .heavy, design: .rounded))
+                        Text("Amnesia").font(.system(size: 22, weight: .heavy, design: .rounded))
                         Text("v\(appVersion)").font(.system(size: 11, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 7).padding(.vertical, 2)
-                            .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0x22D3EE), Color(hex: 0xEC4899)],
+                            .background(Capsule().fill(LinearGradient(colors: Pal.accent,
                                                                       startPoint: .leading, endPoint: .trailing)))
                     }
                     Text(T("Your Mac forgets everything, except what you choose.",
                            "Mac kamu lupa semuanya, kecuali yang kamu pilih."))
-                        .font(.system(size: 13)).foregroundStyle(.secondary)
+                        .font(.system(size: 12)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
@@ -2612,7 +2715,7 @@ struct MainView: View {
                      icon: "rectangle.portrait.and.arrow.right", colors: Pal.logout) { m.saveAndLogout() }
                 Tile(title: m.state == .paused ? T("Cancel Pause", "Batalkan Jeda") : T("Pause 1 Session", "Jeda 1 Sesi"),
                      sub: m.state == .off ? T("Turn on Amnesia first", "Aktifkan Amnesia dulu")
-                                          : T("Don't wipe the next logout & login", "Logout & login berikutnya tidak dibersihkan"),
+                                          : T("Skip the next cleanup once", "Lewati 1 kali pembersihan"),
                      icon: "pause.fill", colors: Pal.pause) { m.togglePause() }
                     .disabled(m.state == .off)
                 Tile(title: "Keep List", sub: T("\(Keep.entries().count) items never wiped",
@@ -2675,7 +2778,12 @@ func vaultAppIcon(_ name: String) -> some View {
 }
 
 func mbText(_ mb: Double) -> String {
-    ByteCountFormatter.string(fromByteCount: Int64(mb * 1_048_576), countStyle: .file)
+    bytesText(Int64(mb * 1_048_576))
+}
+
+/// v5.17: ukuran file yang mudah dibaca. macOS menulis 0 sebagai "Zero KB", di sini selalu "0 KB".
+func bytesText(_ bytes: Int64) -> String {
+    bytes <= 0 ? "0 KB" : ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
 }
 
 struct VaultView: View {
@@ -2869,7 +2977,7 @@ struct VaultView: View {
                     Image(systemName: "leaf.fill").foregroundStyle(.green)
                     Text(T("Light snapshot", "Snapshot ringan")).font(.system(size: 13, weight: .semibold))
                 }
-                Text(T("For browsers. Light skips the browser's caches and the program files of Web Store extensions, so the "
+                MoreText(T("For browsers. Light skips the browser's caches and the program files of Web Store extensions, so the "
                        + "snapshot is much smaller (Chrome: about 1 GB → 150 MB). Your logins, bookmarks, extension settings "
                        + "and extensions that are not from the Web Store are always saved. After Restore Profiles, press Repair "
                        + "in the browser's extensions page to download the Web Store ones again.",
@@ -2986,7 +3094,7 @@ struct VaultView: View {
         let folders = v.folders ?? []
         return Card {
             Text(T("Folders in the vault", "Folder di vault")).font(.system(size: 13, weight: .semibold))
-            Text(T("For documents, PDFs, music or videos you want locked away. They're wiped at logout like everything "
+            MoreText(T("For documents, PDFs, music or videos you want locked away. They're wiped at logout like everything "
                    + "else, but a copy stays locked in the vault. Restore Profiles brings them back with your password.",
                    "Untuk dokumen, PDF, musik atau video yang mau dikunci. Ikut dihapus saat logout seperti yang lain, "
                    + "tapi salinannya terkunci di vault. Restore Profil mengembalikannya dengan password kamu."))
@@ -3419,9 +3527,12 @@ enum History {
             return ev("arrow.counterclockwise.circle.fill", .green, T("Profiles restored", "Profil dikembalikan"), data)
         case "backup":
             let auto = w.first == "1", vault = w.count > 1 && w[1] == "1", mb = w.count > 2 ? w[2] : "?"
-            return ev("externaldrive.fill.badge.checkmark", .pink,
+            return ev("externaldrive.fill.badge.checkmark", Pal.ink,
                       auto ? T("Scheduled backup done", "Backup terjadwal berhasil") : T("Backup done", "Backup berhasil"),
                       "\(mb) MB" + (vault ? T(", vault included", ", termasuk vault") : ""))
+        case "restorefiles":
+            return ev("arrow.uturn.backward.circle.fill", .green, T("Files restored from a backup", "File dipulihkan dari backup"),
+                      T("\(data) items back in their place", "\(data) item kembali ke tempatnya"))
         case "backupfail":
             return ev("exclamationmark.triangle.fill", .red,
                       data == "1" ? T("Scheduled backup failed", "Backup terjadwal gagal") : T("Backup failed", "Backup gagal"),
@@ -3520,7 +3631,7 @@ struct MoveView: View {
                 PageHeader(title: T("Move to a New Mac", "Pindah Mac"), icon: "arrow.left.arrow.right", colors: Pal.backup, back: back)
                 Card {
                     Text(T("How it works", "Cara kerjanya")).font(.system(size: 13, weight: .semibold))
-                    Text(T("Chrome, Claude and WhatsApp lock their logins with secret keys in this Mac's Keychain. "
+                    MoreText(T("Chrome, Claude and WhatsApp lock their logins with secret keys in this Mac's Keychain. "
                            + "A new Mac doesn't have those keys, so restored profiles would be logged out. "
                            + "This page carries the keys over, safely inside your vault.",
                            "Chrome, Claude dan WhatsApp mengunci login dengan kunci rahasia di Keychain Mac ini. "
@@ -4562,6 +4673,174 @@ struct AppFooter: View {
 
 // MARK: - Backup
 
+/// v5.17: 1 baris dari "backup.sh --list": ITEM <path di backup> <d|f> <byte> <lokasi asal>
+struct RestoreItem: Identifiable, Hashable {
+    let path: String
+    let isDir: Bool
+    let bytes: Int64
+    let original: String
+    var id: String { path }
+    var depth: Int { path.split(separator: "/").count }
+    init?(line: String) {
+        let w = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+        guard w.count == 5, w[0] == "ITEM" else { return nil }
+        path = w[1]; isDir = w[2] == "d"; bytes = Int64(w[3]) ?? 0; original = w[4]
+    }
+}
+
+struct RestoreJob: Identifiable {
+    let id = UUID()
+    let file: String
+    let password: String
+    let items: [RestoreItem]
+}
+
+/// v5.17: pilih yang mau dipulihkan dari backup, lalu kembalikan ke lokasi asal (atau ke folder lain).
+struct RestoreFilesSheet: View {
+    @EnvironmentObject var m: Model
+    let job: RestoreJob
+    let close: () -> Void
+    @State private var pick = Set<String>()
+    @State private var roots: [RestoreItem] = []
+    @State private var open = Set<String>()
+
+    private func kids(_ r: RestoreItem) -> [RestoreItem] {
+        job.items.filter { $0.path.hasPrefix(r.path + "/") }
+    }
+    private func homeShort(_ p: String) -> String {
+        p.hasPrefix(P.home + "/") ? "~/" + p.dropFirst(P.home.count + 1) : p
+    }
+    /// path yang benar-benar dikirim: kalau folder induknya dicentang, anaknya tidak perlu ikut
+    private var chosen: [String] {
+        pick.filter { p in !pick.contains { q in q != p && p.hasPrefix(q + "/") } }.sorted()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(T("Restore files", "Pulihkan file"), systemImage: "arrow.uturn.backward.circle.fill")
+                .font(.system(size: 17, weight: .bold))
+            Text((job.file as NSString).lastPathComponent).font(.system(size: 12)).foregroundStyle(.secondary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(roots) { r in
+                        row(r, indent: 0)
+                        if open.contains(r.path) {
+                            ForEach(kids(r)) { k in row(k, indent: 1).disabled(pick.contains(r.path)) }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(minHeight: 160, maxHeight: 320)
+            Note(text: T("Anything already in that place is moved to ~/.amnesia/before-restore first, nothing is overwritten.",
+                         "Yang sudah ada di tempat itu dipindah dulu ke ~/.amnesia/before-restore, tidak ada yang ditimpa."),
+                 icon: "checkmark.shield.fill", color: .green)
+            HStack {
+                Button(T("Cancel", "Batal")) { close() }.keyboardShortcut(.cancelAction)
+                Spacer()
+                Button(T("To Another Folder…", "Ke Folder Lain…")) { run(to: chooseFolder()) }
+                    .disabled(pick.isEmpty)
+                Button(T("Restore to Original Place", "Pulihkan ke Lokasi Asal")) { run(to: nil) }
+                    .keyboardShortcut(.defaultAction).disabled(pick.isEmpty)
+            }
+        }
+        .padding(22)
+        .frame(width: 520)
+        .onAppear { roots = job.items.filter { r in !job.items.contains { r.path.hasPrefix($0.path + "/") } } }
+    }
+
+    private func row(_ it: RestoreItem, indent: Int) -> some View {
+        HStack(spacing: 8) {
+            if indent == 0 && it.isDir {
+                Button { if open.contains(it.path) { open.remove(it.path) } else { open.insert(it.path) } } label: {
+                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold))
+                        .rotationEffect(.degrees(open.contains(it.path) ? 90 : 0)).frame(width: 14)
+                }
+                .buttonStyle(.plain).foregroundStyle(.secondary)
+            } else {
+                Color.clear.frame(width: 14 + CGFloat(indent) * 14, height: 1)
+            }
+            Toggle(isOn: Binding(get: { pick.contains(it.path) },
+                                 set: { on in if on { pick.insert(it.path) } else { pick.remove(it.path) } })) {
+                HStack(spacing: 6) {
+                    Image(systemName: it.isDir ? "folder.fill" : "doc.fill").foregroundStyle(Pal.ink)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text((it.path as NSString).lastPathComponent).font(.system(size: 12.5, weight: .semibold))
+                        Text(T("from ", "dari ") + homeShort(it.original)).font(.system(size: 10.5)).foregroundStyle(.secondary)
+                            .lineLimit(1).truncationMode(.middle)
+                    }
+                    Spacer(minLength: 6)
+                    Text(bytesText(it.bytes)).font(.system(size: 11)).foregroundStyle(.secondary).monospacedDigit()
+                }
+            }
+            .toggleStyle(.checkbox)
+        }
+    }
+
+    private func chooseFolder() -> String? {
+        let panel = NSOpenPanel()
+        panel.title = T("Restore into which folder?", "Pulihkan ke folder mana?")
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        return panel.runModal() == .OK ? panel.url?.path : nil
+    }
+
+    private func run(to: String?) {
+        if to == nil && pick.isEmpty { return }
+        let paths = chosen, file = job.file, pw = job.password
+        var args = [P.backupSh, "--restore-files", file]
+        if let to { args += ["--to", to] }
+        args += paths
+        let cmd = args
+        close()
+        m.background(T("Restoring files…", "Memulihkan file…"), {
+            sh("/bin/bash", cmd, input: pw + "\n")
+        }) { r in RestoreFilesSheet.report(r, file: file) }
+    }
+
+    static func report(_ r: Out, file: String) {
+        let name = (file as NSString).lastPathComponent
+        guard r.code == 0 else {
+            popup(T("Couldn't restore the files", "File tidak bisa dipulihkan"), name,
+                  [PopSection(.warn, [stripFail(r.err.trimmingCharacters(in: .whitespacesAndNewlines))
+                                        .replacingOccurrences(of: "[broken] ", with: "")], title: T("What went wrong", "Masalahnya")),
+                   PopSection(.kept, [T("Nothing on this Mac was changed.", "Tidak ada yang diubah di Mac ini.")])],
+                  warning: true)
+            return
+        }
+        var done: [String] = [], moved = 0, missing: [String] = [], failed: [String] = []
+        let short = { (p: String) in p.hasPrefix(P.home + "/") ? "~/" + p.dropFirst(P.home.count + 1) : p }
+        for l in r.out.split(separator: "\n") {
+            let w = l.split(separator: "\t").map(String.init)
+            switch w.first {
+            case "RESTORED": if w.count > 2 { done.append(short(w[2])) }
+            case "MOVED": moved += 1
+            case "NOTARGET": if w.count > 2 { missing.append(short(w[2])) }
+            case "NOTINBACKUP", "FAILEDITEM": if w.count > 1 { failed.append(w[1]) }
+            default: break
+            }
+        }
+        let ok = popup(done.isEmpty ? T("Nothing was restored", "Tidak ada yang dipulihkan")
+                                    : T("Files are back in their place", "File sudah kembali ke tempatnya"), name,
+            [PopSection(.kept, done.map { "\($0)" }, title: T("Restored", "Dipulihkan")),
+             PopSection(.warn, missing, title: T("The place doesn't exist (drive not plugged in?)",
+                                                 "Lokasinya tidak ada (drive belum dicolok?)")),
+             PopSection(.warn, failed, title: T("Couldn't be restored", "Tidak bisa dipulihkan")),
+             PopSection(.todo, missing.isEmpty ? [] : [T("Plug in the drive and try again, or use To Another Folder….",
+                                                         "Colokkan drive lalu ulangi, atau pakai Ke Folder Lain….")]),
+             PopSection(.note, (moved > 0 ? [T("\(moved) existing items were moved to ~/.amnesia/before-restore (not deleted).",
+                                              "\(moved) item yang sudah ada dipindah ke ~/.amnesia/before-restore (tidak dihapus).")] : [])
+                         + [T("While Amnesia is on, restored files outside the Keep List are wiped again at the next logout.",
+                              "Selama Amnesia aktif, file yang dipulihkan di luar Keep List ikut dihapus lagi saat logout berikutnya.")])],
+            ok: moved > 0 ? T("Show Old Files", "Lihat File Lama") : "OK",
+            cancel: moved > 0 ? "OK" : nil)
+        if ok.ok && moved > 0 {
+            NSWorkspace.shared.open(URL(fileURLWithPath: P.home + "/.amnesia/before-restore"))
+        }
+    }
+}
+
 struct BackupView: View {
     @EnvironmentObject var m: Model
     let back: () -> Void
@@ -4591,7 +4870,27 @@ struct BackupView: View {
     @State private var pw = ""
     @State private var pw2 = ""
     @State private var status = lastBackupStatus()
+    /// v5.17: bagian Tujuan terbuka kalau belum ada tujuan yang diatur
+    @State private var destOpen = !BackupView.destConfigured
+
+    static var destConfigured: Bool {
+        switch Config.get("BACKUP_DEST") {
+        case "drive": return !Config.get("BACKUP_DRIVE").isEmpty
+        case "ssh": return !Config.get("BACKUP_SSH").isEmpty
+        case "rclone", "folder": return true
+        default: return false
+        }
+    }
+
+    private var destSummary: String {
+        switch dest {
+        case "ssh": return T("SSH server", "Server SSH") + " · " + (server.isEmpty ? T("not set", "belum diisi") : server)
+        case "rclone": return provider.name + " · " + folderName
+        default: return T("USB / SSD", "Flashdisk / SSD") + " · " + (drive.isEmpty ? T("none picked", "belum dipilih") : drive)
+        }
+    }
     @State private var showGuide = false
+    @State private var restoreJob: RestoreJob? = nil
     @State private var showGoogleGuide = false
     static let defaults = ["@keep", "Documents", "Desktop", "Downloads", "Pictures", "Music", "Movies"]
     /// "@keep" = folder Keep (di mana pun letaknya). "Keep" dari versi lama juga berarti folder Keep.
@@ -4633,30 +4932,52 @@ struct BackupView: View {
         ScrollView {
             VStack(spacing: 14) {
                 PageHeader(title: "Backup", icon: "externaldrive.fill", colors: Pal.backup, back: back)
-                Button { showGuide = true } label: {
-                    Label(T("How backup works (guide)", "Cara kerja backup (panduan)"), systemImage: "questionmark.circle.fill")
-                }
-                .buttonStyle(Pill(colors: Pal.gray))
+                    .overlay(alignment: .trailing) {
+                        // v5.17: panduan jadi tombol kecil di pojok, bukan tombol abu-abu besar
+                        Button { showGuide = true } label: {
+                            Label(T("Guide", "Panduan"), systemImage: "questionmark.circle")
+                                .font(.system(size: 12, weight: .semibold))
+                        }
+                        .buttonStyle(.plain).foregroundStyle(Pal.ink)
+                        .help(T("How backup works", "Cara kerja backup"))
+                    }
                 if !status.isEmpty {
                     Card {
-                        Note(text: T("Last: ", "Terakhir: ") + status,
+                        Note(text: backupText(status),
                              icon: status.contains("OK:") ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
                              color: status.contains("OK:") ? .green : .red)
                     }
                 }
                 Card {
-                    Text(T("Where to", "Tujuan")).font(.system(size: 13, weight: .semibold))
-                    Picker("", selection: $dest) {
-                        Text(T("USB / SSD", "Flashdisk / SSD")).tag("drive")
-                        Text(T("SSH Server", "Server SSH")).tag("ssh")
-                        Text("Cloud").tag("rclone")
+                    // v5.17: bagian Tujuan bisa dilipat. Setelah tujuan diatur, cukup 1 baris ringkasan.
+                    Button { withAnimation(.easeOut(duration: 0.15)) { destOpen.toggle() } } label: {
+                        HStack(spacing: 8) {
+                            Text(T("Where to", "Tujuan")).font(.system(size: 13, weight: .semibold))
+                            Spacer(minLength: 8)
+                            if !destOpen {
+                                Text(destSummary).font(.system(size: 12)).foregroundStyle(.secondary)
+                                    .lineLimit(1).truncationMode(.middle)
+                            }
+                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(.secondary).rotationEffect(.degrees(destOpen ? 90 : 0))
+                        }
+                        .contentShape(Rectangle())
                     }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    switch dest {
-                    case "ssh": sshBox
-                    case "rclone": cloudBox
-                    default: driveBox
+                    .buttonStyle(.plain)
+                    .help(destOpen ? T("Fold", "Lipat") : T("Change where backups go", "Ubah tujuan backup"))
+                    if destOpen {
+                        Picker("", selection: $dest) {
+                            Text(T("USB / SSD", "Flashdisk / SSD")).tag("drive")
+                            Text(T("SSH Server", "Server SSH")).tag("ssh")
+                            Text("Cloud").tag("rclone")
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        switch dest {
+                        case "ssh": sshBox
+                        case "rclone": cloudBox
+                        default: driveBox
+                        }
                     }
                 }
                 Card {
@@ -4672,7 +4993,7 @@ struct BackupView: View {
                     Button { addFolder() } label: {
                         Label(T("Add another folder…", "Tambah folder lain…"), systemImage: "plus.circle.fill")
                     }
-                    .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(.pink)
+                    .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(Pal.ink)
                     Toggle(T("Include Profile Vault (your saved app logins, encrypted)",
                              "Sertakan Profile Vault (login app yang tersimpan, terenkripsi)"), isOn: $withVault)
                         .toggleStyle(.checkbox)
@@ -4716,7 +5037,7 @@ struct BackupView: View {
                         Button { runScheduledNow() } label: {
                             Label(T("Run the scheduled backup now", "Jalankan backup terjadwal sekarang"), systemImage: "clock.arrow.circlepath")
                         }
-                        .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(.pink)
+                        .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(Pal.ink)
                         .help(T("Runs exactly like the schedule would (saved password, no typing), so you can test it without waiting.",
                                 "Berjalan persis seperti jadwal (pakai password tersimpan, tanpa mengetik), jadi bisa dites tanpa menunggu."))
                     }
@@ -4742,10 +5063,28 @@ struct BackupView: View {
                     }
                     .buttonStyle(Pill(colors: Pal.keep))
                 }
+                // v5.17: Memory Recall untuk file: kembalikan isi backup ke lokasi asalnya
+                Card {
+                    Text(T("Restore files from a backup", "Pulihkan file dari backup")).font(.system(size: 13, weight: .semibold))
+                    MoreText(T("Pick a backup, tick the folders or files you want back, and Amnesia puts them back where they "
+                               + "were when the backup was made. Nothing is overwritten: anything already in that place is "
+                               + "moved to ~/.amnesia/before-restore first.",
+                               "Pilih file backup, centang folder atau file yang mau dikembalikan, lalu Amnesia menaruhnya lagi "
+                               + "di tempat asalnya saat backup dibuat. Tidak ada yang ditimpa: yang sudah ada di tempat itu "
+                               + "dipindah dulu ke ~/.amnesia/before-restore."))
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                    Button { pickRestore() } label: {
+                        Label(T("Restore Files…", "Pulihkan File…"), systemImage: "arrow.uturn.backward.circle.fill")
+                    }
+                    .buttonStyle(Pill(colors: Pal.keep))
+                }
             }
         }
         .scrollIndicators(.never)
         .onAppear { load() }
+        .sheet(item: $restoreJob) { job in
+            RestoreFilesSheet(job: job) { restoreJob = nil }.environmentObject(m)
+        }
         .sheet(isPresented: $showGuide) {
             GuideSheet(T("How backup works", "Cara kerja backup"), close: { showGuide = false }) { guideContent }
         }
@@ -4808,7 +5147,7 @@ struct BackupView: View {
                      "Tanpa Terminal. Amnesia membuat kunci SSH dan memasangnya di server pakai password kamu, "
                      + "sekali saja. Folder tujuan juga dicek bisa ditulis, dan kecepatan upload diukur. "
                      + "Pakai folder di home server (tidak butuh hak admin). Tidak ada folder setelah titik dua? "
-                     + "Backup masuk ke amnesia-backup di folder home server."))
+                     + "Backup masuk ke amnesia-backup di folder home server."), more: true)
     }
 
     private func stepTitle(_ t: String) -> some View {
@@ -4983,7 +5322,7 @@ struct BackupView: View {
 
     private func guideItem(_ icon: String, _ t: String, _ sub: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: icon).foregroundStyle(.pink).frame(width: 18)
+            Image(systemName: icon).foregroundStyle(Pal.ink).frame(width: 18)
             VStack(alignment: .leading, spacing: 2) {
                 Text(t).font(.system(size: 12, weight: .semibold))
                 Text(sub).font(.system(size: 11, weight: .regular)).foregroundStyle(.secondary)
@@ -5201,6 +5540,43 @@ struct BackupView: View {
     }
 
     /// v5.16: cek vault di dalam file backup (folder sementara, vault di Mac ini tidak disentuh).
+    /// v5.17: pilih backup -> daftar isinya -> lembar pilihan (RestoreFilesSheet).
+    private func pickRestore() {
+        let typed = pw
+        guard !typed.isEmpty || Secret.exists else {
+            info("Backup", T("Type the backup password first.", "Isi password backup dulu."), error: true)
+            return
+        }
+        let panel = NSOpenPanel()
+        panel.title = T("Choose an Amnesia backup file (.7z)", "Pilih file backup Amnesia (.7z)")
+        panel.canChooseDirectories = false
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let file = panel.url?.path else { return }
+        let name = (file as NSString).lastPathComponent
+        m.background(T("Reading \(name)…", "Membaca \(name)…"), {
+            guard let p = typed.isEmpty ? Secret.get() : typed else { return (Out(code: 1, out: "", err: "FAILED: no password"), "") }
+            return (sh("/bin/bash", [P.backupSh, "--list", file], input: p + "\n"), p)
+        }) { res in
+            let r = res.0, p = res.1
+            guard r.code == 0 else {
+                let err = r.err.trimmingCharacters(in: .whitespacesAndNewlines)
+                popup(T("This backup can't be opened", "Backup ini tidak bisa dibuka"), name,
+                      [PopSection(.warn, [stripFail(err).replacingOccurrences(of: "[wrongpw] ", with: "")
+                                            .replacingOccurrences(of: "[broken] ", with: "")], title: T("What went wrong", "Masalahnya")),
+                       PopSection(.kept, [T("Nothing on this Mac was changed.", "Tidak ada yang diubah di Mac ini.")])],
+                      warning: true)
+                return
+            }
+            let items = r.out.split(separator: "\n").compactMap { RestoreItem(line: String($0)) }
+            guard !items.isEmpty else {
+                info("Backup", T("This backup has no files to restore (only the vault).",
+                                 "Backup ini tidak berisi file untuk dipulihkan (hanya vault)."))
+                return
+            }
+            restoreJob = RestoreJob(file: file, password: p, items: items)
+        }
+    }
+
     private func checkFile() {
         let typed = pw
         guard !typed.isEmpty || Secret.exists else {
@@ -5219,9 +5595,27 @@ struct BackupView: View {
         }) { r in
             let line = r.out.split(separator: "\n").last.map(String.init) ?? ""
             guard r.code == 0, line.hasPrefix("OK: VAULT ") else {
-                popup(T("This backup can't be used for the vault", "Backup ini tidak bisa dipakai untuk vault"), "",
-                      [PopSection(.warn, [stripFail(r.err.trimmingCharacters(in: .whitespacesAndNewlines))],
-                                  title: T("What went wrong", "Masalahnya")),
+                // v5.17: backup.sh memberi tanda [wrongpw] / [novault] / [broken], jadi penyebabnya jelas
+                let err = r.err.trimmingCharacters(in: .whitespacesAndNewlines)
+                let msg = stripFail(err).replacingOccurrences(of: "[wrongpw] ", with: "")
+                    .replacingOccurrences(of: "[novault] ", with: "").replacingOccurrences(of: "[broken] ", with: "")
+                let todo: [String]
+                if err.contains("[wrongpw]") {
+                    todo = [T("Type the password you used when this backup was made, then try again.",
+                              "Ketik password yang dipakai saat backup ini dibuat, lalu coba lagi."),
+                            T("Changed the backup password since then? Older backups still use the old one.",
+                              "Pernah mengganti password backup? Backup lama tetap memakai password lama.")]
+                } else if err.contains("[novault]") {
+                    todo = [T("Pick a newer backup, or make a new one with Include Profile Vault ticked.",
+                              "Pilih backup yang lebih baru, atau buat backup baru dengan Sertakan Profile Vault dicentang."),
+                            T("Your other files in this backup are still fine. Open it with Keka or 7zz.",
+                              "File lain di backup ini tetap aman. Buka dengan Keka atau 7zz.")]
+                } else {
+                    todo = [T("Pick another backup file.", "Pilih file backup lain.")]
+                }
+                popup(T("This backup can't be used for the vault", "Backup ini tidak bisa dipakai untuk vault"), name,
+                      [PopSection(.warn, [msg], title: T("What went wrong", "Masalahnya")),
+                       PopSection(.todo, todo),
                        PopSection(.kept, [T("Nothing on this Mac was changed.", "Tidak ada yang diubah di Mac ini.")])],
                       warning: true)
                 return
@@ -5448,8 +5842,7 @@ struct SettingsView: View {
                 IconBadge(icon: icon, colors: colors, size: 34)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title).font(.system(size: 14, weight: .semibold))
-                    Text(sub).font(.system(size: 11)).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    MoreText(sub).font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
                 Toggle("", isOn: Binding(get: { value.wrappedValue },
@@ -5796,7 +6189,7 @@ struct MenuPanel: View {
             }
 
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                MenuTile(title: T("Open Amnesia", "Buka Amnesia"), icon: "macwindow", colors: [Color(hex: 0x22D3EE), Color(hex: 0x6366F1)]) {
+                MenuTile(title: T("Open Amnesia", "Buka Amnesia"), icon: "macwindow", colors: Pal.accent) {
                     openWindow(id: "main")
                     NSApp.activate(ignoringOtherApps: true)
                 }
@@ -5853,7 +6246,7 @@ enum Shots {
     static let on = CommandLine.arguments.contains("--shots")
     /// v5.16: "Amnesia Shots" = salinan app khusus screenshot (dibuat screenshots.sh). Tidak bisa membersihkan,
     /// tidak bisa mengubah LaunchAgent, Keychain atau vault asli, dan hanya jalan dengan --shots di home palsu.
-    static let mandul = Bundle.main.bundleIdentifier == "com.amnesia.shots"
+    nonisolated static let mandul = Bundle.main.bundleIdentifier == "com.amnesia.shots"
     static var dir: String {
         let a = CommandLine.arguments
         if let i = a.firstIndex(of: "--shots"), i + 1 < a.count { return a[i + 1] }
@@ -5892,7 +6285,7 @@ enum Shots {
             m.lang = lang
             await wait(2.5)
             let cleanLog = (try? String(contentsOfFile: P.cleanLog, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            m.lastClean = T("Last: ", "Terakhir: ") + cleanLog
+            m.lastClean = cleanText(cleanLog)
             let out = dir + "/" + lang.rawValue
             try? FileManager.default.createDirectory(atPath: out, withIntermediateDirectories: true)
             await shot(Shell { OnboardingView(step: 0) }, out + "/tour-welcome.png")
@@ -5908,10 +6301,7 @@ enum Shots {
             }
             m.page = .home
             await shot(MainView(), out + "/home-dark.png", dark: true)
-            // v5.16: halaman panjang utuh (untuk tutorial di website)
-            await shot(Shell(height: 1500) { VaultView(back: {}) }, out + "/vault-full.png", settle: 3)
-            await shot(Shell(height: 1900) { BackupView(back: {}) }, out + "/backup-full.png", settle: 3)
-            await shot(Shell(height: 1250) { SettingsView(back: {}) }, out + "/settings-full.png")
+            // v5.17: tidak ada lagi screenshot yang lebih tinggi dari jendela asli (dulu vault/backup/settings-full)
             // v5.16: popup berwarna (sama seperti di app)
             for (name, title, intro, sections, ok, cancel, check) in popups() {
                 await shot(PopupShot(title: title, intro: intro, sections: sections, ok: ok, cancel: cancel, check: check),
@@ -6043,18 +6433,27 @@ enum Shots {
         }
     }
 
+    /// Jendela tanpa bingkai yang tetap boleh jadi jendela aktif (borderless biasa selalu tampil "tidak aktif").
+    final class KeyWindow: NSWindow {
+        override var canBecomeKey: Bool { true }
+        override var canBecomeMain: Bool { true }
+    }
+
     static func shot<V: View>(_ v: V, _ path: String, dark: Bool = false, settle: Double = 1.5, window: Bool = true) async {
         log("shot " + (path as NSString).lastPathComponent)
         let host = NSHostingView(rootView: v.environmentObject(Model.shared))
         let size = host.fittingSize
         host.frame = NSRect(origin: .zero, size: size)
-        let w = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        let w = KeyWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         w.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         w.contentView = host
         w.level = .floating
         // v5.16: di layar (bukan di luar layar), supaya bisa ditangkap persis seperti aslinya
         let vis = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         w.setFrameOrigin(NSPoint(x: vis.midX - size.width / 2, y: max(vis.minY, vis.midY - size.height / 2)))
+        // v5.17: jendela aktif, supaya tombol on/off dan tombol lain tampil berwarna seperti saat dipakai
+        NSApp.activate(ignoringOtherApps: true)
+        w.makeKeyAndOrderFront(nil)
         w.orderFrontRegardless()
         await wait(settle)
         host.layoutSubtreeIfNeeded()

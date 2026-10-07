@@ -5,6 +5,32 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## v5.17 — 2026-10-07
+
+### Baru
+- **Pulihkan File** (halaman Backup → **Pulihkan File…**). Pilih file backup `.7z`, ketik password-nya, lalu centang file atau folder yang mau dikembalikan (folder bisa dibuka untuk memilih isinya satu per satu). **Pulihkan ke Lokasi Asal** mengembalikan semuanya persis ke tempat asalnya. Tidak ada yang pernah ditimpa: file atau folder yang sudah ada di sana dipindah dulu ke `~/.amnesia/before-restore/<tanggal-jam>/`, dan popup hasilnya punya tombol **Lihat File Lama**. Kalau tempat asalnya ada di drive eksternal yang tidak tercolok, Amnesia memberi tahu dan meminta kamu memilih folder lain. **Ke Folder Lain…** memulihkan semuanya ke folder pilihanmu. Halaman Riwayat mencatat "File dipulihkan dari backup".
+- **Backup ingat asal file-nya.** Setiap backup baru membawa `backup-index.json` kecil berisi lokasi asal setiap folder. Backup lama tetap bisa dipakai: folder-nya dianggap berasal dari folder home.
+- **Glosarium** di website dan README: *Selective Amnesia* (pembersihan normal saat logout), *Global Amnesia* (semua hilang tanpa jalan kembali) dan *Memory Recall* (semua cara mengembalikan data). Istilah ini hanya dipakai di teks; tombol di app tetap memakai nama biasanya. Syarat & Ketentuan juga menyebutnya.
+- **"Baca selengkapnya…"** di bawah teks panjang (keterangan di Pengaturan, kartu snapshot ringan, folder di vault, panduan Pindah Mac, catatan SSH): hanya dua baris yang tampil sampai kamu menekannya.
+- **FAQ baru:** mengambil beberapa file dari backup, kenapa backup tidak terbuka saat di-klik dua kali (pakai Keka atau `7zz` dan ketik password saat diminta), arti "tidak berisi Profile Vault", dan kenapa backup terjadwal minta password Mac.
+
+### Diubah
+- **Desain lebih tenang.** Satu warna aksen indigo dan abu-abu netral, bukan warna berbeda untuk setiap ikon; hijau, oranye dan merah hanya untuk status (nyala, jeda, mati, bahaya). Ikon duduk di latar berwarna lembut, latar belakang hanya satu cahaya samar, tema terang dan gelap tetap ada.
+- **Semua sedikit lebih kecil dan rapi:** kartu status di beranda, tile, judul halaman dan tombol Kembali. Tombol besar **Cara kerja backup** jadi tautan kecil **Panduan** di samping judul Backup.
+- **Tujuan backup bisa dilipat.** Kalau tujuan sudah diatur, kartu "Tujuan" hanya menampilkan satu baris ringkasan (misalnya "SSH: user@host"); tekan untuk membuka dan mengubahnya.
+- **Teks status pakai bahasa sehari-hari, sesuai bahasamu.** "logout: 1284 items wiped" jadi "Terakhir dibersihkan: hari ini 13:03, saat logout, 1284 item"; status backup berbunyi "Backup terakhir: hari ini 10:17, 4,9 GB ke …" atau bilang jelas kalau gagal dan kenapa.
+- **"0 KB"** menggantikan "Zero KB" untuk ukuran kosong.
+- **Keterangan tile Jeda** lebih pendek supaya tidak terpotong.
+- **Tombol nonaktif tetap terbaca:** latar abu-abu dengan teks gelap (atau terang), bukan teks putih pudar.
+- **Cek file backup bilang apa masalahnya.** Sekarang menyebut nama file-nya dan membedakan password salah, backup tanpa Profile Vault (dibuat saat *Sertakan Profile Vault* mati, atau sebelum v5.13) dan file rusak, lengkap dengan saran untuk masing-masing.
+
+### Diperbaiki
+- **Backup terjadwal minta password Mac** (popup Keychain). Password backup yang tersimpan dibuat oleh versi app yang lama. Setelah kamu mengizinkannya sekali, Amnesia menyimpannya ulang atas nama versi sekarang, jadi popup-nya tidak muncul lagi.
+- **Screenshot:** tidak ada lagi screenshot halaman penuh yang terlalu tinggi (dihapus dari website); jendela diaktifkan dulu sebelum dipotret supaya sakelar tampil berwarna, bukan abu-abu. Tips Screen Recording sekarang bilang izinkan **Terminal**, karena skrip screenshot dijalankan dari Terminal.
+
+### Tes
+- `test_backup.sh`: backup berisi `backup-index.json`; `--list` menampilkan Keep, file di dalamnya dan folder dari luar home, serta menyembunyikan `.amnesia`; password salah memberi `[wrongpw]`; backup tanpa vault memberi `[novault]`; file kembali ke tempat asalnya dan salinan lama dipindah ke `before-restore`; `--to` berfungsi; `.amnesia` dan `..` ditolak; Riwayat tercatat dan tidak ada folder sementara yang tertinggal.
+
 ## v5.16 — 2026-10-07
 
 ### Baru

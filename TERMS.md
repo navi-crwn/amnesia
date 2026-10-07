@@ -18,6 +18,8 @@ Amnesia stays **off** until you turn it on yourself. Before you do:
 2. Open Settings → **See what would be deleted** and read the list.
 3. Move important files into your Keep folder.
 
+In the docs we call the normal logout cleanup **Selective Amnesia** (your Keep List, Keep folder and vault stay). **Global Amnesia** means everything is gone with no way back: the panic button, Uninstall with *delete the vault too*, or a wipe with no snapshot and no backup. **Memory Recall** is everything that brings data back (Restore Profiles, Get Vault from Backup, Move to a New Mac, Restore Files), and it only works if you made a snapshot or backup first.
+
 ## 🔐 Your passwords are yours alone
 
 - The **Profile Vault** and **backups** are locked with passwords only you know.

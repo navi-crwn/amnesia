@@ -5,6 +5,32 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## v5.17 — 2026-10-07
+
+### Added
+- **Restore Files** (Backup page → **Restore Files…**). Pick a backup `.7z`, type its password, and tick the files or folders you want back (folders can be opened to pick single items inside). **Restore to Original Place** puts each one back exactly where it came from. Nothing is ever overwritten: a file or folder that is already there is moved to `~/.amnesia/before-restore/<date-time>/` first, and the result popup has a **Show Old Files** button. If the original place is on an external drive that isn't plugged in, Amnesia says so and asks you to pick another folder. **To Another Folder…** restores everything into a folder you choose instead. The History page shows "Files restored from backup".
+- **Backups remember where files came from.** Every new backup carries a small `backup-index.json` with the original location of each folder. Older backups still work: their folders are assumed to come from your home folder.
+- **Glossary** on the website and in the README: *Selective Amnesia* (the normal logout cleanup), *Global Amnesia* (everything gone with no way back) and *Memory Recall* (everything that brings data back). These words are only used in text; the buttons in the app keep their names. The Terms mention them too.
+- **"Read more…"** under long texts (Settings descriptions, the light-snapshot card, folders in the vault, the Move Mac guide, the SSH note): only two lines show until you tap it.
+- **New FAQ entries:** getting a few files back, why double-clicking a backup doesn't open it (use Keka or `7zz` and type the password at the prompt), what "no Profile Vault" means, and why the scheduled backup asked for the Mac password.
+
+### Changed
+- **Calmer design.** One indigo accent plus neutral grays instead of a different color for every icon; green, orange and red are only used for status (on, paused, off, danger). Icons sit on a soft tinted background, the backdrop is a single faint glow, and light and dark mode both stay.
+- **Everything a bit smaller and tidier:** the status card on the home page, tiles, page titles and the Back button. The big **How backup works** button became a small **Guide** link next to the Backup title.
+- **Backup destination folds away.** Once a destination is set, the "Destination" card shows one summary line (for example "SSH: user@host"); tap it to open and change it.
+- **Status text in plain words, in your language.** "logout: 1284 items wiped" became "Last cleaned: today 13:03, at logout, 1284 items"; the backup status reads "Last backup: today 10:17, 4.9 GB to …" or says clearly that it failed and why.
+- **"0 KB"** instead of "Zero KB" for empty sizes.
+- **Pause tile** subtitle is shorter so it no longer gets cut off.
+- **Disabled buttons are readable:** a gray background with dark (or light) text instead of faded white text.
+- **Check a backup file says what's wrong.** It now names the file and tells apart a wrong password, a backup without a Profile Vault (made with *Include Profile Vault* off, or before v5.13) and a damaged file, with advice for each.
+
+### Fixed
+- **Scheduled backup asked for the Mac password** (Keychain popup). The saved backup password was stored by an older build of the app. After you allow it once, Amnesia now saves it again under the current version, so the popup doesn't come back.
+- **Screenshots:** no more extra-tall full-page shots (removed from the website); the window is made active before capturing so switches show their real color instead of gray. The Screen Recording tip now says to allow **Terminal**, because the screenshot script is started from Terminal.
+
+### Tests
+- `test_backup.sh`: the backup contains `backup-index.json`; `--list` shows Keep, files inside it and a folder from outside home, and hides `.amnesia`; a wrong password gives `[wrongpw]`; a backup without vault gives `[novault]`; files go back to their original places with the old copy moved to `before-restore`; `--to` works; `.amnesia` and `..` are refused; History is written and no temporary folder is left behind.
+
 ## v5.16 — 2026-10-07
 
 ### Added

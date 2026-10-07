@@ -92,7 +92,8 @@ bash ~/.amnesia/clean.sh logout --dry-run
   - **Server sendiri / VPS** lewat SSH + rsync. Ketik password server sekali, Amnesia yang menyiapkan kuncinya. Tanpa Terminal.
   - **Cloud**: Google Drive, Dropbox, OneDrive, Box atau pCloud. Login lewat browser, tanpa Terminal. (S3, WebDAV dan 40+ lainnya lewat rclone.)
 - **⏰ Backup terjadwal.** Harian atau mingguan, jalan sendiri selama ikon Amnesia ada di menu bar. Tombol **Jalankan backup terjadwal sekarang** untuk langsung mengetesnya.
-- **🔎 Cek file backup.** Pilih file backup `.7z`, lalu Amnesia membukanya di folder sementara untuk memastikan vault di dalamnya bisa dipulihkan. Vault kamu yang sekarang tidak berubah sama sekali.
+- **🔎 Cek file backup.** Pilih file backup `.7z`, lalu Amnesia membukanya di folder sementara untuk memastikan vault di dalamnya bisa dipulihkan. Vault kamu yang sekarang tidak berubah sama sekali. Kalau password salah atau file-nya tidak berisi vault, pesannya bilang dengan jelas.
+- **↩️ Pulihkan File.** Pilih file atau folder dari backup, lalu Amnesia mengembalikannya ke tempat asalnya. File yang sudah ada di sana dipindah dulu ke `~/.amnesia/before-restore`, tidak pernah ditimpa. Mau taruh di tempat lain? Tekan **Ke Folder Lain**.
 - **🕘 Riwayat.** Halaman yang mencatat setiap pembersihan, snapshot, restore dan backup, dikelompokkan per hari. Isinya hanya waktu dan nama app, tidak pernah nama file kamu.
 - **🚚 Pindah Mac.** Bawa semua login ke Mac baru: kunci Keychain ikut disimpan ke vault, vault ikut ke backup, lalu dipulihkan di Mac baru.
 - **👋 Tur perkenalan.** Saat pertama dibuka, Amnesia mengajak kamu keliling, cek semua sudah siap, mendeteksi app kamu, lalu tanya mana yang datanya mau disimpan.
@@ -145,6 +146,14 @@ Tur perkenalan akan memandu kamu, tapi singkatnya begini:
 
 **Sehari-hari:** logout lewat tombol **Simpan & Logout**. Saat login lagi, buka Profile Vault dan tekan **Restore Profil**.
 
+## Glosarium
+
+Istilah ini hanya dipakai di teks ini dan di website. Tombol di app tetap memakai nama biasanya.
+
+- **Selective Amnesia**: pembersihan normal saat logout. Semua dihapus kecuali Keep List, folder Keep dan Profile Vault.
+- **Global Amnesia**: semuanya hilang tanpa jalan kembali. Ini terjadi lewat tombol panik (Doomsday), lewat Uninstall kalau kamu mencentang *hapus vault juga*, atau saat dibersihkan padahal tidak punya snapshot maupun backup.
+- **Memory Recall**: mengembalikan yang tersimpan. Yaitu Restore Profil, Ambil Vault dari Backup, Pindah Mac dan Pulihkan File.
+
 ## Pertanyaan umum
 
 **Apa bedanya Keep List dan Profile Vault?**
@@ -179,7 +188,16 @@ Kalau nanti password server diganti, backup tetap jalan (pakai kunci). Backup ba
 Catatan jujur: setiap backup dikirim utuh (bukan hanya bagian yang berubah), karena filenya terenkripsi. Backup lama tidak dihapus otomatis, jadi sesekali bersihkan sendiri di tujuan.
 
 **Cara membuka file backup?**
-Pakai app seperti Keka, atau Terminal: `7zz x amnesia_backup_xxx.7z`, lalu ketik password backup.
+Kalau di-klik dua kali, yang terbuka adalah Archive Utility, dan app itu tidak bisa membuka `.7z` terkunci seperti ini. Pakai **Keka** (gratis), atau Terminal: `~/.amnesia/bin/7zz x amnesia_backup_xxx.7z`, lalu ketik password backup saat diminta (jangan tulis password di perintahnya). Lebih gampang lagi: Backup → **Pulihkan File** di app.
+
+**Cara mengambil beberapa file saja dari backup?**
+Backup → **Pulihkan File…**: pilih file `.7z`, ketik password backup, centang yang mau dikembalikan, lalu tekan **Pulihkan ke Lokasi Asal**. File yang sudah ada di sana dipindah dulu ke `~/.amnesia/before-restore/`. Kalau tempat asalnya drive eksternal yang tidak tercolok, Amnesia minta kamu memilih folder lain. Catatan: selama Amnesia nyala, file yang dipulihkan di luar Keep List akan terhapus lagi saat logout berikutnya, jadi pindahkan ke folder Keep.
+
+**Cek file backup bilang "tidak berisi Profile Vault". Backup saya rusak?**
+Tidak. File-nya bisa dibuka; hanya saja dibuat saat *Sertakan Profile Vault* mati (atau sebelum v5.13). File kamu ada di dalamnya, vault-nya saja yang tidak. Kalau pesannya password tidak cocok, file-nya juga baik-baik saja, hanya password-nya beda.
+
+**Backup terjadwal minta password Mac. Kenapa?**
+Password backup disimpan di Keychain, dan yang menyimpannya versi app yang lama. Ketik password Mac sekali dan tekan **Always Allow**; Amnesia lalu menyimpannya ulang atas nama versi sekarang, jadi tidak ditanya lagi.
 
 **Pindah ke Mac baru, langkahnya?**
 Buka Profile Vault → **Pindah Mac** (atau dari Pengaturan). Halamannya memandu langkah demi langkah:

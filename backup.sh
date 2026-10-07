@@ -4,6 +4,11 @@
 #   backup.sh [--auto]                  buat backup .7z terenkripsi lalu kirim ke tujuan
 #   backup.sh --restore-vault FILE      ambil Profile Vault dari file backup (untuk Mac baru)
 #   backup.sh --check-vault FILE        cek vault di file backup (folder sementara, vault di Mac ini tidak disentuh)
+#   backup.sh --list FILE               daftar isi backup + lokasi asalnya (untuk Pulihkan File)
+#   backup.sh --restore-files FILE [--to FOLDER] PATH...
+#                                       kembalikan file/folder ke lokasi asalnya (atau ke FOLDER). Yang sudah ada
+#                                       di lokasi itu tidak ditimpa: dipindah dulu ke ~/.amnesia/before-restore/<waktu>
+#                                       (~/.amnesia tidak pernah dibersihkan saat logout).
 # Password backup selalu dibaca dari stdin (1 baris), tidak pernah lewat argumen.
 # Tujuan diatur di settings.conf: BACKUP_DEST = drive | ssh | rclone | folder
 #   folder = folder biasa di Mac, mis. folder Google Drive (app Google Drive for Desktop yang mengunggah)
@@ -44,10 +49,24 @@ fi
 # Vault dibongkar ke folder sementara, dicek isinya, lalu folder itu dihapus. Vault di Mac ini tidak diubah.
 if [ "${1:-}" = "--check-vault" ]; then
     FILE="${2:-}"; [ -f "$FILE" ] || { echo "FAILED: $(t "backup file not found" "file backup tidak ditemukan")" >&2; exit 1; }
+    # v5.17: buka daftar isinya dulu, supaya "password salah" dan "tidak ada vault" bisa dibedakan.
+    # Daftar isi backup Amnesia ikut dikunci (-mhe), jadi password salah sudah gagal di langkah ini.
+    list="$(printf '%s\n' "$PW" | "$SEVENZ" l -slt "$FILE" 2>&1)"; lrc=$?
+    if [ $lrc -ne 0 ]; then
+        if printf '%s' "$list" | grep -qi "password"; then
+            echo "FAILED: [wrongpw] $(t "The password doesn't match this backup." "Password tidak cocok dengan backup ini.")" >&2
+        else
+            echo "FAILED: [broken] $(t "This file can't be opened. It may not be an Amnesia backup, or it's damaged." "File ini tidak bisa dibuka. Mungkin bukan backup Amnesia, atau file-nya rusak.")" >&2
+        fi
+        exit 1
+    fi
+    printf '%s\n' "$list" | grep -qx "Path = .amnesia/vault/private.7z" || {
+        echo "FAILED: [novault] $(t "The backup opens, but it has no Profile Vault inside (it was made with Include Profile Vault off, or before v5.13)." "Backup bisa dibuka, tapi tidak berisi Profile Vault (dibuat saat Sertakan Profile Vault mati, atau sebelum v5.13).")" >&2
+        exit 1; }
     TMPV="$(mktemp -d)"; trap 'rm -rf "$TMPV"' EXIT
     out="$(printf '%s\n' "$PW" | "$SEVENZ" x -y -bso0 -bsp0 -o"$TMPV" "$FILE" ".amnesia/vault/*" -r 2>&1)"
     V="$TMPV/.amnesia/vault"
-    [ -f "$V/private.7z" ] || { echo "FAILED: $(t "wrong password, or this backup has no Profile Vault." "password salah, atau backup ini tidak berisi Profile Vault.") $out" | tail -c 300 >&2; exit 1; }
+    [ -f "$V/private.7z" ] || { echo "FAILED: [broken] $(t "The vault couldn't be unpacked from this backup." "Vault tidak bisa dikeluarkan dari backup ini.") $out" | tail -c 300 >&2; exit 1; }
     SIZE_MB=$(du -sm "$V" 2>/dev/null | cut -f1)
     INFO="$(/usr/bin/python3 - "$V/manifest.json" 2>/dev/null <<'PY'
 import json, sys
@@ -59,6 +78,122 @@ print(f"{m.get('time', '')}|{', '.join(m.get('apps', []))}")
 PY
 )"
     echo "OK: VAULT ${SIZE_MB:-0}|$INFO"
+    exit 0
+fi
+
+# ---------- v5.17: daftar isi + Pulihkan File ke lokasi asal ----------
+# Lokasi asal dibaca dari .amnesia/backup-index.json di dalam backup (ditulis sejak v5.17).
+# Backup lama tanpa file itu: folder dianggap berasal dari folder home.
+if [ "${1:-}" = "--list" ] || [ "${1:-}" = "--restore-files" ]; then
+    MODE="$1"; FILE="${2:-}"; shift 2 || true
+    [ -f "$FILE" ] || { echo "FAILED: [broken] $(t "backup file not found" "file backup tidak ditemukan")" >&2; exit 1; }
+    TMPR="$(mktemp -d "$H/.amnesia-restore.XXXXXX" 2>/dev/null || mktemp -d)"; trap 'rm -rf "$TMPR"' EXIT
+    list="$(printf '%s\n' "$PW" | "$SEVENZ" l -slt "$FILE" 2>&1)"
+    if [ $? -ne 0 ]; then
+        if printf '%s' "$list" | grep -qi "password"; then
+            echo "FAILED: [wrongpw] $(t "The password doesn't match this backup." "Password tidak cocok dengan backup ini.")" >&2
+        else
+            echo "FAILED: [broken] $(t "This file can't be opened. It may not be an Amnesia backup, or it's damaged." "File ini tidak bisa dibuka. Mungkin bukan backup Amnesia, atau file-nya rusak.")" >&2
+        fi
+        exit 1
+    fi
+    printf '%s\n' "$list" > "$TMPR/.list"
+    printf '%s\n' "$list" | grep -qx "Path = .amnesia/backup-index.json" && \
+        printf '%s\n' "$PW" | "$SEVENZ" x -y -bso0 -bsp0 -o"$TMPR" "$FILE" ".amnesia/backup-index.json" >/dev/null 2>&1
+    if [ "$MODE" = "--list" ]; then
+        /usr/bin/python3 - "$TMPR/.list" "$TMPR/.amnesia/backup-index.json" "$H" <<'PY'
+import json, os, sys
+lst, idx, home = sys.argv[1:4]
+ents, cur, started = {}, {}, False
+for line in open(lst, errors="replace"):
+    line = line.rstrip("\n")
+    if line.startswith("----------"):
+        started = True; continue
+    if not started: continue
+    if not line:
+        if "Path" in cur: ents[cur["Path"]] = cur
+        cur = {}; continue
+    k, _, v = line.partition(" = ")
+    cur[k] = v
+if "Path" in cur: ents[cur["Path"]] = cur
+skip = lambda p: p == ".amnesia" or p.startswith(".amnesia/")
+roots = {}
+try:
+    for it in json.load(open(idx)).get("items", []):
+        if not skip(it["stored"]): roots[it["stored"]] = it["from"]
+except Exception:
+    pass
+if not roots:   # backup lama: ambil folder paling atas, anggap berasal dari home
+    for p in ents:
+        if skip(p): continue
+        top = p.split("/")[0]
+        roots.setdefault(top, os.path.join(home, top))
+def size(p):
+    e = ents.get(p, {})
+    if not e.get("Attributes", "").startswith("D") and "Size" in e and p in ents:
+        return int(e.get("Size") or 0)
+    return sum(int(x.get("Size") or 0) for q, x in ents.items()
+               if q.startswith(p + "/") and not x.get("Attributes", "").startswith("D"))
+def kind(p):
+    e = ents.get(p)
+    return "f" if e and not e.get("Attributes", "").startswith("D") else "d"
+for r in sorted(roots):
+    print(f"ITEM\t{r}\t{kind(r)}\t{size(r)}\t{roots[r]}")
+    kids = sorted({q[len(r) + 1:].split("/")[0] for q in ents if q.startswith(r + "/")})
+    for k in kids:
+        q = r + "/" + k
+        print(f"ITEM\t{q}\t{kind(q)}\t{size(q)}\t{roots[r]}/{k}")
+PY
+        exit 0
+    fi
+    # --restore-files
+    TO=""; [ "${1:-}" = "--to" ] && { TO="${2:-}"; shift 2; [ -d "$TO" ] || { echo "FAILED: $(t "folder not found" "folder tidak ditemukan"): $TO" >&2; exit 1; }; }
+    [ $# -gt 0 ] || { echo "FAILED: $(t "nothing picked" "belum ada yang dipilih")" >&2; exit 1; }
+    for p in "$@"; do
+        case "$p" in ""|/*|..|../*|*/../*|*/..|.amnesia|.amnesia/*)
+            echo "FAILED: $(t "not allowed" "tidak diizinkan"): $p" >&2; exit 1 ;; esac
+    done
+    out="$(printf '%s\n' "$PW" | "$SEVENZ" x -y -bso0 -bsp0 -o"$TMPR" "$FILE" "$@" 2>&1)" || {
+        echo "FAILED: [broken] $(t "couldn't unpack from the backup" "gagal mengeluarkan dari backup"): $(printf '%s' "$out" | tail -c 200)" >&2; exit 1; }
+    STAMP="$(date +%Y-%m-%d_%H%M%S)"; SAFE="$A/before-restore/$STAMP"
+    n=0
+    for p in "$@"; do
+        src="$TMPR/$p"
+        [ -e "$src" ] || { printf 'NOTINBACKUP\t%s\n' "$p"; continue; }
+        if [ -n "$TO" ]; then
+            dst="${TO%/}/$(basename "$p")"
+        else
+            dst="$(/usr/bin/python3 - "$TMPR/.amnesia/backup-index.json" "$H" "$p" <<'PY'
+import json, os, sys
+idx, home, p = sys.argv[1:4]
+roots = {}
+try:
+    roots = {i["stored"]: i["from"] for i in json.load(open(idx)).get("items", [])}
+except Exception:
+    pass
+for r in sorted(roots, key=len, reverse=True):
+    if p == r or p.startswith(r + "/"):
+        print(roots[r] + p[len(r):]); break
+else:
+    print(os.path.join(home, p))
+PY
+)"
+        fi
+        par="$(dirname "$dst")"
+        # drive eksternal yang tidak tercolok: jangan bikin folder palsu di /Volumes, app akan tanya mau ke mana
+        case "$dst" in /Volumes/*)
+            vol="/Volumes/$(printf '%s' "${dst#/Volumes/}" | cut -d/ -f1)"
+            [ -d "$vol" ] || { printf 'NOTARGET\t%s\t%s\n' "$p" "$dst"; continue; } ;; esac
+        mkdir -p "$par" 2>/dev/null || { printf 'NOTARGET\t%s\t%s\n' "$p" "$dst"; continue; }
+        if [ -e "$dst" ] || [ -L "$dst" ]; then
+            mkdir -p "$SAFE/$(dirname "$p")" && mv "$dst" "$SAFE/$p" || { printf 'FAILEDITEM\t%s\t%s\n' "$p" "$dst"; continue; }
+            printf 'MOVED\t%s\t%s\n' "$dst" "$SAFE/$p"
+        fi
+        if mv "$src" "$dst"; then printf 'RESTORED\t%s\t%s\n' "$p" "$dst"; n=$((n + 1))
+        else printf 'FAILEDITEM\t%s\t%s\n' "$p" "$dst"; fi
+    done
+    printf '%s\trestorefiles\t%s\n' "$(date '+%F %T')" "$n" >> "$A/history.log"
+    echo "OK: RESTORED $n"
     exit 0
 fi
 
@@ -78,6 +213,19 @@ done
 WITHVAULT=0
 [ "$(cfg BACKUP_VAULT)" != 0 ] && [ -d .amnesia/vault ] && { items+=(.amnesia/vault); WITHVAULT=1; }
 [ ${#items[@]} -gt 0 ] || fail "$(t "nothing to back up" "tidak ada folder untuk di-backup")"
+# v5.17: catat lokasi asal tiap folder di dalam backup, supaya Pulihkan File bisa mengembalikannya ke tempat semula.
+# 7-Zip menyimpan folder dengan path lengkap hanya dengan nama terakhirnya (mis. /Volumes/SSD/Proyek -> "Proyek").
+/usr/bin/python3 - "$H" "$A/backup-index.json" "${items[@]}" <<'PY' && items+=(.amnesia/backup-index.json)
+import json, os, sys, time
+home, out, items = sys.argv[1], sys.argv[2], sys.argv[3:]
+rows = []
+for f in items:
+    if f.startswith("/"):
+        rows.append({"stored": os.path.basename(f.rstrip("/")), "from": f.rstrip("/")})
+    else:
+        rows.append({"stored": f.rstrip("/"), "from": os.path.join(home, f.rstrip("/"))})
+json.dump({"made": time.strftime("%Y-%m-%d %H:%M"), "home": home, "items": rows}, open(out, "w"), indent=1)
+PY
 
 NAME="amnesia_backup_$(date +%Y%m%d_%H%M).7z"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT

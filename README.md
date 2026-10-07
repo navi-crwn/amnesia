@@ -92,7 +92,8 @@ bash ~/.amnesia/clean.sh logout --dry-run
   - **your own server / VPS** over SSH + rsync. Type the server password once, Amnesia sets up the key. No Terminal.
   - the **cloud**: Google Drive, Dropbox, OneDrive, Box or pCloud. You log in through your browser, no Terminal needed. (S3, WebDAV and 40+ more work through rclone.)
 - **⏰ Scheduled backups.** Daily or weekly, running on their own while the Amnesia icon is in the menu bar. **Run the scheduled backup now** tests it right away.
-- **🔎 Check a backup file.** Pick a backup `.7z` and Amnesia opens it in a temporary folder to check that the vault inside can be restored. Nothing in your current vault changes.
+- **🔎 Check a backup file.** Pick a backup `.7z` and Amnesia opens it in a temporary folder to check that the vault inside can be restored. Nothing in your current vault changes. It tells you clearly if the password is wrong or the file has no vault inside.
+- **↩️ Restore Files.** Pick files or folders from a backup and Amnesia puts them back where they came from. Anything already there is moved to `~/.amnesia/before-restore` first, never overwritten. Prefer another place? Press **To Another Folder**.
 - **🕘 History.** A page that lists every cleanup, snapshot, restore and backup, grouped by day. Only times and app names, never your file names.
 - **🚚 Move to a new Mac.** Take all your logins with you: the Keychain keys go into the vault, the vault goes into a backup, and you restore it on the new Mac.
 - **👋 Welcome tour.** The first time you open it, Amnesia shows you around, checks that everything's ready, finds your apps and asks which ones should keep their data.
@@ -145,6 +146,14 @@ The welcome tour walks you through this, but here's the short version:
 
 **Day to day:** log out with **Save & Log Out**. When you log back in, open Profile Vault and press **Restore Profiles**.
 
+## Glossary
+
+These words are only used in this text and on the website. The buttons in the app keep their normal names.
+
+- **Selective Amnesia**: the normal cleanup at logout. Everything is wiped except your Keep List, your Keep folder and the Profile Vault.
+- **Global Amnesia**: everything is gone with no way back. This happens with the panic button (Doomsday), with Uninstall when you tick *delete the vault too*, or with a wipe when you have no snapshot and no backup.
+- **Memory Recall**: bringing things back. That's Restore Profiles, Get Vault from Backup, Move to a New Mac and Restore Files.
+
 ## FAQ
 
 **What's the difference between the Keep List and the Profile Vault?**
@@ -179,7 +188,16 @@ If you change your server password later, backups keep working (they use the key
 Heads up: every backup is uploaded in full (not just what changed), because the file is encrypted. Old backups aren't deleted automatically, so clean them up at the destination now and then.
 
 **How do I open a backup file?**
-Use an app like Keka, or Terminal: `7zz x amnesia_backup_xxx.7z`, then type your backup password.
+Double-clicking it opens Archive Utility, which can't open this kind of locked `.7z`. Use **Keka** (free), or Terminal: `~/.amnesia/bin/7zz x amnesia_backup_xxx.7z`, then type your backup password when it asks (don't put the password in the command). Easier still: Backup → **Restore Files** in the app.
+
+**How do I get a few files back from a backup?**
+Backup → **Restore Files…**: pick the `.7z`, type the backup password, tick what you want back and press **Restore to Original Place**. Files that are already there are moved to `~/.amnesia/before-restore/` first. If the original place is an external drive that isn't plugged in, Amnesia asks you for another folder. Note: while Amnesia is on, restored files outside your Keep List are wiped again at the next logout, so move them into your Keep folder.
+
+**Check a backup file says "no Profile Vault". Is my backup broken?**
+No. The file opens fine; it was just made with *Include Profile Vault* off (or before v5.13). Your files are in it, only the vault isn't. If it says the password doesn't match, the file is fine too, the password is just a different one.
+
+**The scheduled backup asks for my Mac password. Why?**
+The saved backup password sits in the Keychain, and an older version of the app saved it. Type your Mac password once and press **Always Allow**; Amnesia then saves it again under the current version, so it stops asking.
 
 **Moving to a new Mac, what are the steps?**
 Open Profile Vault → **Move to a New Mac** (or Settings). The page walks you through it:

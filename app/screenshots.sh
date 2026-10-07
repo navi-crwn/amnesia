@@ -73,6 +73,8 @@ AMNESIA_HOME="$D" "$PY" "$A/vault.py" snapshot >/dev/null 2>&1
 
 echo "Taking screenshots (about 1 minute, a Dock icon may blink)..."
 mkdir -p "$OUT"
+# v5.17: screenshot halaman-panjang lama tidak dibuat lagi (lebih tinggi dari jendela asli); hapus sisa buatan script ini
+rm -f "$OUT"/en/*-full.png "$OUT"/id/*-full.png
 LOG="$HOME/.amnesia/shots.log"; : > "$LOG"
 for L in en id; do                   # 1 bahasa per jalan: kalau satu macet, yang lain tetap jadi
   AMNESIA_HOME="$D" "$APPBIN" --shots "$OUT" --lang "$L" >>"$LOG" 2>&1 &
@@ -86,8 +88,9 @@ echo "Done: $N screenshots in docs/screens/en and docs/screens/id (log: ~/.amnes
 if grep -q "no screen recording permission" "$LOG"; then
   echo
   echo "Tip: for screenshots that look exactly like the app (HD, glass effects):"
-  echo "  System Settings > Privacy & Security > Screen & System Audio Recording > switch on \"Amnesia Shots\","
-  echo "  then run this script again: bash ~/.amnesia/app/screenshots.sh"
-  echo "  (Only the screenshot copy gets this permission, not Amnesia itself.)"
+  echo "  System Settings > Privacy & Security > Screen & System Audio Recording > switch on \"Terminal\""
+  echo "  (the app you run this script from), choose Quit & Reopen, then run this script again:"
+  echo "  bash ~/.amnesia/app/screenshots.sh"
+  echo "  Amnesia itself never gets this permission. You can switch Terminal off again afterwards."
 fi
 exit 0

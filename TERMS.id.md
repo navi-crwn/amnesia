@@ -18,6 +18,8 @@ Amnesia tetap **mati** sampai kamu sendiri yang mengaktifkannya. Sebelum itu:
 2. Buka Pengaturan → **Lihat yang akan dihapus** dan baca daftarnya.
 3. Pindahkan file penting ke folder Keep.
 
+Di dokumentasi, pembersihan normal saat logout kami sebut **Selective Amnesia** (Keep List, folder Keep dan vault tetap ada). **Global Amnesia** artinya semuanya hilang tanpa jalan kembali: tombol panik, Uninstall dengan *hapus vault juga*, atau dibersihkan tanpa punya snapshot maupun backup. **Memory Recall** adalah semua cara mengembalikan data (Restore Profil, Ambil Vault dari Backup, Pindah Mac, Pulihkan File), dan hanya bisa kalau sebelumnya kamu sudah membuat snapshot atau backup.
+
 ## 🔐 Password kamu cuma kamu yang tahu
 
 - **Profile Vault** dan **backup** dikunci pakai password yang hanya kamu tahu.
