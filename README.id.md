@@ -6,6 +6,8 @@
   <b>Setiap kali kamu logout, Mac kamu lupa semuanya.<br>Kecuali yang memang kamu mau simpan.</b>
 </p>
 
+<p align="center"><a href="https://navi-crwn.github.io/amnesia-mac/#film"><img src="docs/media/teaser.gif" alt="Klip paper craft 15 detik: mata-mata login ke Mac dan tidak menemukan apa pun" width="720"></a><br><sub>▶ Tonton cerita lengkap 54 detik, dengan suara, di <a href="https://navi-crwn.github.io/amnesia-mac/#film">website</a></sub></p>
+
 <p align="center">
   <a href="../../releases/latest"><b>⬇️ Download app</b></a> ·
   <a href="https://navi-crwn.github.io/amnesia-mac/">Website</a> ·

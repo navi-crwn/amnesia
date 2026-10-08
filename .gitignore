@@ -7,7 +7,12 @@ __pycache__/
 app/build/
 app/shots/
 video/vo/
+video/vo2/
 video/out/
+video/paper/out/
+video/paper/sfx/
+video/paper/music/
+video/hyperframes/
 .DS_Store
 keep.conf
 settings.conf

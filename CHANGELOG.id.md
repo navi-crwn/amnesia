@@ -5,6 +5,14 @@
 Semua perubahan Amnesia dicatat di sini. Versi terbaru ada di paling atas.
 Nomor versi juga terlihat di app (di samping judul dan di bawah menu bar).
 
+## Website & README — 2026-10-08
+
+### Ditambahkan
+- **Film pendek di website.** Tepat di bawah bagian atas halaman ada video stop motion paper craft 54 detik berisi tiga cerita kecil (mata-mata, orang tua yang kepo, teman yang pinjam Mac). Tampilannya seperti selembar kertas yang ditempel di halaman. Video main sendiri tanpa suara saat kamu scroll ke sana; tekan **Nyalakan suara** untuk menonton dari awal dengan suara.
+- **Video di bagian "Yang paham, paham".** Kartu "Mac mau dipinjam?", "Keluarga kepo?" dan "Coba buka sebentar." masing-masing punya video vertikal 30 detik. Video main tanpa suara saat terlihat; klik untuk menonton besar dengan suara. "Hilang atau dicuri?" sekarang jadi kartu lebar di bawahnya. Di HP kartunya bisa digeser ke samping.
+- **Pratinjau bergerak di README.** Klip 15 detik (GIF) di bawah slogan, dengan link ke video lengkap di website.
+- Video baru dimuat saat kamu scroll ke sana dan ukurannya kecil (sekitar 1–3 MB per video). Kalau "Kurangi gerakan" atau penghemat data menyala, video tidak main sendiri.
+
 ## v5.18.1 — 2026-10-07
 
 ### Diperbaiki

@@ -1,0 +1,82 @@
+{
+ "note": "Dibuat otomatis dari video/script.js. Jangan diubah di sini.",
+ "roles": {
+  "gelap": "Narator (satu suara untuk semua kalimat)"
+ },
+ "lines": {
+  "L1": {
+   "role": "gelap",
+   "en": "2 a.m. Someone wants what's on your Mac.",
+   "id": "Jam dua pagi. Ada yang mengincar isi Mac kamu."
+  },
+  "L3": {
+   "role": "gelap",
+   "en": "He even knows your password.",
+   "id": "Password kamu pun dia tahu."
+  },
+  "L4": {
+   "role": "gelap",
+   "en": "But there's nothing here. No history. No logins. No chats.",
+   "id": "Tapi isinya kosong. Tanpa riwayat. Tanpa login. Tanpa chat."
+  },
+  "L6": {
+   "role": "gelap",
+   "en": "Because hours earlier, you logged out. And your Mac forgot everything.",
+   "id": "Karena beberapa jam sebelumnya, kamu logout. Dan Mac kamu lupa semuanya."
+  },
+  "L8": {
+   "role": "gelap",
+   "en": "Amnesia. Free on GitHub. Forget everything.",
+   "id": "Amnesia. Gratis di GitHub. Lupakan semuanya."
+  },
+  "L9": {
+   "role": "gelap",
+   "en": "Nothing.",
+   "id": "Kosong."
+  },
+  "O1": {
+   "role": "gelap",
+   "en": "Uh-oh. Your parents want your Mac password."
+  },
+  "O2": {
+   "role": "gelap",
+   "en": "No sweat. Save and log out."
+  },
+  "O3": {
+   "role": "gelap",
+   "en": "Apps and private stuff go into the vault."
+  },
+  "O4": {
+   "role": "gelap",
+   "en": "They log in. A clean Mac. Just your homework."
+  },
+  "O5": {
+   "role": "gelap",
+   "en": "Privacy, no headache. Amnesia."
+  },
+  "B1": {
+   "role": "gelap",
+   "en": "A friend wants to borrow your Mac."
+  },
+  "B2": {
+   "role": "gelap",
+   "en": "Your whole life is on it. Chats. Tabs. Photos."
+  },
+  "B3": {
+   "role": "gelap",
+   "en": "Save and log out. Your stuff goes into the vault."
+  },
+  "B4": {
+   "role": "gelap",
+   "en": "Log back in. A clean Mac. Hand it over."
+  },
+  "B5": {
+   "role": "gelap",
+   "en": "Got it back? One click, and it's all yours again."
+  },
+  "B6": {
+   "role": "gelap",
+   "en": "Amnesia. Lend your Mac, not your life."
+  }
+ }
+}

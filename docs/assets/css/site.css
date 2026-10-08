@@ -904,3 +904,53 @@ html:not(.js) .tp[data-page="0"]{position:relative}
 @media (max-width:560px){.iyk-grid{grid-template-columns:minmax(0,1fr)}}
 @media (prefers-reduced-motion:reduce){.iyk .wink{animation:none}}
 .final .pun{margin-top:14px;color:var(--muted);font-size:clamp(16px,1.6vw,19px)}
+
+/* ---------- 00 film: the paper craft story, stuck on the page like a sheet of craft paper ---------- */
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.film{padding-block:clamp(24px,5vw,56px) clamp(72px,9vw,120px);--paper:#efe4cc;--paper-ink:#3b2f22}
+.paper{position:relative;max-width:1040px;margin:0 auto;transform:rotate(-.6deg);filter:drop-shadow(0 30px 50px rgba(0,0,0,.45)) drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+:root[data-theme=light] .paper{filter:drop-shadow(0 24px 40px rgba(60,40,10,.18)) drop-shadow(0 2px 3px rgba(60,40,10,.15))}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]) .paper{filter:drop-shadow(0 24px 40px rgba(60,40,10,.18)) drop-shadow(0 2px 3px rgba(60,40,10,.15))}}
+.paper-sheet{position:relative;padding:clamp(10px,1.6vw,18px);background-color:var(--paper);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .27 0 0 0 0 .17 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.paper-sheet video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#e8dcc0;border-radius:3px;cursor:default}
+.paper .tape{position:absolute;z-index:2;width:clamp(70px,11vw,130px);height:clamp(22px,3vw,34px);background:color-mix(in srgb,var(--cyan) 38%,rgba(255,255,255,.35));opacity:.82;
+  -webkit-mask:linear-gradient(90deg,transparent 0 3px,#000 3px calc(100% - 3px),transparent 0);mask:linear-gradient(90deg,transparent 0 3px,#000 3px calc(100% - 3px),transparent 0)}
+.paper .t1{left:-18px;top:-10px;transform:rotate(-24deg)}
+.paper .t2{right:-16px;top:-8px;transform:rotate(19deg);background:color-mix(in srgb,var(--pink) 36%,rgba(255,255,255,.35))}
+.paper .sound{position:absolute;right:clamp(20px,2.6vw,32px);bottom:clamp(20px,2.6vw,32px);display:flex;align-items:center;gap:8px;padding:9px 14px 9px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(20,16,12,.62);color:#fff;font:600 14px/1 var(--sans);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);cursor:pointer;transition:transform .2s,background .2s}
+.paper .sound:hover{transform:translateY(-1px);background:rgba(20,16,12,.78)}
+.paper .sound:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.paper .sound svg{width:20px;height:20px}
+.paper .sound .s-wave,.paper .sound[aria-pressed=false] .s-off-t,.paper .sound[aria-pressed=true] .s-on-t,.paper .sound[aria-pressed=true] .s-off{display:none}
+.paper .sound[aria-pressed=true] .s-wave{display:inline}
+.strip{position:relative;z-index:2;width:max-content;max-width:calc(100% - 32px);margin:-14px auto 0;transform:rotate(1.2deg);padding:8px 18px;background:var(--paper);color:var(--paper-ink);font:italic 400 clamp(17px,2vw,22px)/1.25 var(--serif);text-align:center;box-shadow:0 6px 14px rgba(0,0,0,.28);
+  clip-path:polygon(0 8%,3% 0,40% 6%,72% 0,100% 7%,98% 50%,100% 94%,64% 100%,30% 94%,2% 100%,0 55%)}
+@media (max-width:560px){.paper{transform:none}.paper .tape{display:none}.paper .sound span{display:none}.paper .sound{padding:9px}}
+
+/* reels in the "If you know, you know" cards (vertical videos, open with sound) */
+.iyk-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.iyk-wide{grid-column:1/-1;grid-template-columns:auto minmax(0,1fr);column-gap:16px;align-items:start}
+.iyk-wide .i-ico{grid-row:span 2}
+.reel{position:relative;display:block;width:min(100%,280px);aspect-ratio:9/16;margin:0 auto 6px;padding:0;border:1px solid var(--line-2);border-radius:16px;overflow:hidden;background:#e8dcc0;cursor:pointer;box-shadow:var(--shadow-md);transition:transform .3s}
+.reel video{display:block;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.reel:hover{transform:translateY(-3px) rotate(-.6deg)}
+.reel:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.reel-tag{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;white-space:nowrap;padding:7px 12px 7px 9px;border-radius:999px;background:rgba(20,16,12,.66);color:#fff;font:600 12.5px/1 var(--sans);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.reel-tag svg{width:14px;height:14px}
+@media (max-width:860px){
+  .iyk-grid{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(260px,78%);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:10px;overscroll-behavior-x:contain}
+  .iyk-grid>.cell{scroll-snap-align:start}
+  .iyk-wide{grid-column:auto;display:grid;grid-template-columns:none}
+  .iyk-wide .i-ico{grid-row:auto}
+}
+.film-box{padding:0;border:0;background:transparent;overflow:visible;max-width:none;max-height:none}
+.film-box::backdrop{background:rgba(5,5,8,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.film-box video{display:block;height:min(86dvh,960px);width:auto;max-width:calc(100vw - 32px);aspect-ratio:9/16;object-fit:contain;border-radius:16px;background:#000}
+.fb-close{position:absolute;top:-14px;right:-14px;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(255,255,255,.2);background:#16171f;color:#fff;cursor:pointer;z-index:1}
+.fb-close svg{width:18px;height:18px}
+@media (max-width:560px){.fb-close{top:8px;right:8px}}
+.iyk-grid .cell:has(.reel){grid-template-columns:auto minmax(0,1fr);column-gap:12px;align-items:center}
+.iyk-grid .cell:has(.reel)>.reel,.iyk-grid .cell:has(.reel)>p{grid-column:1/-1}
+.iyk-grid .cell:has(.reel)>.reel{margin-bottom:10px}
+.iyk-wide{align-items:center}.iyk-wide p{grid-column:2}

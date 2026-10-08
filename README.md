@@ -6,6 +6,8 @@
   <b>Every time you log out, your Mac forgets everything.<br>Except the stuff you actually want to keep.</b>
 </p>
 
+<p align="center"><a href="https://navi-crwn.github.io/amnesia-mac/#film"><img src="docs/media/teaser.gif" alt="A 15-second paper craft clip: a spy logs in to a Mac and finds nothing" width="720"></a><br><sub>▶ Watch the full 54-second story, with sound, on the <a href="https://navi-crwn.github.io/amnesia-mac/#film">website</a></sub></p>
+
 <p align="center">
   <a href="../../releases/latest"><b>⬇️ Download the app</b></a> ·
   <a href="https://navi-crwn.github.io/amnesia-mac/">Website</a> ·

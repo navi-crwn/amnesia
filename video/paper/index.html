@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Amnesia Paper</title>
+<!-- Video Amnesia gaya paper craft stop motion. Semua gambar dibuat dengan kode (HTML/SVG/CSS) dan
+     dianimasikan dengan GSAP, lalu "dipatah-patah" jadi 12 gambar per detik seperti stop motion asli.
+     URL (atau #hash):  ?cut=30|15|p30|b30|all  &ar=h|v  &play  &t=12.5  &nocap  &raw
+     Naskah + urutan adegan: ../script.js (disalin ke sini oleh build.js). Efek suara + musik: sound.js. -->
+<style>
+@font-face{font-family:"Fraunces";src:url("assets/fraunces.woff2") format("woff2");font-weight:100 900;font-display:block}
+@font-face{font-family:"Caveat";src:url("assets/caveat.woff2") format("woff2");font-weight:400 700;font-display:block}
+@font-face{font-family:"Nunito";src:url("assets/nunito.woff2") format("woff2");font-weight:200 1000;font-display:block}
+:root{
+  --ink:#2a2733;--ink-2:#4a4552;--cream:#f6eedd;--paper:#fbf7ee;--kraft:#c79b6c;--kraft-d:#a77a4f;
+  --indigo:#5b5bd6;--indigo-d:#3d3ca8;--cyan:#3fb6c6;--pink:#e2729c;--green:#58b07e;--green-d:#3e8a5f;
+  --mustard:#e9b949;--tomato:#e0614b;--sky:#9fd0e6;--navy:#1d2342;--navy-2:#2a3160;
+  --serif:"Fraunces",Georgia,serif;--hand:"Caveat","Comic Sans MS",cursive;--ui:"Nunito",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#111;overflow:hidden;width:100%;height:100%}
+#root{position:relative;width:100%;height:100%;overflow:hidden;background:#1b1712}
+#stage{position:absolute;left:0;top:0;overflow:hidden;background:#1b1712;transform-origin:0 0;font-family:var(--ui);color:var(--ink)}
+#stage.h{width:1920px;height:1080px}#stage.v{width:1080px;height:1920px}
+#cam{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+#world{position:absolute;inset:0;transform-origin:960px 560px}
+.layer{position:absolute;left:0;top:0;width:1920px;height:1080px;visibility:hidden}
+/* papan belakang (dinding) dan meja; dibuat lebih tinggi supaya versi tegak (9:16) tetap penuh */
+.wall{position:absolute;left:-400px;right:-400px;top:-1000px;height:1760px}
+.floor{position:absolute;left:-400px;right:-400px;top:740px;height:1300px}
+.floor:before{content:'';position:absolute;left:0;right:0;top:0;height:26px;background:rgba(0,0,0,.16)}
+/* potongan kertas: tekstur serat + tepi gunting tidak rata + bayangan */
+.pc{position:absolute;filter:url(#tex) drop-shadow(5px 8px 5px rgba(38,22,8,.34))}
+.pcs{position:absolute;filter:url(#texs) drop-shadow(3px 5px 3px rgba(38,22,8,.28))}
+.flat{position:absolute;background-blend-mode:multiply,multiply,normal}
+.pc>svg,.pcs>svg,.flat>svg{display:block;width:100%;height:100%;overflow:visible}
+.rig{position:absolute}
+.lift{filter:url(#tex) drop-shadow(14px 22px 12px rgba(38,22,8,.3))}
+/* layar laptop */
+.scr{position:absolute;overflow:hidden;background:#eef3f6;border-radius:6px}
+.scr .st{position:absolute;inset:0;opacity:0}
+.mbar{position:absolute;left:0;right:0;top:0;height:30px;background:rgba(255,255,255,.75);display:flex;align-items:center;gap:16px;padding:0 14px;font:800 15px var(--ui);color:#3d3a45}
+.mbar .am{margin-left:auto;width:22px;height:22px;border-radius:7px;background:var(--indigo);display:flex;align-items:center;justify-content:center}
+.mbar .am:after{content:'';width:9px;height:9px;border-radius:50%;border:2.5px solid #fff}
+.wallp{position:absolute;inset:0}
+.av{width:104px;height:104px;border-radius:50%;background:#d9cbe8;border:5px solid #fff;position:relative;overflow:hidden}
+.av:before{content:'';position:absolute;left:31px;top:20px;width:42px;height:42px;border-radius:50%;background:#8a7aa6}
+.av:after{content:'';position:absolute;left:14px;top:66px;width:76px;height:60px;border-radius:40px 40px 0 0;background:#8a7aa6}
+.fld{width:270px;height:50px;border-radius:25px;background:rgba(255,255,255,.85);border:3px solid #fff;display:flex;align-items:center;justify-content:center;gap:12px;position:relative}
+.fld i{width:14px;height:14px;border-radius:50%;background:#3d3a45;opacity:0;display:block}
+.ok{position:absolute;right:-58px;top:4px;width:42px;height:42px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;opacity:0}
+.ok:after{content:'';width:16px;height:9px;border-left:5px solid #fff;border-bottom:5px solid #fff;transform:translateY(-3px) rotate(-45deg)}
+.nm{font:900 22px var(--ui);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.15)}
+.dock{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);height:62px;padding:8px 12px;border-radius:18px;background:rgba(255,255,255,.55);display:flex;gap:10px}
+.dock b{width:46px;height:46px;border-radius:12px;display:block}
+.dic{position:absolute;width:118px;display:flex;flex-direction:column;align-items:center;gap:6px;font:800 15px var(--ui);color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.25)}
+.dic>div{width:84px;height:70px;border-radius:12px;position:relative}
+.menu{position:absolute;right:10px;top:34px;width:300px;padding:10px;border-radius:14px;background:#fff;box-shadow:0 8px 0 rgba(0,0,0,.08);font:800 19px var(--ui);color:#3d3a45;opacity:0;transform-origin:85% 0}
+.menu div{padding:10px 12px;border-radius:9px;display:flex;align-items:center;gap:10px}
+.menu .on{color:var(--green-d)}.menu .on:before{content:'';width:12px;height:12px;border-radius:50%;background:var(--green)}
+.menu hr{border:0;border-top:2px dashed #e4dccd;margin:6px 4px}
+.menu .hi{background:var(--indigo);color:#fff}
+.vmod{position:absolute;left:50%;top:50%;width:380px;margin:-130px 0 0 -190px;padding:22px;border-radius:20px;background:#fff;text-align:center;opacity:0}
+.vmod b{display:block;font:900 26px var(--ui);margin:6px 0 14px}
+.vmod .fld{margin:0 auto;width:300px;background:#f1ecf9;border-color:#e3dbf3}
+.vmod .er{margin-top:12px;font:900 18px var(--ui);color:var(--tomato);opacity:0}
+.stamp{position:absolute;padding:8px 22px;border:7px solid var(--tomato);border-radius:12px;color:var(--tomato);font:900 46px var(--ui);letter-spacing:.04em;text-transform:uppercase;opacity:0;white-space:nowrap;mix-blend-mode:multiply}
+/* teks: huruf potongan kertas + label tulisan tangan */
+.tiles{position:absolute;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 4px}
+.tile{position:relative;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:800;line-height:1;padding:.12em .14em .16em;border-radius:.08em;color:var(--ink)}
+.tile.sp{width:.38em;padding:0}
+.hand{font-family:var(--hand);font-weight:700}
+.bub{position:absolute;padding:20px 30px 24px;font:700 46px var(--hand);color:var(--ink);white-space:nowrap}
+.bub svg{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 40px);overflow:visible;z-index:-1}
+.lbl{position:absolute;padding:4px 16px 6px;font:700 34px var(--hand);color:var(--ink);background:var(--paper);white-space:nowrap}
+/* lapisan atas */
+#hud{position:absolute;inset:0;pointer-events:none}
+.cap{position:absolute;left:0;right:0;display:flex;justify-content:center}
+.cap>div{position:absolute;opacity:0;padding:10px 34px 14px;font:700 50px/1.12 var(--hand);color:var(--ink);text-align:center;max-width:1500px}
+.cap>div:before{content:'';position:absolute;inset:0;background:var(--paper);clip-path:polygon(0 6%,3% 0,22% 5%,47% 0,71% 4%,100% 0,98% 52%,100% 100%,74% 95%,50% 100%,26% 94%,0 100%,2% 48%);z-index:-1;filter:drop-shadow(3px 5px 3px rgba(0,0,0,.3))}
+.nocap .cap{display:none}
+#wipe{position:absolute;left:0;top:0;width:3200px;height:3400px;transform-origin:0 0;visibility:hidden}
+#flick{position:absolute;inset:0;background:#fff3dc;opacity:0}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse 75% 70% at 45% 40%,transparent 55%,rgba(20,10,0,.42) 100%)}
+#warm{position:absolute;inset:0;background:linear-gradient(125deg,rgba(255,220,160,.07),transparent 45%,rgba(30,15,50,.08))}
+</style>
+</head>
+<body>
+<div id="root">
+<div id="stage" class="h">
+  <div id="cam"><div id="world"></div></div>
+  <div id="warm"></div>
+  <div id="hud"><div class="cap" id="cap"></div></div>
+  <div id="wipe"></div>
+  <div id="flick"></div>
+  <div id="vig"></div>
+</div>
+</div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- kertas: tepi digunting tidak rata + serat diterangi dari kiri atas -->
+    <filter id="tex" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="1" seed="4" result="e"/>
+      <feDisplacementMap in="SourceGraphic" in2="e" scale="6" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feImage class="grain" x="0" y="0" width="384" height="384" preserveAspectRatio="none" result="g0"/>
+      <feTile in="g0" result="g"/>
+      <feComposite in="d" in2="g" operator="arithmetic" k1="1.02" k2="0" k3="0" k4="0" result="m"/>
+      <feComposite in="m" in2="d" operator="in"/>
+    </filter>
+    <!-- kertas tanpa tepi bergerigi (untuk layar dan teks kecil) -->
+    <filter id="texs" x="-4%" y="-4%" width="108%" height="108%" color-interpolation-filters="sRGB">
+      <feImage class="grain" x="0" y="0" width="384" height="384" preserveAspectRatio="none" result="g0"/>
+      <feTile in="g0" result="g"/>
+      <feComposite in="SourceGraphic" in2="g" operator="arithmetic" k1="1.02" k2="0" k3="0" k4="0" result="m"/>
+      <feComposite in="m" in2="SourceGraphic" operator="in"/>
+    </filter>
+    <!-- lapisan kertas di dalam satu gambar: bayangan kecil -->
+    <filter id="lay" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="2" dy="3" stdDeviation="1.6" flood-color="#2a1606" flood-opacity=".32"/></filter>
+  </defs>
+</svg>
+<script src="assets/gsap.min.js"></script>
+<script src="script.js"></script>
+<script src="sound.js"></script>
+<script>
+(() => {
+// ---------- pengaturan ----------
+const HF = window.HF_CONFIG;
+const Q = new URLSearchParams(HF ? HF.q : (location.search || location.hash.slice(1)));
+const CUT = Q.get('cut') || '30', V = Q.get('ar') === 'v', S = window.SCRIPT;
+const cut = S.cuts[CUT] || S.cuts['30'];
+const STEP = 12;                                   // stop motion: 12 gambar per detik
+const SW = V ? 1080 : 1920, SH = V ? 1920 : 1080;
+const $ = s => document.querySelector(s), stage = $('#stage'), world = $('#world'), cam = $('#cam');
+stage.className = V ? 'v' : 'h';
+if (Q.has('nocap')) stage.classList.add('nocap');
+function fit() { if (Q.has('raw') || HF) return; const k = Math.min(innerWidth / SW, innerHeight / SH); stage.style.transform = `scale(${k})`; stage.style.left = (innerWidth - SW * k) / 2 + 'px'; stage.style.top = (innerHeight - SH * k) / 2 + 'px'; }
+addEventListener('resize', fit); fit();
+// versi tegak: dunia 1920x1080 diperbesar sedikit dan dipotong kiri-kanan; ruang atas = judul, bawah = teks
+const CK = V ? 1.12 : 1;
+gsap.set(cam, { scale: CK, x: V ? 540 - 960 * CK : 0, y: V ? 900 - 560 * CK : 0 });
+const CAP_Y = V ? 1500 : 968;
+$('#cap').style.top = CAP_Y + 'px';
+
+// angka acak yang selalu sama (setiap render harus menghasilkan gambar yang sama)
+const hash = (a, b = 0) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647, rr = (a, b) => a + (b - a) * rnd();
+
+// ---------- pembuat potongan kertas ----------
+const el = (cls, css = {}, html = '', parent) => {
+  const e = document.createElement('div'); e.className = cls; e.innerHTML = html;
+  for (const [k, v] of Object.entries(css)) e.style[k] = typeof v === 'number' && !['opacity', 'zIndex'].includes(k) ? v + 'px' : v;
+  if (parent) parent.appendChild(e); return e;
+};
+const svg = (vb, inner) => `<svg viewBox="${vb}">${inner}</svg>`;
+// sobekan/potongan tidak rata untuk kotak
+const cutRect = (w, h, j = 3, n = 7) => {
+  const p = [], J = () => rr(-j, j);
+  for (let i = 0; i < n; i++) p.push([w * i / n + J(), J()]);
+  for (let i = 0; i < n; i++) p.push([w + J(), h * i / n + J()]);
+  for (let i = n; i > 0; i--) p.push([w * i / n + J(), h + J()]);
+  for (let i = n; i > 0; i--) p.push([J(), h * i / n + J()]);
+  return 'M' + p.map(q => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join('L') + 'Z';
+};
+const card = (parent, x, y, w, h, fill, inner = '', cls = 'pc') =>
+  el(cls, { left: x, top: y, width: w, height: h }, svg(`0 0 ${w} ${h}`, `<path d="${cutRect(w, h)}" fill="${fill}"/>${inner}`), parent);
+
+// ---------- timeline + suara ----------
+const tl = gsap.timeline({ paused: true });
+const AUDIO = [], SFXQ = [], SILENCE = [];
+const sfx = (id, at, gain = 1) => { if (window.SOUND && SOUND.sfx[id]) SFXQ.push({ id, at: +at.toFixed(2), gain }); };
+const show = (L, t, d) => { if (t <= 0) gsap.set(L, { visibility: 'visible' }); else tl.set(L, { visibility: 'visible' }, t); tl.set(L, { visibility: 'hidden' }, t + d); };
+// gerakan "pop" kertas: muncul dengan sedikit melenting
+const popIn = (e, at, o = {}) => { gsap.set(e, { scale: 0, rotation: o.r0 ?? rr(-14, 14), transformOrigin: o.origin || '50% 80%' }); tl.to(e, { scale: o.s ?? 1, rotation: o.r ?? rr(-3, 3), duration: o.dur ?? .5, ease: 'back.out(2.2)' }, at); };
+const slideIn = (e, at, dx, dy, dur = .7, ease = 'power3.out') => { gsap.set(e, { x: dx, y: dy }); tl.to(e, { x: 0, y: 0, duration: dur, ease }, at); };
+
+// ---------- latar ----------
+// serat kertas untuk dinding/meja: dibuat sekali di canvas (lebih ringan daripada filter SVG di bidang besar)
+const GRAIN = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 384; const g = c.getContext('2d'), im = g.createImageData(384, 384);
+  for (let i = 0; i < 384 * 384; i++) { const v = 232 + hash(i, 5) * 23 | 0; im.data[i * 4] = v; im.data[i * 4 + 1] = v - 2; im.data[i * 4 + 2] = v - 6; im.data[i * 4 + 3] = 255; }
+  g.putImageData(im, 0, 0);
+  g.globalAlpha = .07; g.strokeStyle = '#5a4630';
+  for (let i = 0; i < 140; i++) { const x = hash(i, 11) * 384, y = hash(i, 12) * 384, a = hash(i, 13) * 6.3, l = 6 + hash(i, 14) * 22; g.lineWidth = .6 + hash(i, 15); g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * l * .6 + 3, y + Math.sin(a) * l * .6, x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+  const u = c.toDataURL(); document.querySelectorAll('feImage.grain').forEach(f => f.setAttribute('href', u));
+  return `url(${u})`;
+})();
+const paperBg = (color, light = true) => ({ backgroundColor: color, backgroundImage: `${GRAIN}${light ? ', radial-gradient(ellipse 60% 55% at 40% 35%, #ffffff, #d9d2c6)' : ''}` });
+const SETS = {
+  night: { wall: '#232a52', floor: '#5b4232' },
+  day:   { wall: '#f2cf9e', floor: '#b98654' },
+  home:  { wall: '#a9cdbd', floor: '#c48c58' },
+  cream: { wall: '#efe1c6', floor: '#e5d2ae' },
+  plum:  { wall: '#3a2f5c', floor: '#2c2447' },
+};
+function backdrop(L, kind, o = {}) {
+  const s = SETS[kind];
+  const w = el('wall flat', paperBg(s.wall), '', L);
+  const f = el('floor flat', paperBg(s.floor, false), '', L);
+  // garis serat kayu di meja
+  let lines = ''; for (let i = 0; i < 26; i++) { const y = 30 + i * 46 + rr(-8, 8); lines += `<path d="M0 ${y} C 700 ${y + rr(-10, 10)}, 1600 ${y + rr(-14, 14)}, 2800 ${y + rr(-8, 8)}" stroke="rgba(0,0,0,.07)" stroke-width="${rr(2, 5).toFixed(1)}" fill="none"/>`; }
+  f.innerHTML = svg('0 0 2720 1300', lines);
+  if (kind === 'home') {   // pigura + tanaman
+    if (o.frames !== false) card(L, 380, 170, 230, 170, '#f6eedd', `<rect x="16" y="16" width="198" height="138" fill="#e8b45a" filter="url(#lay)"/><path d="M16 154 L80 80 L130 120 L170 70 L214 154Z" fill="#5f9b74" filter="url(#lay)"/><circle cx="170" cy="48" r="16" fill="#fff6d8" filter="url(#lay)"/>`);
+    if (o.frames !== false) card(L, 1340, 140, 180, 220, '#f6eedd', `<rect x="14" y="14" width="152" height="192" fill="#e88a9e" filter="url(#lay)"/><circle cx="90" cy="92" r="34" fill="#f6d1b0" filter="url(#lay)"/><path d="M40 206 Q90 120 140 206Z" fill="#7a6bb0" filter="url(#lay)"/>`);
+    el('pc', { left: 1600, top: 470, width: 200, height: 290 }, svg('0 0 200 290', `
+      <path d="M100 170 C 40 140, 20 70, 60 20 C 80 70, 95 110, 100 170Z" fill="#4f9a6a" filter="url(#lay)"/>
+      <path d="M100 170 C 160 140, 190 60, 150 10 C 125 70, 110 110, 100 170Z" fill="#62b07b" filter="url(#lay)"/>
+      <path d="M100 175 C 70 120, 85 60, 105 30 C 115 80, 112 130, 100 175Z" fill="#3e855a" filter="url(#lay)"/>
+      <path d="M50 170 L150 170 L135 286 L65 286Z" fill="#d9775a" filter="url(#lay)"/><rect x="44" y="162" width="112" height="22" fill="#c9644a" filter="url(#lay)"/>`), L);
+  }
+  if (kind === 'day' || kind === 'night') {   // jendela
+    const night = kind === 'night';
+    const win = el('rig', { left: night ? 1290 : 1440, top: night ? 110 : 80, width: 430, height: 380 }, '', L);
+    if (!night) gsap.set(win, { scale: .82, transformOrigin: '0 0' });
+    card(win, 0, 0, 430, 380, night ? '#e9dcc0' : '#fbf3e2');
+    const sky = card(win, 24, 24, 382, 332, night ? '#141a3a' : '#9fd3ea', '', 'pcs');
+    let inner = night
+      ? `<circle cx="290" cy="90" r="46" fill="#f7eecb"/><circle cx="270" cy="78" r="44" fill="#141a3a"/>` +
+        Array.from({ length: 16 }, () => `<circle cx="${rr(10, 370).toFixed(0)}" cy="${rr(10, 190).toFixed(0)}" r="${rr(1.5, 3.5).toFixed(1)}" fill="#f7eecb"/>`).join('')
+      : `<circle cx="300" cy="80" r="42" fill="#ffd56b"/><path d="M40 120 q30 -30 60 0 q20 -20 46 0 z" fill="#fff" opacity=".95"/>`;
+    // gedung kota berlapis
+    let city = ''; let x = -10;
+    while (x < 382) { const w = rr(40, 80), h = rr(70, 190); city += `<rect x="${x.toFixed(0)}" y="${(332 - h).toFixed(0)}" width="${w.toFixed(0)}" height="${h.toFixed(0)}" fill="${night ? '#0b0f26' : '#7a95b8'}" filter="url(#lay)"/>`;
+      for (let wy = 332 - h + 14; wy < 320; wy += 26) for (let wx = x + 10; wx < x + w - 14; wx += 20) if (hash(wx | 0, wy | 0) > (night ? .72 : .5)) city += `<rect x="${wx.toFixed(0)}" y="${wy.toFixed(0)}" width="9" height="12" fill="${night ? '#f2cf6b' : '#d7e6f3'}"/>`;
+      x += w + rr(2, 8); }
+    sky.insertAdjacentHTML('beforeend', `<svg viewBox="0 0 382 332" style="position:absolute;inset:0">${inner + city}</svg>`);
+    card(win, 205, 18, 20, 344, night ? '#e9dcc0' : '#fbf3e2', '', 'pcs');
+    card(win, 18, 180, 394, 18, night ? '#e9dcc0' : '#fbf3e2', '', 'pcs');
+    if (night) {   // lampu meja + jam
+      el('pc', { left: 150, top: 470, width: 220, height: 300 }, svg('0 0 220 300', `<path d="M40 286 L180 286 L170 300 L50 300Z" fill="#2d2a3a"/><rect x="104" y="110" width="12" height="180" fill="#3a3648" filter="url(#lay)"/><path d="M30 120 L110 20 L190 120Z" fill="#e0614b" filter="url(#lay)"/>`), L);
+      el('', { position: 'absolute', left: 1180, top: 300, width: 900, height: 900, background: 'linear-gradient(200deg,rgba(220,230,255,.16),rgba(220,230,255,0) 70%)', clipPath: 'polygon(20% 0,62% 0,100% 100%,0 100%)', }, '', L);
+      const clk = card(L, 360, 640, 210, 120, '#f6eedd', `<text x="105" y="84" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="64" fill="#e0614b">02:14</text>`);
+      return { clk };
+    }
+  }
+  return {};
+}
+
+// ---------- laptop kertas ----------
+// rig: tutup + layar + alas. Layar berisi lapisan tampilan: login, desktop penuh, desktop bersih, menu, vault.
+function laptop(L, x, y, s = 1) {
+  const r = el('rig', { left: x, top: y, width: 760, height: 520 }, '', L);
+  gsap.set(r, { scale: s, transformOrigin: '50% 100%' });
+  card(r, 0, 0, 760, 480, '#3b3f52');
+  const scr = el('scr pcs', { left: 26, top: 24, width: 708, height: 432 }, '', r);
+  el('pc', { left: -60, top: 474, width: 880, height: 46 }, svg('0 0 880 46', `<path d="M0 6 L880 6 L842 44 L38 44Z" fill="#a9afc0"/><path d="M0 0 L880 0 L880 10 L0 10Z" fill="#c7ccd8"/><rect x="380" y="10" width="120" height="8" rx="4" fill="#8d93a5"/>`), r);
+  // lapisan layar
+  const wallp = el('wallp', { background: 'linear-gradient(160deg,#8e8cf0,#5fb9d0 60%,#f0a9c3)' }, svg('0 0 708 432', `<path d="M0 330 C 160 270, 300 360, 460 300 S 650 260, 708 290 L708 432 L0 432Z" fill="rgba(255,255,255,.18)"/><path d="M0 380 C 200 340, 380 410, 708 350 L708 432 L0 432Z" fill="rgba(255,255,255,.18)"/>`), scr);
+  const login = el('st', {}, `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><div class="av"></div><div class="nm">You</div><div class="fld">${'<i></i>'.repeat(6)}<span class="ok"></span></div></div>`, scr);
+  const desk = el('st', {}, '', scr);
+  const items = [['#58b07e', 'Chats', 'chat'], ['#3fb6c6', 'Browser', 'web'], ['#e2729c', 'Photos', 'photo'], ['#e9b949', 'Passwords', 'key'], ['#e0614b', 'Private', 'folder'], ['#7c6fd1', 'Notes', 'note']];
+  items.forEach((it, i) => el('dic', { left: 40 + (i % 3) * 132 + (i > 2 ? 0 : 0), top: 54 + Math.floor(i / 3) * 128 }, `<div style="background:${it[0]}">${glyph(it[2])}</div>${it[1]}`, desk));
+  el('', { position: 'absolute', left: 470, top: 60, width: 210, height: 250, background: '#fff', borderRadius: 12, padding: 14 },
+    `<div style="height:16px;width:60%;background:#e5e0f0;border-radius:6px;margin-bottom:12px"></div>` + Array.from({ length: 6 }, (_, i) => `<div style="height:12px;width:${90 - (i * 13) % 40}%;background:#efe9f6;border-radius:6px;margin:9px 0"></div>`).join(''), desk);
+  el('dock', {}, ['#58b07e', '#3fb6c6', '#e2729c', '#e9b949', '#7c6fd1', '#e0614b'].map(c => `<b style="background:${c}"></b>`).join(''), desk);
+  const clean = el('st', {}, `<div class="dic" style="left:36px;top:54px;opacity:0" data-keep><div style="background:#58b07e">${glyph('folder')}</div>Homework</div>`, scr);
+  const mbar = el('mbar', {}, `<span style="font-size:18px">&#9673;</span><span>Finder</span><span style="font-weight:700">File</span><span style="font-weight:700">Edit</span><span class="am"></span>`, scr);
+  const menu = el('menu', {}, `<div class="on">Amnesia is On</div><hr><div class="hi">Save &amp; Log Out</div><div>Restore Profiles</div><div>Settings…</div>`, scr);
+  const vmod = el('vmod', {}, `<div style="width:60px;height:60px;margin:0 auto;border-radius:16px;background:var(--indigo)">${glyph('lock')}</div><b>Profile Vault</b><div class="fld">${'<i></i>'.repeat(6)}</div><div class="er">Wrong password</div>`, scr);
+  const rbtn = el('', { position: 'absolute', left: 254, top: 190, width: 200, height: 56, borderRadius: 28, background: 'var(--indigo)', color: '#fff', font: '900 21px var(--ui)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 }, 'Restore Profiles', scr);
+  gsap.set([mbar], { opacity: 0 });
+  return { r, scr, login, desk, clean, mbar, menu, vmod, rbtn, dots: [...login.querySelectorAll('.fld i')], ok: login.querySelector('.ok'), keep: clean.querySelector('[data-keep]'),
+    vdots: [...vmod.querySelectorAll('.fld i')], ver: vmod.querySelector('.er'), hi: menu.querySelector('.hi'),
+    // titik tengah layar (koordinat dunia)
+    cx: x + 380, cy: y + 250, x, y, s };
+}
+function glyph(k) {   // ikon putih sederhana di atas ubin warna
+  const g = {
+    chat: `<path d="M18 20 h48 a10 10 0 0 1 10 10 v20 a10 10 0 0 1 -10 10 h-26 l-12 10 v-10 h-10 a10 10 0 0 1 -10 -10 v-20 a10 10 0 0 1 10 -10z" fill="#fff"/>`,
+    web: `<circle cx="42" cy="38" r="22" fill="none" stroke="#fff" stroke-width="5"/><path d="M20 38 h44 M42 16 c-12 14 -12 30 0 44 M42 16 c12 14 12 30 0 44" stroke="#fff" stroke-width="4" fill="none"/>`,
+    photo: `<rect x="16" y="16" width="52" height="42" rx="6" fill="#fff"/><path d="M20 54 l14 -16 10 10 8 -8 12 14z" fill="#e2729c"/><circle cx="52" cy="28" r="5" fill="#e2729c"/>`,
+    key: `<circle cx="30" cy="38" r="12" fill="none" stroke="#fff" stroke-width="6"/><path d="M42 38 h28 v8 M60 38 v8" stroke="#fff" stroke-width="6" fill="none"/>`,
+    folder: `<path d="M14 22 h20 l6 6 h30 v32 h-56z" fill="#fff"/>`,
+    note: `<rect x="20" y="14" width="44" height="50" rx="5" fill="#fff"/><path d="M28 28 h28 M28 38 h28 M28 48 h18" stroke="#7c6fd1" stroke-width="4"/>`,
+    lock: `<rect x="17" y="27" width="26" height="22" rx="4" fill="#fff"/><path d="M22 27 v-6 a8 8 0 0 1 16 0 v6" stroke="#fff" stroke-width="4" fill="none"/>`,
+  }[k];
+  return `<svg viewBox="0 0 ${k === 'lock' ? 60 : 84} ${k === 'lock' ? 60 : 70}" style="width:100%;height:100%">${g}</svg>`;
+}
+
+// ---------- benda: kartu isi Mac ----------
+const ITEMS = {
+  chat:  (p) => card(p, 0, 0, 190, 130, '#58b07e', `<rect x="20" y="22" width="120" height="16" rx="8" fill="#fff" filter="url(#lay)"/><rect x="20" y="50" width="150" height="16" rx="8" fill="#e3f4e9" filter="url(#lay)"/><rect x="20" y="78" width="90" height="16" rx="8" fill="#fff" filter="url(#lay)"/><path d="M30 128 l10 22 l16 -22z" fill="#58b07e"/>`),
+  tabs:  (p) => card(p, 0, 0, 220, 150, '#fbf7ee', `<path d="M10 10 h60 l8 20 h-76z M74 10 h60 l8 20 h-76z" fill="#3fb6c6" filter="url(#lay)"/><path d="M138 10 h60 l8 20 h-76z" fill="#9fd0e6" filter="url(#lay)"/><rect x="10" y="30" width="200" height="110" fill="#e9f4f7" filter="url(#lay)"/><rect x="24" y="48" width="120" height="12" rx="6" fill="#3fb6c6"/><rect x="24" y="72" width="160" height="10" rx="5" fill="#bcdfe7"/><rect x="24" y="92" width="140" height="10" rx="5" fill="#bcdfe7"/>`),
+  photo: (p) => card(p, 0, 0, 160, 186, '#fbf7ee', `<rect x="14" y="14" width="132" height="122" fill="#9fd3ea" filter="url(#lay)"/><path d="M14 136 L58 80 L88 112 L112 88 L146 136Z" fill="#58b07e" filter="url(#lay)"/><circle cx="112" cy="46" r="14" fill="#ffd56b" filter="url(#lay)"/>`),
+  key:   (p) => el('pc', { left: 0, top: 0, width: 210, height: 110 }, svg('0 0 210 110', `<path d="M8 54 a40 40 0 1 1 80 0 a40 40 0 1 1 -80 0z M30 54 a18 18 0 1 0 36 0 a18 18 0 1 0 -36 0z" fill="#e9b949" fill-rule="evenodd"/><path d="M86 46 h112 v18 h-18 v22 h-18 v-22 h-14 v14 h-18 v-14 h-44z" fill="#e9b949"/><rect x="104" y="80" width="96" height="30" rx="4" fill="#fbf7ee" filter="url(#lay)"/><text x="152" y="102" text-anchor="middle" font-family="Caveat" font-weight="700" font-size="24" fill="#2a2733">passwords</text>`), p),
+  folder:(p, label = 'Private', c = '#e0614b') => el('pc', { left: 0, top: 0, width: 200, height: 160 }, svg('0 0 200 160', `<path d="M4 20 h70 l14 16 h108 v120 h-192z" fill="${c}"/><path d="M4 50 h192 v106 h-192z" fill="${c}" filter="url(#lay)" opacity=".92"/><rect x="34" y="84" width="132" height="44" fill="#fbf7ee" filter="url(#lay)"/><text x="100" y="116" text-anchor="middle" font-family="Caveat" font-weight="700" font-size="34" fill="#2a2733">${label}</text>`), p),
+};
+const item = (L, kind, x, y, ...a) => { const r = el('rig', { left: x, top: y }, '', L); ITEMS[kind](r, ...a); return r; };
+
+// ---------- brankas (Profile Vault) ----------
+function vault(L, x, y, s = 1) {
+  const r = el('rig', { left: x, top: y, width: 300, height: 330 }, '', L);
+  gsap.set(r, { scale: s, transformOrigin: '50% 100%' });
+  card(r, 0, 0, 300, 300, '#4a4ab8', `<rect x="20" y="20" width="260" height="260" fill="#3d3ca8" filter="url(#lay)"/>`);
+  el('pc', { left: 20, top: 296, width: 50, height: 30 }, svg('0 0 50 30', '<rect width="50" height="30" fill="#2c2b7a"/>'), r);
+  el('pc', { left: 230, top: 296, width: 50, height: 30 }, svg('0 0 50 30', '<rect width="50" height="30" fill="#2c2b7a"/>'), r);
+  const inside = el('pcs', { left: 30, top: 30, width: 240, height: 240, background: '#221f5c' }, '', r);
+  const door = el('rig', { left: 22, top: 22, width: 256, height: 256 }, '', r);
+  card(door, 0, 0, 256, 256, '#5b5bd6', `<rect x="18" y="18" width="220" height="220" fill="#6a6be0" filter="url(#lay)"/>`);
+  const dial = el('pc', { left: 68, top: 58, width: 120, height: 120 }, svg('0 0 120 120', `<circle cx="60" cy="60" r="56" fill="#e9b949"/><circle cx="60" cy="60" r="40" fill="#f3d27a" filter="url(#lay)"/>` +
+    Array.from({ length: 12 }, (_, i) => `<rect x="58" y="8" width="4" height="12" fill="#8a6a1e" transform="rotate(${i * 30} 60 60)"/>`).join('') + `<circle cx="60" cy="60" r="12" fill="#8a6a1e"/>`), door);
+  el('pc', { left: 190, top: 104, width: 34, height: 70 }, svg('0 0 34 70', '<rect x="6" width="22" height="70" rx="11" fill="#e9b949"/>'), door);
+  const tag = el('lbl', { left: 34, top: 196, fontSize: '30px', padding: '0 12px 4px', transform: 'rotate(-3deg)' }, 'Profile Vault', door);
+  gsap.set(door, { transformOrigin: '0% 50%', transformPerspective: 900 });
+  return { r, door, dial, inside, cx: x + 150 * 1, cy: y + 150, s };
+}
+
+// ---------- tokoh (boneka kertas) ----------
+function spy(L, x, y) {
+  const r = el('rig', { left: x, top: y, width: 380, height: 660 }, '', L);
+  const arm = el('pc', { left: 30, top: 250, width: 290, height: 120 }, svg('0 0 290 120', `<path d="M270 30 C 200 10, 120 30, 60 56 L 70 96 C 130 76, 210 70, 280 76Z" fill="#a8794a"/><path d="M14 52 C 30 40, 56 44, 66 58 C 72 80, 52 98, 30 96 C 10 92, 2 70, 14 52Z" fill="#2b2833" filter="url(#lay)"/>`), r);
+  el('pc', { left: 80, top: 210, width: 300, height: 450 }, svg('0 0 300 450', `
+    <path d="M60 30 C 120 0, 220 0, 260 40 L 300 450 L 20 450Z" fill="#b8874f"/>
+    <path d="M70 30 L150 120 L120 450 L40 450Z" fill="#a8794a" filter="url(#lay)"/>
+    <path d="M22 300 h270 v34 h-270z" fill="#7b5530" filter="url(#lay)"/><rect x="130" y="296" width="44" height="42" fill="#e9b949" filter="url(#lay)"/>
+    <path d="M60 30 L110 0 L150 90Z M250 34 L210 0 L176 84Z" fill="#c99a62" filter="url(#lay)"/>`), r);
+  const head = el('rig', { left: 96, top: 30, width: 240, height: 240 }, '', r);
+  el('pc', { left: 30, top: 60, width: 170, height: 170 }, svg('0 0 170 170', `<path d="M40 30 C 90 0, 150 20, 160 80 C 168 130, 140 170, 90 168 C 60 166, 44 150, 40 132 L 14 120 L 30 100 L 20 92 L 40 70Z" fill="#efc59d"/>
+    <path d="M10 66 L96 62 L98 86 L14 92Z" fill="#1d1b24" filter="url(#lay)"/><path d="M24 70 L46 70" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+    <path d="M40 150 C 70 140, 120 150, 150 120 L 160 170 L 40 170Z" fill="#b8874f"/>`), head);
+  el('pc', { left: 0, top: 0, width: 240, height: 120 }, svg('0 0 240 120', `<path d="M60 74 C 60 20, 90 0, 130 4 C 172 8, 190 34, 186 74Z" fill="#33313e"/><path d="M60 64 h126 v14 h-126z" fill="#1d1b24" filter="url(#lay)"/><path d="M0 86 C 60 66, 180 64, 240 84 C 200 98, 40 100, 0 86Z" fill="#3d3a4a" filter="url(#lay)"/>`), head);
+  gsap.set(arm, { transformOrigin: '96% 40%' });
+  gsap.set(head, { transformOrigin: '50% 90%' });
+  return { r, arm, head };
+}
+function person(p, x, y, o) {   // o: {skin, hair, top, kind:'mom'|'dad'|'friend'}
+  const r = el('rig', { left: x, top: y, width: 300, height: 560 }, '', p);
+  const body = el('pc', { left: 20, top: 250, width: 260, height: 310 }, svg('0 0 260 310', `<path d="M30 60 C 40 10, 220 10, 230 60 L 260 310 L 0 310Z" fill="${o.top}"/>` +
+    (o.kind === 'friend' ? `<path d="M90 30 C 110 80, 150 80, 170 30" stroke="#2f6b49" stroke-width="10" fill="none"/><rect x="70" y="170" width="120" height="60" rx="14" fill="#2f6b49" opacity=".55"/>` :
+     o.kind === 'dad' ? `<path d="M100 22 L130 70 L160 22" fill="#fbf7ee" filter="url(#lay)"/>` : `<circle cx="130" cy="120" r="9" fill="#fbf7ee"/><circle cx="130" cy="160" r="9" fill="#fbf7ee"/><circle cx="130" cy="200" r="9" fill="#fbf7ee"/>`) +
+    // lengan terlipat (orang tua) atau lengan di samping (teman)
+    (o.kind === 'friend' ? `<path d="M30 70 C 10 140, 6 220, 14 290 L 44 290 C 44 220, 50 150, 60 90Z M230 70 C 250 140, 254 220, 246 290 L 216 290 C 216 220, 210 150, 200 90Z" fill="${o.top}" filter="url(#lay)" opacity=".95"/>`
+      : `<path d="M14 150 C 60 130, 200 130, 246 150 L 240 196 C 190 180, 70 180, 20 196Z" fill="${o.top}" filter="url(#lay)"/><path d="M14 150 C 60 130, 200 130, 246 150 L 240 196 C 190 180, 70 180, 20 196Z" fill="#000" opacity=".08"/><ellipse cx="40" cy="170" rx="22" ry="18" fill="${o.skin}" filter="url(#lay)"/><ellipse cx="220" cy="170" rx="22" ry="18" fill="${o.skin}" filter="url(#lay)"/>`)), r);
+  const head = el('rig', { left: 50, top: 30, width: 200, height: 250 }, '', r);
+  const hair = {
+    mom: `<circle cx="100" cy="28" r="34" fill="${o.hair}"/><path d="M28 110 C 20 40, 180 40, 172 110 C 160 70, 40 70, 28 110Z" fill="${o.hair}"/>`,
+    dad: `<path d="M34 92 C 30 40, 170 30, 166 92 C 150 64, 60 60, 34 92Z" fill="${o.hair}"/>`,
+    friend: `<path d="M18 150 C 0 40, 200 40, 182 150 L 160 150 C 166 80, 34 80, 40 150Z" fill="#3e8a5f"/>`,
+  }[o.kind];
+  const face = el('pc', { left: 0, top: 0, width: 200, height: 250 }, svg('0 0 200 250', `${o.kind === 'friend' ? '' : ''}<ellipse cx="100" cy="128" rx="70" ry="82" fill="${o.skin}"/>${hair}
+    <g class="eyes"><ellipse cx="74" cy="128" rx="8" ry="10" fill="#2a2733"/><ellipse cx="126" cy="128" rx="8" ry="10" fill="#2a2733"/></g>
+    ${o.kind === 'dad' ? `<path d="M50 120 h48 M102 120 h48" stroke="#2a2733" stroke-width="5"/><circle cx="74" cy="126" r="20" fill="none" stroke="#2a2733" stroke-width="5"/><circle cx="126" cy="126" r="20" fill="none" stroke="#2a2733" stroke-width="5"/><path d="M70 172 C 86 162, 114 162, 130 172 C 116 182, 84 182, 70 172Z" fill="${o.hair}"/>` : ''}
+    <path class="mouth" d="M82 178 C 92 172, 108 172, 118 178" stroke="#2a2733" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="56" cy="160" rx="12" ry="7" fill="#e88a8a" opacity=".55"/><ellipse cx="144" cy="160" rx="12" ry="7" fill="#e88a8a" opacity=".55"/>`), head);
+  const smile = el('pc', { left: 0, top: 0, width: 200, height: 250, opacity: 0, filter: 'none' }, svg('0 0 200 250', `<ellipse cx="100" cy="186" rx="26" ry="14" fill="${o.skin}"/><path d="M74 172 C 86 196, 114 196, 126 172" stroke="#2a2733" stroke-width="5" fill="#fbf7ee" stroke-linecap="round"/>`), head);
+  gsap.set(head, { transformOrigin: '50% 95%' });
+  return { r, head, body, smile };
+}
+// tangan kamu (masuk dari bawah)
+function hand(L, x, y, flip = false) {
+  const e = el('pc', { left: x, top: y, width: 170, height: 300 }, svg('0 0 170 300', `<path d="M40 300 L 46 150 C 30 130, 26 100, 40 92 L 60 104 L 60 30 C 60 14, 84 14, 84 30 L 86 104 L 96 96 C 112 90, 124 100, 120 116 L 132 112 C 148 110, 156 124, 150 138 L 148 200 L 140 300Z" fill="#efc59d"/><path d="M36 240 h112 v60 h-112z" fill="#7c6fd1" filter="url(#lay)"/>`), L);
+  if (flip) gsap.set(e, { scaleX: -1 });
+  return e;
+}
+const cursorEl = (L) => el('pc', { left: 0, top: 0, width: 54, height: 70, zIndex: 50 }, svg('0 0 54 70', `<path d="M6 4 L6 58 L20 46 L30 68 L40 63 L30 42 L48 40Z" fill="#fbf7ee" stroke="#2a2733" stroke-width="4" stroke-linejoin="round"/>`), L);
+// gelembung bicara
+function bubble(L, x, y, text, tail = 'bl', vpos) {
+  const color = '#fbf7ee';
+  if (V && vpos) [x, y] = vpos;
+  const b = el('bub pc', { left: x, top: y }, '', L);
+  b.textContent = text;
+  const w = Math.max(160, text.length * 21 + 64), h = 96;
+  b.style.width = w + 'px';
+  const tx = tail === 'br' ? w - 70 : 50;
+  b.insertAdjacentHTML('afterbegin', `<svg viewBox="0 0 ${w + 12} ${h + 40}" preserveAspectRatio="none"><path d="M10 14 Q ${w / 2} -6 ${w} 12 Q ${w + 14} ${h / 2} ${w} ${h - 4} Q ${w / 2} ${h + 10} ${tx + 40} ${h} L ${tx + (tail === 'br' ? 40 : -6)} ${h + 34} L ${tx + 10} ${h} Q 4 ${h + 4} 8 ${h / 2} Z" fill="${color}"/></svg>`);
+  return b;
+}
+// teks huruf potongan kertas
+function tiles(parent, text, o = {}) {
+  let size = o.size || 110; const colors = o.colors || ['#fbf7ee', '#f6eedd', '#fff8e6'];
+  const W = o.w ?? 1920; size = Math.min(size, W / (text.length * .74));
+  const w = el('tiles', { left: o.x ?? 0, top: o.y ?? 0, width: W, fontSize: size + 'px', gap: (o.gap || 6) + 'px ' + Math.round(size * .3) + 'px' }, '', parent);
+  const out = []; let i = 0;
+  text.split(' ').forEach(word => {   // satu kata tidak pernah terpotong ke baris baru
+    const g = el('', { display: 'flex', gap: (o.gap || 4) + 'px', flexWrap: 'nowrap' }, '', w);
+    [...word].forEach(ch => {
+      const t = el('tile pc', { background: colors[i % colors.length], color: o.ink || 'var(--ink)' }, ch, g); i++;
+      gsap.set(t, { rotation: rr(-6, 6), y: rr(-6, 6) });
+      out.push(t);
+    });
+  });
+  return { w, out };
+}
+function tilesIn(list, at, step = .07, snd = true) {
+  list.forEach((t, i) => { const r = gsap.getProperty(t, 'rotation'); gsap.set(t, { scale: 0, rotation: r + rr(-30, 30) }); tl.to(t, { scale: 1, rotation: r, duration: .35, ease: 'back.out(2.6)' }, at + i * step); if (snd && i % 2 === 0) sfx('letter', at + i * step, .5); });
+}
+// stempel
+function stamp(parent, text, x, y, at, rot = -8, size) {
+  const s = el('stamp', { left: x, top: y }, text, parent);
+  if (size) s.style.fontSize = size + 'px';
+  gsap.set(s, { rotation: rot, scale: 2.2 });
+  tl.to(s, { opacity: .9, scale: 1, duration: .16, ease: 'power4.in' }, at);
+  sfx('stamp', at + .1, .8);
+  return s;
+}
+// ketik password: titik muncul satu-satu
+function typeDots(dots, at, step = .14) { dots.forEach((d, i) => tl.to(d, { opacity: 1, duration: .01 }, at + i * step)); sfx('type', at, .55); }
+// kartu terbang melengkung dari a ke b
+function fly(e, at, to, o = {}) {
+  const dur = o.dur ?? .8;
+  tl.to(e, { x: to.x, duration: dur, ease: o.ease || 'power2.inOut' }, at);
+  tl.to(e, { y: to.y, duration: dur, ease: o.yEase || 'back.in(1.2)' }, at);
+  tl.to(e, { rotation: to.r ?? rr(-200, 200), scale: to.s ?? .25, duration: dur, ease: 'power1.in' }, at);
+  if (o.hide !== false) tl.to(e, { opacity: 0, duration: .08 }, at + dur - .06);
+}
+// klik kursor
+function clickAt(c, at, x, y, from) {
+  if (from) { gsap.set(c, { x: from.x, y: from.y }); }
+  tl.to(c, { x, y, duration: .55, ease: 'power2.inOut' }, at - .6);
+  tl.to(c, { scale: .82, duration: .06, yoyo: true, repeat: 1 }, at);
+  sfx('click', at, .9);
+}
+// gerak kamera (set ke awal adegan lalu dorong pelan)
+function camera(t, d, from, to, focus = 960) {
+  // versi tegak: geser supaya pusat aksi (focus, koordinat dunia) ada di tengah layar
+  const fx = o => V ? { scale: o.s, x: (960 - focus) * o.s, y: (o.y || 0) * .5 } : { scale: o.s, x: o.x || 0, y: o.y || 0 };
+  tl.set(world, fx(from), t);
+  if (to) tl.to(world, { ...fx(to), duration: d, ease: 'sine.inOut' }, t);
+}
+
+// ---------- adegan ----------
+const SC = {};
+const vx = (h, v) => V ? v : h;   // posisi khusus versi tegak
+// Mata-mata
+SC.agent = (L, t, d) => {
+  const B = backdrop(L, 'night');
+  const lp = laptop(L, 640, 330, .9);
+  gsap.set(lp.r, { filter: 'brightness(.55)' });
+  const sp = spy(L, vx(1460, 1330), 220);
+  slideIn(sp.r, t + .3, 700, 0, 1.6, 'power2.out'); sfx('swoosh', t + .3, .8); sfx('sting', t + .5, .7);
+  tl.to(sp.head, { rotation: -10, duration: .5, ease: 'power2.inOut' }, t + 2.1).to(sp.head, { rotation: 4, duration: .4 }, t + 2.9);
+  tl.to(sp.r, { x: -120, duration: 1, ease: 'power2.inOut' }, t + 3);
+  if (B.clk) { tl.to(B.clk, { rotation: -6, duration: .2, yoyo: true, repeat: 3 }, t + .9); sfx('tick', t + .1, .5); }
+  camera(t, d, { s: 1.06, x: 40 }, { s: 1.12, x: 10, y: 10 }, 1150);
+};
+SC.login = (L, t, d) => {
+  backdrop(L, 'night');
+  const lp = laptop(L, 560, 300, 1);
+  gsap.set(lp.login, { opacity: 1 });
+  const sp = spy(L, vx(1260, 1150), 200);
+  gsap.set(sp.arm, { rotation: -14 });
+  // tangan bersarung mengetik
+  for (let i = 0; i < 6; i++) tl.to(sp.arm, { rotation: i % 2 ? -10 : -18, duration: .13 }, t + .6 + i * .15);
+  typeDots(lp.dots, t + .6);
+  tl.to(lp.ok, { opacity: 1, scale: 1.2, duration: .2, ease: 'back.out(3)' }, t + 1.7).to(lp.ok, { scale: 1, duration: .15 }, t + 1.9);
+  sfx('pop', t + 1.7, .6);
+  // kilau kacamata
+  tl.to(sp.head, { rotation: -6, duration: .3 }, t + 2.2).to(sp.head, { rotation: 0, duration: .3 }, t + 3.2);
+  const glint = el('pc', { left: vx(1338, 1228), top: 290, width: 60, height: 60, opacity: 0 }, svg('0 0 60 60', '<path d="M30 0 L35 25 L60 30 L35 35 L30 60 L25 35 L0 30 L25 25Z" fill="#fff"/>'), L);
+  tl.to(glint, { opacity: 1, scale: 1.3, rotation: 45, duration: .25 }, t + 2.4).to(glint, { opacity: 0, scale: .4, duration: .25 }, t + 2.7);
+  sfx('ding', t + 2.4, .35);
+  camera(t, d, { s: 1.12, x: 60, y: 20 }, { s: 1.2, x: 40, y: 30 }, 1090);
+};
+SC.empty = (L, t, d, line) => {
+  backdrop(L, 'night');
+  const lp = laptop(L, 560, 300, 1);
+  gsap.set([lp.clean, lp.mbar], { opacity: 1 });
+  const sp = spy(L, vx(1260, 1150), 200);
+  // kaca pembesar
+  const mag = el('pc', { left: 700, top: 360, width: 230, height: 230 }, svg('0 0 230 230', `<circle cx="90" cy="90" r="76" fill="rgba(220,240,255,.35)" stroke="#e9b949" stroke-width="20"/><path d="M146 146 L 220 220" stroke="#6b4a2a" stroke-width="30" stroke-linecap="round"/>`), L);
+  gsap.set(mag, { opacity: 0, scale: .6 });
+  tl.to(mag, { opacity: 1, scale: 1, duration: .3, ease: 'back.out(2)' }, t + .2);
+  tl.to(mag, { x: 280, y: -60, duration: 1.2, ease: 'sine.inOut' }, t + .5).to(mag, { x: 80, y: 80, duration: 1.1, ease: 'sine.inOut' }, t + 1.7).to(mag, { x: 340, y: 40, duration: 1.1, ease: 'sine.inOut' }, t + 2.8);
+  tl.to(mag, { opacity: 0, duration: .2 }, t + d - .5);
+  if (line === 'L9') {
+    stamp(L, 'Nothing', 790, 440, t + .9, -8, 80);
+  } else {
+    // "No history. No logins. No chats." ikut irama kalimat
+    const T = line === 'L4' ? [1.7, 2.75, 3.75] : [1.2, 2.2, 3.2];
+    stamp(L, 'No history', 640, 380, t + T[0], -9);
+    stamp(L, 'No logins', 840, 480, t + T[1], 6);
+    stamp(L, 'No chats', 680, 580, t + T[2], -4);
+  }
+  tl.to(sp.head, { rotation: -8, duration: .4 }, t + .6).to(sp.head, { rotation: 6, duration: .4 }, t + 2.3).to(sp.head, { rotation: -2, duration: .4 }, t + 3.6);
+  camera(t, d, { s: 1.2, x: 40, y: 30 }, { s: 1.28, x: 20, y: 40 }, 1090);
+};
+SC.duh = (L, t, d) => {
+  backdrop(L, 'night');
+  const lp = laptop(L, 400, 300, 1);
+  gsap.set([lp.clean, lp.mbar], { opacity: 1 });
+  const sp = spy(L, vx(1150, 1060), 190);
+  gsap.set(sp.head, { rotation: 10 });   // menoleh ke kamera
+  const drop = el('pc', { left: vx(1390, 1300), top: 270, width: 36, height: 54, opacity: 0 }, svg('0 0 36 54', '<path d="M18 0 C 26 18, 36 30, 36 38 a18 16 0 0 1 -36 0 C 0 30, 10 18, 18 0Z" fill="#9fd0e6"/>'), L);
+  tl.to(drop, { opacity: 1, duration: .05 }, t + 1).to(drop, { y: 90, duration: 1.2, ease: 'power2.in' }, t + 1.05);
+  sfx('crickets', t + .1, .7);
+  camera(t, d, { s: 1.32, x: -150, y: 120 }, { s: 1.4, x: -170, y: 130 }, 1000);
+};
+SC.flash = (L, t, d) => {
+  backdrop(L, 'day');
+  const lp = laptop(L, 420, 290, .95);
+  gsap.set([lp.desk, lp.mbar], { opacity: 1 });
+  const vt = vault(L, 1240, 430, .95);
+  const c = cursorEl(L);
+  // klik ikon Amnesia di menu bar lalu Save & Log Out
+  clickAt(c, t + 1.0, lp.x + 690 * .95 - 20, lp.y + 40, { x: 1100, y: 900 });
+  gsap.set(lp.menu, { scale: .3 });
+  tl.to(lp.menu, { opacity: 1, scale: 1, duration: .25, ease: 'back.out(2)' }, t + 1.05);
+  clickAt(c, t + 1.8, lp.x + 560 * .95, lp.y + 135 * .95);
+  tl.to(lp.hi, { scale: .94, duration: .08, yoyo: true, repeat: 1 }, t + 1.8);
+  tl.to(lp.menu, { opacity: 0, duration: .15 }, t + 2.0);
+  // isi layar terbang ke brankas, sisanya hilang
+  const kinds = ['chat', 'tabs', 'photo', 'key'];
+  tl.to(vt.door, { rotationY: -100, duration: .4, ease: 'power2.out' }, t + 2.0);
+  kinds.forEach((k, i) => {
+    const it = item(L, k, lp.cx - 100 + (i - 1.5) * 60, lp.cy - 70);
+    gsap.set(it, { scale: 0 });
+    tl.to(it, { scale: .7, duration: .2, ease: 'back.out(2)' }, t + 2.1 + i * .12);
+    fly(it, t + 2.35 + i * .12, { x: vt.cx - lp.cx + 70 - (i - 1.5) * 60, y: vt.cy - lp.cy + 40, s: .15 }, { dur: .7 });
+  });
+  sfx('suck', t + 2.3, .8);
+  tl.to(lp.desk, { opacity: 0, duration: .3 }, t + 2.4);
+  tl.to(lp.login, { opacity: 1, duration: .3 }, t + 3.2);
+  tl.to(vt.door, { rotationY: 0, duration: .35, ease: 'power3.in' }, t + 3.25);
+  tl.to(vt.dial, { rotation: 300, duration: .9, ease: 'power2.out' }, t + 3.6);
+  sfx('lock', t + 3.5, .8);
+  camera(t, d, { s: 1, x: 0 }, { s: 1.05, x: -20 }, 980);
+};
+// Orang tua
+SC.parents = (L, t, d) => {
+  backdrop(L, 'home', { frames: false });
+  const lp = laptop(L, 580, 380, .82);
+  gsap.set([lp.desk, lp.mbar], { opacity: 1 });
+  const mom = person(L, 520, 120, { kind: 'mom', skin: '#f2c9a4', hair: '#5a3b2e', top: '#e0614b' });
+  const dad = person(L, 1040, 100, { kind: 'dad', skin: '#e3b48c', hair: '#3a2c28', top: '#5b7fd1' });
+  L.insertBefore(mom.r, lp.r); L.insertBefore(dad.r, lp.r);
+  slideIn(mom.r, t + .2, 0, 520, .6, 'back.out(1.4)'); slideIn(dad.r, t + .4, 0, 540, .6, 'back.out(1.4)');
+  sfx('unfold', t + .2, .7); sfx('unfold', t + .45, .5);
+  const b = bubble(L, 1270, 70, "What's your Mac password?", 'bl', [760, -10]);
+  popIn(b, t + 1.4); sfx('pop', t + 1.4, .7);
+  const h1 = hand(L, 690, 800), h2 = hand(L, 1070, 800, true);
+  slideIn(h1, t + .1, 0, 220, .5); slideIn(h2, t + .1, 0, 220, .5);
+  for (let i = 0; i < 8; i++) tl.to([h1, h2], { x: i % 2 ? 4 : -4, duration: .09 }, t + 2.2 + i * .1);
+  tl.to([mom.head, dad.head], { rotation: (i) => i ? -5 : 5, duration: .4 }, t + 2.4);
+  camera(t, d, { s: 1, x: 0, y: 0 }, { s: 1.06, x: -10, y: 10 });
+};
+function saveLogout(L, t, d, set) {   // dekat layar: menu Amnesia → Save & Log Out → stempel
+  backdrop(L, set);
+  const lp = laptop(L, 580, 300, 1);
+  gsap.set([lp.desk, lp.mbar], { opacity: 1 });
+  const c = cursorEl(L);
+  clickAt(c, t + .9, lp.x + 690, lp.y + 40, { x: 900, y: 700 });
+  gsap.set(lp.menu, { scale: .3 });
+  tl.to(lp.menu, { opacity: 1, scale: 1, duration: .25, ease: 'back.out(2)' }, t + .95);
+  clickAt(c, t + 1.9, lp.x + 590, lp.y + 140);
+  tl.to(lp.hi, { scale: .94, duration: .08, yoyo: true, repeat: 1 }, t + 1.9);
+  stamp(L, 'Saved', lp.x + vx(470, 300), lp.y + 230, t + 2.2, -10, 70);
+  return { lp, c };
+}
+SC.savelo = (L, t, d) => {
+  const { lp } = saveLogout(L, t, d, 'home');
+  tl.to(lp.menu, { opacity: 0, duration: .15 }, t + 2.6);
+  tl.to(lp.desk, { opacity: 0, duration: .3 }, t + 2.9);
+  tl.to(lp.login, { opacity: 1, duration: .3 }, t + 3.2);
+  camera(t, d, { s: 1.35, x: -60, y: 180 }, { s: 1.42, x: -70, y: 190 });
+};
+function toVault(L, t, d, set, o = {}) {
+  backdrop(L, set);
+  const lp = laptop(L, vx(300, 470), 340, .85);
+  gsap.set([lp.desk, lp.mbar], { opacity: 1 });
+  const vt = vault(L, vx(1240, 1180), 420, 1);
+  const kinds = o.kinds || [['chat'], ['tabs'], ['photo'], ['key'], ['folder', 'Private']];
+  tl.to(vt.door, { rotationY: -105, duration: .45, ease: 'power2.out' }, t + .3);
+  sfx('key', t + .2, .6);
+  kinds.forEach((k, i) => {
+    const it = item(L, k[0], lp.cx - 110 + (i - 2) * 70, lp.cy - 90, ...k.slice(1));
+    gsap.set(it, { scale: 0 });
+    tl.to(it, { scale: .8, y: -60, duration: .3, ease: 'back.out(2)' }, t + .6 + i * .16);
+    sfx('flick', t + .6 + i * .16, .5);
+    fly(it, t + 1.0 + i * .2, { x: vt.cx - lp.cx + 100 - (i - 2) * 70, y: vt.cy - lp.cy + 80, s: .12 }, { dur: .75 });
+  });
+  sfx('suck', t + 1.1, .7);
+  tl.to(lp.desk, { opacity: 0, duration: .3 }, t + 1.4);
+  const tEnd = t + 1.0 + kinds.length * .2 + .8;
+  tl.to(vt.door, { rotationY: 0, duration: .35, ease: 'power3.in' }, tEnd);
+  tl.to(vt.dial, { rotation: 320, duration: 1, ease: 'power2.out' }, tEnd + .35);
+  sfx('lock', tEnd + .25, .8);
+  const lk = el('pc', { left: vt.cx + 70, top: vt.cy - 210, width: 90, height: 100 }, svg('0 0 90 100', `<rect x="8" y="40" width="74" height="58" rx="10" fill="#e9b949"/><path d="M22 42 v-14 a23 23 0 0 1 46 0 v14" stroke="#e9b949" stroke-width="12" fill="none"/><circle cx="45" cy="68" r="8" fill="#8a6a1e"/>`), L);
+  popIn(lk, tEnd + .6);
+  const lab = el('lbl', { left: vt.cx - 150, top: vt.cy + 210, transform: 'rotate(-2deg)' }, 'encrypted', L);
+  popIn(lab, tEnd + .8);
+  if (o.loginAfter !== false) tl.to(lp.login, { opacity: 1, duration: .3 }, tEnd + .2);
+  camera(t, d, { s: 1, x: 0, y: 0 }, { s: 1.05, x: -20, y: 0 }, 990);
+  return { lp, vt };
+}
+SC.tovault = (L, t, d) => toVault(L, t, d, 'home');
+SC.parentlogin = (L, t, d) => {
+  backdrop(L, 'home', { frames: false });
+  const lp = laptop(L, 580, 380, .82);
+  gsap.set(lp.login, { opacity: 1 });
+  const mom = person(L, vx(330, 470), vx(140, 60), { kind: 'mom', skin: '#f2c9a4', hair: '#5a3b2e', top: '#e0614b' });
+  const dad = person(L, vx(1300, 1160), vx(120, 40), { kind: 'dad', skin: '#e3b48c', hair: '#3a2c28', top: '#5b7fd1' });
+  if (V) { L.insertBefore(mom.r, lp.r); L.insertBefore(dad.r, lp.r); }
+  typeDots(lp.dots, t + .5, .12);
+  tl.to(lp.ok, { opacity: 1, duration: .1 }, t + 1.3);
+  tl.to(lp.login, { opacity: 0, duration: .25 }, t + 1.6);
+  tl.to([lp.clean, lp.mbar], { opacity: 1, duration: .25 }, t + 1.7);
+  popIn(lp.keep, t + 2.6, { s: 1 }); sfx('pop', t + 2.6, .6);
+  const kp = el('lbl', { left: lp.x + 160, top: lp.y + 70, fontSize: '30px', background: '#c9ecd6', transform: 'rotate(-6deg)' }, 'just homework', L);
+  popIn(kp, t + 3.0);
+  tl.to(mom.head, { rotation: 10, duration: .5 }, t + 2).to(dad.head, { rotation: -10, duration: .5 }, t + 2.1);
+  tl.to(mom.head, { rotation: 0, duration: .4 }, t + 4.2).to(dad.head, { rotation: 0, duration: .4 }, t + 4.3);
+  tl.to(mom.head, { y: 6, duration: .15, yoyo: true, repeat: 3 }, t + 4.8);   // mengangguk
+  camera(t, d, { s: 1.04, x: 0, y: 0 }, { s: 1.12, x: -10, y: 20 });
+};
+SC.goodkid = (L, t, d) => {
+  backdrop(L, 'home', { frames: false });
+  const mom = person(L, 560, 160, { kind: 'mom', skin: '#f2c9a4', hair: '#5a3b2e', top: '#e0614b' });
+  const dad = person(L, 1060, 140, { kind: 'dad', skin: '#e3b48c', hair: '#3a2c28', top: '#5b7fd1' });
+  tl.to([mom.smile, dad.smile], { opacity: 1, duration: .05 }, t + .5);
+  const b = bubble(L, 1250, 90, 'Hm. Good kid.', 'bl', [1040, 20]);
+  popIn(b, t + .7); sfx('pop', t + .7, .7);
+  const star = el('pc', { left: 860, top: 600, width: 200, height: 200 }, svg('0 0 200 200', `<path d="M100 8 L126 72 L194 76 L141 118 L158 186 L100 148 L42 186 L59 118 L6 76 L74 72Z" fill="#e9b949"/><path d="M100 40 L116 82 L160 84 L126 110 L136 152 L100 128 L64 152 L74 110 L40 84 L84 82Z" fill="#f3d27a" filter="url(#lay)"/>`), L);
+  popIn(star, t + 1.4, { s: 1 }); sfx('ding', t + 1.4, .6);
+  tl.to(star, { rotation: 380, duration: 1.4, ease: 'power2.out' }, t + 1.5);
+  camera(t, d, { s: 1.1, x: 0, y: 40 }, { s: 1.16, x: 0, y: 50 });
+};
+// Pinjam Mac
+SC.borrow = (L, t, d) => {
+  backdrop(L, 'home', { frames: false });
+  const lp = laptop(L, vx(360, 470), 380, .82);
+  gsap.set([lp.desk, lp.mbar], { opacity: 1 });
+  const fr = person(L, vx(1200, 1080), 120, { kind: 'friend', skin: '#d9a47c', hair: '#3e8a5f', top: '#58b07e' });
+  slideIn(fr.r, t + .2, 500, 0, .9, 'power3.out'); sfx('swoosh', t + .2, .6);
+  tl.to(fr.r, { y: -16, duration: .14, yoyo: true, repeat: 3 }, t + 1.1);   // melompat kecil, semangat
+  tl.to(fr.smile, { opacity: 1, duration: .05 }, t + 1);
+  const b = bubble(L, 820, 80, 'Can I borrow your Mac?', 'br', [700, 0]);
+  popIn(b, t + 1.2); sfx('pop', t + 1.2, .7);
+  camera(t, d, { s: 1, x: 0, y: 0 }, { s: 1.06, x: -20, y: 10 }, 930);
+};
+SC.busy = (L, t, d) => {
+  backdrop(L, 'home');
+  const lp = laptop(L, 580, 360, .9);
+  gsap.set([lp.desk, lp.mbar], { opacity: 1 });
+  const spots = [['chat', -540, -260, 'Chats'], ['tabs', 400, -300, 'Tabs'], ['photo', -560, 60, 'Photos'], ['key', 420, 40, ''], ['folder', -380, -420, '', 'Private'], ['chat', 300, -480, '']];
+  // waktu muncul mengikuti "Chats. Tabs. Photos."
+  const at = [1.9, 2.6, 3.3, 3.8, 4.1, 4.3];
+  spots.forEach(([k, dx, dy, lab, ...a], i) => {
+    const it = item(L, k, lp.cx - 100, lp.cy - 80, ...a);
+    gsap.set(it, { scale: .1, opacity: 0 });
+    tl.to(it, { opacity: 1, duration: .01 }, t + at[i]);
+    if (V) { dx *= .62; dy = dy < -200 ? dy - 120 : dy + (dy > 0 ? 260 : 0); }
+    tl.to(it, { x: dx, y: dy, scale: 1, rotation: rr(-10, 10), duration: .45, ease: 'back.out(1.6)' }, t + at[i]);
+    sfx('flick', t + at[i], .6);
+    if (lab) { const l = el('lbl', { left: lp.cx - 60 + dx, top: lp.cy - 120 + dy - 40, transform: `rotate(${rr(-6, 6).toFixed(1)}deg)` }, lab, L); popIn(l, t + at[i] + .2); }
+  });
+  camera(t, d, { s: .96, x: 0, y: 20 }, { s: 1.02, x: 0, y: 30 });
+};
+SC.savevault = (L, t, d) => {
+  const { lp, vt } = toVault(L, t + 1.4, d - 1.4, 'home', { kinds: [['chat'], ['tabs'], ['photo'], ['key']] });
+  // klik Save & Log Out dulu
+  const c = cursorEl(L);
+  clickAt(c, t + .8, lp.x + 690 * .85 - 10, lp.y + 40 * .85 + 6, { x: 900, y: 860 });
+  gsap.set(lp.menu, { scale: .3 });
+  tl.to(lp.menu, { opacity: 1, scale: 1, duration: .2, ease: 'back.out(2)' }, t + .85);
+  clickAt(c, t + 1.35, lp.x + 590 * .85, lp.y + 140 * .85);
+  tl.to(lp.menu, { opacity: 0, duration: .12 }, t + 1.5);
+  tl.to(c, { opacity: 0, duration: .1 }, t + 1.7);
+};
+SC.lend2 = (L, t, d) => {
+  backdrop(L, 'home', { frames: false });
+  const lp = laptop(L, 360, 380, .82);
+  gsap.set(lp.login, { opacity: 1 });
+  typeDots(lp.dots, t + .3, .1);
+  tl.to(lp.ok, { opacity: 1, duration: .1 }, t + 1);
+  tl.to(lp.login, { opacity: 0, duration: .2 }, t + 1.2);
+  tl.to([lp.clean, lp.mbar], { opacity: 1, duration: .2 }, t + 1.3);
+  const cl = el('lbl', { left: lp.x + 210, top: lp.y - 70, transform: 'rotate(-4deg)' }, 'clean Mac', L);
+  popIn(cl, t + 1.8);
+  const fr = person(L, vx(1260, 1120), 120, { kind: 'friend', skin: '#d9a47c', hair: '#3e8a5f', top: '#58b07e' });
+  L.insertBefore(fr.r, lp.r);
+  // geser laptop ke teman
+  tl.to([lp.r, cl], { x: vx(440, 300), duration: 1, ease: 'power2.inOut' }, t + 2.9); sfx('slide', t + 2.9, .7);
+  tl.to(fr.smile, { opacity: 1, duration: .05 }, t + 3.8);
+  const b = bubble(L, 1240, 60, 'Thanks!', 'bl', [1180, 40]); popIn(b, t + 4.0); sfx('pop', t + 4.0, .6);
+  camera(t, d, { s: 1, x: 0, y: 0 }, { s: 1.04, x: -30, y: 0 });
+};
+SC.back = (L, t, d) => {
+  backdrop(L, 'home');
+  const lp = laptop(L, vx(300, 470), 340, .85);
+  gsap.set([lp.clean, lp.mbar], { opacity: 1 });
+  slideIn(lp.r, t + .1, 600, 0, .9, 'power2.out'); sfx('slide', t + .1, .7);
+  const vt = vault(L, vx(1240, 1180), 420, 1);
+  gsap.set(lp.rbtn, { opacity: 0, scale: .4 });
+  tl.to(lp.rbtn, { opacity: 1, scale: 1, duration: .25, ease: 'back.out(2)' }, t + 1.2);
+  const c = cursorEl(L);
+  clickAt(c, t + 2.0, lp.x + 354 * .85, lp.y + 230 * .85, { x: 1000, y: 900 });
+  tl.to(lp.rbtn, { opacity: 0, duration: .15 }, t + 2.2);
+  tl.to(vt.door, { rotationY: -105, duration: .4, ease: 'power2.out' }, t + 2.2); sfx('key', t + 2.1, .6);
+  const kinds = [['chat'], ['tabs'], ['photo'], ['key']];
+  kinds.forEach((k, i) => {
+    const it = item(L, k[0], vt.cx - 90, vt.cy - 60);
+    gsap.set(it, { scale: .1, opacity: 0 });
+    tl.to(it, { opacity: 1, duration: .01 }, t + 2.5 + i * .15);
+    tl.to(it, { x: lp.cx - vt.cx + (i - 1.5) * 110, y: lp.cy - vt.cy - 40 + (i % 2) * 30, scale: .55, rotation: rr(-12, 12), duration: .6, ease: 'back.out(1.3)' }, t + 2.5 + i * .15);
+    tl.to(it, { opacity: 0, scale: .2, duration: .2 }, t + 3.4 + i * .1);
+  });
+  sfx('flurry', t + 2.5, .8);
+  tl.to(lp.clean, { opacity: 0, duration: .2 }, t + 3.6);
+  tl.to(lp.desk, { opacity: 1, duration: .2 }, t + 3.6);
+  camera(t, d, { s: 1, x: 0, y: 0 }, { s: 1.04, x: -20, y: 0 }, 990);
+};
+// penutup (3 variasi): huruf AMNESIA + tagline + GitHub
+function cta(L, t, d, tagline) {
+  backdrop(L, 'cream');
+  // konfeti kertas
+  for (let i = 0; i < 26; i++) { const c = el('pcs', { left: rr(-200, 2100), top: rr(-600, 1500), width: rr(18, 34), height: rr(10, 20), background: ['#e9b949', '#e2729c', '#3fb6c6', '#5b5bd6', '#58b07e'][i % 5], borderRadius: '3px' }, '', L); gsap.set(c, { rotation: rr(0, 360) }); }
+  const logo = el('pc', { left: 960 - 95, top: 160, width: 190, height: 190, background: '#fbf7ee', padding: '16px', borderRadius: '30px' }, `<img src="logo.png" style="width:100%;height:100%;display:block;border-radius:22px" alt="">`, L);
+  popIn(logo, t + .2, { s: 1 }); sfx('unfold', t + .2, .6);
+  const T = tiles(L, 'Amnesia', { y: 390, size: 150, colors: ['#5b5bd6', '#3fb6c6', '#e2729c', '#e9b949', '#58b07e', '#5b5bd6', '#e0614b'], ink: '#fbf7ee', gap: 10 });
+  tilesIn(T.out, t + .55, .09);
+  const tg = el('lbl', { left: 0, top: 640, width: 'auto', fontSize: '64px', padding: '6px 30px 10px' }, tagline, L);
+  tg.style.left = (960 - tagline.length * 13.5) + 'px';
+  gsap.set(tg, { rotation: -2 });
+  popIn(tg, t + 1.6); sfx('pop', t + 1.6, .5);
+  const gh = el('pcs', { left: 960 - 290, top: 790, width: 580, height: 74, background: '#2a2733', color: '#fbf7ee', borderRadius: '37px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', font: '900 30px var(--ui)' },
+    `<svg viewBox="0 0 24 24" style="width:34px;height:34px"><path fill="#fbf7ee" d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5z"/></svg>Free &amp; open source for macOS`, L);
+  popIn(gh, t + 2.3); sfx('tap', t + 2.3, .6);
+  sfx('ding', t + 1.2, .6);
+  camera(t, d, { s: 1, x: 0, y: 0 }, { s: 1.04, x: 0, y: 0 });
+}
+SC.cta = (L, t, d) => cta(L, t, d, 'Forget everything. Pun intended.');
+SC.cta2 = (L, t, d) => cta(L, t, d, 'Privacy. No headache.');
+SC.cta3 = (L, t, d) => cta(L, t, d, 'Lend your Mac. Not your life.');
+
+// ---------- susun versi ----------
+const GROUP = id => ['agent', 'login', 'empty', 'duh', 'flash'].includes(id) ? 'spy' : ['parents', 'savelo', 'tovault', 'parentlogin', 'goodkid'].includes(id) ? 'parents' : ['borrow', 'busy', 'savevault', 'lend2', 'back'].includes(id) ? 'borrow' : 'cta';
+const words = s => s.split(/\s+/).length / 2.3 + .2;
+const capBox = $('#cap');
+// lembar kertas penyapu untuk ganti skenario (satu lembar per transisi, warnanya sesuai skenario berikutnya)
+function doWipe(at, color) {
+  const w = el('pc', { left: 0, top: 0, width: 3200, height: 3400, visibility: 'hidden' }, '', stage);
+  stage.insertBefore(w, $('#flick'));
+  let edge = 'M300 0 L3200 0 L3200 3400 L300 3400'; for (let y = 3400; y >= 0; y -= 70) edge += ` L${(300 + rr(-30, 30)).toFixed(0)} ${y}`;
+  w.innerHTML = svg('0 0 3200 3400', `<path d="${edge}Z" fill="${color}"/><path d="M420 0 L3200 0 L3200 3400 L420 3400Z" fill="#000" opacity=".06"/>`);
+  gsap.set(w, { x: SW + 200, y: -800, rotation: 8, transformOrigin: '0 0' });
+  tl.set(w, { visibility: 'visible' }, at - .45);
+  tl.to(w, { x: -3400, duration: .9, ease: 'power2.inOut' }, at - .45);
+  tl.set(w, { visibility: 'hidden' }, at + .46);
+  sfx('rustle', at - .4, .8);
+}
+let at = 0, prev = null;
+cut.forEach(([id, d, lid], n) => {
+  const L = el('layer', {}, '', world);
+  seed = 1000 + n * 97;
+  show(L, at, d);
+  if (SC[id]) SC[id](L, at, d, lid);
+  const g = GROUP(id);
+  if (n && g !== prev) doWipe(at, { spy: '#2a3160', parents: '#e0614b', borrow: '#58b07e', cta: '#5b5bd6' }[g]);
+  if (id === 'flash') {   // mundur 3 jam: halaman kertas dibalik cepat
+    doWipe(at, '#f6eedd'); sfx('flip', at - .4, .8);
+  }
+  prev = g;
+  // judul besar (duh, 3 hours earlier, back)
+  const HD = S.headline[id];
+  if (HD && !id.startsWith('cta')) {
+    const big = id === 'duh';
+    const HL = el('layer', { width: SW, height: SH }, '', $('#hud'));
+    show(HL, at, d);
+    const T = tiles(HL, HD[0], V ? { x: 40, y: big ? 330 : 240, size: big ? 150 : 84, w: 1000 } : { x: big ? 90 : 0, y: big ? 330 : 64, size: big ? 170 : 92, w: big ? 1060 : 1920 });
+    tilesIn(T.out, at + (big ? Math.min(.9, d * .25) : .25), big ? .1 : .05, !big);
+    if (big) sfx('stamp', at + Math.min(.9, d * .25) + .55, .5);
+  }
+  // teks voiceover
+  if (lid) {
+    const ln = S.lines[lid];
+    const c = el('', {}, ln.en, capBox);
+    const len = Math.min(d - .4, words(ln.en));
+    tl.fromTo(c, { opacity: 0, y: 14, rotation: rr(-1.5, 1.5) }, { opacity: 1, y: 0, duration: .2, immediateRender: false }, at + .3);
+    tl.to(c, { opacity: 0, duration: .15 }, Math.min(at + d - .2, at + .3 + len + .5));
+    AUDIO.push({ line: lid, at: +(at + .3).toFixed(2), max: +(d - .4).toFixed(2) });
+  }
+  if ((S.silence || []).includes(id)) SILENCE.push([at, at + d]);
+  at += d;
+});
+const DUR = at;
+if (V) {   // versi tegak: label merek kecil di bawah
+  const f = el('pcs', { left: 340, top: 1760, width: 400, height: 64, background: '#fbf7ee', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', font: '900 26px var(--ui)', color: 'var(--ink)' },
+    `<img src="logo.png" style="width:38px;height:38px;border-radius:10px" alt="">Amnesia for macOS`, $('#hud'));
+  gsap.set(f, { rotation: -1.5 });
+}
+
+// ---------- stop motion: timeline halus "dipatah" jadi 12 gambar/detik + getar kecil tiap gambar ----------
+const pieces = [...document.querySelectorAll('.pc,.pcs')];
+const flick = $('#flick');
+let lastF = -1;
+function step(time) {
+  const f = Math.max(0, Math.min(Math.floor(time * STEP + 1e-4), Math.ceil(DUR * STEP) - 1));
+  if (f === lastF) return; lastF = f;
+  tl.seek(f / STEP, false);
+  for (let i = 0; i < pieces.length; i++) {   // setiap potongan bergeser sedikit, seperti disentuh tangan animator
+    const a = hash(f, i * 3 + 1), b = hash(f, i * 3 + 2), c = hash(f, i * 3 + 3);
+    pieces[i].style.translate = `${((a - .5) * 1.6).toFixed(2)}px ${((b - .5) * 1.6).toFixed(2)}px`;
+    pieces[i].style.rotate = `${((c - .5) * .5).toFixed(3)}deg`;
+  }
+  flick.style.opacity = (hash(f, 99991) * .035).toFixed(3);   // cahaya sedikit berkedip antar gambar
+  cam.style.translate = `${((hash(f, 7) - .5) * 1.2).toFixed(2)}px ${((hash(f, 8) - .5) * 1.2).toFixed(2)}px`;
+}
+const master = gsap.timeline({ paused: true });
+const proxy = { t: 0 };
+master.to(proxy, { t: DUR, duration: DUR, ease: 'none', onUpdate: () => step(proxy.t) });
+step(0);
+window.STEP_TO = step;   // dipakai render.js
+window.TL = master; window.DURATION = DUR; window.AUDIO = AUDIO; window.SFXQ = SFXQ; window.SILENCE = SILENCE;
+window.SCENES = cut.map(([id, d, lid], i) => ({ id, line: lid, start: cut.slice(0, i).reduce((s, c) => s + c[1], 0), dur: d }));
+if (Q.has('t')) { master.seek(+Q.get('t')); step(+Q.get('t')); }
+if (Q.has('play')) master.play(0);
+if (HF) window.__timelines[HF.id] = master;
+window.READY = true;
+})();
+</script>
+</body>
+</html>

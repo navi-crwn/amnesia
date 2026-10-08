@@ -151,6 +151,20 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   </div>
 </section>
 
+<!-- 00 film: the 54-second paper craft story, stuck on the page like a sheet of paper -->
+<section class="film" id="film">
+  <div class="wrap">
+    <figure class="paper">
+      <span class="tape t1" aria-hidden="true"></span><span class="tape t2" aria-hidden="true"></span>
+      <div class="paper-sheet">
+        <video class="fv" src="media/story.mp4" poster="media/story.jpg" muted playsinline loop preload="none" data-auto width="1280" height="720"></video>
+        <button class="sound" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="s-wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="s-off" d="m16 9 6 6m0-6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z" fill="currentColor"/></svg><span class="s-on-t"><span data-en>Sound on</span><span data-id>Nyalakan suara</span></span><span class="s-off-t"><span data-en>Mute</span><span data-id>Matikan suara</span></span></button>
+      </div>
+      <figcaption class="strip"><span data-en>Three stories, 54 seconds. One Mac that forgets.</span><span data-id>Tiga cerita, 54 detik. Satu Mac yang lupa.</span></figcaption>
+    </figure>
+  </div>
+</section>
+
 <!-- 01 open source -->
 <section class="ref oss" id="open">
   <div class="wrap">
@@ -416,18 +430,24 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <h3 class="iyk-h"><span data-en>For people who'd rather <em>not explain.</em></span><span data-id>Buat kamu yang malas <em>ditanya-tanya.</em></span></h3>
       </div>
       <div class="bento iyk-grid">
-        <div class="cell"><div class="i-ico" style="--c:var(--cyan)"><svg viewBox="0 0 24 24"><use href="#i-laptop"/></svg></div>
+        <div class="cell">
+          <button class="reel" type="button" data-film="media/lend.mp4" data-poster="media/lend.jpg"><video src="media/lend.mp4" poster="media/lend.jpg" muted playsinline loop preload="none" data-auto width="540" height="960"></video><span class="reel-tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><span data-en>Watch with sound · 0:30</span><span data-id>Tonton dengan suara · 0:30</span></span><span class="sr"><span data-en>Play the video: Lending your Mac</span><span data-id>Putar video: Mac mau dipinjam</span></span></button>
+          <div class="i-ico" style="--c:var(--cyan)"><svg viewBox="0 0 24 24"><use href="#i-laptop"/></svg></div>
           <h4><span data-en>Lending your Mac?</span><span data-id>Mac mau dipinjam?</span></h4>
           <p><span data-en>Log out, log back in, hand it over. Browser history, logins, recent files and chats are already gone. Your vault stays locked.</span><span data-id>Logout, login lagi, serahkan. Riwayat browser, login, file terakhir, dan chat sudah hilang. Vault tetap terkunci.</span></p></div>
-        <div class="cell"><div class="i-ico" style="--c:var(--orange)"><svg viewBox="0 0 24 24"><use href="#i-warn"/></svg></div>
-          <h4><span data-en>Lost or stolen?</span><span data-id>Hilang atau dicuri?</span></h4>
-          <p><span data-en>After a logout your history, logins and chats are already gone, and the vault is AES-256. Turn on FileVault too, so your Keep folder is encrypted on the disk.</span><span data-id>Setelah logout, riwayat, login, dan chat sudah hilang, dan vault terkunci AES-256. Nyalakan juga FileVault, supaya folder Keep ikut terenkripsi di disk.</span></p></div>
-        <div class="cell iyk-hot"><div class="i-ico" style="--c:var(--red)"><svg viewBox="0 0 24 24"><use href="#i-lock"/></svg></div>
-          <h4><span data-en>"Just open it real quick."</span><span data-id>"Coba buka sebentar."</span></h4>
-          <p><span data-en>Logging in shows an empty desktop. Asked for the vault password too? Type your <b>panic word</b> instead. The vault is gone, and the Keep folder too if you chose so. No drama.</span><span data-id>Login hanya menampilkan desktop kosong. Diminta password vault juga? Ketik <b>kata panik</b> saja. Vault langsung hilang, folder Keep juga kalau kamu memilihnya. Tanpa drama.</span></p></div>
-        <div class="cell"><div class="i-ico" style="--c:var(--pink)"><svg viewBox="0 0 24 24"><use href="#i-eye"/></svg></div>
+        <div class="cell">
+          <button class="reel" type="button" data-film="media/parents.mp4" data-poster="media/parents.jpg"><video src="media/parents.mp4" poster="media/parents.jpg" muted playsinline loop preload="none" data-auto width="540" height="960"></video><span class="reel-tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><span data-en>Watch with sound · 0:30</span><span data-id>Tonton dengan suara · 0:30</span></span><span class="sr"><span data-en>Play the video: Nosy family</span><span data-id>Putar video: Keluarga kepo</span></span></button>
+          <div class="i-ico" style="--c:var(--pink)"><svg viewBox="0 0 24 24"><use href="#i-eye"/></svg></div>
           <h4><span data-en>Nosy family?</span><span data-id>Keluarga kepo?</span></h4>
           <p><span data-en>Your browser history doesn't survive a logout. Nobody needs to know about that 3 a.m. shopping spree.</span><span data-id>Riwayat browser tidak selamat dari logout. Belanja jam 3 pagi itu cukup jadi rahasia kamu.</span></p></div>
+        <div class="cell iyk-hot">
+          <button class="reel" type="button" data-film="media/spy.mp4" data-poster="media/spy.jpg"><video src="media/spy.mp4" poster="media/spy.jpg" muted playsinline loop preload="none" data-auto width="540" height="960"></video><span class="reel-tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><span data-en>Watch with sound · 0:30</span><span data-id>Tonton dengan suara · 0:30</span></span><span class="sr"><span data-en>Play the video: "Just open it real quick."</span><span data-id>Putar video: "Coba buka sebentar."</span></span></button>
+          <div class="i-ico" style="--c:var(--red)"><svg viewBox="0 0 24 24"><use href="#i-lock"/></svg></div>
+          <h4><span data-en>"Just open it real quick."</span><span data-id>"Coba buka sebentar."</span></h4>
+          <p><span data-en>Logging in shows an empty desktop. Asked for the vault password too? Type your <b>panic word</b> instead. The vault is gone, and the Keep folder too if you chose so. No drama.</span><span data-id>Login hanya menampilkan desktop kosong. Diminta password vault juga? Ketik <b>kata panik</b> saja. Vault langsung hilang, folder Keep juga kalau kamu memilihnya. Tanpa drama.</span></p></div>
+        <div class="cell iyk-wide"><div class="i-ico" style="--c:var(--orange)"><svg viewBox="0 0 24 24"><use href="#i-warn"/></svg></div>
+          <h4><span data-en>Lost or stolen?</span><span data-id>Hilang atau dicuri?</span></h4>
+          <p><span data-en>After a logout your history, logins and chats are already gone, and the vault is AES-256. Turn on FileVault too, so your Keep folder is encrypted on the disk.</span><span data-id>Setelah logout, riwayat, login, dan chat sudah hilang, dan vault terkunci AES-256. Nyalakan juga FileVault, supaya folder Keep ikut terenkripsi di disk.</span></p></div>
       </div>
       <p class="iyk-term"><span class="pr">$</span> amnesia --forget-everything <span class="cm"><span data-en># pun intended</span><span data-id># pun intended</span></span></p>
       <p class="iyk-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span data-en>Honest fine print: Amnesia protects you <b>after a logout</b>. While you're logged in, your Mac is as open as always, so lock your screen. And the panic word can't be undone.</span><span data-id>Catatan jujur: Amnesia melindungi kamu <b>setelah logout</b>. Selama masih login, Mac kamu terbuka seperti biasa, jadi kunci layarnya. Dan kata panik tidak bisa dibatalkan.</span></p>
@@ -1059,6 +1079,11 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   </div>
 </section>
 
+<!-- video player for the reels (opens with sound) -->
+<dialog class="film-box" id="film-box">
+  <button class="fb-close" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="sr"><span data-en>Close</span><span data-id>Tutup</span></span></button>
+  <video controls playsinline width="540" height="960"></video>
+</dialog>
 </main>
 
 <footer class="site-foot">
@@ -1110,6 +1135,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
 <script defer src="assets/js/scenes/story.js"></script>
 <script defer src="assets/js/scenes/tutorial.js"></script>
 <script defer src="assets/js/site.js"></script>
+<script defer src="assets/js/film.js"></script>
 <script type="module" src="assets/js/scenes/shield3d.js"></script>
 <script type="module" src="assets/js/scenes/objects3d.js"></script>
 </body>

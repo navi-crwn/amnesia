@@ -5,6 +5,14 @@
 Every change to Amnesia is written down here, newest first.
 You can see the version number in the app too (next to the title and at the bottom of the menu bar panel).
 
+## Website & README — 2026-10-08
+
+### Added
+- **A short film on the website.** Right under the top of the page there's a 54-second paper craft stop motion video with three little stories (a spy, nosy parents, a friend borrowing your Mac). It looks like a sheet of craft paper taped onto the page. It plays by itself without sound when you scroll to it; press **Sound on** to hear it from the beginning.
+- **Videos in "If you know, you know".** The cards "Lending your Mac?", "Nosy family?" and "Just open it real quick." each show their own 30-second vertical video. They play silently while on screen; click one to watch it big, with sound. "Lost or stolen?" now sits as a wide card below them. On phones the cards scroll sideways.
+- **A moving preview in the README.** A 15-second clip (GIF) under the tagline, linking to the full video on the website.
+- The videos only load when you scroll to them and are small (about 1–3 MB each). With "Reduce motion" or data saver on, they don't play by themselves.
+
 ## v5.18.1 — 2026-10-07
 
 ### Fixed
