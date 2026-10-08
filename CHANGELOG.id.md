@@ -43,6 +43,7 @@ Ini versi yang sebaiknya kamu unduh. Isinya v5.16 sampai v5.18.1, ditambah websi
 
 ### Di balik layar
 - Tes baru untuk Pulihkan File, Cek file backup, dan snapshot ringan per browser.
+- **Versi Windows: langkah pertama.** Versi awal banget ada di `windows/` (app di tray + halaman yang mirip website). Cuma menunjukkan apa yang *akan* dihapus, belum menghapus apa pun. GitHub otomatis build dan mengetesnya di Windows setiap ada perubahan.
 
 Perubahan yang lebih lama: [changelog lengkap](https://github.com/navi-crwn/amnesia-mac/blob/main/CHANGELOG.id.md).
 

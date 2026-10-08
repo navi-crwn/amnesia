@@ -1,0 +1,60 @@
+# Amnesia for Windows: built and tested on GitHub's free Windows servers on every push that changes windows/.
+# Results: the repo's Actions tab. The ready-to-try app: open a run, scroll to "Artifacts".
+name: Windows
+
+on:
+  push:
+    branches: [main]
+    paths: ['windows/**', '.github/workflows/windows.yml']
+  pull_request:
+    paths: ['windows/**', '.github/workflows/windows.yml']
+  workflow_dispatch: # "Run workflow" button in the Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Cleaner tests (dry run)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test with PowerShell 7
+        shell: pwsh
+        run: ./windows/tests/test_clean.ps1
+      - name: Test with Windows PowerShell 5.1 (the one built into Windows)
+        shell: pwsh
+        env:
+          AMNESIA_TEST_SHELL: powershell
+        run: ./windows/tests/test_clean.ps1
+
+  build:
+    name: Build (${{ matrix.arch }})
+    needs: test
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64] # arm64 = Windows on ARM, e.g. a Windows 11 VM on a Mac
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build Amnesia.exe
+        shell: pwsh
+        run: >
+          dotnet publish windows/src/Amnesia/Amnesia.csproj -c Release -r win-${{ matrix.arch }}
+          --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true -o out/Amnesia
+      - name: Check the files are all there
+        shell: pwsh
+        run: |
+          foreach ($f in 'Amnesia.exe', 'ui/index.html', 'ui/app.js', 'ui/app.css', 'scripts/clean.ps1') {
+            if (-not (Test-Path "out/Amnesia/$f")) { throw "missing: $f" }
+          }
+          Get-ChildItem out/Amnesia -Recurse -File | ForEach-Object { '{0,8:N0} KB  {1}' -f ($_.Length / 1KB), $_.FullName.Substring((Resolve-Path out/Amnesia).Path.Length + 1) }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Amnesia-windows-${{ matrix.arch }}
+          path: out/Amnesia
+          retention-days: 14

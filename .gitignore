@@ -21,6 +21,8 @@ backup.vault.ok
 clean.done
 crash/
 bin/
+obj/
+windows/out/
 .engine_version
 *.md
 !README.md
@@ -29,3 +31,4 @@ bin/
 !CHANGELOG.id.md
 !TERMS.md
 !TERMS.id.md
+!windows/README.md

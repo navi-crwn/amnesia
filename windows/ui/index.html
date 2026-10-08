@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'">
+<title>Amnesia</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <img src="logo.png" alt="" width="36" height="36">
+    <h1>Amnesia</h1>
+    <span class="ver" id="ver"></span>
+    <span class="badge" data-t="badge">Early preview</span>
+  </header>
+
+  <section class="status">
+    <span class="dot" aria-hidden="true"></span>
+    <div>
+      <h2 data-t="statusTitle">Not active yet</h2>
+      <p data-t="statusText">This is the first Windows version. It only shows what Amnesia would wipe. Nothing gets deleted, at logout or ever.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <h2 data-t="previewTitle">What would be wiped</h2>
+        <p class="muted" data-t="previewText">A dry run of your user folder. Your Keep folder, the Keep List and what Windows needs to log you in always stay.</p>
+      </div>
+      <button class="btn" id="run" data-t="previewBtn">Show preview</button>
+    </div>
+    <p class="muted" id="msg" role="status"></p>
+    <div id="result" hidden>
+      <p class="sum" id="sum"></p>
+      <ul class="list" id="items"></ul>
+      <details>
+        <summary data-t="keptTitle">What stays</summary>
+        <ul class="list kept" id="kept"></ul>
+      </details>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <a href="https://navi-crwn.github.io/amnesia-mac/" target="_blank" rel="noopener" data-t="site">Amnesia website</a>
+    <span class="muted" id="win"></span>
+  </footer>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

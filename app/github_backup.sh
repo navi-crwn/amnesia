@@ -5,6 +5,9 @@ set -euo pipefail
 cd "$HOME/.amnesia"
 command -v gh >/dev/null || { echo "gh is missing. Run: brew install gh"; exit 1; }
 gh auth status >/dev/null 2>&1 || gh auth login --web --git-protocol https
+# .github/workflows (Windows build on GitHub Actions) can only be pushed with the "workflow" permission. Asked once, in the browser.
+gh auth status 2>&1 | grep -q "'workflow'" || { echo "GitHub needs one extra permission (workflow) for the Windows build. A browser window opens once."; gh auth refresh -h github.com -s workflow; }
+gh auth setup-git >/dev/null 2>&1 || true   # git push uses the same GitHub login as gh
 V="$(defaults read "$PWD/app/Info" CFBundleShortVersionString)"
 
 echo "1/7  Tidying old files..."
@@ -39,6 +42,8 @@ backup.vault.ok
 clean.done
 crash/
 bin/
+obj/
+windows/out/
 .engine_version
 *.md
 !README.md
@@ -47,6 +52,7 @@ bin/
 !CHANGELOG.id.md
 !TERMS.md
 !TERMS.id.md
+!windows/README.md
 IGN
 
 echo "2/7  Commit & push..."

@@ -43,6 +43,7 @@ This is the version to download. It covers v5.16 up to v5.18.1, plus the new web
 
 ### Behind the scenes
 - New tests for Restore Files, Check a backup file and per-browser light snapshots.
+- **Windows version: first steps.** A very early preview lives in `windows/` (tray app + pages that look like the website). It only shows what it *would* wipe and never deletes anything yet. GitHub builds and tests it on Windows after every change.
 
 Older changes: [the full changelog](https://github.com/navi-crwn/amnesia-mac/blob/main/CHANGELOG.md).
 
