@@ -42,6 +42,7 @@ This is the version to download. It covers v5.16 up to v5.18.2, plus the new web
 - **The README** got a 15-second moving preview that links to the full video.
 - **The README looks like the website now.** Its pictures are taken straight from the website (in light or dark, following your GitHub theme), instead of old screenshots. Lighter WebP images, a new link preview when you share the repo, and a fresher repo description.
 - **A Windows page** on the website ([/win](https://navi-crwn.github.io/amnesia/win/)) with what already works, what's next and how to try the preview. A Mac / Windows switch sits in the menu bar of both pages.
+- **Shorter Homebrew command:** `brew install navi-crwn/tap/amnesia` (no `--cask` needed).
 - **New address.** The repo is now [github.com/navi-crwn/amnesia](https://github.com/navi-crwn/amnesia) and the website [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/), since Amnesia is heading to Windows too. Old repo links still work; the old website link does not, so please update your bookmark.
 
 ### Behind the scenes

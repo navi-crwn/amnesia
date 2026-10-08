@@ -105,7 +105,7 @@ bash ~/.amnesia/clean.sh logout --dry-run
 **Cara 1: Homebrew** (paling gampang, update cukup `brew upgrade`)
 
 ```bash
-brew install --cask navi-crwn/tap/amnesia
+brew install navi-crwn/tap/amnesia
 ```
 
 **Cara 2: Installer (.dmg)**
@@ -223,7 +223,7 @@ bash ~/.amnesia/uninstall.sh
 Script ini mematikan agent login lebih dulu (supaya waktu dihentikan tidak ada yang terhapus), menghentikan Amnesia, menghapus app, lalu mengecek tidak ada yang tersisa. Vault dan pengaturan di `~/.amnesia` tetap disimpan, kalau nanti mau pasang lagi. Folder Keep kamu tidak pernah disentuh.
 
 - Mau hapus semuanya, termasuk vault? Pakai `bash ~/.amnesia/uninstall.sh --all` (kamu diminta mengetik `HAPUS` dulu).
-- Pasang lewat Homebrew? `brew uninstall --cask amnesia` menjalankan langkah aman yang sama.
+- Pasang lewat Homebrew? `brew uninstall amnesia` menjalankan langkah aman yang sama.
 - Tidak ada folder `~/.amnesia`? Berarti Amnesia belum pernah jalan, jadi script tidak perlu: hapus app-nya saja.
 
 ## Untuk yang penasaran (teknis)

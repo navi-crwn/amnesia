@@ -342,9 +342,12 @@ HAPUS  ~/Desktop/Amnesia.app
 HAPUS  ~/Desktop/Keep
 HAPUS  ~/Desktop/Screenshot 2026-10-07 at 13.20.26.png
 HAPUS  ~/Desktop/Screenshot 2026-10-07 at 23.08.12.png
+HAPUS  ~/Desktop/Screenshot 2026-10-08 at 14.07.51.png
 HAPUS  ~/Downloads/.DS_Store
 HAPUS  ~/Downloads/Agents_ give ChatGPT, Claude or Cursor a workspace to work in.html
 HAPUS  ~/Downloads/Agents_ give ChatGPT, Claude or Cursor a workspace to work in_files
+HAPUS  ~/Downloads/Amnesia-windows-arm64.zip
+HAPUS  ~/Downloads/Amnesia-windows-x64.zip
 HAPUS  ~/Downloads/Features · salt.md.html
 HAPUS  ~/Downloads/Features · salt.md_files
 HAPUS  ~/Downloads/Self-host salt.md_ install in about a minute.html
@@ -359,6 +362,7 @@ HAPUS  ~/Downloads/amnesia-v5.16.zip
 HAPUS  ~/Downloads/amnesia-v5.17.1-r2.zip
 HAPUS  ~/Downloads/amnesia-v5.17.zip
 HAPUS  ~/Downloads/amnesia-v5.18.1.zip
+HAPUS  ~/Downloads/amnesia-v5.18.2.zip
 HAPUS  ~/Downloads/amnesia-v5.18.zip
 HAPUS  ~/Downloads/amnesia-v5.zip
 HAPUS  ~/Downloads/amnesia-video-paper
@@ -389,4 +393,4 @@ HAPUS  ~/Music/Music
 HAPUS  ~/.Trash/.DS_Store
 HAPUS  ~/.Trash/Amnesia.app
 HAPUS  ~/.Trash/amnesia-lama-20261007-0103
---- dry-run (logout): 391 items would be deleted. Nothing was deleted. ---
+--- dry-run (logout): 395 items would be deleted. Nothing was deleted. ---

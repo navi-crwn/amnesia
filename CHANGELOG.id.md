@@ -42,6 +42,7 @@ Ini versi yang sebaiknya kamu unduh. Isinya v5.16 sampai v5.18.2, ditambah websi
 - **README** sekarang punya pratinjau bergerak 15 detik yang mengarah ke video lengkapnya.
 - **README sekarang senada dengan website.** Gambarnya diambil langsung dari website (terang atau gelap, ikut tema GitHub kamu), menggantikan screenshot lama. Gambar WebP yang lebih ringan, pratinjau link baru saat repo dibagikan, dan deskripsi repo yang lebih segar.
 - **Halaman Windows** di website ([/win](https://navi-crwn.github.io/amnesia/win/)): apa yang sudah jalan, apa berikutnya, dan cara mencoba preview-nya. Ada tombol Mac / Windows di menu atas kedua halaman.
+- **Perintah Homebrew lebih pendek:** `brew install navi-crwn/tap/amnesia` (tanpa `--cask`).
 - **Alamat baru.** Repo-nya sekarang [github.com/navi-crwn/amnesia](https://github.com/navi-crwn/amnesia) dan websitenya [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/), karena Amnesia juga sedang menuju Windows. Link repo lama tetap jalan, tapi link website lama tidak, jadi bookmark-nya perlu diganti.
 
 ### Di balik layar

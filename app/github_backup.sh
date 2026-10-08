@@ -128,7 +128,7 @@ gh api "repos/$OWNER/$REPO/pages" >/dev/null 2>&1 || \
   || echo "     (couldn't turn on Pages: Settings > Pages > Branch: main, folder: /docs)"
 gh repo edit --homepage "$SITE" >/dev/null
 
-echo "7/7  Homebrew (brew install --cask $OWNER/tap/amnesia)..."
+echo "7/7  Homebrew (brew install $OWNER/tap/amnesia)..."
 SHA="$(shasum -a 256 "$PKG" | cut -d' ' -f1)"
 TAP="$(mktemp -d)/homebrew-tap"
 gh repo view "$OWNER/homebrew-tap" >/dev/null 2>&1 || \
@@ -145,7 +145,7 @@ cask "amnesia" do
   desc "Wipes your Mac at every logout, except what you choose to keep"
   homepage "$SITE"
 
-  depends_on macos: ">= :sequoia"
+  depends_on macos: :sequoia
 
   app "Amnesia.app"
 
@@ -164,7 +164,7 @@ cask "amnesia" do
   caveats <<~EOS
     Amnesia really deletes data once you turn it on. Read the terms first:
       https://github.com/$OWNER/$REPO/blob/main/TERMS.md
-    To uninstall: brew uninstall --cask amnesia (turns Amnesia off safely).
+    To uninstall: brew uninstall amnesia (turns Amnesia off safely).
     To also delete the vault and settings: bash ~/.amnesia/uninstall.sh --all
   EOS
 end
@@ -173,7 +173,7 @@ cat > "$TAP/README.md" <<README
 # Homebrew tap
 
 \`\`\`bash
-brew install --cask $OWNER/tap/amnesia
+brew install $OWNER/tap/amnesia
 \`\`\`
 
 [Amnesia]($SITE): your Mac forgets everything every time you log out, except what you choose to keep.
@@ -185,4 +185,4 @@ git -C "$TAP" remote get-url origin >/dev/null 2>&1 || git -C "$TAP" remote add 
 git -C "$TAP" push -q -u origin HEAD:main
 
 echo "DONE: $(gh repo view --json url -q .url)  (release v$V)"
-echo "      site: $SITE   ·   brew install --cask $OWNER/tap/amnesia"
+echo "      site: $SITE   ·   brew install $OWNER/tap/amnesia"

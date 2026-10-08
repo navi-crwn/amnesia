@@ -105,7 +105,7 @@ bash ~/.amnesia/clean.sh logout --dry-run
 **Option 1: Homebrew** (easiest, and updates come with `brew upgrade`)
 
 ```bash
-brew install --cask navi-crwn/tap/amnesia
+brew install navi-crwn/tap/amnesia
 ```
 
 **Option 2: Installer (.dmg)**
@@ -223,7 +223,7 @@ bash ~/.amnesia/uninstall.sh
 It turns off the login agent first (so stopping it can't wipe anything), stops Amnesia, removes the app and checks that nothing is left. Your vault and settings in `~/.amnesia` stay, in case you come back. Your Keep folder is never touched.
 
 - Want everything gone, vault included? Use `bash ~/.amnesia/uninstall.sh --all` (it asks you to type `DELETE` first).
-- Installed with Homebrew? `brew uninstall --cask amnesia` does the same safe steps.
+- Installed with Homebrew? `brew uninstall amnesia` does the same safe steps.
 - No `~/.amnesia` folder? Then Amnesia never ran, and the script isn't needed: just delete the app.
 
 ## Under the hood
