@@ -1,11 +1,11 @@
 #!/bin/bash
-# Buat repo PUBLIC baru "amnesia-mac" dengan riwayat bersih (cukup 1x).
+# Buat repo PUBLIC baru "amnesia" dengan riwayat bersih (cukup 1x).
 # Repo private "amnesia" yang lama TIDAK dihapus dan tidak diubah: riwayatnya berisi file pribadi,
 # jadi tidak dipakai untuk versi public. Kalau mau, hapus sendiri lewat GitHub > Settings.
 # Setelah ini, github_backup.sh meng-update repo public.
 set -euo pipefail
 cd "$HOME/.amnesia"
-NAME="${1:-amnesia-mac}"
+NAME="${1:-amnesia}"
 OWNER="$(gh api user -q .login)"
 if git remote get-url public-done >/dev/null 2>&1; then echo "Sudah public: $(git remote get-url origin)"; exit 0; fi
 

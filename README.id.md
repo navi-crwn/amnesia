@@ -6,11 +6,12 @@
   <b>Setiap kali kamu logout, Mac kamu lupa semuanya.<br>Kecuali yang memang kamu mau simpan.</b>
 </p>
 
-<p align="center"><a href="https://navi-crwn.github.io/amnesia-mac/#film"><img src="docs/media/teaser.gif" alt="Klip paper craft 15 detik: mata-mata login ke Mac dan tidak menemukan apa pun" width="720"></a><br><sub>▶ Tonton cerita lengkap 54 detik, dengan suara, di <a href="https://navi-crwn.github.io/amnesia-mac/#film">website</a></sub></p>
+<p align="center"><a href="https://navi-crwn.github.io/amnesia/#film"><img src="docs/media/teaser.gif" alt="Klip paper craft 15 detik: mata-mata login ke Mac dan tidak menemukan apa pun" width="720"></a><br><sub>▶ Tonton cerita lengkap 54 detik, dengan suara, di <a href="https://navi-crwn.github.io/amnesia/#film">website</a></sub></p>
 
 <p align="center">
   <a href="../../releases/latest"><b>⬇️ Download app</b></a> ·
-  <a href="https://navi-crwn.github.io/amnesia-mac/">Website</a> ·
+  <a href="https://navi-crwn.github.io/amnesia/">Website</a> ·
+  <a href="https://navi-crwn.github.io/amnesia/win/">Windows (preview)</a> ·
   <a href="#cara-pasang">Cara pasang</a> ·
   <a href="#pertanyaan-umum">FAQ</a> ·
   <a href="#cara-hapus">Cara hapus</a> ·
@@ -38,7 +39,7 @@ Masalahnya, kalau semua hilang, kamu harus login ulang Gmail, WhatsApp, Telegram
 
 <p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/app-id-light.webp"><img src="docs/readme/app-id-dark.webp" alt="Jendela utama Amnesia" width="46%"></picture></p>
 
-📖 **Cerita lengkap, tutorial yang bisa diikuti, dan FAQ:** [navi-crwn.github.io/amnesia-mac](https://navi-crwn.github.io/amnesia-mac/)
+📖 **Cerita lengkap, tutorial yang bisa diikuti, dan FAQ:** [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/)
 
 <details>
 <summary><b>Lihat lebih dekat</b></summary>
@@ -116,7 +117,7 @@ brew install --cask navi-crwn/tap/amnesia
 **Cara 3: Build sendiri** (butuh Command Line Tools)
 
 ```bash
-git clone https://github.com/navi-crwn/amnesia-mac.git ~/.amnesia
+git clone https://github.com/navi-crwn/amnesia.git ~/.amnesia
 bash ~/.amnesia/app/build.sh
 ```
 
@@ -236,6 +237,7 @@ Script ini mematikan agent login lebih dulu (supaya waktu dihentikan tidak ada y
 | `keep.example.conf` | Contoh Keep List. `build.sh` menyalinnya jadi `keep.conf` saat pertama dipasang. |
 | `app/` | Kode app SwiftUI, ikon, dan script build/rilis. `app/screenshots.sh` memotret app asli dengan data contoh (opsional). |
 | `docs/` | Website (GitHub Pages). `docs/readme/` berisi gambar README yang diambil dari website. |
+| `windows/` | Versi Windows, masih awal banget (app tray C# + halaman HTML + pembersih PowerShell). Baru menunjukkan apa yang akan dihapus. Di-build dan dites oleh GitHub Actions (`.github/workflows/windows.yml`). |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Tes otomatis di "home palsu", aman dijalankan kapan saja. |
 
 ---

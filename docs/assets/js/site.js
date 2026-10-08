@@ -76,7 +76,7 @@
   // no referrer, cached for an hour. If it fails, the built-in values stay.
   // The star count is never shown, only the "Star this repo" button.
   (function () {
-    var KEY = 'gh-repo-v2', repo = 'https://api.github.com/repos/navi-crwn/amnesia-mac';
+    var KEY = 'gh-repo-v2', repo = 'https://api.github.com/repos/navi-crwn/amnesia';
     var COLORS = ['var(--orange)', 'var(--green)', 'var(--cyan)', 'var(--indigo)', 'var(--pink)', 'var(--violet)'];
     var data = null;
     function all(sel, f) { document.querySelectorAll('[data-gh=' + sel + ']').forEach(f); }

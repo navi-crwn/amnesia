@@ -954,3 +954,39 @@ html:not(.js) .tp[data-page="0"]{position:relative}
 .iyk-grid .cell:has(.reel)>.reel,.iyk-grid .cell:has(.reel)>p{grid-column:1/-1}
 .iyk-grid .cell:has(.reel)>.reel{margin-bottom:10px}
 .iyk-wide{align-items:center}.iyk-wide p{grid-column:2}
+
+/* ---------- Mac / Windows switch in the navbar ---------- */
+.plat{display:flex;border:1px solid var(--line-2);border-radius:999px;padding:2px;margin-left:4px}
+.plat a{font:500 13px var(--sans);color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:999px}
+.plat a:hover{color:var(--text)}
+.plat a[aria-current=page]{background:var(--tint-3);color:var(--text)}
+@media (max-width:560px){.plat a{padding:5px 9px;font-size:12px}.brand{font-size:0;gap:0}}
+
+/* ---------- Windows page (win/index.html) ---------- */
+.winpage .nav-r{margin-left:auto}
+.win-hero{padding-block:150px 40px}
+.win-hero h1{font-size:clamp(38px,6vw,72px);line-height:1.04;letter-spacing:-.035em;font-weight:700;max-width:16ch}
+.win-hero h1 em{font-family:var(--serif);font-weight:400;font-style:italic;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+.win-hero .lead{margin-top:24px}
+.win-hero .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.win-hero .btn svg{width:18px;height:18px}
+.win-tag{display:inline-block;margin-bottom:22px;font:500 13px var(--mono);color:var(--orange);border:1px solid var(--line-2);border-radius:999px;padding:5px 12px}
+.win-sec{padding-block:20px}
+.win-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:760px){.win-grid{grid-template-columns:1fr}}
+.win-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:28px}
+.win-card h2{font-size:22px;letter-spacing:-.01em;margin-bottom:16px}
+.win-list{list-style:none;padding:0;display:grid;gap:12px}
+.win-list li{position:relative;padding-left:30px;color:var(--muted)}
+.win-list li b{color:var(--text)}
+.win-list li::before{content:"";position:absolute;left:0;top:.45em;width:16px;height:16px;border-radius:50%}
+.win-list.ok li::before{background:var(--green);box-shadow:0 0 0 4px var(--tint-2)}
+.win-list.todo li::before{border:1.5px dashed var(--muted)}
+.win-steps{padding-left:22px;display:grid;gap:10px;color:var(--muted);max-width:75ch}
+.win-steps a{color:var(--cyan)}
+.win-steps code,.win-note code{font:13px var(--mono);color:var(--text);background:var(--tint-2);padding:1px 6px;border-radius:6px}
+.win-note{margin-top:18px;font-size:14px;color:var(--muted)}
+.win-foot{padding-block:48px 56px;color:var(--muted);font-size:14px}
+.win-foot .wrap{display:grid;gap:10px}
+.win-foot a{color:var(--text)}
+.win-foot .ft-tm{font-size:12px}

@@ -2276,7 +2276,7 @@ extension Color {
     }
 }
 
-/// v5.18: warna dan permukaan sama dengan website (navi-crwn.github.io/amnesia-mac).
+/// v5.18: warna dan permukaan sama dengan website (navi-crwn.github.io/amnesia).
 /// Tiap warna punya versi gelap dan terang, ikut tampilan Mac (Appearance) otomatis.
 enum Th {
     private static func ns(_ hex: UInt32, _ a: CGFloat = 1) -> NSColor {
@@ -4747,8 +4747,8 @@ struct PrivacyNote: View {
     }
 }
 
-let termsURL = "https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.md"
-let repoURL = "https://github.com/navi-crwn/amnesia-mac"
+let termsURL = "https://github.com/navi-crwn/amnesia/blob/main/TERMS.md"
+let repoURL = "https://github.com/navi-crwn/amnesia"
 
 /// v5.16: baris kecil di bawah halaman utama: versi, lisensi, pembuat, tautan.
 struct AppFooter: View {

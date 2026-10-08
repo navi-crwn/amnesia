@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Amnesia intro video</title>
+<!-- Rendered frame by frame by site/render_video.js (the timeline is paused and seeked).
+     Open in a browser and add ?play to watch it live. ?lang=id for Indonesian. -->
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#eef0f6; --sheet:#f8f9fc; --ink:#15162c; --muted:#5d6079; --faint:#b9bccd;
+  --line:rgba(21,22,44,.10); --accent:#5458e6; --kept:#0e9f6e; --kept-soft:rgba(14,159,110,.12);
+  --night:#0d0e1c; --night-ink:#e9eaf6; --danger:#f87171;
+  --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Geist",system-ui,sans-serif; --mono:"Geist Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#000;overflow:hidden}
+#stage{position:relative;width:1920px;height:1080px;background:var(--paper);color:var(--ink);font-family:var(--body);overflow:hidden;transform-origin:0 0}
+.scene{position:absolute;inset:0;padding:120px 160px;display:flex;flex-direction:column;justify-content:center;opacity:0}
+.label{font:500 22px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;gap:16px}
+.label b{color:var(--accent);font-weight:500}
+h1,h2{font-family:var(--display);font-weight:700;letter-spacing:-.045em;margin:0}
+h1{font-size:184px;line-height:.9}
+h2{font-size:120px;line-height:.95;letter-spacing:-.035em}
+.keep{color:var(--kept);font:500 84px/1.1 var(--display);letter-spacing:-.02em;margin-top:36px}
+.sx{white-space:pre}
+.desk{display:flex;flex-wrap:wrap;gap:14px;margin-top:56px;max-width:1600px}
+.f{font:400 26px var(--mono);padding:12px 18px;border-radius:12px;border:1.5px solid var(--line);background:var(--sheet);white-space:pre}
+.f.k{border-color:rgba(14,159,110,.45);background:var(--kept-soft)}
+.f.k::before{content:"● ";color:var(--kept)}
+.tally{display:flex;gap:80px;margin-top:56px}
+.tally strong{display:block;font:700 120px/1 var(--display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.tally span{font:500 22px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.vault{margin-top:56px;background:var(--sheet);border:1.5px solid var(--line);border-radius:28px;padding:36px 44px;width:1400px}
+.vault .top{display:flex;justify-content:space-between;font:500 22px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-bottom:20px;border-bottom:2px dashed var(--line);margin-bottom:12px}
+.vault .top .st{color:var(--accent)}
+.row{display:grid;grid-template-columns:280px 1fr;font:400 32px var(--mono);padding:12px 0}
+.row .who{color:var(--muted)}
+.recall{display:grid;grid-template-columns:1fr 1fr;gap:28px 80px;margin-top:64px}
+.recall div{font:700 76px/1.05 var(--display);letter-spacing:-.03em}
+.recall small{display:block;font:500 22px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.shots{position:absolute;left:0;top:250px;display:flex;gap:56px;padding-left:160px}
+.shots img{height:760px;border-radius:18px;filter:drop-shadow(0 30px 50px rgba(21,22,44,.18))}
+.night{background:color-mix(in srgb,#d93f3f 7%,var(--paper))}
+.night .label{color:#d93f3f}
+.night ul{list-style:none;padding:0;margin:56px 0 0;display:grid;gap:18px;font:400 34px var(--mono);color:var(--ink)}
+.night li::before{content:"× ";color:#d93f3f}
+.end{align-items:center;text-align:center}
+.end img{width:160px;height:160px}
+.end h2{margin-top:28px;font-size:150px}
+.end .cmd{margin-top:48px;font:400 36px var(--mono);background:var(--sheet);border:1.5px solid var(--line);border-radius:18px;padding:20px 32px}
+.end .cmd::before{content:"$ ";color:var(--faint)}
+.end .url{margin-top:28px;font:500 28px var(--mono);color:var(--muted)}
+.wipe{position:absolute;inset:0;background:#d93f3f;transform:scaleY(0);transform-origin:top}
+</style>
+</head>
+<body>
+<div id="stage">
+  <section class="scene" id="s1">
+    <div class="label"><span data-t="eyebrow"></span></div>
+    <h1 style="margin-top:40px"><span class="sx" data-t="h1"></span></h1>
+    <div class="keep" data-t="keep"></div>
+  </section>
+
+  <section class="scene" id="s2">
+    <div class="label">Selective Amnesia</div>
+    <h2 style="margin-top:28px" data-t="h2a"></h2>
+    <div class="desk" id="desk"></div>
+    <div class="tally">
+      <div><strong id="count">0</strong><span data-t="wiped"></span></div>
+      <div><strong>4</strong><span data-t="kept"></span></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s3">
+    <div class="label">Profile Vault</div>
+    <h2 style="margin-top:28px" data-t="h2b"></h2>
+    <div class="vault">
+      <div class="top"><span>private.7z · AES-256</span><span class="st" id="vst"></span></div>
+      <div class="row"><span class="who">Chrome</span><span class="cx sx">Gmail, WhatsApp Web, Telegram Web</span></div>
+      <div class="row"><span class="who">Claude</span><span class="cx sx">signed in, projects, chats</span></div>
+      <div class="row"><span class="who">WhatsApp</span><span class="cx sx">linked device session</span></div>
+      <div class="row"><span class="who">Claude Code</span><span class="cx sx">~/.claude, settings, login</span></div>
+      <div class="row"><span class="who">GitHub CLI</span><span class="cx sx">gh auth, hosts.yml</span></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s4">
+    <div class="label">Memory Recall</div>
+    <h2 style="margin-top:28px" data-t="h2c"></h2>
+    <div class="recall">
+      <div><small>Profile Vault</small><span class="rx sx" data-t="r1"></span></div>
+      <div><small>Backup</small><span class="rx sx" data-t="r2"></span></div>
+      <div><small>Backup</small><span class="rx sx" data-t="r3"></span></div>
+      <div><small>Profile Vault</small><span class="rx sx" data-t="r4"></span></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s5" style="justify-content:flex-start">
+    <div class="label"><span data-t="app"></span></div>
+    <h2 style="margin-top:28px;font-size:96px" data-t="h2d"></h2>
+    <div class="shots" id="shots"></div>
+  </section>
+
+  <section class="scene night" id="s6">
+    <div class="label">Global Amnesia</div>
+    <h2 style="margin-top:28px;font-size:140px" data-t="h2e"></h2>
+    <ul><li data-t="g1"></li><li data-t="g2"></li><li data-t="g3"></li></ul>
+  </section>
+
+  <section class="scene end" id="s7">
+    <img src="logo.png" alt="">
+    <h2>Amnesia</h2>
+    <div class="keep" style="margin-top:12px;font-size:56px" data-t="keepEnd"></div>
+    <div class="cmd">brew install --cask navi-crwn/tap/amnesia</div>
+    <div class="url">github.com/navi-crwn/amnesia</div>
+  </section>
+  <div class="wipe" id="wipe"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+const LANG = new URLSearchParams(location.search).get('lang') === 'id' ? 'id' : 'en';
+const TXT = {
+  en: { eyebrow:'Amnesia for macOS', h1:'Your Mac\nforgets everything', keep:'except what you choose.',
+        h2a:'Logging out is the cleanup.', wiped:'items wiped at one logout', kept:'kept, on purpose',
+        h2b:'Your logins, locked away first.', sealing:'sealing…', sealed:'sealed ●',
+        h2c:'One password brings it back.', r1:'Restore Profiles', r2:'Restore Files', r3:'Get Vault from Backup', r4:'Move to a New Mac',
+        app:'The app', h2d:'Quiet. Lives in your menu bar.',
+        h2e:'Some forgetting\nis forever.', g1:'3 wrong vault passwords, or your panic word', g2:'Uninstall with "also delete the vault" ticked', g3:'a cleanup with no snapshot and no backup',
+        keepEnd:'Free and open source for macOS.' },
+  id: { eyebrow:'Amnesia untuk macOS', h1:'Mac kamu\nlupa segalanya', keep:'kecuali yang kamu pilih.',
+        h2a:'Logout itulah pembersihannya.', wiped:'item dihapus dalam 1 logout', kept:'disimpan, sengaja',
+        h2b:'Login kamu dikunci dulu.', sealing:'mengunci…', sealed:'terkunci ●',
+        h2c:'Satu password, semuanya kembali.', r1:'Restore Profil', r2:'Pulihkan File', r3:'Ambil Vault dari Backup', r4:'Pindah Mac',
+        app:'Aplikasinya', h2d:'Tenang. Tinggal di menu bar.',
+        h2e:'Ada lupa yang\nselamanya.', g1:'salah password vault 3 kali, atau kata panik', g2:'Hapus Amnesia dengan "hapus juga vault" dicentang', g3:'pembersihan tanpa snapshot dan backup',
+        keepEnd:'Gratis dan open source untuk macOS.' }
+}[LANG];
+document.querySelectorAll('[data-t]').forEach(el => { el.textContent = TXT[el.dataset.t]; });
+document.querySelectorAll('h2[data-t]').forEach(el => { el.style.whiteSpace = 'pre-line'; });
+
+const FILES = ['Downloads/invoice-final(3).pdf','Chrome · History','#Keep/Project','Chrome · Cookies','Desktop/Screenshot 15.11.png',
+  '~/.zsh_history','Slack · Cache','#VPN settings','Documents/draft-v2.docx','Safari · LocalStorage','Telegram · tdata',
+  '~/.npm/_cacache','#Keep/Website','Mail · Downloads','Recent Items','Pictures/IMG_2041.HEIC','Code · workspaceStorage',
+  'Zoom · recordings','#Profile Vault','Keychain · web passwords','Spotify · Cache'];
+const desk = document.getElementById('desk');
+FILES.forEach(f => { const s = document.createElement('span'); const k = f[0] === '#';
+  s.className = 'f' + (k ? ' k' : ' sx'); s.textContent = k ? f.slice(1) : f; desk.appendChild(s); });
+const shots = document.getElementById('shots');
+['home','vault','backup','keep'].forEach(n => { const i = new Image(); i.src = 'screens/' + LANG + '/' + n + '.png'; shots.appendChild(i); });
+
+// deterministic noise, so a frame always renders the same way
+function hash(a, b) { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; }
+const NOISE = '░▒▓#%&*+=<>/\\|', HEX = '0123456789abcdef';
+function render(el, p, mode, seed) {
+  if (el._o === undefined) el._o = el.textContent;
+  const o = el._o, frame = Math.floor(p * 60); let out = '';
+  for (let i = 0; i < o.length; i++) {
+    const c = o[i]; if (c === ' ' || c === '\n') { out += c; continue; }
+    const t = hash(i, seed) * 0.8;
+    if (p <= t) out += c;
+    else if (p < t + 0.2) out += (mode === 'cipher' ? HEX : NOISE)[Math.floor(hash(i + frame * 31, seed + 7) * (mode === 'cipher' ? 16 : NOISE.length))];
+    else out += mode === 'cipher' ? HEX[(i * 7 + o.charCodeAt(i)) % 16] : ' ';
+  }
+  el.textContent = out;
+}
+const prog = (fn) => { const o = { p: 0 }; return [o, { p: 1, ease: 'none', onUpdate: () => fn(o.p) }]; };
+
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+const show = (id, at) => tl.fromTo(id, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .8 }, at);
+const hide = (id, at) => tl.to(id, { opacity: 0, y: -30, duration: .6, ease: 'power2.in' }, at);
+
+// 1 · title, then the headline forgets itself
+show('#s1', 0.2);
+tl.from('#s1 .keep', { opacity: 0, duration: .8 }, 1.2);
+const h1 = document.querySelector('#s1 .sx');
+tl.to(...prog(p => render(h1, p, 'erase', 1)).map((v, i) => i ? { ...v, duration: 2.2 } : v), 2.8);
+tl.to('#s1 .keep', { y: -260, scale: 1.15, transformOrigin: 'left center', duration: 1.2, ease: 'power3.inOut' }, 4.4);
+hide('#s1', 6.0);
+
+// 2 · Selective Amnesia
+show('#s2', 6.4);
+const files = Array.from(document.querySelectorAll('#desk .f.sx'));
+const count = document.getElementById('count');
+tl.to(...prog(p => {
+  files.forEach((el, i) => { const l = gsap.utils.clamp(0, 1, p * 1.5 - (i % 6) * 0.08); render(el, l, 'erase', 10 + i); el.style.opacity = 1 - l * .85; el.style.borderStyle = l > .6 ? 'dashed' : 'solid'; });
+  count.textContent = Math.round(gsap.utils.clamp(0, 1, p * 1.15) * 1284);
+}).map((v, i) => i ? { ...v, duration: 4.2 } : v), 7.8);
+hide('#s2', 13.0);
+
+// 3 · Profile Vault
+show('#s3', 13.4);
+const rows = Array.from(document.querySelectorAll('#s3 .cx')); const vst = document.getElementById('vst'); vst.textContent = TXT.sealing;
+tl.to(...prog(p => { rows.forEach((el, i) => render(el, gsap.utils.clamp(0, 1, p * 1.5 - i * .1), 'cipher', 40 + i)); vst.textContent = p > .9 ? TXT.sealed : TXT.sealing; })
+  .map((v, i) => i ? { ...v, duration: 3.2 } : v), 14.8);
+hide('#s3', 19.4);
+
+// 4 · Memory Recall: the reverse
+const rx = Array.from(document.querySelectorAll('#s4 .rx'));
+rx.forEach((el, i) => render(el, 1, 'cipher', 60 + i));
+show('#s4', 19.8);
+tl.to(...prog(p => rx.forEach((el, i) => render(el, 1 - gsap.utils.clamp(0, 1, p * 1.5 - i * .12), 'cipher', 60 + i)))
+  .map((v, i) => i ? { ...v, duration: 3.0 } : v), 21.0);
+hide('#s4', 25.6);
+
+// 5 · the app
+show('#s5', 26.0);
+tl.fromTo('#shots', { x: 300 }, { x: -620, duration: 6, ease: 'none' }, 26.0);
+hide('#s5', 31.6);
+
+// 6 · Global Amnesia (dark curtain drops in)
+tl.to('#wipe', { scaleY: 1, duration: .5, ease: 'power3.inOut' }, 31.8);
+tl.set('#s6', { opacity: 1, y: 0 }, 32.3);
+tl.set('#wipe', { scaleY: 0 }, 32.3);
+tl.from('#s6 h2', { opacity: 0, y: 40, duration: .8 }, 32.4);
+tl.from('#s6 li', { opacity: 0, x: -30, duration: .5, stagger: .35 }, 33.2);
+hide('#s6', 37.6);
+
+// 7 · end card
+show('#s7', 38.0);
+tl.from('#s7 .cmd', { opacity: 0, y: 20, duration: .6 }, 38.8);
+tl.from('#s7 .url', { opacity: 0, duration: .6 }, 39.3);
+tl.to({}, { duration: 3.2 }, 39.8);   // hold
+
+window.TL = tl;
+window.DURATION = tl.duration();
+function fit() { const s = Math.min(innerWidth / 1920, innerHeight / 1080); document.getElementById('stage').style.transform = 'scale(' + s + ')'; }
+fit(); addEventListener('resize', fit);
+if (new URLSearchParams(location.search).has('play')) tl.play();
+</script>
+</body>
+</html>

@@ -67,7 +67,7 @@ else gh repo create amnesia --private --source=. --push; fi
 
 echo "3/7  Repo description & topics..."
 gh repo edit --description "Your Mac forgets everything at logout. Except the logins and files you keep. Free macOS menu bar app with an encrypted login vault, backups and a panic word." \
-  --homepage "https://navi-crwn.github.io/amnesia-mac/" \
+  --homepage "https://navi-crwn.github.io/amnesia/" \
   --add-topic macos --add-topic privacy --add-topic swiftui --add-topic menubar-app --add-topic encryption --add-topic backup \
   --add-topic opsec --add-topic mac-app --add-topic open-source >/dev/null
 
@@ -89,7 +89,7 @@ AMNESIA v$V - read this before you install
 WARNING: Amnesia really deletes data. Once you turn it on, everything outside
 your Keep folder and Keep List is deleted at every logout, restart and shutdown.
 It does not go to the Trash and cannot be undone. Back up first.
-Full terms: https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.md
+Full terms: https://github.com/navi-crwn/amnesia/blob/main/TERMS.md
 
 Your data stays on your Mac. Amnesia has no servers, no tracking, no analytics.
 
@@ -101,7 +101,7 @@ Paste this in Terminal instead:  bash ~/.amnesia/uninstall.sh
 PERINGATAN: Amnesia benar-benar menghapus data. Setelah aktif, semua di luar
 folder Keep dan Keep List dihapus setiap logout, restart dan shutdown, tidak
 masuk Trash dan tidak bisa dibatalkan. Backup dulu.
-Ketentuan lengkap: https://github.com/navi-crwn/amnesia-mac/blob/main/TERMS.id.md
+Ketentuan lengkap: https://github.com/navi-crwn/amnesia/blob/main/TERMS.id.md
 
 HAPUS APP: jangan cuma buang ke Trash (agent login masih tertinggal).
 Tempel ini di Terminal:  bash ~/.amnesia/uninstall.sh

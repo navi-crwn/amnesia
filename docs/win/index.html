@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amnesia for Windows</title>
+<meta name="description" content="Amnesia is coming to Windows: your PC forgets everything when you sign out, except what you keep. Early preview, built in the open.">
+<meta name="theme-color" content="#07070a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f7f7fb" media="(prefers-color-scheme: light)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Amnesia for Windows">
+<meta property="og:description" content="Coming to Windows: your PC forgets everything when you sign out, except what you keep.">
+<meta property="og:url" content="https://navi-crwn.github.io/amnesia/win/">
+<meta property="og:image" content="https://navi-crwn.github.io/amnesia/social.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../logo.png">
+<script>
+(function(){var d=document.documentElement,l=null,t=null;d.classList.add('js');
+try{l=localStorage.getItem('lang');t=localStorage.getItem('theme')}catch(e){}
+d.lang=l||((navigator.language||'').indexOf('id')===0?'id':'en');
+if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body class="winpage">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<header class="nav solid" id="nav">
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../logo.png" alt="" width="30" height="30">Amnesia</a>
+    <div class="plat" role="group" aria-label="Platform">
+      <a href="../">Mac</a>
+      <a href="./" aria-current="page">Windows</a>
+    </div>
+    <div class="nav-r">
+      <button type="button" class="theme" id="theme" aria-label="Light or dark"><svg class="t-sun"><use href="#i-sun"/></svg><svg class="t-moon"><use href="#i-moon"/></svg></button>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" id="lang-en" aria-pressed="true" lang="en">EN</button>
+        <button type="button" id="lang-id" aria-pressed="false" lang="id">ID</button>
+      </div>
+      <a class="btn main" href="https://github.com/navi-crwn/amnesia"><span data-en>Follow on GitHub</span><span data-id>Ikuti di GitHub</span></a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<section class="win-hero">
+  <div class="wrap">
+    <p class="win-tag"><span data-en>Work in progress · preview v0.1.0</span><span data-id>Sedang dibuat · preview v0.1.0</span></p>
+    <h1>
+      <span data-en>Amnesia for Windows <em>is on its way.</em></span>
+      <span data-id>Amnesia untuk Windows <em>sedang dalam perjalanan.</em></span>
+    </h1>
+    <p class="lead">
+      <span data-en>Same idea as on Mac: your PC forgets everything when you sign out, except the logins and files you keep. It's being built right now, in the open.</span>
+      <span data-id>Idenya sama seperti di Mac: PC kamu lupa segalanya saat kamu sign out, kecuali login dan file yang kamu simpan. Sekarang lagi dibuat, terbuka untuk semua orang.</span>
+    </p>
+    <div class="cta">
+      <a class="btn main" href="https://github.com/navi-crwn/amnesia"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github"/></svg><span data-en>Star the repo to follow along</span><span data-id>Kasih star untuk ikut memantau</span></a>
+      <a class="btn ghost" href="../"><span data-en>Got a Mac? It's ready there</span><span data-id>Pakai Mac? Di sana sudah siap</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="win-sec">
+  <div class="wrap win-grid">
+    <div class="win-card">
+      <h2><span data-en>Works now</span><span data-id>Sudah jalan</span></h2>
+      <ul class="win-list ok">
+        <li><span data-en><b>Preview:</b> see exactly what would be wiped from your user folder. Nothing gets deleted.</span><span data-id><b>Simulasi:</b> lihat apa saja yang akan dihapus dari folder user kamu. Tidak ada yang dihapus.</span></li>
+        <li><span data-en>Your Keep folder, the Keep List and what Windows needs to sign you in always stay.</span><span data-id>Folder Keep, Keep List dan semua yang dibutuhkan Windows untuk login selalu aman.</span></li>
+        <li><span data-en>Tray app next to the clock, light and dark, English and Indonesian.</span><span data-id>App di tray dekat jam, terang dan gelap, bahasa Inggris dan Indonesia.</span></li>
+        <li><span data-en>Built and tested on Windows automatically after every change.</span><span data-id>Otomatis di-build dan dites di Windows setiap ada perubahan.</span></li>
+      </ul>
+    </div>
+    <div class="win-card">
+      <h2><span data-en>Coming next</span><span data-id>Berikutnya</span></h2>
+      <ul class="win-list todo">
+        <li><span data-en>The real cleanup at sign out, restart and shutdown</span><span data-id>Pembersihan sungguhan saat sign out, restart dan shutdown</span></li>
+        <li><span data-en>Profile Vault: an encrypted copy of your logins</span><span data-id>Profile Vault: salinan login kamu yang terenkripsi</span></li>
+        <li><span data-en>Picking what stays, right in the app</span><span data-id>Memilih apa yang tetap ada, langsung dari app</span></li>
+        <li><span data-en>Backups and the panic word</span><span data-id>Backup dan panic word</span></li>
+        <li><span data-en>A proper installer</span><span data-id>Installer yang rapi</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="win-sec">
+  <div class="wrap">
+    <div class="win-card wide">
+      <h2><span data-en>Curious? Try the preview</span><span data-id>Penasaran? Coba preview-nya</span></h2>
+      <ol class="win-steps">
+        <li><span data-en>Sign in to GitHub (downloads from Actions need an account).</span><span data-id>Login ke GitHub (download dari Actions butuh akun).</span></li>
+        <li><span data-en>Open the <a href="https://github.com/navi-crwn/amnesia/actions/workflows/windows.yml">latest Windows build</a> with a green check.</span><span data-id>Buka <a href="https://github.com/navi-crwn/amnesia/actions/workflows/windows.yml">build Windows terbaru</a> yang centang hijau.</span></li>
+        <li><span data-en>Under <b>Artifacts</b>, download <code>Amnesia-windows-x64</code> for a normal PC, or <code>Amnesia-windows-arm64</code> for Windows on ARM (like a Windows VM on a Mac).</span><span data-id>Di bagian <b>Artifacts</b>, download <code>Amnesia-windows-x64</code> untuk PC biasa, atau <code>Amnesia-windows-arm64</code> untuk Windows ARM (misalnya VM Windows di Mac).</span></li>
+        <li><span data-en>Unzip and open <code>Amnesia.exe</code>. Windows will warn because the app isn't signed yet: <b>More info → Run anyway</b>.</span><span data-id>Unzip lalu buka <code>Amnesia.exe</code>. Windows akan memberi peringatan karena app-nya belum bertanda tangan: <b>More info → Run anyway</b>.</span></li>
+      </ol>
+      <p class="win-note"><span data-en>Windows 10 or 11. The preview only shows a list and never deletes anything.</span><span data-id>Windows 10 atau 11. Preview ini cuma menampilkan daftar dan tidak pernah menghapus apa pun.</span></p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="win-foot">
+  <div class="wrap">
+    <p><span data-en>© 2026 navi-crwn. Open source (MIT).</span><span data-id>© 2026 navi-crwn. Open source (MIT).</span>
+      <a href="https://github.com/navi-crwn/amnesia">GitHub</a> ·
+      <a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md" data-en>Terms</a><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.id.md" data-id>Ketentuan</a></p>
+    <p class="ft-tm"><span data-en>Windows is a trademark of Microsoft. Amnesia is an independent project, not affiliated with or endorsed by Microsoft.</span><span data-id>Windows adalah merek dagang Microsoft. Amnesia adalah proyek independen, tidak berafiliasi dengan dan tidak didukung oleh Microsoft.</span></p>
+  </div>
+</footer>
+
+<script>
+// language + theme, same as the Mac page (assets/js/site.js) without the motion
+(function () {
+  var root = document.documentElement;
+  function setLang(l) {
+    root.lang = l;
+    document.getElementById('lang-en').setAttribute('aria-pressed', String(l === 'en'));
+    document.getElementById('lang-id').setAttribute('aria-pressed', String(l === 'id'));
+    try { localStorage.setItem('lang', l); } catch (e) {}
+  }
+  document.getElementById('lang-en').addEventListener('click', function () { setLang('en'); });
+  document.getElementById('lang-id').addEventListener('click', function () { setLang('id'); });
+  setLang(root.lang === 'id' ? 'id' : 'en');
+  var sysLight = window.matchMedia('(prefers-color-scheme: light)');
+  function theme() { var t = root.getAttribute('data-theme'); return t === 'light' || t === 'dark' ? t : (sysLight.matches ? 'light' : 'dark'); }
+  var btn = document.getElementById('theme');
+  function sync() { var l = theme() === 'light'; btn.setAttribute('aria-pressed', String(l)); btn.setAttribute('aria-label', l ? 'Switch to dark mode' : 'Switch to light mode'); }
+  btn.addEventListener('click', function () {
+    var next = theme() === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    sync();
+  });
+  sync();
+})();
+</script>
+</body>
+</html>

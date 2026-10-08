@@ -76,6 +76,7 @@ HAPUS  ~/Library/Containers/com.apple.archiveutility
 HAPUS  ~/Library/Containers/com.apple.assessmentagent
 HAPUS  ~/Library/Containers/com.apple.ax.KonaTTSSupport.KonaSynthesizer
 HAPUS  ~/Library/Containers/com.apple.ax.MauiTTSSupport.MauiAUSP
+HAPUS  ~/Library/Containers/com.apple.calculator
 HAPUS  ~/Library/Containers/com.apple.calendar.CalendarIntentsExtension
 HAPUS  ~/Library/Containers/com.apple.clock
 HAPUS  ~/Library/Containers/com.apple.contacts.ContactsCoreSpotlightExtension
@@ -353,6 +354,7 @@ HAPUS  ~/Downloads/Wiki_ the complete salt.md documentation_files
 HAPUS  ~/Downloads/amnesia-audio.zip
 HAPUS  ~/Downloads/amnesia-opsec-web-video3.zip
 HAPUS  ~/Downloads/amnesia-rapikan-release.zip
+HAPUS  ~/Downloads/amnesia-readme-web.zip
 HAPUS  ~/Downloads/amnesia-v5.16.zip
 HAPUS  ~/Downloads/amnesia-v5.17.1-r2.zip
 HAPUS  ~/Downloads/amnesia-v5.17.zip
@@ -370,6 +372,7 @@ HAPUS  ~/Downloads/amnesia-website-v2.zip
 HAPUS  ~/Downloads/amnesia-website-v3.zip
 HAPUS  ~/Downloads/amnesia-website-v4.zip
 HAPUS  ~/Downloads/amnesia-website-video.zip
+HAPUS  ~/Downloads/amnesia-windows-awal.zip
 HAPUS  ~/Downloads/atlasaudio-acoustic-593028.mp3
 HAPUS  ~/Downloads/bheart.mid
 HAPUS  ~/Downloads/joyinsound-family-sunrise-387948.mp3
@@ -386,4 +389,4 @@ HAPUS  ~/Music/Music
 HAPUS  ~/.Trash/.DS_Store
 HAPUS  ~/.Trash/Amnesia.app
 HAPUS  ~/.Trash/amnesia-lama-20261007-0103
---- dry-run (logout): 388 items would be deleted. Nothing was deleted. ---
+--- dry-run (logout): 391 items would be deleted. Nothing was deleted. ---

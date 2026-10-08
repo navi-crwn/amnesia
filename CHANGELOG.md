@@ -7,9 +7,9 @@ Quick backstory: on October 6, 2026 Amnesia was a handful of scripts. Two days a
 
 Your version number is next to the Amnesia title and at the bottom of the menu bar panel.
 
-## v5.18.1 · It looks like the website now (Oct 7–8, 2026)
+## v5.18.2 · It looks like the website now (Oct 7–8, 2026)
 
-This is the version to download. It covers v5.16 up to v5.18.1, plus the new website and the videos.
+This is the version to download. It covers v5.16 up to v5.18.2, plus the new website, the videos and a first look at Windows.
 
 ### New stuff
 - **History page.** A new tile on the home page shows what Amnesia did, day by day: cleanups (with how many items), paused sessions, snapshots, restores, backups and the panic word. Only times, counts and app names get written down, never your file names.
@@ -32,20 +32,23 @@ This is the version to download. It covers v5.16 up to v5.18.1, plus the new web
 - The main popup button (like **Turn Off**) was invisible on macOS 26. It's back.
 - Tiles and buttons near the edges had their border or shadow cut off.
 - The scheduled backup kept asking for your Mac password (Keychain popup). Allow it once and it stays quiet.
+- The GitHub and Terms buttons in the app now go to the new repo address.
 
 ### Website & README
-- **Brand new website** at [navi-crwn.github.io/amnesia-mac](https://navi-crwn.github.io/amnesia-mac/): scroll animations, a 3D logo, light and dark mode, the app taken apart button by button, a click-along tutorial, install cards and a big FAQ. Still works fine with animations off. No tracking.
+- **Brand new website** at [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/): scroll animations, a 3D logo, light and dark mode, the app taken apart button by button, a click-along tutorial, install cards and a big FAQ. Still works fine with animations off. No tracking.
 - **Built in the open:** a section with live repo info and a 3D chart of every commit.
 - **"If you know, you know" 😉** for people who'd rather not explain: lending your Mac, losing it, "just open it real quick" and nosy family. With honest fine print: it protects you after a logout, and the panic word can't be undone.
 - **Paper craft videos.** A 54-second stop motion film right under the top of the page, and three 30-second vertical clips in the "If you know, you know" cards. They play silently while on screen; tap to watch with sound.
 - **The README** got a 15-second moving preview that links to the full video.
 - **The README looks like the website now.** Its pictures are taken straight from the website (in light or dark, following your GitHub theme), instead of old screenshots. Lighter WebP images, a new link preview when you share the repo, and a fresher repo description.
+- **A Windows page** on the website ([/win](https://navi-crwn.github.io/amnesia/win/)) with what already works, what's next and how to try the preview. A Mac / Windows switch sits in the menu bar of both pages.
+- **New address.** The repo is now [github.com/navi-crwn/amnesia](https://github.com/navi-crwn/amnesia) and the website [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/), since Amnesia is heading to Windows too. Old repo links still work; the old website link does not, so please update your bookmark.
 
 ### Behind the scenes
 - New tests for Restore Files, Check a backup file and per-browser light snapshots.
 - **Windows version: first steps.** A very early preview lives in `windows/` (tray app + pages that look like the website). It only shows what it *would* wipe and never deletes anything yet. GitHub builds and tests it on Windows after every change.
 
-Older changes: [the full changelog](https://github.com/navi-crwn/amnesia-mac/blob/main/CHANGELOG.md).
+Older changes: [the full changelog](https://github.com/navi-crwn/amnesia/blob/main/CHANGELOG.md).
 
 ## v5.15 · Faster, safer, easier to remove (Oct 7, 2026)
 

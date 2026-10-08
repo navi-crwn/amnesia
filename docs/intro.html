@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Your Mac forgets everything at every logout, except the logins and files you choose to keep. Free and open source.">
+<meta property="og:title" content="Amnesia for Mac">
+<meta property="og:description" content="Your Mac forgets everything, except what you choose.">
+<meta property="og:image" content="banner.png">
+<link rel="icon" href="logo.png">
+<title>Amnesia for Mac</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+<style>
+/* Layout: a "case file" for forgetting. Wide left-aligned type, one pinned scene per idea
+   (Selective Amnesia, Profile Vault, Memory Recall), quiet everywhere else.
+   Motion has one job: text erodes when it's forgotten and resolves when it's recalled. */
+:root{
+  --paper:#eef0f6;      /* cool fog, biased to the app's indigo */
+  --sheet:#f8f9fc;
+  --ink:#15162c;
+  --muted:#5d6079;
+  --faint:#b9bccd;
+  --line:rgba(21,22,44,.10);
+  --accent:#5458e6;     /* the app's indigo */
+  --accent-soft:rgba(84,88,230,.12);
+  --kept:#0e9f6e;       /* "on" green from the app: only for what stays */
+  --kept-soft:rgba(14,159,110,.12);
+  --danger:#d93f3f;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --body:"Geist",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f1020; --sheet:#171830; --ink:#e7e8f5; --muted:#9a9cb8; --faint:#3f4160;
+    --line:rgba(231,232,245,.10); --accent:#8b8ff8; --accent-soft:rgba(139,143,248,.14);
+    --kept:#34d399; --kept-soft:rgba(52,211,153,.14); --danger:#f87171; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f1020; --sheet:#171830; --ink:#e7e8f5; --muted:#9a9cb8; --faint:#3f4160;
+  --line:rgba(231,232,245,.10); --accent:#8b8ff8; --accent-soft:rgba(139,143,248,.14);
+  --kept:#34d399; --kept-soft:rgba(52,211,153,.14); --danger:#f87171; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:auto}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 16px/1.6 var(--body);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+img{max-width:100%;height:auto;display:block}
+[data-id]{display:none}
+html[lang=id] [data-en]{display:none}
+html[lang=id] [data-id]{display:revert}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:clamp(16px,4vw,40px)}
+.label{font:500 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;align-items:center}
+.label b{font-weight:500;color:var(--accent)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.025em;margin:0;text-wrap:balance}
+h2{font-size:clamp(34px,5.2vw,64px);line-height:1}
+p{margin:0}
+.lede{font-size:clamp(17px,1.6vw,19px);color:var(--muted);max-width:56ch}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:color-mix(in srgb,var(--paper) 78%,transparent);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:16px;height:60px}
+.brand{display:flex;gap:10px;align-items:center;text-decoration:none;font:700 18px var(--display);letter-spacing:-.02em}
+.brand img{width:28px;height:28px}
+.nav nav{margin-left:auto;display:flex;gap:4px;align-items:center}
+.nav nav a{font-size:14px;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:8px}
+.nav nav a:hover{color:var(--ink);background:var(--accent-soft)}
+.lang{display:flex;border:1px solid var(--line);border-radius:999px;padding:2px;margin-left:6px}
+.lang button{border:0;background:none;color:var(--muted);font:500 12px var(--mono);padding:5px 9px;border-radius:999px;cursor:pointer}
+.lang button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+@media (max-width:720px){.nav nav a.opt{display:none}}
+
+/* hero */
+.hero{padding-block:clamp(40px,6vw,88px) clamp(40px,6vw,72px)}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.65fr);gap:clamp(24px,5vw,64px);align-items:center}
+.hero h1{font-size:clamp(44px,5.4vw,84px);line-height:.95;letter-spacing:-.04em}
+.hero h1 .keep{display:block;color:var(--kept);font-weight:500;font-size:.44em;letter-spacing:-.02em;line-height:1.1;margin-top:.35em}
+.hero .lede{margin-top:26px}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px;align-items:center}
+.btn{display:inline-flex;gap:8px;align-items:center;padding:13px 20px;border-radius:12px;font:600 15px var(--body);text-decoration:none;border:1px solid transparent}
+.btn.main{background:var(--accent);color:#fff}
+.btn.main:hover{filter:brightness(1.08)}
+.btn.ghost{border-color:var(--line);color:var(--ink)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.cmd{display:flex;align-items:center;gap:10px;margin-top:16px;min-width:0;background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 14px;max-width:100%;width:fit-content}
+.cmd code{font:400 13.5px var(--mono);white-space:nowrap;overflow-x:auto;min-width:0}
+.cmd code::before{content:"$ ";color:var(--faint)}
+.cmd button{border:0;background:var(--ink);color:var(--paper);font:500 12px var(--mono);border-radius:8px;padding:7px 10px;cursor:pointer;flex-shrink:0}
+.hero-shot{position:relative}
+.hero-shot img{width:100%;border-radius:14px;filter:drop-shadow(0 30px 50px rgba(21,22,44,.18))}
+@media (max-width:860px){.hero .wrap{grid-template-columns:minmax(0,1fr)}.hero-shot{max-width:380px}}
+
+/* chapters */
+.chapter{padding-block:clamp(72px,10vw,120px);border-top:1px solid var(--line)}
+.chapter .head{display:grid;gap:18px;max-width:760px}
+.scene{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(24px,5vw,72px);align-items:center}
+.scene>*{min-width:0}
+@media (max-width:860px){.scene{grid-template-columns:minmax(0,1fr)}}
+.pin{min-height:100dvh;display:flex;align-items:center}
+@media (max-width:860px){.pin{min-height:0}}
+
+/* Selective Amnesia: the desk of files */
+.desk{position:relative;background:var(--sheet);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;min-height:340px}
+.desk .bar{width:100%;display:flex;justify-content:space-between;font:500 11px var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding-bottom:10px;margin-bottom:4px;border-bottom:1px dashed var(--line)}
+.f{font:400 13px var(--mono);padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--paper);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.f.k{border-color:color-mix(in srgb,var(--kept) 45%,transparent);background:var(--kept-soft);color:var(--ink)}
+.f.k::before{content:"● ";color:var(--kept)}
+.tally{display:flex;gap:28px;margin-top:28px;flex-wrap:wrap}
+.tally div{display:grid;gap:2px}
+.tally strong{font:700 clamp(36px,4vw,52px)/1 var(--display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.tally span{font:500 12px var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+
+/* Profile Vault */
+.vault{position:relative;border-radius:18px;padding:clamp(18px,3vw,32px);margin-top:48px;background:var(--sheet);border:1px solid var(--line);display:grid;gap:10px}
+.vault .lockline{display:flex;justify-content:space-between;align-items:center;font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-bottom:12px;border-bottom:1px dashed var(--line)}
+.vault .lockline .state{color:var(--accent)}
+.row{display:grid;grid-template-columns:minmax(90px,180px) minmax(0,1fr);gap:14px;align-items:baseline;font:400 clamp(13px,1.3vw,16px) var(--mono);padding:7px 0}
+.row .who{color:var(--muted)}
+.row .what{white-space:nowrap;overflow:hidden;text-overflow:clip}
+.note{margin-top:4px;font-size:15px;color:var(--danger);max-width:56ch}
+
+/* Memory Recall: a typographic list, names resolve out of ciphertext */
+.recall{list-style:none;margin:48px 0 0;padding:0;display:grid;gap:clamp(18px,2.4vw,28px)}
+.recall li{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:8px 40px;align-items:baseline}
+.recall h3{font-size:clamp(30px,4.6vw,60px);line-height:1;letter-spacing:-.035em;font-weight:600}
+.recall p{color:var(--muted);font-size:16px;max-width:44ch}
+@media (max-width:760px){.recall li{grid-template-columns:minmax(0,1fr)}}
+
+/* Backup: one sentence-sized statement, destinations flow inline */
+.dest{display:flex;flex-wrap:wrap;gap:28px 56px;margin-top:44px}
+.dest article{display:grid;gap:6px;align-content:start;max-width:34ch;min-width:0}
+.dest h3{font-size:clamp(24px,2.6vw,32px);letter-spacing:-.02em}
+.dest p{color:var(--muted);font-size:15px}
+.dest .spec{font:400 12.5px var(--mono);color:var(--accent)}
+.seal{margin-top:40px;font:400 14px var(--mono);color:var(--muted);max-width:70ch}
+.seal b{color:var(--ink);font-weight:500}
+
+/* gallery */
+.gallery{overflow:hidden}
+.strip{display:flex;gap:clamp(16px,2.5vw,32px);padding-inline:clamp(16px,4vw,40px);margin-top:48px;width:max-content}
+.strip figure{margin:0;width:clamp(240px,26vw,340px);flex:none;display:grid;gap:12px}
+.strip img{width:100%;border-radius:12px;filter:drop-shadow(0 18px 30px rgba(21,22,44,.14))}
+.strip figcaption{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+@media (max-width:860px){.gallery .track{overflow-x:auto;scroll-snap-type:x mandatory}.strip figure{scroll-snap-align:start}}
+
+/* Global Amnesia: same theme, the only place the danger color leads */
+.global .panel{border:1px solid color-mix(in srgb,var(--danger) 35%,transparent);background:color-mix(in srgb,var(--danger) 6%,var(--sheet));border-radius:22px;padding:clamp(24px,5vw,64px)}
+.global h2{font-size:clamp(40px,6.4vw,88px);line-height:.95;margin-top:18px;max-width:14ch}
+.global .label{color:var(--danger)}
+.global p{color:var(--muted);max-width:56ch;margin-top:22px;font-size:18px}
+.global ul{margin:24px 0 0;padding:0;list-style:none;display:grid;gap:10px;font:400 15px var(--mono);color:var(--ink)}
+.global li::before{content:"× ";color:var(--danger)}
+
+/* install */
+.steps{display:grid;gap:22px;margin:44px 0 0;padding:0;max-width:760px}
+.steps li{list-style:none;display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:6px 28px;align-items:baseline}
+.steps h3{font-size:24px;letter-spacing:-.02em}
+.steps p{color:var(--muted);font-size:16px}
+@media (max-width:640px){.steps li{grid-template-columns:minmax(0,1fr)}}
+footer{border-top:1px solid var(--line);padding-block:28px;font:400 13px var(--mono);color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 20px}
+footer a{color:var(--muted)}
+
+.sx{white-space:pre-wrap}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="logo.png" alt="">Amnesia</a>
+    <nav aria-label="Main">
+      <a class="opt" href="#selective"><span data-en>How it works</span><span data-id>Cara kerja</span></a>
+      <a class="opt" href="#install"><span data-en>Install</span><span data-id>Pasang</span></a>
+      <a href="index.html"><span data-en>Full guide</span><span data-id>Panduan lengkap</span></a>
+      <a class="opt" href="https://github.com/navi-crwn/amnesia">GitHub</a>
+      <div class="lang" role="group" aria-label="Language">
+        <button id="lang-en" type="button" aria-pressed="true">EN</button>
+        <button id="lang-id" type="button" aria-pressed="false">ID</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1 id="hero-title">
+          <span class="erase"><span data-en class="sx">Your Mac forgets everything</span><span data-id class="sx">Mac kamu lupa segalanya</span></span>
+          <span class="keep"><span data-en>except what you choose.</span><span data-id>kecuali yang kamu pilih.</span></span>
+        </h1>
+        <p class="lede"><span data-en>Every logout, restart and shutdown wipes your Mac clean. Your Keep folder, Keep List and locked Profile Vault stay.</span><span data-id>Setiap logout, restart dan shutdown, Mac kamu dibersihkan. Folder Keep, Keep List dan Profile Vault yang terkunci tetap ada.</span></p>
+        <div class="cta">
+          <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases/latest"><span data-en>Download for Mac</span><span data-id>Download untuk Mac</span></a>
+          <a class="btn ghost" href="index.html"><span data-en>Read the guide</span><span data-id>Baca panduan</span></a>
+        </div>
+        <div class="cmd"><code id="brew">brew install --cask navi-crwn/tap/amnesia</code><button type="button" class="copy" data-copy="brew">Copy</button></div>
+      </div>
+      <div class="hero-shot">
+        <img class="shot" data-shot="home" src="screens/en/home.png" alt="Amnesia home screen: Amnesia is On, with tiles for Profile Vault, Save &amp; Log Out, Pause, Keep List, Backup and History" width="1104" height="1524">
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter" id="selective">
+    <div class="wrap pin" id="pin-selective">
+      <div class="scene">
+        <div class="head">
+          <div class="label">Selective Amnesia</div>
+          <h2><span data-en>Logging out is the cleanup.</span><span data-id>Logout itulah pembersihannya.</span></h2>
+          <p class="lede"><span data-en>Downloads, browser history, cookies, chats and app data. Anything that isn't on your Keep List is gone before the Mac logs out, then checked again at login.</span><span data-id>Downloads, riwayat browser, cookie, chat dan data app. Semua yang tidak ada di Keep List hilang sebelum Mac logout, lalu dicek lagi saat login.</span></p>
+          <div class="tally">
+            <div><strong id="count">1284</strong><span data-en>items wiped at one logout</span><span data-id>item dihapus dalam 1 logout</span></div>
+            <div><strong id="kept-count">4</strong><span data-en>kept, on purpose</span><span data-id>disimpan, sengaja</span></div>
+          </div>
+        </div>
+        <div class="desk" id="desk" aria-label="Example files on a Mac">
+          <div class="bar"><span>~/</span><span data-en>at logout</span><span data-id>saat logout</span></div>
+          <span class="f sx">Downloads/invoice-final(3).pdf</span>
+          <span class="f sx">Chrome · History</span>
+          <span class="f k">Keep/Project</span>
+          <span class="f sx">Chrome · Cookies</span>
+          <span class="f sx">Desktop/Screenshot 15.11.png</span>
+          <span class="f sx">~/.zsh_history</span>
+          <span class="f sx">Slack · Cache</span>
+          <span class="f k">VPN settings</span>
+          <span class="f sx">Documents/draft-v2.docx</span>
+          <span class="f sx">Safari · LocalStorage</span>
+          <span class="f sx">Telegram · tdata</span>
+          <span class="f sx">~/.npm/_cacache</span>
+          <span class="f k">Keep/Website</span>
+          <span class="f sx">Mail · Downloads</span>
+          <span class="f sx">Recent Items</span>
+          <span class="f sx">Pictures/IMG_2041.HEIC</span>
+          <span class="f sx">Code · workspaceStorage</span>
+          <span class="f sx">Zoom · recordings</span>
+          <span class="f k">Profile Vault</span>
+          <span class="f sx">Keychain · web passwords</span>
+          <span class="f sx">Spotify · Cache</span>
+          <span class="f sx">Downloads/setup.dmg</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter" id="vault">
+    <div class="wrap pin" id="pin-vault">
+      <div style="width:100%">
+        <div class="head">
+          <h2><span data-en>Your logins, locked away first.</span><span data-id>Login kamu dikunci dulu.</span></h2>
+          <p class="lede"><span data-en>Right before the wipe, logins for Chrome, Claude, WhatsApp and your coding tools go into the Profile Vault. Saving needs no password. Opening it does.</span><span data-id>Tepat sebelum dibersihkan, login Chrome, Claude, WhatsApp dan alat coding kamu masuk ke Profile Vault. Menyimpan tidak butuh password. Membukanya butuh.</span></p>
+          <p class="note"><span data-en>Get the vault password wrong 3 times, or type your panic word, and the vault destroys itself.</span><span data-id>Salah password vault 3 kali, atau ketik kata panik, dan vault menghancurkan dirinya sendiri.</span></p>
+        </div>
+        <div class="vault" id="vault-box" aria-label="Profile Vault contents">
+          <div class="lockline"><span>private.7z · AES-256</span><span class="state" id="vault-state"><span data-en>sealing</span><span data-id>mengunci</span></span></div>
+          <div class="row"><span class="who">Chrome</span><span class="what cx">Gmail, WhatsApp Web, Telegram Web</span></div>
+          <div class="row"><span class="who">Claude</span><span class="what cx">signed in, projects, chats</span></div>
+          <div class="row"><span class="who">WhatsApp</span><span class="what cx">linked device session</span></div>
+          <div class="row"><span class="who">Claude Code</span><span class="what cx">~/.claude, settings, login</span></div>
+          <div class="row"><span class="who">OpenCode</span><span class="what cx">opencode.db, providers</span></div>
+          <div class="row"><span class="who">GitHub CLI</span><span class="what cx">gh auth, hosts.yml</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter" id="recall">
+    <div class="wrap">
+      <div class="head">
+        <h2><span data-en>One password brings it all back.</span><span data-id>Satu password, semuanya kembali.</span></h2>
+        <p class="lede"><span data-en>We call this Memory Recall. A clean Mac doesn't mean starting over, as long as you made a snapshot or a backup earlier.</span><span data-id>Kami menyebutnya Memory Recall. Mac yang bersih tidak berarti mulai dari nol, asalkan kamu sudah membuat snapshot atau backup sebelumnya.</span></p>
+      </div>
+      <ol class="recall" id="recall-grid">
+        <li><h3 class="rx"><span data-en class="sx">Restore Profiles</span><span data-id class="sx">Restore Profil</span></h3><p><span data-en>Log in, type your vault password, and Chrome, Claude and WhatsApp open signed in.</span><span data-id>Login, ketik password vault, lalu Chrome, Claude dan WhatsApp terbuka dalam keadaan login.</span></p></li>
+        <li><h3 class="rx"><span data-en class="sx">Restore Files</span><span data-id class="sx">Pulihkan File</span></h3><p><span data-en>Pick files from a backup and they go back where they came from. Nothing is overwritten.</span><span data-id>Pilih file dari backup dan semuanya kembali ke tempat asalnya. Tidak ada yang ditimpa.</span></p></li>
+        <li><h3 class="rx"><span data-en class="sx">Get Vault from Backup</span><span data-id class="sx">Ambil Vault dari Backup</span></h3><p><span data-en>Lost the vault on this Mac? The copy inside your last backup takes its place.</span><span data-id>Vault di Mac ini hilang? Salinan di backup terakhir menggantikannya.</span></p></li>
+        <li><h3 class="rx"><span data-en class="sx">Move to a New Mac</span><span data-id class="sx">Pindah Mac</span></h3><p><span data-en>Your vault and Keychain keys travel together, so apps on the new Mac open logged in.</span><span data-id>Vault dan kunci Keychain ikut pindah, jadi app di Mac baru langsung terbuka dalam keadaan login.</span></p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="chapter" id="backup">
+    <div class="wrap">
+      <div class="head">
+        <h2><span data-en>A sealed copy, somewhere else.</span><span data-id>Salinan tersegel, di tempat lain.</span></h2>
+      </div>
+      <div class="dest">
+        <article><h3><span data-en>USB drive or SSD</span><span data-id>Flashdisk atau SSD</span></h3><p><span data-en>Plug it in, pick it once. Scheduled backups run daily or weekly on their own.</span><span data-id>Colok, pilih sekali. Backup terjadwal jalan sendiri tiap hari atau tiap minggu.</span></p><span class="spec">/Volumes/…</span></article>
+        <article><h3><span data-en>Your own server</span><span data-id>Server sendiri</span></h3><p><span data-en>Type the server password once. Amnesia sets up an SSH key for you and uses it from then on.</span><span data-id>Ketik password server sekali. Amnesia memasang kunci SSH dan memakainya seterusnya.</span></p><span class="spec">ssh + rsync · user@host</span></article>
+        <article><h3>Cloud</h3><p><span data-en>Google Drive, Dropbox, OneDrive, Box or pCloud. You log in through your browser.</span><span data-id>Google Drive, Dropbox, OneDrive, Box atau pCloud. Login lewat browser kamu.</span></p><span class="spec">rclone · Drive for Desktop</span></article>
+      </div>
+      <p class="seal"><span data-en>Every backup is <b>one .7z file, AES-256</b>, locked before it leaves your Mac. No servers of ours, no accounts, no tracking.</span><span data-id>Setiap backup adalah <b>1 file .7z, AES-256</b>, dikunci sebelum keluar dari Mac kamu. Tanpa server kami, tanpa akun, tanpa pelacakan.</span></p>
+    </div>
+  </section>
+
+  <section class="chapter gallery" id="app">
+    <div class="wrap">
+      <div class="head">
+        <h2><span data-en>Quiet. Lives in your menu bar.</span><span data-id>Tenang. Tinggal di menu bar.</span></h2>
+      </div>
+    </div>
+    <div class="track" id="track">
+      <div class="strip" id="strip">
+        <figure><img class="shot" data-shot="vault" src="screens/en/vault.png" alt="Profile Vault page" loading="lazy" width="1104" height="1524"><figcaption>Profile Vault</figcaption></figure>
+        <figure><img class="shot" data-shot="keep" src="screens/en/keep.png" alt="Keep List page" loading="lazy" width="1104" height="1524"><figcaption>Keep List</figcaption></figure>
+        <figure><img class="shot" data-shot="backup" src="screens/en/backup.png" alt="Backup page" loading="lazy" width="1104" height="1524"><figcaption>Backup</figcaption></figure>
+        <figure><img class="shot" data-shot="preview" src="screens/en/preview.png" alt="What Gets Deleted list" loading="lazy" width="1104" height="1524"><figcaption><span data-en>What gets deleted</span><span data-id>Yang akan dihapus</span></figcaption></figure>
+        <figure><img class="shot" data-shot="history" src="screens/en/history.png" alt="History page" loading="lazy" width="1104" height="1524"><figcaption><span data-en>History</span><span data-id>Riwayat</span></figcaption></figure>
+        <figure><img class="shot" data-shot="home-dark" src="screens/en/home-dark.png" alt="Home screen in dark mode" loading="lazy" width="1104" height="1524"><figcaption><span data-en>Dark mode</span><span data-id>Mode gelap</span></figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter global" id="global">
+    <div class="wrap"><div class="panel">
+      <div class="label">Global Amnesia</div>
+      <h2><span data-en>Some forgetting is forever.</span><span data-id>Ada lupa yang selamanya.</span></h2>
+      <p><span data-en>Amnesia really deletes. Wiped files don't go to the Trash. These are the moments with no way back:</span><span data-id>Amnesia benar-benar menghapus. File yang dihapus tidak masuk Trash. Ini saat-saat tanpa jalan kembali:</span></p>
+      <ul>
+        <li><span data-en>3 wrong vault passwords, or your panic word</span><span data-id>salah password vault 3 kali, atau kata panik</span></li>
+        <li><span data-en>Uninstall with "also delete the vault" ticked</span><span data-id>Hapus Amnesia dengan "hapus juga vault" dicentang</span></li>
+        <li><span data-en>a cleanup while you have no snapshot and no backup</span><span data-id>pembersihan saat belum ada snapshot dan backup</span></li>
+      </ul>
+      <p><span data-en>Amnesia stays off until you turn it on yourself. Read the <a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md">terms</a> first.</span><span data-id>Amnesia tetap mati sampai kamu sendiri yang menyalakan. Baca <a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.id.md">syaratnya</a> dulu.</span></p>
+    </div></div>
+  </section>
+
+  <section class="chapter" id="install">
+    <div class="wrap">
+      <div class="head">
+        <h2><span data-en>Three steps. Nothing is deleted yet.</span><span data-id>Tiga langkah. Belum ada yang dihapus.</span></h2>
+      </div>
+      <ol class="steps">
+        <li><h3><span data-en>Get it</span><span data-id>Unduh</span></h3><p><span data-en>Get the .dmg from <a href="https://github.com/navi-crwn/amnesia/releases/latest">Releases</a> and drag Amnesia to Applications, or use the Homebrew command below.</span><span data-id>Ambil .dmg dari <a href="https://github.com/navi-crwn/amnesia/releases/latest">Releases</a> lalu seret Amnesia ke Applications, atau pakai perintah Homebrew di bawah.</span></p></li>
+        <li><h3><span data-en>Open it</span><span data-id>Buka</span></h3><p><span data-en>It isn't signed by Apple yet. The first time, go to System Settings → Privacy &amp; Security → Open Anyway.</span><span data-id>Belum ditandatangani Apple. Pertama kali, buka System Settings → Privacy &amp; Security → Open Anyway.</span></p></li>
+        <li><h3><span data-en>Choose what stays</span><span data-id>Pilih yang tetap ada</span></h3><p><span data-en>The welcome tour finds your apps and asks what to keep. Turn Amnesia on only when you're ready.</span><span data-id>Tur perkenalan menemukan app kamu dan menanyakan apa yang disimpan. Nyalakan Amnesia kalau sudah siap.</span></p></li>
+      </ol>
+      <div class="cta">
+        <div class="cmd" style="margin-top:0"><code id="brew2">brew install --cask navi-crwn/tap/amnesia</code><button type="button" class="copy" data-copy="brew2">Copy</button></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Amnesia for macOS</span>
+    <a href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE">MIT License</a>
+    <span>© 2026 navi-crwn</span>
+    <a href="https://github.com/navi-crwn/amnesia">GitHub</a>
+    <a href="index.html"><span data-en>Full guide</span><span data-id>Panduan lengkap</span></a>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+(function () {
+  const root = document.documentElement;
+
+  // language: remembered per viewer, default from the browser
+  function setLang(l) {
+    root.lang = l;
+    document.getElementById('lang-en').setAttribute('aria-pressed', l === 'en');
+    document.getElementById('lang-id').setAttribute('aria-pressed', l === 'id');
+    document.querySelectorAll('img.shot').forEach(img => { img.src = 'screens/' + l + '/' + img.dataset.shot + '.png'; });
+    try { localStorage.setItem('amnesia-lang', l); } catch (e) {}
+    if (window.ScrollTrigger) ScrollTrigger.refresh();
+  }
+  let saved = null;
+  try { saved = localStorage.getItem('amnesia-lang'); } catch (e) {}
+  setLang(saved || ((navigator.language || '').toLowerCase().startsWith('id') ? 'id' : 'en'));
+  document.getElementById('lang-en').onclick = () => setLang('en');
+  document.getElementById('lang-id').onclick = () => setLang('id');
+
+  // copy buttons
+  document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
+    const el = document.getElementById(b.dataset.copy);
+    const done = () => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy', 1600); };
+    (navigator.clipboard ? navigator.clipboard.writeText(el.textContent) : Promise.reject())
+      .then(done).catch(() => { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+  }));
+
+  if (!window.gsap || !window.ScrollTrigger) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  gsap.registerPlugin(ScrollTrigger);
+
+  // --- the one effect: text erodes (forget) or resolves (recall) ---
+  const NOISE = '░▒▓#%&*+=<>/\\|';
+  const HEX = '0123456789abcdef';
+  const rand = (s) => s[Math.floor(Math.random() * s.length)];
+  // each character gets its own moment, so words fall apart unevenly, like memory
+  function prep(el) {
+    if (el._orig) return;
+    el._orig = el.textContent;
+    el._t = Array.from(el._orig, () => Math.random());
+  }
+  // p: 0 = intact, 1 = gone. mode 'erase' ends in blanks, 'cipher' ends in hex
+  function render(el, p, mode) {
+    prep(el);
+    const o = el._orig;
+    let out = '';
+    for (let i = 0; i < o.length; i++) {
+      const c = o[i];
+      if (c === ' ' || c === '\n') { out += c; continue; }
+      const t = el._t[i] * 0.8;               // when this char starts to go
+      if (p <= t) out += c;
+      else if (p < t + 0.2) out += mode === 'cipher' ? rand(HEX) : rand(NOISE);
+      else out += mode === 'cipher' ? HEX[(i * 7 + o.charCodeAt(i)) % 16] : ' ';
+    }
+    el.textContent = out;
+  }
+  const visible = (root) => Array.from(root.querySelectorAll('.sx')).filter(el => el.offsetParent !== null || el.getClientRects().length);
+
+  const wide = matchMedia('(min-width: 861px)').matches;
+
+  // hero: the headline forgets itself as you scroll away; "except what you choose" stays
+  ScrollTrigger.create({
+    trigger: '.hero', start: 'top top', end: 'bottom 20%', scrub: true,
+    onUpdate: s => document.querySelectorAll('#hero-title .erase .sx').forEach(el => render(el, s.progress * 1.05, 'erase'))
+  });
+
+  // Selective Amnesia: files fall apart, kept ones stay lit; counter runs
+  const files = Array.from(document.querySelectorAll('#desk .f.sx'));
+  const count = document.getElementById('count');
+  ScrollTrigger.create({
+    trigger: '#pin-selective', start: wide ? 'top top' : 'top 75%', end: wide ? '+=130%' : 'bottom 35%',
+    pin: wide, scrub: true,
+    onUpdate: s => {
+      const p = s.progress;
+      files.forEach((el, i) => {
+        const local = gsap.utils.clamp(0, 1, (p * 1.4) - (i % 7) * 0.05);
+        render(el, local, 'erase');
+        el.style.opacity = 1 - local * 0.85;
+        el.style.borderStyle = local > 0.6 ? 'dashed' : 'solid';
+      });
+      count.textContent = Math.round(gsap.utils.clamp(0, 1, p * 1.2) * 1284).toLocaleString('en-US');
+    }
+  });
+
+  // Profile Vault: rows turn into ciphertext, the lock line flips to "sealed"
+  const rows = Array.from(document.querySelectorAll('#vault-box .cx'));
+  const state = document.getElementById('vault-state');
+  ScrollTrigger.create({
+    trigger: '#pin-vault', start: wide ? 'top top' : 'top 70%', end: wide ? '+=110%' : 'bottom 40%',
+    pin: wide, scrub: true,
+    onUpdate: s => {
+      rows.forEach((el, i) => render(el, gsap.utils.clamp(0, 1, s.progress * 1.5 - i * 0.08), 'cipher'));
+      const sealed = s.progress > 0.85;
+      state.innerHTML = sealed ? '<span data-en>sealed ●</span><span data-id>terkunci ●</span>'
+                               : '<span data-en>sealing…</span><span data-id>mengunci…</span>';
+    }
+  });
+
+  // Memory Recall: the reverse, names resolve out of ciphertext as they come into view
+  document.querySelectorAll('#recall-grid .rx .sx').forEach((el, i) => {
+    render(el, 1, 'cipher');
+    ScrollTrigger.create({
+      trigger: el, start: 'top 92%', end: 'top 55%', scrub: true,
+      onUpdate: s => render(el, 1 - s.progress, 'cipher'),
+      onLeave: () => render(el, 0, 'cipher')
+    });
+  });
+
+  // gallery: vertical scroll drives the strip sideways on wide screens
+  if (wide) {
+    const strip = document.getElementById('strip');
+    gsap.to(strip, {
+      x: () => -(strip.scrollWidth - innerWidth + 40),
+      ease: 'none',
+      scrollTrigger: { trigger: '#app', start: 'top top', end: () => '+=' + (strip.scrollWidth - innerWidth), pin: true, scrub: true, invalidateOnRefresh: true }
+    });
+  }
+
+  // gentle parallax on the hero shot
+  gsap.to('.hero-shot img', { yPercent: -8, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+})();
+</script>
+
+</body>
+</html>

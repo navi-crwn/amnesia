@@ -18,7 +18,7 @@ jobs:
     name: Cleaner tests (dry run)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Test with PowerShell 7
         shell: pwsh
         run: ./windows/tests/test_clean.ps1
@@ -36,8 +36,8 @@ jobs:
       matrix:
         arch: [x64, arm64] # arm64 = Windows on ARM, e.g. a Windows 11 VM on a Mac
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
       - name: Build Amnesia.exe
@@ -53,7 +53,7 @@ jobs:
             if (-not (Test-Path "out/Amnesia/$f")) { throw "missing: $f" }
           }
           Get-ChildItem out/Amnesia -Recurse -File | ForEach-Object { '{0,8:N0} KB  {1}' -f ($_.Length / 1KB), $_.FullName.Substring((Resolve-Path out/Amnesia).Path.Length + 1) }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: Amnesia-windows-${{ matrix.arch }}
           path: out/Amnesia

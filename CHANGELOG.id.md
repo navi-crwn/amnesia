@@ -7,9 +7,9 @@ Sedikit cerita: tanggal 6 Oktober 2026 Amnesia masih berupa beberapa skrip. Dua 
 
 Nomor versi kamu ada di samping judul Amnesia dan di bagian bawah panel menu bar.
 
-## v5.18.1 · Sekarang tampilannya kayak website (7–8 Okt 2026)
+## v5.18.2 · Sekarang tampilannya kayak website (7–8 Okt 2026)
 
-Ini versi yang sebaiknya kamu unduh. Isinya v5.16 sampai v5.18.1, ditambah website baru dan video-videonya.
+Ini versi yang sebaiknya kamu unduh. Isinya v5.16 sampai v5.18.2, ditambah website baru, video-videonya, dan intip awal versi Windows.
 
 ### Yang baru
 - **Halaman Riwayat.** Tile baru di halaman utama yang menunjukkan apa saja yang dikerjakan Amnesia, per hari: pembersihan (berapa item), sesi yang dijeda, snapshot, restore, backup, dan kata panik. Yang dicatat cuma waktu, jumlah, dan nama app. Nama file kamu tidak pernah ditulis.
@@ -32,20 +32,23 @@ Ini versi yang sebaiknya kamu unduh. Isinya v5.16 sampai v5.18.1, ditambah websi
 - Tombol utama popup (misalnya **Matikan**) tidak kelihatan di macOS 26. Sekarang sudah muncul lagi.
 - Tile dan tombol di pinggir halaman garis atau bayangannya terpotong.
 - Backup terjadwal terus minta password Mac (popup Keychain). Izinkan sekali, setelah itu diam.
+- Tombol GitHub dan Ketentuan di app sekarang menuju alamat repo yang baru.
 
 ### Website & README
-- **Website baru** di [navi-crwn.github.io/amnesia-mac](https://navi-crwn.github.io/amnesia-mac/): animasi saat scroll, logo 3D, mode terang dan gelap, app dibongkar tombol per tombol, tutorial yang bisa diikuti, kartu instalasi, dan FAQ yang lengkap. Tetap enak dibaca walau animasi dimatikan. Tanpa pelacakan.
+- **Website baru** di [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/): animasi saat scroll, logo 3D, mode terang dan gelap, app dibongkar tombol per tombol, tutorial yang bisa diikuti, kartu instalasi, dan FAQ yang lengkap. Tetap enak dibaca walau animasi dimatikan. Tanpa pelacakan.
 - **Dibuat secara terbuka:** bagian berisi info repo langsung dari GitHub dan grafik 3D setiap commit.
 - **"Yang paham, paham" 😉** buat kamu yang malas ditanya-tanya: Mac dipinjam, Mac hilang, "coba buka sebentar", dan keluarga kepo. Dengan catatan jujur: perlindungannya berlaku setelah logout, dan kata panik tidak bisa dibatalkan.
 - **Video paper craft.** Film stop motion 54 detik tepat di bawah bagian atas halaman, plus tiga klip vertikal 30 detik di kartu "Yang paham, paham". Main tanpa suara saat terlihat; ketuk untuk menonton dengan suara.
 - **README** sekarang punya pratinjau bergerak 15 detik yang mengarah ke video lengkapnya.
 - **README sekarang senada dengan website.** Gambarnya diambil langsung dari website (terang atau gelap, ikut tema GitHub kamu), menggantikan screenshot lama. Gambar WebP yang lebih ringan, pratinjau link baru saat repo dibagikan, dan deskripsi repo yang lebih segar.
+- **Halaman Windows** di website ([/win](https://navi-crwn.github.io/amnesia/win/)): apa yang sudah jalan, apa berikutnya, dan cara mencoba preview-nya. Ada tombol Mac / Windows di menu atas kedua halaman.
+- **Alamat baru.** Repo-nya sekarang [github.com/navi-crwn/amnesia](https://github.com/navi-crwn/amnesia) dan websitenya [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/), karena Amnesia juga sedang menuju Windows. Link repo lama tetap jalan, tapi link website lama tidak, jadi bookmark-nya perlu diganti.
 
 ### Di balik layar
 - Tes baru untuk Pulihkan File, Cek file backup, dan snapshot ringan per browser.
 - **Versi Windows: langkah pertama.** Versi awal banget ada di `windows/` (app di tray + halaman yang mirip website). Cuma menunjukkan apa yang *akan* dihapus, belum menghapus apa pun. GitHub otomatis build dan mengetesnya di Windows setiap ada perubahan.
 
-Perubahan yang lebih lama: [changelog lengkap](https://github.com/navi-crwn/amnesia-mac/blob/main/CHANGELOG.id.md).
+Perubahan yang lebih lama: [changelog lengkap](https://github.com/navi-crwn/amnesia/blob/main/CHANGELOG.id.md).
 
 ## v5.15 · Lebih cepat, lebih aman, lebih gampang dihapus (7 Okt 2026)
 

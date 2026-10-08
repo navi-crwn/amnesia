@@ -6,11 +6,12 @@
   <b>Every time you log out, your Mac forgets everything.<br>Except the stuff you actually want to keep.</b>
 </p>
 
-<p align="center"><a href="https://navi-crwn.github.io/amnesia-mac/#film"><img src="docs/media/teaser.gif" alt="A 15-second paper craft clip: a spy logs in to a Mac and finds nothing" width="720"></a><br><sub>▶ Watch the full 54-second story, with sound, on the <a href="https://navi-crwn.github.io/amnesia-mac/#film">website</a></sub></p>
+<p align="center"><a href="https://navi-crwn.github.io/amnesia/#film"><img src="docs/media/teaser.gif" alt="A 15-second paper craft clip: a spy logs in to a Mac and finds nothing" width="720"></a><br><sub>▶ Watch the full 54-second story, with sound, on the <a href="https://navi-crwn.github.io/amnesia/#film">website</a></sub></p>
 
 <p align="center">
   <a href="../../releases/latest"><b>⬇️ Download the app</b></a> ·
-  <a href="https://navi-crwn.github.io/amnesia-mac/">Website</a> ·
+  <a href="https://navi-crwn.github.io/amnesia/">Website</a> ·
+  <a href="https://navi-crwn.github.io/amnesia/win/">Windows (preview)</a> ·
   <a href="#install">Install</a> ·
   <a href="#faq">FAQ</a> ·
   <a href="#uninstall">Uninstall</a> ·
@@ -38,7 +39,7 @@ The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, 
 
 <p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/app-en-light.webp"><img src="docs/readme/app-en-dark.webp" alt="The Amnesia main window" width="46%"></picture></p>
 
-📖 **The full story, a click-along tutorial and the FAQ:** [navi-crwn.github.io/amnesia-mac](https://navi-crwn.github.io/amnesia-mac/)
+📖 **The full story, a click-along tutorial and the FAQ:** [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/)
 
 <details>
 <summary><b>A closer look</b></summary>
@@ -116,7 +117,7 @@ brew install --cask navi-crwn/tap/amnesia
 **Option 3: Build it yourself** (needs the Command Line Tools)
 
 ```bash
-git clone https://github.com/navi-crwn/amnesia-mac.git ~/.amnesia
+git clone https://github.com/navi-crwn/amnesia.git ~/.amnesia
 bash ~/.amnesia/app/build.sh
 ```
 
@@ -236,6 +237,7 @@ It turns off the login agent first (so stopping it can't wipe anything), stops A
 | `keep.example.conf` | Example Keep List. `build.sh` copies it to `keep.conf` on first install. |
 | `app/` | The SwiftUI app, the icon, and the build/release scripts. `app/screenshots.sh` takes screenshots of the real app with demo data (optional). |
 | `docs/` | The website (GitHub Pages). `docs/readme/` holds the README images, drawn from the website. |
+| `windows/` | The Windows version, very early (C# tray app + HTML pages + PowerShell cleaner). Only shows what it would wipe. Built and tested by GitHub Actions (`.github/workflows/windows.yml`). |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Automatic tests in a fake home folder, safe to run anytime. |
 
 ---
