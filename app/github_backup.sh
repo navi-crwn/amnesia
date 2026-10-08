@@ -9,6 +9,8 @@ V="$(defaults read "$PWD/app/Info" CFBundleShortVersionString)"
 
 echo "1/7  Tidying old files..."
 rm -rf reset.sh clean_keychain.sh keep_apps.conf amnesia_app.py templates __pycache__ app/build/makeicon docs/vault.png
+# README now uses images drawn from the website (docs/readme/*.webp); the old banner/feature images and app screenshots are no longer used
+rm -rf docs/banner.png docs/banner.id.png docs/features.png docs/fitur.png docs/screens
 # screenshot lama (v5.6) diganti hasil app/screenshots.sh
 [ -f docs/screens/en/home.png ] && rm -f docs/screens/menu.png docs/screens/home.png docs/screens/vault.png docs/screens/keep.png docs/screens/backup.png
 
@@ -58,8 +60,10 @@ if git remote get-url origin >/dev/null 2>&1; then git push -q -u origin main
 else gh repo create amnesia --private --source=. --push; fi
 
 echo "3/7  Repo description & topics..."
-gh repo edit --description "Your Mac forgets everything every time you log out, except the logins and files you choose to keep. A macOS menu bar app with an encrypted login vault and backups." \
-  --add-topic macos --add-topic privacy --add-topic swiftui --add-topic menubar-app --add-topic encryption --add-topic backup >/dev/null
+gh repo edit --description "Your Mac forgets everything at logout. Except the logins and files you keep. Free macOS menu bar app with an encrypted login vault, backups and a panic word." \
+  --homepage "https://navi-crwn.github.io/amnesia-mac/" \
+  --add-topic macos --add-topic privacy --add-topic swiftui --add-topic menubar-app --add-topic encryption --add-topic backup \
+  --add-topic opsec --add-topic mac-app --add-topic open-source >/dev/null
 
 echo "4/7  Making the installer (.dmg)..."
 APP=""

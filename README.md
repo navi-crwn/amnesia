@@ -1,6 +1,6 @@
 <p align="center"><b>English</b> · <a href="README.id.md">Bahasa Indonesia</a></p>
 
-<p align="center"><img src="docs/banner.png" alt="Amnesia" width="100%"></p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/hero-en-light.webp"><img src="docs/readme/hero-en-dark.webp" alt="Amnesia: your Mac forgets everything, except what you keep" width="100%"></picture></p>
 
 <p align="center">
   <b>Every time you log out, your Mac forgets everything.<br>Except the stuff you actually want to keep.</b>
@@ -34,34 +34,20 @@ The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, 
 - don't want any trace of your work left behind,
 - like a Mac that starts clean and light every day.
 
-<p align="center"><img src="docs/features.png" alt="Amnesia features" width="100%"></p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/features-en-light.webp"><img src="docs/readme/features-en-dark.webp" alt="Everything Amnesia can do" width="100%"></picture></p>
 
-<p align="center">
-  <img src="docs/screens/en/home.png" alt="Home" width="32%">
-  <img src="docs/screens/en/keep-setup.png" alt="Pick what stays" width="32%">
-  <img src="docs/screens/en/vault.png" alt="Profile Vault" width="32%">
-</p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/app-en-light.webp"><img src="docs/readme/app-en-dark.webp" alt="The Amnesia main window" width="46%"></picture></p>
 
-📖 **Full guide with screenshots, tutorial and FAQ:** [navi-crwn.github.io/amnesia-mac](https://navi-crwn.github.io/amnesia-mac/)
+📖 **The full story, a click-along tutorial and the FAQ:** [navi-crwn.github.io/amnesia-mac](https://navi-crwn.github.io/amnesia-mac/)
 
 <details>
-<summary><b>More screenshots</b></summary>
-<p align="center">
-  <img src="docs/screens/en/tour-welcome.png" alt="Welcome tour" width="32%">
-  <img src="docs/screens/en/tour-terms.png" alt="Read this first" width="32%">
-  <img src="docs/screens/en/tour-check.png" alt="Quick check" width="32%">
-  <img src="docs/screens/en/backup.png" alt="Backup" width="32%">
-  <img src="docs/screens/en/history.png" alt="History" width="32%">
-  <img src="docs/screens/en/move.png" alt="Move to a new Mac" width="32%">
-  <img src="docs/screens/en/keep.png" alt="Keep List" width="32%">
-  <img src="docs/screens/en/preview.png" alt="What gets deleted" width="32%">
-  <img src="docs/screens/en/settings.png" alt="Settings" width="32%">
-  <img src="docs/screens/en/home-dark.png" alt="Dark mode" width="32%">
-  <img src="docs/screens/en/menu.png" alt="Menu bar" width="32%">
-  <img src="docs/screens/en/popup-turn-on.png" alt="Turn On popup" width="32%">
-  <img src="docs/screens/en/popup-uninstall.png" alt="Uninstall popup" width="32%">
-  <img src="docs/screens/en/popup-restore.png" alt="Restore result" width="32%">
-</p>
+<summary><b>A closer look</b></summary>
+
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/vault-en-light.webp"><img src="docs/readme/vault-en-dark.webp" alt="Profile Vault" width="100%"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/backup-en-light.webp"><img src="docs/readme/backup-en-dark.webp" alt="Backup anywhere" width="100%"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/popups-en-light.webp"><img src="docs/readme/popups-en-dark.webp" alt="Amnesia popups explained with colored boxes" width="100%"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/private-en-light.webp"><img src="docs/readme/private-en-dark.webp" alt="For people who'd rather not explain" width="100%"></picture></p>
+
 </details>
 
 ## What gets wiped, what stays?
@@ -248,8 +234,8 @@ It turns off the login agent first (so stopping it can't wipe anything), stops A
 | `vault.py` | Profile Vault: RSA-4096 key + 7-Zip AES-256. |
 | `backup.sh` | Encrypted backups to a USB drive, an SSH server, or the cloud (rclone). |
 | `keep.example.conf` | Example Keep List. `build.sh` copies it to `keep.conf` on first install. |
-| `app/` | The SwiftUI app, the icon, and the build/release scripts. `app/screenshots.sh` makes all the screenshots with demo data. |
-| `docs/` | Images, screenshots and the website (GitHub Pages). |
+| `app/` | The SwiftUI app, the icon, and the build/release scripts. `app/screenshots.sh` takes screenshots of the real app with demo data (optional). |
+| `docs/` | The website (GitHub Pages). `docs/readme/` holds the README images, drawn from the website. |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Automatic tests in a fake home folder, safe to run anytime. |
 
 ---

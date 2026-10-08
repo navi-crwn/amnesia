@@ -39,6 +39,7 @@ Ini versi yang sebaiknya kamu unduh. Isinya v5.16 sampai v5.18.1, ditambah websi
 - **"Yang paham, paham" 😉** buat kamu yang malas ditanya-tanya: Mac dipinjam, Mac hilang, "coba buka sebentar", dan keluarga kepo. Dengan catatan jujur: perlindungannya berlaku setelah logout, dan kata panik tidak bisa dibatalkan.
 - **Video paper craft.** Film stop motion 54 detik tepat di bawah bagian atas halaman, plus tiga klip vertikal 30 detik di kartu "Yang paham, paham". Main tanpa suara saat terlihat; ketuk untuk menonton dengan suara.
 - **README** sekarang punya pratinjau bergerak 15 detik yang mengarah ke video lengkapnya.
+- **README sekarang senada dengan website.** Gambarnya diambil langsung dari website (terang atau gelap, ikut tema GitHub kamu), menggantikan screenshot lama. Gambar WebP yang lebih ringan, pratinjau link baru saat repo dibagikan, dan deskripsi repo yang lebih segar.
 
 ### Di balik layar
 - Tes baru untuk Pulihkan File, Cek file backup, dan snapshot ringan per browser.

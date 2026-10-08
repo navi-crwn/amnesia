@@ -1,6 +1,6 @@
 <p align="center"><a href="README.md">English</a> · <b>Bahasa Indonesia</b></p>
 
-<p align="center"><img src="docs/banner.id.png" alt="Amnesia" width="100%"></p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/hero-id-light.webp"><img src="docs/readme/hero-id-dark.webp" alt="Amnesia: Mac kamu lupa segalanya, kecuali yang kamu simpan" width="100%"></picture></p>
 
 <p align="center">
   <b>Setiap kali kamu logout, Mac kamu lupa semuanya.<br>Kecuali yang memang kamu mau simpan.</b>
@@ -34,34 +34,20 @@ Masalahnya, kalau semua hilang, kamu harus login ulang Gmail, WhatsApp, Telegram
 - tidak mau ada jejak kerja yang tertinggal,
 - ingin Mac tetap ringan dan bersih setiap hari.
 
-<p align="center"><img src="docs/fitur.png" alt="Fitur Amnesia" width="100%"></p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/features-id-light.webp"><img src="docs/readme/features-id-dark.webp" alt="Semua yang bisa dilakukan Amnesia" width="100%"></picture></p>
 
-<p align="center">
-  <img src="docs/screens/id/home.png" alt="Home" width="32%">
-  <img src="docs/screens/id/keep-setup.png" alt="Pilih yang disimpan" width="32%">
-  <img src="docs/screens/id/vault.png" alt="Profile Vault" width="32%">
-</p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/app-id-light.webp"><img src="docs/readme/app-id-dark.webp" alt="Jendela utama Amnesia" width="46%"></picture></p>
 
-📖 **Panduan lengkap dengan screenshot, tutorial dan FAQ:** [navi-crwn.github.io/amnesia-mac](https://navi-crwn.github.io/amnesia-mac/)
+📖 **Cerita lengkap, tutorial yang bisa diikuti, dan FAQ:** [navi-crwn.github.io/amnesia-mac](https://navi-crwn.github.io/amnesia-mac/)
 
 <details>
-<summary><b>Screenshot lainnya</b></summary>
-<p align="center">
-  <img src="docs/screens/id/tour-welcome.png" alt="Tur perkenalan" width="32%">
-  <img src="docs/screens/id/tour-terms.png" alt="Baca ini dulu" width="32%">
-  <img src="docs/screens/id/tour-check.png" alt="Cek dulu" width="32%">
-  <img src="docs/screens/id/backup.png" alt="Backup" width="32%">
-  <img src="docs/screens/id/history.png" alt="Riwayat" width="32%">
-  <img src="docs/screens/id/move.png" alt="Pindah Mac" width="32%">
-  <img src="docs/screens/id/keep.png" alt="Keep List" width="32%">
-  <img src="docs/screens/id/preview.png" alt="Yang akan dihapus" width="32%">
-  <img src="docs/screens/id/settings.png" alt="Pengaturan" width="32%">
-  <img src="docs/screens/id/home-dark.png" alt="Mode gelap" width="32%">
-  <img src="docs/screens/id/menu.png" alt="Menu bar" width="32%">
-  <img src="docs/screens/id/popup-turn-on.png" alt="Popup Aktifkan" width="32%">
-  <img src="docs/screens/id/popup-uninstall.png" alt="Popup Hapus Amnesia" width="32%">
-  <img src="docs/screens/id/popup-restore.png" alt="Hasil Restore" width="32%">
-</p>
+<summary><b>Lihat lebih dekat</b></summary>
+
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/vault-id-light.webp"><img src="docs/readme/vault-id-dark.webp" alt="Profile Vault" width="100%"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/backup-id-light.webp"><img src="docs/readme/backup-id-dark.webp" alt="Backup ke mana saja" width="100%"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/popups-id-light.webp"><img src="docs/readme/popups-id-dark.webp" alt="Popup Amnesia dengan kotak berwarna" width="100%"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/private-id-light.webp"><img src="docs/readme/private-id-dark.webp" alt="Buat kamu yang malas ditanya-tanya" width="100%"></picture></p>
+
 </details>
 
 ## Apa yang dihapus, apa yang aman?
@@ -248,8 +234,8 @@ Script ini mematikan agent login lebih dulu (supaya waktu dihentikan tidak ada y
 | `vault.py` | Profile Vault: kunci RSA-4096 + 7-Zip AES-256. |
 | `backup.sh` | Backup terenkripsi ke flashdisk, server SSH, atau cloud (rclone). |
 | `keep.example.conf` | Contoh Keep List. `build.sh` menyalinnya jadi `keep.conf` saat pertama dipasang. |
-| `app/` | Kode app SwiftUI, ikon, dan script build/rilis. `app/screenshots.sh` membuat semua screenshot dengan data contoh. |
-| `docs/` | Gambar, screenshot, dan website (GitHub Pages). |
+| `app/` | Kode app SwiftUI, ikon, dan script build/rilis. `app/screenshots.sh` memotret app asli dengan data contoh (opsional). |
+| `docs/` | Website (GitHub Pages). `docs/readme/` berisi gambar README yang diambil dari website. |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Tes otomatis di "home palsu", aman dijalankan kapan saja. |
 
 ---

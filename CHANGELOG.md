@@ -39,6 +39,7 @@ This is the version to download. It covers v5.16 up to v5.18.1, plus the new web
 - **"If you know, you know" 😉** for people who'd rather not explain: lending your Mac, losing it, "just open it real quick" and nosy family. With honest fine print: it protects you after a logout, and the panic word can't be undone.
 - **Paper craft videos.** A 54-second stop motion film right under the top of the page, and three 30-second vertical clips in the "If you know, you know" cards. They play silently while on screen; tap to watch with sound.
 - **The README** got a 15-second moving preview that links to the full video.
+- **The README looks like the website now.** Its pictures are taken straight from the website (in light or dark, following your GitHub theme), instead of old screenshots. Lighter WebP images, a new link preview when you share the repo, and a fresher repo description.
 
 ### Behind the scenes
 - New tests for Restore Files, Check a backup file and per-browser light snapshots.

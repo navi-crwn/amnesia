@@ -235,6 +235,7 @@ KEYCHAIN  anydesk.inst_id
 KEYCHAIN-WEB  github.com
 HAPUS  ~/.zsh_history
 HAPUS  ~/.claude.json
+HAPUS  ~/.cache
 HAPUS  ~/.claude
 HAPUS  ~/.config/gh
 HAPUS  ~/.local/state
@@ -242,6 +243,7 @@ HAPUS  ~/.npm
 HAPUS  ~/.zsh_sessions
 HAPUS  ~/Library/Application Support/com.apple.sharedfilelist
 HAPUS  ~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV2
+HAPUS  ~/Library/Preferences/ByHost/com.anthropic.claudefordesktop.ShipIt.5AAE4FF6-D89A-55A7-AA47-4277F3E725E8.plist
 HAPUS  ~/Library/Preferences/ContextStoreAgent.plist
 HAPUS  ~/Library/Preferences/TokenBucketRateLimiter.plist
 HAPUS  ~/Library/Preferences/com.amnesia.controlpanel.plist
@@ -254,6 +256,7 @@ HAPUS  ~/Library/Preferences/familycircled.plist
 HAPUS  ~/Library/Preferences/no_backup
 HAPUS  ~/Library/Preferences/pbs.plist
 HAPUS  ~/Library/Preferences/systemgroup.com.apple.icloud.searchpartyd.sharedsettings.plist
+HAPUS  ~/Library/Preferences/ByHost/com.anthropic.claudefordesktop.ShipIt.5AAE4FF6-D89A-55A7-AA47-4277F3E725E8.plist
 HAPUS  ~/Library/Assistant
 HAPUS  ~/Library/Suggestions
 HAPUS  ~/Library/Caches/Amnesia
@@ -298,6 +301,7 @@ HAPUS  ~/Library/Caches/com.apple.findmy.findmylocateagent
 HAPUS  ~/Library/Caches/com.apple.geoanalyticsd
 HAPUS  ~/Library/Caches/com.apple.helpd
 HAPUS  ~/Library/Caches/com.apple.homed
+HAPUS  ~/Library/Caches/com.apple.iCloudNotificationAgent
 HAPUS  ~/Library/Caches/com.apple.iTunes
 HAPUS  ~/Library/Caches/com.apple.iTunesCloud
 HAPUS  ~/Library/Caches/com.apple.icloudwebd
@@ -348,6 +352,7 @@ HAPUS  ~/Downloads/Wiki_ the complete salt.md documentation.html
 HAPUS  ~/Downloads/Wiki_ the complete salt.md documentation_files
 HAPUS  ~/Downloads/amnesia-audio.zip
 HAPUS  ~/Downloads/amnesia-opsec-web-video3.zip
+HAPUS  ~/Downloads/amnesia-rapikan-release.zip
 HAPUS  ~/Downloads/amnesia-v5.16.zip
 HAPUS  ~/Downloads/amnesia-v5.17.1-r2.zip
 HAPUS  ~/Downloads/amnesia-v5.17.zip
@@ -364,6 +369,7 @@ HAPUS  ~/Downloads/amnesia-website-v1-r2.zip
 HAPUS  ~/Downloads/amnesia-website-v2.zip
 HAPUS  ~/Downloads/amnesia-website-v3.zip
 HAPUS  ~/Downloads/amnesia-website-v4.zip
+HAPUS  ~/Downloads/amnesia-website-video.zip
 HAPUS  ~/Downloads/atlasaudio-acoustic-593028.mp3
 HAPUS  ~/Downloads/bheart.mid
 HAPUS  ~/Downloads/joyinsound-family-sunrise-387948.mp3
@@ -380,4 +386,4 @@ HAPUS  ~/Music/Music
 HAPUS  ~/.Trash/.DS_Store
 HAPUS  ~/.Trash/Amnesia.app
 HAPUS  ~/.Trash/amnesia-lama-20261007-0103
---- dry-run (logout): 382 items would be deleted. Nothing was deleted. ---
+--- dry-run (logout): 388 items would be deleted. Nothing was deleted. ---
