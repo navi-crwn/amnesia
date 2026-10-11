@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Amnesia.Core</RootNamespace>
-    <Version>0.6.0</Version>
+    <Version>0.6.1</Version>
     <!-- registry calls are guarded by OperatingSystem.IsWindows() / the test switch -->
     <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>

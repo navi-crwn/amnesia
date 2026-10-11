@@ -92,6 +92,7 @@ KC_KEEP=(
 )
 # folder Keep (karakter * ? [ ] di namanya dibaca apa adanya, bukan pola)
 [ -n "$KREL" ] && KEEP+=("$(printf '%s' "$KREL" | sed 's/[][*?\\]/\\&/g')")
+APP_KEEP=()
 KEEPF="$A/keep.conf"; [ -f "$KEEPF" ] || KEEPF="$A/keep.example.conf"   # keep.conf = milik pribadi (tidak di GitHub)
 if [ -f "$KEEPF" ]; then
     while IFS= read -r line || [ -n "$line" ]; do
@@ -100,6 +101,7 @@ if [ -f "$KEEPF" ]; then
         case "$line" in
             ""|"#"*) ;;
             keychain:*) KC_KEEP+=("${line#keychain:}") ;;
+            app:*) APP_KEEP+=("${line#app:}") ;;          # v5.19: app yang tidak ikut "Hapus app baru"
             *) KEEP+=("${line#\~/}") ;;
         esac
     done < "$KEEPF"
@@ -127,16 +129,20 @@ has_kept_inside() {
     return 1
 }
 
+# v5.14: tempat sampah Amnesia untuk pembersihan ini (dibuat saat pertama dipakai)
+new_trash() {
+    [ -n "$TRASH" ] && return 0
+    TRASH="$TRASHROOT/$(date +%Y%m%d-%H%M%S)-$$"
+    mkdir -p "$TRASH" 2>/dev/null && chmod 700 "$TRASHROOT" 2>/dev/null
+    touch "$TRASHROOT/.metadata_never_index" 2>/dev/null      # Spotlight tidak mengindeks isinya
+}
+
 remove() {
     COUNT=$((COUNT + 1))
     if [ "$DRY" = 1 ]; then echo "HAPUS  ~/$1"; return 0; fi
     # v5.14: dipindah ke tempat sampah Amnesia (instan, berapa pun ukurannya), lalu dihapus pelan di
     # background setelah login. Kalau pindah gagal, langsung dihapus seperti dulu.
-    if [ -z "$TRASH" ]; then
-        TRASH="$TRASHROOT/$(date +%Y%m%d-%H%M%S)-$$"
-        mkdir -p "$TRASH" 2>/dev/null && chmod 700 "$TRASHROOT" 2>/dev/null
-        touch "$TRASHROOT/.metadata_never_index" 2>/dev/null      # Spotlight tidak mengindeks isinya
-    fi
+    new_trash
     mkdir "$TRASH/$COUNT" 2>/dev/null && mv "$H/$1" "$TRASH/$COUNT/" 2>/dev/null && return 0
     rm -rf "$H/$1" 2>/dev/null
 }
@@ -268,6 +274,40 @@ for d in Desktop Downloads Documents Pictures Movies Music Public .Trash; do
     wipe_inside "$d"
 done
 
+# ---------- 3b. App yang baru dipasang (v5.19, Pengaturan → Lanjutan, default mati) ----------
+# App di Applications yang tidak ada di daftar patokan (dibuat saat fitur ini dinyalakan) dan tidak ada di
+# Keep List (baris app:/Applications/Nama.app) ikut dihapus. Hanya app milik user kamu sendiri: app yang
+# dipasang dengan password admin (.pkg, App Store) tidak disentuh, cuma dihitung.
+APPS_SKIPPED=0
+remove_new_apps() {
+    [ "$(grep '^REMOVE_NEW_APPS=' "$A/settings.conf" 2>/dev/null | tail -1 | cut -d= -f2)" = 1 ] || return 0
+    local base="$A/apps_baseline.txt" dirs app k ok
+    [ -f "$base" ] || return 0
+    if [ -n "${AMNESIA_APPS_DIRS:-}" ]; then dirs="$AMNESIA_APPS_DIRS"          # hanya untuk tes
+    elif [ -n "${AMNESIA_HOME:-}" ]; then dirs="$H/Applications"                # mode tes: jangan sentuh /Applications asli
+    else dirs="/Applications:$H/Applications"; fi
+    local IFS=:
+    for d in $dirs; do
+        IFS=$' \t\n'
+        for app in "$d"/*.app; do
+            [ -d "$app" ] && [ ! -L "$app" ] || continue
+            case "${app##*/}" in Amnesia.app|"Amnesia Shots.app") continue ;; esac
+            grep -qxF "$app" "$base" && continue
+            ok=0; for k in "${APP_KEEP[@]+"${APP_KEEP[@]}"}"; do [ "$k" = "$app" ] && ok=1; done
+            [ "$ok" = 1 ] && continue
+            if [ ! -O "$app" ]; then APPS_SKIPPED=$((APPS_SKIPPED + 1)); continue; fi   # milik admin/sistem
+            COUNT=$((COUNT + 1))
+            if [ "$DRY" = 1 ]; then echo "APP  $app"; continue; fi
+            new_trash
+            mkdir "$TRASH/$COUNT" 2>/dev/null && mv "$app" "$TRASH/$COUNT/" 2>/dev/null && continue
+            rm -rf "$app" 2>/dev/null
+        done
+        IFS=:
+    done
+}
+trace "3b new apps"
+remove_new_apps
+
 if [ "$DRY" = 1 ]; then
     echo "--- dry-run ($MODE): $(t "$COUNT items would be deleted. Nothing was deleted." "$COUNT item akan dihapus. Tidak ada yang dihapus.") ---"
     exit 0
@@ -285,16 +325,25 @@ fi
 for d in /Applications "$H/Applications"; do      # pintasan app di Desktop (bukan salinan)
     [ -d "$d/Amnesia.app" ] && { ln -sfn "$d/Amnesia.app" "$H/Desktop/Amnesia.app" 2>/dev/null; break; }
 done
-# pintasan folder Keep di Desktop (kalau foldernya tidak di Desktop sendiri)
+# pintasan folder Keep di Desktop (kalau foldernya tidak di Desktop sendiri). v5.19.1: bisa dimatikan di
+# Pengaturan → "Alias Keep di Desktop" (KEEP_SHORTCUT=0)
 KL="$H/Desktop/${KD##*/}"
+if [ "$(grep '^KEEP_SHORTCUT=' "$A/settings.conf" 2>/dev/null | tail -1 | cut -d= -f2)" != 0 ]; then
 case "$KD" in "$H/Desktop"|"$H/Desktop/"*) ;; *)
     [ -d "$KD" ] && { [ ! -e "$KL" ] || [ -L "$KL" ]; } && ln -sfn "$KD" "$KL" 2>/dev/null ;;
 esac
+fi
 
 rm -f "$A/report.txt"     # laporan "yang akan dihapus" berisi nama file: ikut dibuang
 # Log hanya waktu + jumlah, tanpa nama file (log juga jejak)
 echo "$(date '+%F %T') $MODE: $(t "$COUNT items wiped" "$COUNT item dibersihkan")" > "$A/clean.log"
-printf '%s\tclean\t%s %s\n' "$(date '+%F %T')" "$MODE" "$COUNT" >> "$A/history.log"   # halaman Riwayat
+# v5.19: ukuran yang dibersihkan (KB) ikut dicatat di Riwayat. du dibatasi waktunya: logout tidak boleh tertahan.
+KB=0
+if [ -n "$TRASH" ] && [ -d "$TRASH" ]; then
+    KB="$(limit 10 du -sk "$TRASH" 2>/dev/null | cut -f1)"; KB="${KB:-0}"
+fi
+printf '%s\tclean\t%s %s %s\n' "$(date '+%F %T')" "$MODE" "$COUNT" "$KB" >> "$A/history.log"   # halaman Riwayat
+[ "$APPS_SKIPPED" -gt 0 ] && printf '%s\tappskip\t%s\n' "$(date '+%F %T')" "$APPS_SKIPPED" >> "$A/history.log"
 [ "$MODE" = logout ] && touch "$A/clean.done"      # login berikutnya cukup cek ringan
 [ "$MODE" = logout ] || purge_trash               # saat logout waktunya terbatas: hapus nanti saja
 trace "done ($COUNT)"

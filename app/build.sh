@@ -4,6 +4,12 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 command -v swiftc >/dev/null || { echo "Command Line Tools are missing. Run: xcode-select --install"; exit 1; }
+# v5.19: pasang update hanya saat Amnesia mati (7 Okt: build saat ON menghapus sesi yang sedang dipakai)
+if [ -f "$HOME/Library/LaunchAgents/com.amnesia.agent.plist" ]; then
+  echo "Amnesia is ON. Click the Amnesia icon in the menu bar -> Turn Off, run this again, then Turn On. Nothing was changed."
+  echo "Amnesia sedang ON. Klik ikon Amnesia di menu bar -> Matikan, jalankan perintah ini lagi, lalu Aktifkan. Belum ada yang diubah."
+  exit 1
+fi
 
 B="$PWD/build"; APP="$B/Amnesia.app"; ARCH="$(uname -m)"
 rm -rf "$B"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$B/AppIcon.iconset"
@@ -51,7 +57,7 @@ sign() {
   codesign --force --deep -s - "$1"
 }
 echo "1/4  Compile app..."
-swiftc -swift-version 5 -O -parse-as-library -target "$ARCH-apple-macos15.0" Amnesia.swift -o "$APP/Contents/MacOS/Amnesia"
+swiftc -swift-version 5 -O -parse-as-library -target "$ARCH-apple-macos15.0" Amnesia.swift Extras.swift -o "$APP/Contents/MacOS/Amnesia"
 cp Info.plist "$APP/Contents/Info.plist"
 
 # Mesin Amnesia ikut di dalam app, jadi app dari GitHub Releases langsung bisa dipakai

@@ -371,7 +371,10 @@ enum Agent {
             }
             let dict: [String: Any] = [
                 "Label": label,
-                "ProgramArguments": ["/usr/bin/open", "-g", "-b", "com.amnesia.controlpanel", "--args", "--background"],
+                // v5.19: "Jalan di background" mati → jendela ikut terbuka saat login
+                "ProgramArguments": Setting.bgStart.isOn
+                    ? ["/usr/bin/open", "-g", "-b", "com.amnesia.controlpanel", "--args", "--background"]
+                    : ["/usr/bin/open", "-b", "com.amnesia.controlpanel"],
                 "RunAtLoad": true,
             ]
             if let d = NSDictionary(contentsOfFile: plist), d.isEqual(to: dict) { return }
@@ -654,12 +657,10 @@ enum KeepDir {
         // pintasan di Desktop ikut diganti
         let oldLink = P.home + "/Desktop/" + (old as NSString).lastPathComponent
         if (try? fm.destinationOfSymbolicLink(atPath: oldLink)) == old { try? fm.removeItem(atPath: oldLink) }
+        if old != newPath, fm.fileExists(atPath: old) { FinderSidebar.set(URL(fileURLWithPath: old), on: false) }
         let stored = newPath.hasPrefix(P.home + "/") ? "~/" + String(newPath.dropFirst(P.home.count + 1)) : newPath
         Config.set("KEEP_DIR", stored)
-        let link = P.home + "/Desktop/" + (newPath as NSString).lastPathComponent
-        if !newPath.hasPrefix(P.home + "/Desktop") && !fm.fileExists(atPath: link) {
-            try? fm.createSymbolicLink(atPath: link, withDestinationPath: newPath)
-        }
+        KeepLinks.sync()      // v5.19.1: alias Desktop + sidebar Finder ikut pindah (sesuai Pengaturan)
     }
 }
 
@@ -686,6 +687,8 @@ enum Config {
 enum Setting: String {
     case autoSnapshot = "AUTO_SNAPSHOT", notify = "NOTIFY", preview = "PREVIEW"
     case openAtLogin = "OPEN_AT_LOGIN", vaultLight = "VAULT_LIGHT"     // v5.13
+    case bgStart = "BG_START", updateCheck = "UPDATE_CHECK", updateAuto = "UPDATE_AUTO"   // v5.19
+    case keepShortcut = "KEEP_SHORTCUT", keepSidebar = "KEEP_SIDEBAR"                     // v5.19.1
 
     var isOn: Bool { Config.get(rawValue) != "0" }
     func set(_ on: Bool) { Config.set(rawValue, on ? "1" : "0") }
@@ -1767,6 +1770,12 @@ final class Model: ObservableObject {
         if Shots.on { state = .active; refreshVault(); return }    // mode screenshot: tanpa timer & backup
         Agent.migrate()
         Agent.LoginItem.sync()
+        // v5.19: update dari app mematikan Amnesia dulu; app versi baru menyalakannya lagi di sini
+        if FileManager.default.fileExists(atPath: UpdateFiles.turnOnFlag) {
+            try? FileManager.default.removeItem(atPath: UpdateFiles.turnOnFlag)
+            let e = activate()
+            trace(e == nil ? "turned on again after update" : "turn on after update failed")
+        }
         // v5.16: saklar lama "Snapshot Chrome ringan" mati → Chrome disimpan lengkap (sekarang saklar per app di Profile Vault)
         if Config.get("VAULT_LIGHT") == "0" { Config.set("VAULT_FULL", "Chrome"); Config.set("VAULT_LIGHT", "1") }
         refresh()
@@ -1785,6 +1794,12 @@ final class Model: ObservableObject {
         // cek jadwal backup: 2 menit setelah app jalan, lalu tiap 10 menit
         backupTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.autoBackup() }
+        }
+        // v5.19: logout otomatis kalau Mac ditinggal (Lanjutan), cek update sehari sekali
+        Task { @MainActor in
+            IdleWatch.shared.start()
+            Updater.shared.startSchedule()
+            KeepLinks.sync()      // v5.19.1: dibersihkan saat logout, dipasang lagi setelah login
         }
         Task {
             try? await Task.sleep(nanoseconds: 120_000_000_000)
@@ -2045,7 +2060,7 @@ final class Model: ObservableObject {
         refresh()
     }
 
-    private func activate() -> String? {
+    func activate() -> String? {
         let fm = FileManager.default
         // Plist dihapus DULU: agent yang masih jalan melihatnya dan tidak membersihkan saat dihentikan.
         try? fm.removeItem(atPath: P.plist)
@@ -2059,10 +2074,11 @@ final class Model: ObservableObject {
         if sh(P.launchctl, ["bootstrap", P.domain, P.plist]).code != 0 {
             sh(P.launchctl, ["load", P.plist])
         }
+        KeepLinks.sync()      // v5.19.1: alias Keep di Desktop + sidebar Finder
         return nil
     }
 
-    private func deactivate() {
+    func deactivate() {
         let fm = FileManager.default
         try? fm.removeItem(atPath: P.plist)
         sh(P.launchctl, ["bootout", "\(P.domain)/\(P.label)"])
@@ -2074,7 +2090,7 @@ final class Model: ObservableObject {
     private var trashedShown = false
 
     /// Hanya app yang terpasang di Applications (bukan dari .dmg atau Downloads).
-    private var installedApp: Bool {
+    var installedApp: Bool {
         let b = Bundle.main.bundlePath
         return !b.contains("/AppTranslocation/") && (b.hasPrefix("/Applications/") || b.hasPrefix(P.realHome + "/Applications/"))
     }
@@ -2093,7 +2109,7 @@ final class Model: ObservableObject {
         try? p.run()
     }
 
-    private func quitNow() {
+    func quitNow() {
         allowQuit = true
         NSApp.terminate(nil)
     }
@@ -2678,7 +2694,7 @@ struct Tile: View {
     }
 }
 
-enum Page { case home, vault, keep, backup, settings, preview, move, history }
+enum Page { case home, vault, keep, backup, settings, preview, move, history, advanced }
 
 struct MainView: View {
     @EnvironmentObject var m: Model
@@ -2700,6 +2716,7 @@ struct MainView: View {
                 case .backup: BackupView(back: { goHome() })
                 case .move: MoveView(back: { m.page = .vault })
                 case .history: HistoryView(back: { goHome() })
+                case .advanced: AdvancedView(back: { m.page = .settings })
                 }
                 }
             }
@@ -3611,9 +3628,20 @@ enum History {
         switch f[1] {
         case "clean":
             let n = w.count > 1 ? w[1] : "?"
+            // v5.19: ukuran dalam KB (baris lama tanpa ukuran tetap tampil seperti dulu)
+            let size = w.count > 2 ? Double(w[2]).map { ", " + mbText($0 / 1024) } ?? "" : ""
             return w.first == "login"
-                ? ev("checkmark.shield.fill", Th.cyan, T("Checked at login", "Dicek saat login"), T("\(n) items cleaned", "\(n) item dibersihkan"))
-                : ev("sparkles", Th.cyan, T("Wiped at logout", "Dibersihkan saat logout"), T("\(n) items", "\(n) item"))
+                ? ev("checkmark.shield.fill", Th.cyan, T("Checked at login", "Dicek saat login"), T("\(n) items cleaned", "\(n) item dibersihkan") + size)
+                : ev("sparkles", Th.cyan, T("Wiped at logout", "Dibersihkan saat logout"), T("\(n) items", "\(n) item") + size)
+        case "appskip":
+            return ev("lock.app.dashed", Th.orange, T("New apps not removed", "App baru tidak dihapus"),
+                      T("\(data) app(s) were installed with an admin password, so Amnesia left them alone. See Settings → Advanced.",
+                        "\(data) app dipasang dengan password admin, jadi tidak disentuh Amnesia. Lihat Pengaturan → Lanjutan."))
+        case "autologout":
+            return ev("moon.zzz.fill", Th.orange, T("Logged out automatically", "Logout otomatis"),
+                      T("The Mac was not used for \(data) minutes", "Mac tidak dipakai selama \(data) menit"))
+        case "update":
+            return ev("arrow.down.circle.fill", Th.indigo, T("Updated", "Diperbarui"), "Amnesia " + data)
         case "paused":
             return ev("pause.circle.fill", Th.orange, data == "login" ? T("Login not wiped (paused)", "Login tidak dibersihkan (dijeda)")
                                                                     : T("Logout not wiped (paused)", "Logout tidak dibersihkan (dijeda)"))
@@ -3938,13 +3966,15 @@ struct KeepView: View {
 
     private func row(_ e: String) -> some View {
         let isKey = e.hasPrefix("keychain:")
-        let shown = isKey ? T("Key: ", "Kunci: ") + String(e.dropFirst(9)) : "~/" + e
+        let isApp = e.hasPrefix("app:")      // v5.19: app yang tidak ikut "Hapus app baru"
+        let shown = isKey ? T("Key: ", "Kunci: ") + String(e.dropFirst(9))
+            : isApp ? T("App: ", "App: ") + ((String(e.dropFirst(4)) as NSString).lastPathComponent as String) : "~/" + e
         var dir: ObjCBool = true
-        let isFile = !isKey && !e.contains("*") && FileManager.default.fileExists(atPath: P.home + "/" + e, isDirectory: &dir)
+        let isFile = !isKey && !isApp && !e.contains("*") && FileManager.default.fileExists(atPath: P.home + "/" + e, isDirectory: &dir)
             && !dir.boolValue
         return HStack(spacing: 10) {
-            Image(systemName: isKey ? "key.fill" : (isFile ? "doc.fill" : "folder.fill"))
-                .foregroundStyle(isKey ? Th.orange : Th.cyan)
+            Image(systemName: isKey ? "key.fill" : isApp ? "app.badge.checkmark.fill" : (isFile ? "doc.fill" : "folder.fill"))
+                .foregroundStyle(isKey ? Th.orange : isApp ? Th.indigo : Th.cyan)
             Text(shown)
                 .font(.system(size: 12, design: .monospaced))
                 .lineLimit(1).truncationMode(.middle)
@@ -4737,9 +4767,11 @@ struct OnboardingView: View {
 struct PrivacyNote: View {
     var body: some View {
         Label(T("Everything stays on this Mac. Amnesia has no servers, no tracking and no analytics. "
-                + "Nothing is sent anywhere unless you set up a backup yourself.",
+                + "Nothing is sent anywhere unless you set up a backup yourself. The update check only asks GitHub "
+                + "for the newest version number.",
                 "Semua tetap di Mac ini. Amnesia tidak punya server, tidak melacak, tidak mengumpulkan data. "
-                + "Tidak ada yang dikirim ke mana pun, kecuali kamu sendiri yang mengatur backup."),
+                + "Tidak ada yang dikirim ke mana pun, kecuali kamu sendiri yang mengatur backup. Cek update hanya "
+                + "menanyakan nomor versi terbaru ke GitHub."),
               systemImage: "hand.raised.fill")
             .font(.system(size: 13.5, weight: .medium))
             .foregroundStyle(.secondary)
@@ -5831,6 +5863,9 @@ struct SettingsView: View {
     @State private var notify = Setting.notify.isOn
     @State private var preview = Setting.preview.isOn
     @State private var atLogin = Setting.openAtLogin.isOn
+    @State private var bgStart = Setting.bgStart.isOn
+    @State private var keepShortcut = Setting.keepShortcut.isOn
+    @State private var keepSidebar = Setting.keepSidebar.isOn
 
     var body: some View {
         RoomyScroll {
@@ -5872,11 +5907,31 @@ struct SettingsView: View {
                       "Setiap kamu login, Amnesia otomatis jalan sebagai ikon di menu bar (tanpa jendela), juga saat "
                       + "sedang dimatikan. Berlaku mulai login berikutnya."),
                     "power.circle.fill", Pal.keep, $atLogin) { Setting.openAtLogin.set($0); Agent.LoginItem.sync() }
+                row(T("Run in the background", "Jalan di background"),
+                    T("On: when you log in, Amnesia only appears as the icon in the menu bar, no window pops up. "
+                      + "Off: the Amnesia window opens every time you log in.",
+                      "Nyala: saat kamu login, Amnesia hanya muncul sebagai ikon di menu bar, tanpa jendela. "
+                      + "Mati: jendela Amnesia ikut terbuka setiap kamu login."),
+                    "menubar.rectangle", Pal.keep, $bgStart) { Setting.bgStart.set($0); Agent.LoginItem.sync() }
+                row(T("Keep shortcut on the Desktop", "Alias Keep di Desktop"),
+                    T("A shortcut to your Keep folder on the Desktop. Amnesia puts it back after every cleanup. "
+                      + "Shortcuts you make yourself on the Desktop are wiped like any other file.",
+                      "Alias ke folder Keep di Desktop. Amnesia memasangnya lagi setiap selesai membersihkan. "
+                      + "Alias yang kamu buat sendiri di Desktop tetap ikut terhapus seperti file lain."),
+                    "tray.full.fill", Pal.keep, $keepShortcut) { Setting.keepShortcut.set($0); KeepLinks.sync() }
+                row(T("Keep in the Finder sidebar", "Keep di sidebar Finder"),
+                    T("Puts your Keep folder under Favorites in the Finder sidebar. The sidebar list is wiped at logout "
+                      + "(it shows folders you used), so Amnesia adds Keep again after every login.",
+                      "Menaruh folder Keep di Favorit pada sidebar Finder. Daftar sidebar ikut dibersihkan saat logout "
+                      + "(isinya menunjukkan folder yang kamu pakai), jadi Amnesia menambahkan Keep lagi setiap login."),
+                    "sidebar.left", Pal.keep, $keepSidebar) { Setting.keepSidebar.set($0); KeepLinks.sync() }
                 Button { m.page = .preview } label: {
                     Label(T("See what would be deleted now", "Lihat yang akan dihapus sekarang"), systemImage: "list.bullet.rectangle")
                 }
                 .buttonStyle(Pill(colors: Pal.backup))
                 KeepFolderCard()
+                EncryptionCard()
+                UpdateCard()
                 if !Engine.hasFullDisk {
                     Card {
                         Note(text: T("Give Amnesia Full Disk Access once, so macOS stops asking about every folder.",
@@ -5894,10 +5949,15 @@ struct SettingsView: View {
                         }
                     }
                 }
-                Button { m.page = .move } label: {
-                    Label(T("Move to a New Mac", "Pindah Mac"), systemImage: "arrow.right.arrow.left.circle.fill")
+                // v5.19: pengaturan yang bisa menghapus lebih banyak / butuh pemahaman ada di Lanjutan
+                Button { m.page = .advanced } label: {
+                    Label(T("Advanced", "Lanjutan"), systemImage: "exclamationmark.shield.fill")
                 }
-                .buttonStyle(Pill(colors: Pal.backup))
+                .buttonStyle(Pill(colors: Pal.pause))
+                .help(T("Settings that can delete more or act on their own: auto logout, removing new apps, panic word, "
+                        + "moving to a new Mac.",
+                        "Pengaturan yang bisa menghapus lebih banyak atau berjalan sendiri: logout otomatis, hapus app baru, "
+                        + "kata panik, pindah Mac."))
                 Button { m.showTour() } label: {
                     Label(T("Show the welcome tour again", "Tampilkan tur perkenalan lagi"), systemImage: "sparkles")
                 }
@@ -6184,6 +6244,7 @@ struct PreviewView: View {
 
 // MARK: - Menu bar
 
+/// v5.19: kotak di menu bar sama seperti kotak di jendela utama (Tile): ikon kiri, teks kanan, garis berwarna saat disorot.
 struct MenuTile: View {
     let title: String
     let icon: String
@@ -6194,25 +6255,28 @@ struct MenuTile: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
-                IconBadge(icon: icon, colors: colors, size: 30)
+            HStack(spacing: 9) {
+                IconBadge(icon: icon, colors: colors, size: 28)
                 Text(title)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 12.5, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
+                    .minimumScaleFactor(0.85)
                     .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, minHeight: 74, alignment: .topLeading)
-            .padding(10)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(hover && enabled ? Th.tint : Th.tile))
+            .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Th.tile))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(hover && enabled ? colors[0].opacity(0.6) : Th.line, lineWidth: 1))
-            .opacity(enabled ? 1 : 0.4)
+                .strokeBorder(hover && enabled ? (colors.last ?? Th.indigo).opacity(0.6) : Th.line, lineWidth: 1))
+            .shadow(color: (colors.last ?? Th.indigo).opacity(hover && enabled ? 0.18 : 0), radius: hover ? 10 : 0, y: hover ? 4 : 0)
+            .opacity(enabled ? 1 : 0.45)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .onHover { h in withAnimation(.easeOut(duration: 0.12)) { hover = h } }
+        .onHover { h in withAnimation(.easeOut(duration: 0.15)) { hover = h } }
     }
 }
 
@@ -6253,28 +6317,8 @@ struct MenuPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // kartu status (v5.18: gaya website, warna status tipis)
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle().fill(m.state == .off ? Th.tint : sc.opacity(0.25)).frame(width: 46, height: 46)
-                    Circle().strokeBorder(m.state == .off ? Th.line2 : sc.opacity(0.35), lineWidth: 1).frame(width: 46, height: 46)
-                    Image(systemName: m.state.icon).font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(m.state == .off ? Th.muted : sc)
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(m.state.title).font(.system(size: 17, weight: .bold)).foregroundStyle(.primary)
-                    Text(m.lastClean).font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(14)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(m.state == .off ? AnyShapeStyle(Th.tint)
-                      : AnyShapeStyle(LinearGradient(colors: [sc.opacity(0.24), sc.opacity(0.06)],
-                                                     startPoint: .topLeading, endPoint: .bottomTrailing))))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(m.state == .off ? Th.line2 : sc.opacity(0.35), lineWidth: 1))
+            // kartu status: sama seperti kartu status di jendela utama, termasuk tombol Aktifkan / Matikan
+            HeroCard(state: m.state, lastClean: m.lastClean, power: { m.togglePower() })
 
             HStack(spacing: 8) {
                 InfoChip(icon: "lock.rectangle.stack.fill", label: "Snapshot vault", value: vaultValue,
@@ -6288,42 +6332,51 @@ struct MenuPanel: View {
                     ProgressView().controlSize(.small)
                     Text((m.progressText.isEmpty ? b : m.progressText) + (m.progress.map { " \(Int($0 * 100))%" } ?? ""))
                         .font(.system(size: 11)).fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
                     if m.job != nil {
-                        Button(T("Cancel", "Batal")) { m.cancelJob() }.controlSize(.small)
+                        Button(T("Cancel", "Batal")) { m.cancelJob() }
+                            .buttonStyle(Pill(colors: Pal.gray)).frame(width: 84)
                     }
                 }
+                .padding(10)
+                .surface(14, fill: Th.tile)
             }
 
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+            HStack(spacing: 8) {
                 MenuTile(title: T("Open Amnesia", "Buka Amnesia"), icon: "macwindow", colors: Pal.accent) {
                     openWindow(id: "main")
                     NSApp.activate(ignoringOtherApps: true)
                 }
+                // v5.19.1: langsung ke folder Keep
+                MenuTile(title: T("Open Keep", "Buka Keep"), icon: "tray.full.fill", colors: Pal.keep) { KeepLinks.open() }
+            }
+            HStack(spacing: 8) {
                 MenuTile(title: T("Save & Log Out", "Simpan & Logout"), icon: "rectangle.portrait.and.arrow.right",
                          colors: Pal.logout) { m.saveAndLogout() }
                     .disabled(m.busy != nil)
                 MenuTile(title: m.state == .paused ? T("Cancel Pause", "Batalkan Jeda") : T("Pause 1 Session", "Jeda 1 Sesi"), icon: "pause.fill",
                          colors: Pal.pause) { m.togglePause() }
                     .disabled(m.state == .off)
-                MenuTile(title: m.state == .off ? T("Turn On", "Aktifkan") : T("Turn Off", "Matikan"), icon: "power",
-                         colors: m.state == .off ? Pal.on : Pal.danger) { m.togglePower() }
             }
+            MenuUpdateRow()
 
-            Divider()
-            HStack {
+            HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Amnesia v\(appVersion)").font(.system(size: 11, weight: .semibold))
                     Text(T("Quitting the app doesn't stop the wiping.", "Menutup app tidak menghentikan pembersihan."))
                         .font(.system(size: 10)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer()
+                Spacer(minLength: 6)
                 Button(T("Quit App", "Tutup App")) { NSApp.terminate(nil) }
-                    .controlSize(.small)
+                    .buttonStyle(Pill(colors: Pal.gray))
+                    .frame(width: 96)
             }
+            .padding(.top, 2)
         }
         .padding(14)
-        .frame(width: 320)
+        .frame(width: 330)
+        .background(Backdrop())      // v5.19: latar sama seperti jendela utama
         .tint(Th.indigo)
         .onAppear {
             m.refresh()

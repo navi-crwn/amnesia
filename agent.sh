@@ -58,8 +58,12 @@ if [ -f "$A/.just_activated" ]; then
     rm -f "$A/.just_activated"        # baru diaktifkan dari app: jangan hapus sesi yang sedang dipakai
 else
     /bin/bash "$A/clean.sh" login
-    # buka app Amnesia di menu bar (tanpa jendela)
-    open -g -b com.amnesia.controlpanel --args --background 2>/dev/null
+    # buka app Amnesia: hanya di menu bar (tanpa jendela), kecuali "Jalan di background" dimatikan (v5.19)
+    if grep -qx "BG_START=0" "$A/settings.conf" 2>/dev/null; then
+        open -b com.amnesia.controlpanel 2>/dev/null
+    else
+        open -g -b com.amnesia.controlpanel --args --background 2>/dev/null
+    fi
     if setting NOTIFY; then
         if grep -qx "LANG=id" "$A/settings.conf" 2>/dev/null; then
             MSG="Mac sudah bersih. Klik ikon Amnesia di menu bar untuk restore profil."

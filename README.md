@@ -11,7 +11,7 @@
 <p align="center">
   <a href="../../releases/latest"><b>⬇️ Download the app</b></a> ·
   <a href="https://navi-crwn.github.io/amnesia/">Website</a> ·
-  <a href="https://navi-crwn.github.io/amnesia/win/">Windows (preview)</a> ·
+  <a href="https://navi-crwn.github.io/amnesia/win/">Windows (in progress)</a> ·
   <a href="#install">Install</a> ·
   <a href="#faq">FAQ</a> ·
   <a href="#uninstall">Uninstall</a> ·
@@ -58,7 +58,7 @@ The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, 
 | Browser history & cookies | Everything in your **Keep folder** (`~/Keep` by default; put it anywhere, call it anything) |
 | Desktop, Downloads, Documents, Pictures | Logins saved in the **Profile Vault** |
 | Caches, logs, Terminal history | Everything on the **Keep List** (VPN, SSH keys, Terminal settings, etc.) |
-| Data from apps you didn't pick | Apps in `/Applications` and Homebrew |
+| Data from apps you didn't pick | Apps in `/Applications` and Homebrew (unless you switch on *Remove apps installed later* under Advanced) |
 | | Your Apple account, Photos, Notes, Mail, Messages and more (the **Apple accounts & data** card, on by default) |
 
 Want to see exactly what would go, **without deleting anything**? In the app, press **What Gets Deleted** on the home page. Or in Terminal:
@@ -88,11 +88,14 @@ bash ~/.amnesia/clean.sh logout --dry-run
 - **👋 Welcome tour.** The first time you open it, Amnesia shows you around, checks that everything's ready, finds your apps and asks which ones should keep their data.
 - **🔥 Panic button.** Get the vault password wrong 3 times, or type your *panic word*, and the vault is destroyed on the spot.
 - **👀 Check before logout.** Logging out or restarting from the Apple menu? Amnesia holds on for a second and shows what's about to be deleted. You decide: continue or cancel. The list is prepared in the background, so it opens right away.
-- **🏠 Offline & private.** No servers, no accounts, no tracking, no analytics. Nothing leaves your Mac unless you set up a backup yourself.
+- **🏠 Offline & private.** No servers, no accounts, no tracking, no analytics. Nothing leaves your Mac unless you set up a backup yourself. The only thing Amnesia asks the internet is GitHub's newest version number, once a day, and you can switch that off.
 - **📸 Auto snapshot.** Forgot to press Save & Log Out? On a normal logout, restart or shutdown, Amnesia still saves the apps whose data **changed** since their last snapshot (at most 150 seconds, so the Mac doesn't hang). Apps you switched off in the vault are skipped. If it runs out of time, the older snapshot of that app stays.
 - **🎨 Clear warnings.** Every popup is split into colored boxes: *What will happen* (blue), *What gets deleted* (red), *These stay saved (not deleted)* (green) and *What you need to do* (purple).
 - **🔔 Notifications.** After login, Amnesia tells you the Mac is clean and reminds you to restore your profiles.
-- **⚙️ Settings.** Turn any of the above on or off.
+- **⚙️ Settings.** Turn any of the above on or off. **Run in the background** keeps Amnesia as just the menu bar icon at login, no window. A Keep alias on the Desktop and Keep in the Finder sidebar come back after every cleanup (both can be switched off), and the menu bar panel has **Open Keep**.
+- **🧰 Advanced.** Settings that need a bit of thought live together on one page: **log out when the Mac is left alone** (5 to 60 minutes, with a 60-second countdown you cancel by touching anything), **remove apps installed later** (apps you install after switching it on go at logout, unless you press Keep; apps installed with an admin password are left alone), the panic word and Move to a New Mac.
+- **⬇️ Updates from the app.** Amnesia checks GitHub once a day, downloads the new version on its own, checks it against `SHA256SUMS.txt`, and installs it when you press **Install & Reopen**. Installed with Homebrew? Then `brew upgrade` stays the way to update.
+- **🔒 FileVault check.** Settings shows whether disk encryption is on. Amnesia only wipes at logout and your Keep folder isn't encrypted, so FileVault is strongly recommended.
 - **🌐 Two languages.** English or Bahasa Indonesia, pick one in Settings.
 - **🟢 Menu bar icon.** You can always see Amnesia's status in the top right: green is on, orange is paused, red is off. The big **Turn On / Turn Off** button sits right on the status card of the home page.
 
@@ -237,7 +240,7 @@ It turns off the login agent first (so stopping it can't wipe anything), stops A
 | `keep.example.conf` | Example Keep List. `build.sh` copies it to `keep.conf` on first install. |
 | `app/` | The SwiftUI app, the icon, and the build/release scripts. `app/screenshots.sh` takes screenshots of the real app with demo data (optional). |
 | `docs/` | The website (GitHub Pages). `docs/readme/` holds the README images, drawn from the website. |
-| `windows/` | The Windows version, very early (C# tray app + HTML pages + PowerShell cleaner). Only shows what it would wipe. Built and tested by GitHub Actions (`.github/workflows/windows.yml`). |
+| `windows/` | The Windows version, **work in progress (v0.6.0)**: C# tray app + HTML pages, vault, backup and a Setup.exe with in-app updates. It really wipes once turned on, so test it in a VM first. Built and tested by GitHub Actions (`.github/workflows/windows.yml`); a `win-v*` tag makes the Windows release. |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Automatic tests in a fake home folder, safe to run anytime. |
 
 ---

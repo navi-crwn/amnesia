@@ -81,6 +81,23 @@ AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" login >/dev/null 2>&1
 gone "Downloads/f.txt"; grep -q "clean login: light=0" "$T/.amnesia/trace.log" || { echo "FAILED: full login after interrupted logout"; fail=1; }
 ! grep -q "f.txt\|e.txt" "$T/.amnesia/trace.log" || { echo "FAILED: trace.log contains file names"; fail=1; }
 
+# v5.19: Riwayat mencatat ukuran (KB) yang dibersihkan
+grep -qE "	clean	logout [0-9]+ [0-9]+$" "$T/.amnesia/history.log" || { echo "FAILED: history has no size"; fail=1; }
+
+# v5.19: "Hapus app baru" (default mati). Hanya app di luar patokan & Keep List, milik user sendiri.
+mkdir -p "$T/Applications/Lama.app" "$T/Applications/Baru.app" "$T/Applications/Disimpan.app" "$T/Applications/Amnesia.app"
+mk "Desktop/g.txt"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+here "Applications/Baru.app"     # fitur mati: tidak ada app yang dihapus
+printf '%s\n' "$T/Applications/Lama.app" > "$T/.amnesia/apps_baseline.txt"
+printf 'REMOVE_NEW_APPS=1\n' > "$T/.amnesia/settings.conf"
+printf 'app:%s\n' "$T/Applications/Disimpan.app" >> "$T/.amnesia/keep.example.conf"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout --dry-run | grep -q "^APP  .*Baru.app" || { echo "FAILED: dry-run does not list the new app"; fail=1; }
+here "Applications/Baru.app"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+gone "Applications/Baru.app"; here "Applications/Lama.app"; here "Applications/Disimpan.app"; here "Applications/Amnesia.app"
+rm -f "$T/.amnesia/settings.conf" "$T/.amnesia/apps_baseline.txt"
+
 # v5.15: agent.sh membersihkan saat logout hanya kalau app masih ada (dibuang ke Trash = tidak membersihkan)
 G="$T/agenthome"; mkdir -p "$G/.amnesia" "$G/Library/LaunchAgents" "$G/Amnesia.app"
 cp "$DIR/agent.sh" "$G/.amnesia/"
@@ -98,5 +115,14 @@ rm -f "$G/cleaned"; agent_logout "$G/Gone.app"
 [ ! -f "$G/Library/LaunchAgents/com.amnesia.agent.plist" ] || { echo "FAILED: agent not turned off after app removed"; fail=1; }
 rm -f "$G/cleaned"; agent_logout "$G/.Trash/Amnesia.app"
 [ ! -f "$G/cleaned" ] || { echo "FAILED: agent cleaned although the app is in the Trash"; fail=1; }
+
+# v5.19.1: alias Keep di Desktop bisa dimatikan (Pengaturan → Alias Keep di Desktop)
+mkdir -p "$T/Keep"
+printf 'KEEP_SHORTCUT=0\n' > "$T/.amnesia/settings.conf"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+[ ! -L "$T/Desktop/Keep" ] || { echo "FAILED: Keep alias made although switched off"; fail=1; }
+rm -f "$T/.amnesia/settings.conf"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+[ -L "$T/Desktop/Keep" ] || { echo "FAILED: Keep alias missing"; fail=1; }
 
 [ $fail = 0 ] && echo "OK: all clean.sh tests passed" || exit 1

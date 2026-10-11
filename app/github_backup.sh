@@ -53,6 +53,7 @@ windows/out/
 !TERMS.md
 !TERMS.id.md
 !windows/README.md
+!windows/THIRD-PARTY-NOTICES.md
 IGN
 
 echo "2/7  Commit & push..."
@@ -112,12 +113,37 @@ hdiutil create -quiet -volname "Amnesia $V" -srcfolder "$STAGE" -fs HFS+ -format
 NOTES="$(mktemp)"
 awk -v v="## v$V" '$0 ~ "^"v {on=1; next} on && /^## v/ {exit} on' CHANGELOG.md > "$NOTES"
 
+# Proof the download is clean and unchanged: SHA-256 checksum file + (optional) VirusTotal scan.
+# The VirusTotal key is only read from your Keychain (set it once with: bash ~/.amnesia/app/virustotal_key.sh).
+SUMS="$(dirname "$PKG")/SHA256SUMS.txt"
+( cd "$(dirname "$PKG")" && shasum -a 256 "Amnesia-v$V.dmg" > SHA256SUMS.txt )
+SHA_DMG="$(awk '{print $1; exit}' "$SUMS")"
+VT_URL=""
+if VT_KEY="$(security find-generic-password -s "Amnesia VirusTotal" -w 2>/dev/null)" && [ -n "$VT_KEY" ]; then
+  echo "     VirusTotal: uploading the .dmg for a scan..."
+  HDR="$(mktemp)"; chmod 600 "$HDR"; printf 'x-apikey: %s\n' "$VT_KEY" > "$HDR"   # header from a file: the key never shows up in the process list
+  if curl -sS -f --max-time 600 -H @"$HDR" -F "file=@$PKG" https://www.virustotal.com/api/v3/files >/dev/null; then
+    VT_URL="https://www.virustotal.com/gui/file/$SHA_DMG"
+  else
+    echo "     (VirusTotal upload failed; the release goes on without the scan link)"
+  fi
+  rm -f "$HDR"
+fi
+unset VT_KEY
+{
+  echo
+  echo "### Check your download"
+  echo "- SHA-256 of \`Amnesia-v$V.dmg\`: \`$SHA_DMG\` (also in \`SHA256SUMS.txt\`). Compare on your Mac with \`shasum -a 256 ~/Downloads/Amnesia-v$V.dmg\`."
+  [ -n "$VT_URL" ] && echo "- Virus scan by 70+ antivirus engines: [VirusTotal]($VT_URL) (results appear a few minutes after release; a new unsigned app can get 1 or 2 false alarms)."
+  echo "- Amnesia is open source: every file in this release is built from the code in this repo."
+} >> "$NOTES"
+
 echo "5/7  Release v$V..."
 if gh release view "v$V" >/dev/null 2>&1; then
-  gh release upload "v$V" "$PKG" --clobber
+  gh release upload "v$V" "$PKG" "$SUMS" --clobber
   gh release edit "v$V" --notes-file "$NOTES" >/dev/null
 else
-  gh release create "v$V" "$PKG" --title "Amnesia v$V" --notes-file "$NOTES" >/dev/null
+  gh release create "v$V" "$PKG" "$SUMS" --title "Amnesia v$V" --notes-file "$NOTES" >/dev/null
 fi
 OWNER="$(gh api user -q .login)"; REPO="$(gh repo view --json name -q .name)"
 SITE="https://$OWNER.github.io/$REPO/"
@@ -157,8 +183,8 @@ cask "amnesia" do
   }
 
   # Not signed by Apple yet: remove the download quarantine so the app opens.
-  postflight do
-    system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{appdir}/Amnesia.app"]
+  postflight_steps do
+    run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{appdir}}/Amnesia.app"], must_succeed: false
   end
 
   caveats <<~EOS
