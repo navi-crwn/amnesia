@@ -1,10 +1,14 @@
 # Amnesia for Windows: built and tested on GitHub's free Windows servers on every push that changes windows/.
 # Results: the repo's Actions tab. The ready-to-try app: open a run, scroll to "Artifacts".
+# v0.4: tests are C# (windows/tests/Amnesia.Tests), every build also makes Setup.exe (Inno Setup) and a portable zip.
+# Pushing a tag "win-v0.5.0" also makes a GitHub release with those files (the in-app update looks for it).
+# It is never marked "latest", so the Mac app (which reads releases/latest) keeps seeing the Mac release.
 name: Windows
 
 on:
   push:
     branches: [main]
+    tags: ['win-v*']
     paths: ['windows/**', '.github/workflows/windows.yml']
   pull_request:
     paths: ['windows/**', '.github/workflows/windows.yml']
@@ -15,23 +19,25 @@ permissions:
 
 jobs:
   test:
-    name: Cleaner tests (dry run)
+    name: Tests (fake user folder)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Test with PowerShell 7
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - name: Cleanup, vault and backup tests
         shell: pwsh
-        run: ./windows/tests/test_clean.ps1
-      - name: Test with Windows PowerShell 5.1 (the one built into Windows)
-        shell: pwsh
-        env:
-          AMNESIA_TEST_SHELL: powershell
-        run: ./windows/tests/test_clean.ps1
+        run: dotnet run --project windows/tests/Amnesia.Tests -c Release
 
   build:
     name: Build (${{ matrix.arch }})
     needs: test
     runs-on: windows-latest
+    permissions:
+      contents: read
+      id-token: write     # for the build attestation (GitHub's proof that Amnesia.exe was built here)
+      attestations: write
     strategy:
       matrix:
         arch: [x64, arm64] # arm64 = Windows on ARM, e.g. a Windows 11 VM on a Mac
@@ -45,16 +51,71 @@ jobs:
         run: >
           dotnet publish windows/src/Amnesia/Amnesia.csproj -c Release -r win-${{ matrix.arch }}
           --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
-          -p:EnableCompressionInSingleFile=true -o out/Amnesia
+          -p:EnableCompressionInSingleFile=true -p:DebugType=none -p:GenerateDocumentationFile=false -o windows/out/Amnesia
       - name: Check the files are all there
         shell: pwsh
         run: |
-          foreach ($f in 'Amnesia.exe', 'ui/index.html', 'ui/app.js', 'ui/app.css', 'scripts/clean.ps1') {
-            if (-not (Test-Path "out/Amnesia/$f")) { throw "missing: $f" }
+          Remove-Item windows/out/Amnesia/*.xml -ErrorAction SilentlyContinue
+          foreach ($f in 'Amnesia.exe', 'ui/index.html', 'ui/app.js', 'ui/app.css', 'scripts/collect-log.ps1', 'THIRD-PARTY-NOTICES.md') {
+            if (-not (Test-Path "windows/out/Amnesia/$f")) { throw "missing: $f" }
           }
-          Get-ChildItem out/Amnesia -Recurse -File | ForEach-Object { '{0,8:N0} KB  {1}' -f ($_.Length / 1KB), $_.FullName.Substring((Resolve-Path out/Amnesia).Path.Length + 1) }
+          Get-ChildItem windows/out/Amnesia -Recurse -File | ForEach-Object { '{0,8:N0} KB  {1}' -f ($_.Length / 1KB), $_.FullName.Substring((Resolve-Path windows/out/Amnesia).Path.Length + 1) }
+      - name: Setup.exe (Inno Setup) and portable zip
+        shell: pwsh
+        run: |
+          $v = ([xml](Get-Content windows/src/Amnesia/Amnesia.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Q "/DArch=${{ matrix.arch }}" "/DVersion=$v" "/DSrc=..\out\Amnesia" windows/installer/Amnesia.iss
+          if ($LASTEXITCODE) { throw "ISCC failed" }
+          Compress-Archive -Path windows/out/Amnesia/* -DestinationPath "windows/out/Amnesia-portable-$v-${{ matrix.arch }}.zip"
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Move-Item windows/out/*.exe, windows/out/*.zip dist/
+      - name: Checksums (SHA-256)
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -File | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content -Encoding ascii dist/SHA256SUMS-${{ matrix.arch }}.txt
+          "### Amnesia for Windows (${{ matrix.arch }})`n`n``````" + "`n" + (Get-Content -Raw dist/SHA256SUMS-${{ matrix.arch }}.txt) + "``````" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+      - name: Build attestation
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: 'dist/*.exe'
+      - name: VirusTotal scan (only when the VT_API_KEY secret is set)
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+        run: |
+          if (-not $env:VT_API_KEY) { 'No VT_API_KEY secret yet, skipping the scan.'; exit 0 }
+          $h = @{ 'x-apikey' = $env:VT_API_KEY }
+          foreach ($f in Get-ChildItem dist/*.exe) {
+            try {
+              $url = (Invoke-RestMethod -Headers $h -Uri 'https://www.virustotal.com/api/v3/files/upload_url').data
+              Invoke-RestMethod -Method Post -Headers $h -Uri $url -Form @{ file = $f } | Out-Null
+              $sha = (Get-FileHash $f -Algorithm SHA256).Hash.ToLower()
+              "`nVirusTotal ($($f.Name)): https://www.virustotal.com/gui/file/$sha" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+            } catch { "::warning::VirusTotal upload failed: $($_.Exception.Message)" }
+          }
       - uses: actions/upload-artifact@v6
         with:
           name: Amnesia-windows-${{ matrix.arch }}
-          path: out/Amnesia
+          path: dist
           retention-days: 14
+
+  release:
+    name: GitHub release (tag win-v*)
+    if: startsWith(github.ref, 'refs/tags/win-v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist
+          merge-multiple: true
+      - name: One SHA256SUMS.txt for both
+        run: cat dist/SHA256SUMS-*.txt > dist/SHA256SUMS.txt && rm dist/SHA256SUMS-*.txt
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" dist/* --latest=false --repo "${GITHUB_REPOSITORY}" --title "Amnesia for Windows ${GITHUB_REF_NAME#win-v}" --notes "Windows preview. Test it in a VM first. Check your download against SHA256SUMS.txt."

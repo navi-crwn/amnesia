@@ -8,46 +8,510 @@
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
+<!-- v0.4: every text comes from app.js (English + Indonesian), the elements only carry a data-t key -->
 <main class="wrap">
-  <header class="top">
-    <img src="logo.png" alt="" width="36" height="36">
-    <h1>Amnesia</h1>
-    <span class="ver" id="ver"></span>
-    <span class="badge" data-t="badge">Early preview</span>
+  <!-- v0.6: looks like the Mac app: a home screen with tiles, every other page has a back button (no tabs) -->
+  <header class="top" id="homeHead">
+    <img src="logo.png" alt="" width="40" height="40">
+    <div class="grow0">
+      <div class="title"><h1>Amnesia</h1><span class="ver" id="ver"></span><span class="badge" data-t="badge"></span></div>
+      <p class="muted small" data-t="tagline"></p>
+    </div>
+    <button class="round" data-go="settings" data-tip="tabSettings"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.6a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1c.5.4 1.1.7 1.7 1L11 21h4l.3-2.6c.6-.3 1.2-.6 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></button>
+  </header>
+  <header class="pagehead" id="pageHead" hidden>
+    <button class="round" id="back" data-tip="back"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M15.5 4.5 8 12l7.5 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <h1 id="pageTitle"></h1>
   </header>
 
-  <section class="status">
-    <span class="dot" aria-hidden="true"></span>
-    <div>
-      <h2 data-t="statusTitle">Not active yet</h2>
-      <p data-t="statusText">This is the first Windows version. It only shows what Amnesia would wipe. Nothing gets deleted, at logout or ever.</p>
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="card-head">
-      <div>
-        <h2 data-t="previewTitle">What would be wiped</h2>
-        <p class="muted" data-t="previewText">A dry run of your user folder. Your Keep folder, the Keep List and what Windows needs to log you in always stay.</p>
+  <!-- ================= Home ================= -->
+  <div class="view" id="home">
+    <section class="status" id="status" data-state="off">
+      <span class="hicon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M11 3h2v9h-2zM7 6.3l1.4 1.4a6 6 0 1 0 7.2 0L17 6.3A8 8 0 1 1 7 6.3z"/></svg></span>
+      <div class="grow">
+        <h2 id="stTitle"></h2>
+        <p class="muted" id="stText"></p>
+        <div class="row" id="offBox">
+          <label class="check"><input type="checkbox" id="agree"> <span data-t="agree"></span></label>
+          <button class="btn" id="on" disabled data-t="turnOn"></button>
+        </div>
+        <div class="row" id="onBox" hidden>
+          <button class="btn ghost" id="pause"></button>
+          <button class="btn ghost" data-go="review" data-t="reviewBtn"></button>
+          <button class="btn ghost danger" id="off"></button>
+        </div>
       </div>
-      <button class="btn" id="run" data-t="previewBtn">Show preview</button>
+    </section>
+
+    <section class="card alert" id="blockedCard" hidden>
+      <h2 data-t="blockedTitle"></h2>
+      <p id="blockedText"></p>
+      <p class="muted" data-t="blockedHow"></p>
+      <div class="row">
+        <button class="btn ghost" data-link="security" data-t="openSecurity"></button>
+        <button class="btn ghost" data-link="falsePositive" data-t="reportFp"></button>
+      </div>
+    </section>
+
+
+
+
+    <div class="tiles">
+      <button class="tile" data-go="vault"><i class="ib c-vault"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V8a3 3 0 0 0-6 0z"/></svg></i><span><b>Profile Vault</b><small data-t="tVaultSub"></small></span></button>
+      <button class="tile" data-go="review"><i class="ib c-out"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M10 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-8v-2h7V5h-7zM9 7.5 4.5 12 9 16.5V13h7v-2H9z"/></svg></i><span><b data-t="tOut"></b><small data-t="tOutSub"></small></span></button>
+      <button class="tile" id="tPause"><i class="ib c-pause"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg></i><span><b id="tPauseT"></b><small id="tPauseS"></small></span></button>
+      <button class="tile" data-go="keep"><i class="ib c-keep"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M15 3l6 6-2 1-3 3 .5 5-1.5 1.5-4-4L6 20l-2 0 0-2 4.5-5-4-4L6 7.5l5 .5 3-3z"/></svg></i><span><b>Keep List</b><small data-t="tKeepSub"></small></span></button>
+      <button class="tile" data-go="backup"><i class="ib c-backup"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M4 13h16v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zm2.5 3a1 1 0 1 0 0 2 1 1 0 0 0 0-2zM5.2 5.6A1 1 0 0 1 6.1 5h11.8a1 1 0 0 1 .9.6L20 11H4z"/></svg></i><span><b>Backup</b><small data-t="tBackupSub"></small></span></button>
+      <button class="tile" data-go="history"><i class="ib c-gray"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm-1 4v6l5 3 1-1.6-4-2.4V7z"/></svg></i><span><b data-t="histTitle"></b><small data-t="tHistSub"></small></span></button>
     </div>
-    <p class="muted" id="msg" role="status"></p>
-    <div id="result" hidden>
-      <p class="sum" id="sum"></p>
-      <ul class="list" id="items"></ul>
+    <button class="rowlink" data-go="preview"><i class="ib c-preview"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 5c5 0 9 4.5 10 7-1 2.5-5 7-10 7S3 14.5 2 12c1-2.5 5-7 10-7zm0 3.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></svg></i><span><b data-t="previewTitle"></b><small data-t="tPrevSub"></small></span><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+
+  <!-- ================= What gets wiped (v0.6: own page) ================= -->
+  <div class="view" id="preview" hidden>
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2 data-t="previewTitle"></h2>
+          <p class="muted" data-t="previewText"></p>
+        </div>
+        <button class="btn" id="run" data-t="previewBtn"></button>
+      </div>
+      <p class="muted" id="msg" role="status"></p>
+      <div id="result" hidden>
+        <p class="sum" id="sum"></p>
+        <ul class="list" id="items"></ul>
+        <details>
+          <summary data-t="keptTitle"></summary>
+          <ul class="list kept" id="kept"></ul>
+        </details>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= History (v0.6: own page) ================= -->
+  <div class="view" id="history" hidden>
+    <section class="card">
+      <h2 data-t="histTitle"></h2>
+      <ul class="list hist" id="hist"></ul>
+      <p class="muted" id="histEmpty" data-t="histEmpty" hidden></p>
+    </section>
+  </div>
+
+  <!-- ================= Review before sign out ================= -->
+  <div class="view" id="review" hidden>
+    <section class="card">
+      <h2 data-t="reviewTitle"></h2>
+      <p class="muted" data-t="reviewText"></p>
+      <p class="muted" id="revMsg" role="status"></p>
+      <div id="revResult" hidden>
+        <p class="sum" id="revSum"></p>
+        <ul class="list" id="revItems"></ul>
+        <div id="revAppsBox" hidden>
+          <h3 data-t="revApps"></h3>
+          <ul class="list" id="revApps"></ul>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn" id="revSignOut" data-t="signOutNow"></button>
+        <button class="btn ghost" data-go="keep" data-t="keepFirst"></button>
+        <button class="btn ghost" data-go="home" data-t="cancel"></button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= Keep List ================= -->
+  <div class="view" id="keep" hidden>
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2 data-t="keepTitle"></h2>
+          <p class="path" id="keepDir"></p>
+          <p class="muted" data-t="keepText"></p>
+        </div>
+        <button class="btn" id="openKeep" data-t="openKeep"></button>
+      </div>
+    </section>
+    <section class="card">
+      <h2 data-t="klTitle"></h2>
+      <p class="muted" data-t="klText"></p>
+      <ul class="list rows" id="klList"></ul>
+      <p class="muted" id="klEmpty" data-t="klEmpty" hidden></p>
+      <div class="row">
+        <button class="btn" id="klPick" data-t="klPick"></button>
+        <input class="input" id="klPath" data-ph="klPathPh" autocomplete="off" spellcheck="false">
+        <button class="btn ghost" id="klAdd" data-t="add"></button>
+      </div>
+      <p class="muted" id="klMsg" role="status"></p>
+    </section>
+    <section class="card">
+      <h2 data-t="klSuggTitle"></h2>
+      <p class="muted" data-t="klSuggText"></p>
+      <div class="chips" id="klSugg"></div>
+    </section>
+  </div>
+
+  <!-- ================= Vault ================= -->
+  <div class="view" id="vault" hidden>
+    <section class="card" id="vCreate" hidden>
+      <h2 data-t="vTitle"></h2>
+      <p class="muted" data-t="vIntro"></p>
+      <p class="muted small" data-t="vLimit"></p>
+      <label class="field"><span data-t="vPw"></span><input class="input" type="password" id="vPw1" autocomplete="new-password"></label>
+      <label class="field"><span data-t="vPw2"></span><input class="input" type="password" id="vPw2" autocomplete="new-password"></label>
+      <label class="field"><span data-t="vPanic"></span><input class="input" type="password" id="vPanic" autocomplete="off"></label>
+      <p class="muted small" data-t="vPanicText"></p>
+      <label class="check"><input type="checkbox" id="vPanicFull"> <span data-t="vPanicFull"></span></label>
+      <div class="row"><button class="btn" id="vCreateBtn" data-t="vCreate"></button></div>
+      <p class="muted" id="vCreateMsg" role="status"></p>
+    </section>
+
+    <div id="vMain" class="view" hidden>
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2 data-t="vAppsTitle"></h2>
+            <p class="muted" data-t="vAppsText"></p>
+          </div>
+          <button class="btn" id="vSnap" data-t="vSnap"></button>
+        </div>
+        <ul class="list rows" id="vApps"></ul>
+        <div class="row"><button class="btn ghost" id="vAddFolder" data-t="vAddFolder"></button></div>
+        <div class="progress" id="vProg" hidden><div class="bar"><i></i></div><span></span><button class="btn ghost small" data-cancel data-t="cancel"></button></div>
+        <p class="muted" id="vMsg" role="status"></p>
+      </section>
+      <section class="card">
+        <h2 data-t="vRestoreTitle"></h2>
+        <p class="muted" data-t="vRestoreText"></p>
+        <div class="row">
+          <input class="input" type="password" id="vRestorePw" data-ph="vPwPh" autocomplete="current-password">
+          <button class="btn" id="vRestore" data-t="vRestore"></button>
+        </div>
+        <p id="vRestoreMsg" role="status" class="muted"></p>
+      </section>
+      <section class="card">
+        <h2 data-t="vOptions"></h2>
+        <label class="switch"><input type="checkbox" data-set="vaultAuto"><span><b data-t="vAuto"></b><span class="muted" data-t="vAutoText"></span></span></label>
+        <label class="switch"><input type="checkbox" data-set="restoreRemind"><span><b data-t="vRemind"></b><span class="muted" data-t="vRemindText"></span></span></label>
+        <label class="switch"><input type="checkbox" data-set="doomsday"><span><b data-t="vDoom"></b><span class="muted" data-t="vDoomText"></span></span></label>
+        <details>
+          <summary data-t="vChangePw"></summary>
+          <div class="stack">
+            <input class="input" type="password" id="vOld" data-ph="vOldPh" autocomplete="current-password">
+            <input class="input" type="password" id="vNew" data-ph="vNewPh" autocomplete="new-password">
+            <button class="btn ghost" id="vPwBtn" data-t="save"></button>
+          </div>
+        </details>
+        <details>
+          <summary data-t="vChangePanic"></summary>
+          <div class="stack">
+            <input class="input" type="password" id="vPanicPw" data-ph="vPwPh" autocomplete="current-password">
+            <input class="input" type="password" id="vPanicNew" data-ph="vPanicPh" autocomplete="off">
+            <label class="check"><input type="checkbox" id="vPanicNewFull"> <span data-t="vPanicFull"></span></label>
+            <button class="btn ghost" id="vPanicBtn" data-t="save"></button>
+          </div>
+        </details>
+        <p class="muted" id="vOptMsg" role="status"></p>
+      </section>
+    </div>
+  </div>
+
+  <!-- ================= Backup ================= -->
+  <div class="view" id="backup" hidden>
+    <section class="card" id="bNoVault" hidden>
+      <h2 data-t="bTitle"></h2>
+      <p class="muted" data-t="bNeedVault"></p>
+      <div class="row"><button class="btn" data-go="vault" data-t="tabVault"></button></div>
+    </section>
+    <div id="bMain" class="view" hidden>
+      <section class="card">
+        <h2 data-t="bTitle"></h2>
+        <p class="muted" data-t="bText"></p>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="bKind" value="folder"> <span data-t="bFolder"></span></label>
+          <label><input type="radio" name="bKind" value="ssh"> <span data-t="bSsh"></span></label>
+        </div>
+        <div id="bFolderBox" class="stack">
+          <p class="path" id="bFolderPath"></p>
+          <p class="muted small" data-t="bFolderText"></p>
+          <div class="row"><button class="btn ghost" id="bPickFolder" data-t="bPick"></button></div>
+        </div>
+        <div id="bSshBox" class="stack" hidden>
+          <p class="muted small" data-t="bSshText"></p>
+          <div class="row">
+            <input class="input" id="bSsh" data-ph="bSshPh" autocomplete="off" spellcheck="false">
+            <input class="input short" id="bPort" data-ph="bPortPh" inputmode="numeric">
+            <button class="btn ghost" id="bSshSave" data-t="save"></button>
+            <button class="btn ghost" id="bTest" data-t="bTest"></button>
+          </div>
+        </div>
+        <label class="field inline"><span data-t="bEvery"></span>
+          <select class="input" id="bEvery">
+            <option value="off" data-t="bOff"></option><option value="day" data-t="bDay"></option><option value="week" data-t="bWeek"></option>
+          </select>
+        </label>
+        <p class="muted" id="bLast"></p>
+        <div class="row"><button class="btn" id="bNow" data-t="bNow"></button></div>
+        <div class="progress" id="bProg" hidden><div class="bar"><i></i></div><span></span><button class="btn ghost small" data-cancel data-t="cancel"></button></div>
+        <p class="muted" id="bMsg" role="status"></p>
+        <ul class="list" id="bList"></ul>
+      </section>
+    </div>
+    <section class="card">
+      <h2 data-t="mTitle"></h2>
+      <p class="muted" data-t="mText"></p>
+      <p class="path" id="mFile"></p>
+      <div class="row">
+        <button class="btn ghost" id="mPick" data-t="mPick"></button>
+        <input class="input" type="password" id="mPw" data-ph="vPwPh" autocomplete="current-password">
+        <button class="btn" id="mRestore" data-t="mRestore"></button>
+      </div>
+      <div class="progress" id="mProg" hidden><div class="bar"><i></i></div><span></span><button class="btn ghost small" data-cancel data-t="cancel"></button></div>
+      <p class="muted" id="mMsg" role="status"></p>
+    </section>
+  </div>
+
+
+  <!-- ================= Settings ================= -->
+  <div class="view" id="settings" hidden>
+    <!-- v0.6: one page for everything you can set; Advanced lives here too, and the search box filters both -->
+    <div class="search"><input class="input" id="setSearch" type="search" data-ph="searchPh" autocomplete="off" spellcheck="false"></div>
+    <p class="muted" id="searchNone" data-t="searchNone" hidden></p>
+    <div class="sgroup" id="gGeneral">
+    <h2 class="gtitle" data-t="gGeneral"></h2>
+    <section class="card">
+      <h2 data-t="encTitle"></h2>
+      <p id="enc" class="muted">…</p>
+    </section>
+    <section class="card">
+      <h2 data-t="langTitle"></h2>
+      <div class="seg" role="radiogroup">
+        <label><input type="radio" name="lang" value="auto"> <span data-t="langAuto"></span></label>
+        <label><input type="radio" name="lang" value="en"> <span>English</span></label>
+        <label><input type="radio" name="lang" value="id"> <span>Bahasa Indonesia</span></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 data-t="linksTitle"></h2>
+      <label class="switch"><input type="checkbox" data-set="keepShortcut"><span><b data-t="shortcutTitle"></b><span class="muted" data-t="shortcutText"></span></span></label>
+      <label class="switch"><input type="checkbox" data-set="keepPin"><span><b data-t="pinTitle"></b><span class="muted" data-t="pinText"></span></span></label>
+      <p class="muted small" data-t="linksNote"></p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2 data-t="upTitle"></h2>
+          <p class="muted" id="upText"></p>
+        </div>
+        <button class="btn ghost" id="upCheck" data-t="upCheck"></button>
+      </div>
+      <label class="switch"><input type="checkbox" data-set="updateCheck"><span><b data-t="upAuto"></b><span class="muted" data-t="upAutoText"></span></span></label>
+      <div class="row" id="upBox" hidden><button class="btn" id="upInstall" data-t="upInstall"></button></div>
+      <div class="progress" id="upProg" hidden><div class="bar"><i></i></div><span></span></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2 data-t="logTitle"></h2>
+          <p class="muted" data-t="logText"></p>
+        </div>
+        <button class="btn ghost" id="collectLog" data-t="logBtn"></button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2 data-t="tourTitle"></h2>
+          <p class="muted" data-t="tourText"></p>
+        </div>
+        <button class="btn ghost" id="tourAgain" data-t="tourBtn"></button>
+      </div>
+    </section>
+
+    </div>
+    <div class="sgroup" id="advGroup">
+    <h2 class="gtitle" data-t="tabAdvanced"></h2>
+    <p class="muted small" data-t="advNote"></p>
+    <section class="card">
+      <h2 data-t="aIdle"></h2>
+      <p class="muted" data-t="aIdleText"></p>
+      <label class="field inline"><span data-t="aIdleAfter"></span>
+        <select class="input" id="aIdleMin">
+          <option value="0" data-t="aNever"></option><option value="5">5 min</option><option value="10">10 min</option>
+          <option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="card">
+      <h2 data-t="aQuick"></h2>
+      <p class="muted" data-t="aQuickText"></p>
+      <label class="field inline"><span data-t="aHotkey"></span>
+        <select class="input" id="aHotkey">
+          <option value="" data-t="aOff"></option>
+          <option value="ctrl+alt+shift+x">Ctrl + Alt + Shift + X</option>
+          <option value="ctrl+alt+shift+q">Ctrl + Alt + Shift + Q</option>
+          <option value="ctrl+alt+shift+f12">Ctrl + Alt + Shift + F12</option>
+        </select>
+      </label>
+      <label class="field inline"><span data-t="aUsb"></span>
+        <select class="input" id="aUsb"></select>
+      </label>
+      <label class="field inline"><span data-t="aUsbAction"></span>
+        <select class="input" id="aUsbAction">
+          <option value="signout" data-t="aUsbSignOut"></option>
+          <option value="shutdown" data-t="aUsbShutdown"></option>
+        </select>
+      </label>
+      <p class="muted small" id="aUsbState"></p>
+      <div class="row"><button class="btn ghost danger" id="aPanicNow" data-t="aPanicNow"></button></div>
+    </section>
+
+    <section class="card">
+      <h2 data-t="pvTitle"></h2>
+      <p class="muted" data-t="pvText"></p>
+      <label class="check"><input type="checkbox" data-pv="track"> <span data-t="pvTrack"></span></label>
+      <label class="check"><input type="checkbox" data-pv="clipboard"> <span data-t="pvClipboard"></span></label>
+      <label class="check"><input type="checkbox" data-pv="search"> <span data-t="pvSearch"></span></label>
+      <label class="check"><input type="checkbox" data-pv="typing"> <span data-t="pvTyping"></span></label>
+      <label class="check"><input type="checkbox" data-pv="ads"> <span data-t="pvAds"></span></label>
+      <label class="check"><input type="checkbox" data-pv="ai"> <span data-t="pvAi"></span></label>
+      <div class="row">
+        <button class="btn" id="pvApply" data-t="adApply"></button>
+        <button class="btn ghost" id="pvUndo" data-t="pvUndo"></button>
+      </div>
+      <p class="muted" id="pvMsg" role="status"></p>
+      <p class="muted small" data-t="pvMac"></p>
+      <div class="row"><button class="btn ghost small" data-link="wifi" data-t="pvWifi"></button></div>
+    </section>
+
+    <section class="card">
+      <h2 data-t="aApps"></h2>
+      <label class="switch"><input type="checkbox" data-set="removeNewApps"><span><b data-t="aAppsSwitch"></b><span class="muted" data-t="aAppsText"></span></span></label>
+      <div id="aAppsBox" hidden>
+        <ul class="list rows" id="aAppsList"></ul>
+        <p class="muted" id="aAppsEmpty" data-t="aAppsEmpty" hidden></p>
+        <div class="row"><button class="btn ghost" id="aKeepAll" data-t="aKeepAll"></button></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 data-t="loTitle"></h2>
+      <p class="muted" data-t="loText"></p>
+      <div class="row"><button class="btn ghost" id="loScan" data-t="loScan"></button></div>
+      <div id="loBox" hidden>
+        <ul class="list rows" id="loList"></ul>
+        <div class="row"><button class="btn ghost danger" id="loDelete" data-t="loDelete"></button></div>
+      </div>
+      <p class="muted" id="loMsg" role="status"></p>
+    </section>
+
+    <section class="card">
+      <h2 data-t="xlTitle"></h2>
+      <label class="switch"><input type="checkbox" data-set="extraList"><span><b data-t="xlSwitch"></b><span class="muted" data-t="xlText"></span></span></label>
+      <p class="muted small" id="xlState"></p>
+      <div class="row">
+        <button class="btn ghost" id="xlDownload" data-t="xlDownload"></button>
+        <button class="btn ghost small" data-link="winapp2" data-t="xlAbout"></button>
+      </div>
+      <p class="muted" id="xlMsg" role="status"></p>
+    </section>
+
+    <section class="card">
+      <h2 data-t="sbTitle"></h2>
+      <p class="muted" data-t="sbText"></p>
+      <div id="sbReady">
+        <label class="check"><input type="checkbox" id="sbKeep"> <span data-t="sbKeep"></span></label>
+        <label class="check"><input type="checkbox" id="sbNet" checked> <span data-t="sbNet"></span></label>
+        <div class="row"><button class="btn ghost" id="sbOpen" data-t="sbOpen"></button></div>
+      </div>
+      <div id="sbMissing" hidden>
+        <p class="muted small" data-t="sbMissing"></p>
+        <div class="row"><button class="btn ghost small" data-link="features" data-t="sbFeatures"></button></div>
+      </div>
+      <p class="muted" id="sbMsg" role="status"></p>
+    </section>
+
+    <section class="card">
+      <h2 data-t="wfTitle"></h2>
+      <p class="muted" data-t="wfText"></p>
+      <div class="row"><button class="btn ghost" id="wfRun" data-t="wfRun"></button></div>
+      <p class="muted" id="wfMsg" role="status"></p>
+    </section>
+
+    <section class="card">
+      <h2 data-t="aDyn"></h2>
+      <label class="switch"><input type="checkbox" id="aDynamic"><span><b data-t="aDynSwitch"></b><span class="muted" data-t="aDynText"></span></span></label>
+      <div class="row"><button class="btn ghost" data-link="bluetooth" data-t="aBluetooth"></button></div>
+    </section>
+
+    <section class="card">
+      <h2 data-t="aAdmin"></h2>
+      <p class="muted" data-t="aAdminText"></p>
+      <label class="check"><input type="checkbox" id="adPagefile"> <span data-t="adPagefile"></span></label>
+      <label class="check"><input type="checkbox" id="adHiber"> <span data-t="adHiber"></span></label>
+      <label class="check"><input type="checkbox" id="adRecall"> <span data-t="adRecall"></span></label>
+      <label class="check"><input type="checkbox" id="adActivity"> <span data-t="adActivity"></span></label>
+      <label class="check"><input type="checkbox" id="adCopilot"> <span data-t="adCopilot"></span></label>
+      <label class="check"><input type="checkbox" id="adTelemetry"> <span data-t="adTelemetry"></span></label>
+      <div class="row"><button class="btn" id="adApply" data-t="adApply"></button></div>
+      <p class="muted small" data-t="adSysText"></p>
+      <div class="row"><button class="btn ghost" id="adSysClean" data-t="adSysClean"></button></div>
+      <p class="muted" id="adMsg" role="status"></p>
+    </section>
+
+    <section class="card">
+      <h2 data-t="avTitle"></h2>
+      <p class="muted" data-t="avText"></p>
+      <p id="avCfa" class="muted"></p>
+      <div class="row">
+        <button class="btn ghost" data-link="security" data-t="openSecurity"></button>
+        <button class="btn ghost" data-link="falsePositive" data-t="reportFp"></button>
+      </div>
+    </section>
+    <p class="muted" id="aMsg" role="status"></p>
+    </div>
+    <div class="sgroup" id="gEnd">
+    <section class="card">
+      <h2 data-t="unTitle"></h2>
+      <p class="muted" data-t="unText"></p>
+      <div class="row"><button class="btn ghost danger" id="unApp" data-t="unApp"></button></div>
       <details>
-        <summary data-t="keptTitle">What stays</summary>
-        <ul class="list kept" id="kept"></ul>
+        <summary data-t="unAllTitle"></summary>
+        <div class="stack">
+          <p class="muted small" data-t="unAllText"></p>
+          <input class="input" id="unWord" autocomplete="off">
+          <button class="btn ghost danger" id="unAll" data-t="unAll"></button>
+        </div>
       </details>
+    </section>
     </div>
-  </section>
+    <p class="muted" id="setMsg" role="status"></p>
+  </div>
 
   <footer class="foot">
-    <a href="https://navi-crwn.github.io/amnesia/win/" target="_blank" rel="noopener" data-t="site">Amnesia website</a>
+    <a href="https://navi-crwn.github.io/amnesia/win/" target="_blank" rel="noopener" data-t="site"></a>
     <span class="muted" id="win"></span>
   </footer>
 </main>
+
+<!-- v0.4 welcome tour: first start only (again from Settings) -->
+<div class="overlay" id="tour" hidden>
+  <div class="tour card">
+    <img src="logo.png" alt="" width="48" height="48">
+    <h2 id="tourHead"></h2>
+    <p id="tourBody"></p>
+    <div class="dots" id="tourDots"></div>
+    <div class="row">
+      <button class="btn ghost" id="tourSkip" data-t="tourSkip"></button>
+      <button class="btn" id="tourNext"></button>
+    </div>
+  </div>
+</div>
 <script src="app.js"></script>
 </body>
 </html>

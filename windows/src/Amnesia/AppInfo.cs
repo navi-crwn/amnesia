@@ -1,4 +1,4 @@
-// Where Amnesia keeps its things. Same layout as the Mac: everything lives in ~\.amnesia.
+// Where Amnesia keeps its things. Same layout as the Mac: everything lives in ~\.amnesia (see Amnesia.Core\Home.cs).
 namespace Amnesia;
 
 static class AppInfo
@@ -13,9 +13,20 @@ static class AppInfo
     /// <summary>Folder next to Amnesia.exe (ui\ and scripts\ ship there).</summary>
     public static string BaseDir => AppContext.BaseDirectory;
 
-    /// <summary>%USERPROFILE%\.amnesia: settings.conf, keep.conf, logs.</summary>
-    public static string Home => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".amnesia");
+    /// <summary>%USERPROFILE%\.amnesia: settings.conf, keep.conf, vault, logs.</summary>
+    public static string Home => Core.Home.Dir;
 
-    /// <summary>WebView2's own data. Kept out of the cleanup (see scripts\clean.ps1).</summary>
+    /// <summary>One line in %USERPROFILE%\.amnesia\trace.log. Steps only, never file names.</summary>
+    public static void Trace(string step) => Core.Home.Trace("app", step);
+
+    /// <summary>WebView2's own data. Kept out of the cleanup.</summary>
     public static string WebViewData => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Amnesia", "WebView2");
+
+    /// <summary>English or Indonesian: LANG in settings (Settings page), else the language of Windows.</summary>
+    public static bool Id => Core.Conf.Get("LANG") switch
+    {
+        "id" => true,
+        "en" => false,
+        _ => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "id",
+    };
 }

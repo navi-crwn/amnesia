@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- v0.4: the parts of Amnesia that do the real work (cleanup, vault, backup). Plain .NET, so the tests run on any
+       computer (also on Linux/Mac while developing); the Windows-only bits check OperatingSystem.IsWindows() first. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Amnesia.Core</RootNamespace>
+    <Version>0.6.0</Version>
+    <!-- registry calls are guarded by OperatingSystem.IsWindows() / the test switch -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+</Project>

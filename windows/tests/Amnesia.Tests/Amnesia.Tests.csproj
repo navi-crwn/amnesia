@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Tests for the cleanup, vault and backup on a fake user folder. Never touches the real one.
+       Run: dotnet run, project windows/tests/Amnesia.Tests (also runs in GitHub Actions on Windows) -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Amnesia.Core\Amnesia.Core.csproj" />
+  </ItemGroup>
+</Project>
