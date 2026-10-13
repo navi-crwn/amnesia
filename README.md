@@ -11,7 +11,7 @@
 <p align="center">
   <a href="../../releases/latest"><b>⬇️ Download the app</b></a> ·
   <a href="https://navi-crwn.github.io/amnesia/">Website</a> ·
-  <a href="https://navi-crwn.github.io/amnesia/win/">Windows (in progress)</a> ·
+  <a href="https://navi-crwn.github.io/amnesia/win/">Windows</a> ·
   <a href="#install">Install</a> ·
   <a href="#faq">FAQ</a> ·
   <a href="#uninstall">Uninstall</a> ·
@@ -240,7 +240,7 @@ It turns off the login agent first (so stopping it can't wipe anything), stops A
 | `keep.example.conf` | Example Keep List. `build.sh` copies it to `keep.conf` on first install. |
 | `app/` | The SwiftUI app, the icon, and the build/release scripts. `app/screenshots.sh` takes screenshots of the real app with demo data (optional). |
 | `docs/` | The website (GitHub Pages). `docs/readme/` holds the README images, drawn from the website. |
-| `windows/` | The Windows version, **work in progress (v0.7.1)**: C# tray app + HTML pages, vault, backup and a Setup.exe with in-app updates. It really wipes once turned on, so test it in a VM first. Built and tested by GitHub Actions (`.github/workflows/windows.yml`); a `win-v*` tag makes the Windows release. |
+| `windows/` | The Windows version (**v0.7.1**): C# tray app + HTML pages, vault, backup and a Setup.exe with in-app updates. It really wipes once turned on, so check What gets wiped first. Built and tested by GitHub Actions (`.github/workflows/windows.yml`); a `win-v*` tag makes the Windows release. |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Automatic tests in a fake home folder, safe to run anytime. |
 
 ---

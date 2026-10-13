@@ -24,7 +24,7 @@ Your version number is next to the Amnesia title and at the bottom of the menu b
 
 ## Windows v0.7.1 · Sign out cleans again, no Explorer flicker, tidier pages (Oct 13, 2026)
 
-Windows test version, still **test it in a virtual machine only**. Turn Amnesia Off before installing over an older version, then turn it On again.
+Turn Amnesia Off before installing over an older version, then turn it On again.
 
 ### Fixed
 - **Sign out didn't clean** (files were only removed at the next sign in). The automatic vault snapshot ran first and used up the time Windows gives. Now Amnesia **cleans right away** at sign out, and Windows shows "Amnesia is cleaning up..." until it's done. If the sign out is cancelled, nothing is removed.
@@ -45,6 +45,7 @@ Windows test version, still **test it in a virtual machine only**. Turn Amnesia 
 - **Collect log** shows a status and the file location, and its button can't be clicked twice.
 - The Keep shortcut card says "shows up after Turn On" while Amnesia is off.
 - Automatic tests: 207 (was 190).
+- **Out of test status.** The website, README and the turn-on question no longer say "virtual machine only". Found a bug or want a change? Open an issue on GitHub.
 
 ## v5.20.0 · Search in Settings, a resizable window, smarter app picking (Oct 12, 2026)
 

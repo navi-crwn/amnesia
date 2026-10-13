@@ -24,7 +24,7 @@ Matikan (**Turn Off**) Amnesia dulu sebelum install, lalu nyalakan lagi.
 
 ## Windows v0.7.1 · Sign out membersihkan lagi, Explorer tidak kedip, tampilan lebih rapi (13 Okt 2026)
 
-Versi percobaan Windows, tetap **tes di virtual machine saja**. Matikan (Turn Off) Amnesia dulu sebelum install di atas versi lama, lalu nyalakan (Turn On) lagi.
+Matikan (Turn Off) Amnesia dulu sebelum install di atas versi lama, lalu nyalakan (Turn On) lagi.
 
 ### Diperbaiki
 - **Sign out tidak membersihkan** (file baru terhapus saat login berikutnya). Snapshot vault otomatis jalan duluan dan memakan waktu yang diberikan Windows. Sekarang saat sign out Amnesia **langsung membersihkan**, dan Windows menampilkan "Amnesia is cleaning up..." sampai selesai. Kalau sign out dibatalkan, tidak ada yang terhapus.
@@ -45,6 +45,7 @@ Versi percobaan Windows, tetap **tes di virtual machine saja**. Matikan (Turn Of
 - **Kumpulkan log** menampilkan status dan lokasi file, dan tombolnya tidak bisa diklik dua kali.
 - Kartu pintasan Keep menulis "muncul setelah Turn On" selama Amnesia mati.
 - Tes otomatis: 207 (sebelumnya 190).
+- **Bukan versi tes lagi.** Website, README dan pertanyaan saat menyalakan tidak lagi menulis "virtual machine saja". Ketemu bug atau mau ada perubahan? Buka issue di GitHub.
 
 ## v5.20.0 · Cari di Pengaturan, jendela bisa diubah ukurannya, pilih app lebih pintar (12 Okt 2026)
 
