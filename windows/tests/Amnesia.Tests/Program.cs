@@ -335,6 +335,107 @@ try
     Check(store.Get("K\\Adv", "Start_TrackProgs") == 1 && store.Get("K\\Adv", "Start_TrackDocs") == null, "Undo puts back the old value and removes what was not there");
     Check(!File.Exists(Tweaks.UndoFile), "undo list cleaned up");
 
+    Console.WriteLine("v0.7 PIN:");
+    var ph = Pin.Hash("246810");
+    Check(Pin.Verify("246810", ph) && !Pin.Verify("246811", ph) && !Pin.Verify("246810", null), "PIN hash checks the right PIN only");
+    Check(Pin.Hash("246810") != ph, "the same PIN gives a different hash each time (salt)");
+    Check(!Pin.GoodPin("12345") && Pin.GoodPin("123456") && !Pin.GoodPin("12345a"), "lab PIN = 6 or more digits");
+
+    Console.WriteLine("v0.7 lab lock:");
+    var setFile = Path.Combine(fake, ".amnesia/settings.conf");
+    var setBefore = File.ReadAllText(setFile);
+    var labDir = Path.Combine(fake, "ProgramData-lab");
+    Environment.SetEnvironmentVariable("AMNESIA_LAB_DIR", labDir);
+    try
+    {
+        Check(!Lab.Active && Conf.Get("IDLE_MIN") == null, "no lab lock: own settings");
+        Settings("LANG=id", "IDLE_MIN=15", "ENABLED=0");
+        Lab.Stage(labDir, "246810", "C:\\x\\Amnesia.exe");
+        Check(Lab.Active && Lab.Check("246810") && !Lab.Check("111111"), "locked, the PIN works, a wrong one does not");
+        Settings("LANG=en", "IDLE_MIN=0", "ENABLED=0");
+        Check(Conf.Get("IDLE_MIN") == "15", "a locked setting keeps the admin's value when the user changes it");
+        Check(Conf.Get("LANG") == "en", "language stays per user");
+        Check(Conf.Enabled, "always On while locked");
+        File.WriteAllText(Conf.PauseFile, "");
+        Check(!Conf.Paused, "Pause is ignored while locked");
+        File.Delete(Conf.PauseFile);
+        Check(KeepList.File == Lab.KeepFile && File.Exists(Lab.KeepFile), "the Keep List comes from the locked copy");
+        Directory.Delete(labDir, true);
+        Check(!Lab.Active && Conf.Get("IDLE_MIN") == "0" && !Conf.Enabled, "lock off: own settings again");
+    }
+    finally { Environment.SetEnvironmentVariable("AMNESIA_LAB_DIR", null); File.WriteAllText(setFile, setBefore); }
+
+    Console.WriteLine("v0.7 vault: previous snapshot, shrunk, Edge setup:");
+    File.WriteAllText(Path.Combine(fake, ".claude/settings.json"), "first");
+    Vault.Snapshot(new[] { "Claude Code" });
+    File.WriteAllText(Path.Combine(fake, ".claude/settings.json"), "second");
+    Vault.Snapshot(new[] { "Claude Code" });
+    Check(Vault.Manifest()["Claude Code"]?["prevTime"] != null, "the snapshot before is kept as 'previous'");
+    Vault.Restore("correct horse battery", new[] { "Claude Code" }, previous: true);
+    Check(File.ReadAllText(Path.Combine(fake, ".claude/settings.json")) == "first", "restore 'previous' brings back the older one");
+    Vault.Restore("correct horse battery", new[] { "Claude Code" });
+    Check(File.ReadAllText(Path.Combine(fake, ".claude/settings.json")) == "second", "a normal restore uses the newest");
+    var big = new byte[6 * 1024 * 1024]; new Random(7).NextBytes(big);
+    File.WriteAllBytes(Path.Combine(fake, ".claude/big.bin"), big);
+    Vault.Snapshot(new[] { "Claude Code" });
+    File.Delete(Path.Combine(fake, ".claude/big.bin"));
+    Vault.Snapshot(new[] { "Claude Code" });
+    Check(Vault.Manifest()["Claude Code"]?["shrunk"]?.GetValue<bool>() == true, "a much smaller new snapshot is marked");
+    var edgeDefault = Path.Combine(fake, "AppData/Local/Microsoft/Edge/User Data/Default");
+    foreach (var f in new[] { "Cookies", "History", "Network/Cookies" }) CleanEngine.Delete(Path.Combine(edgeDefault, f));
+    File.WriteAllText(Path.Combine(fake, "AppData/Local/Microsoft/Edge/User Data/Local State"), "{\"fre\":{\"has_user_completed_fre\": false}}");
+    Vault.Snapshot(new[] { "Microsoft Edge" });
+    Check(Vault.Manifest()["Microsoft Edge"]?["setup"]?.GetValue<string>() == "unfinished", "Edge setup not finished is noted");
+    // v0.7.1: Edge leaves has_user_completed_fre false when its welcome is skipped
+    var edgeApp = Vault.Apps.First(x => x.Name == "Microsoft Edge");
+    File.WriteAllText(Path.Combine(fake, "AppData/Local/Microsoft/Edge/User Data/Local State"), "{\"fre\":{\"has_user_completed_fre\": false},\"profile\":{\"has_first_visible_browser_session_completed\": true}}");
+    Check(!Vault.SetupUnfinished(edgeApp), "v0.7.1: welcome skipped but the browser was used (first session completed): no warning");
+    File.WriteAllText(Path.Combine(fake, "AppData/Local/Microsoft/Edge/User Data/Local State"), "{\"fre\":{\"has_user_completed_fre\": false}}");
+    Make("AppData/Local/Microsoft/Edge/User Data/Default/Network/Cookies");
+    Check(!Vault.SetupUnfinished(edgeApp), "v0.7.1: welcome skipped but the profile has cookies: no warning");
+    File.Delete(Path.Combine(edgeDefault, "Network/Cookies"));
+    Make("AppData/Local/Microsoft/Edge/User Data/Default/History");
+    Check(!Vault.SetupUnfinished(edgeApp), "v0.7.1: welcome skipped but the profile has history: no warning");
+    File.Delete(Path.Combine(edgeDefault, "History"));
+    Check(Vault.SetupUnfinished(edgeApp), "v0.7.1: really never used: still a warning");
+    File.WriteAllText(Path.Combine(fake, "AppData/Local/Microsoft/Edge/User Data/Local State"), "{\"fre\":{\"has_user_completed_fre\": true}}");
+    Vault.Snapshot(new[] { "Microsoft Edge" });
+    Check(Vault.Manifest()["Microsoft Edge"]?["setup"] == null, "and not after it is finished");
+    Vault.DeleteSnapshots(new[] { "Claude Code" });
+    Check(!Directory.EnumerateFiles(Path.Combine(fake, ".amnesia"), "*.prev.amv", SearchOption.AllDirectories).Any(f => f.Contains("claude", StringComparison.OrdinalIgnoreCase)), "deleting a snapshot deletes 'previous' too");
+
+    Console.WriteLine("v0.7.1 automatic snapshot while signed in:");
+    var appsDir = Path.Combine(fake, ".amnesia/vault/apps");
+    File.WriteAllText(Path.Combine(appsDir, "microsoft-edge.amv.new"), "half");
+    Check(Vault.RemoveUnfinished() == 1 && !File.Exists(Path.Combine(appsDir, "microsoft-edge.amv.new")) && File.Exists(Path.Combine(appsDir, "microsoft-edge.amv")), "a half written snapshot is deleted, the finished one stays");
+    var procs = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "msedge" };
+    var auto = new AutoSnap(TimeSpan.FromMinutes(2), TimeSpan.Zero);
+    var now = DateTime.UtcNow;
+    Check(!auto.Due(procs.Contains, now).Contains("Microsoft Edge"), "an app is not saved while it runs");
+    Check(!auto.Due(procs.Contains, now).Contains("Microsoft Edge"), "still running: still not saved");
+    procs.Clear();
+    Check(auto.Due(procs.Contains, now).Contains("Microsoft Edge"), "closed after running: saved");
+    Check(!auto.Due(procs.Contains, now).Contains("Microsoft Edge"), "only once per close");
+    Vault.Choose("Claude Code", true);
+    Make(".claude/later.json");
+    Check(!auto.Due(procs.Contains, DateTime.UtcNow).Contains("Claude Code"), "an app without its own program waits until its data is quiet");
+    Check(auto.Due(procs.Contains, DateTime.UtcNow.AddMinutes(3)).Contains("Claude Code"), "then it is saved");
+    Vault.Snapshot(new[] { "Claude Code" });
+    Check(!auto.Due(procs.Contains, DateTime.UtcNow.AddMinutes(3)).Contains("Claude Code"), "and not again until it changes");
+    Make("AppData/Local/Microsoft/Edge/User Data/Default/Bookmarks");
+    procs.Add("msedge");
+    Check(Vault.Snapshot(new[] { "Microsoft Edge" }, changedOnly: true, running: procs.Contains).Count == 0, "the background snapshot skips an app that was opened again");
+    procs.Clear();
+    Check(Vault.Snapshot(new[] { "Microsoft Edge" }, changedOnly: true, running: procs.Contains).Count == 1, "and saves it once it is closed");
+
+    Console.WriteLine("v0.7.1 Explorer caches:");
+    Make("AppData/Local/Microsoft/Windows/Explorer/iconcache_48.db");
+    var liveNo = new CleanEngine { ExplorerLiveOk = false }.Run("logout", true).Items.Select(i => i.Path).ToList();
+    Check(!liveNo.Contains("AppData\\Local\\Microsoft\\Windows\\Explorer\\iconcache_48.db"), "a sign out cleanup while Explorer still runs (panic) leaves the icon cache alone");
+    var liveYes = new CleanEngine { ExplorerLiveOk = true }.Run("logout", true).Items.Select(i => i.Path).ToList();
+    Check(liveYes.Contains("AppData\\Local\\Microsoft\\Windows\\Explorer\\iconcache_48.db"), "at the real end of the session it goes");
+    Check(CleanEngine.TouchesShell(new[] { new CleanItem("Desktop\\notes.txt", "file") }) && !CleanEngine.TouchesShell(new[] { new CleanItem("Downloads\\a.zip", "file") }), "Explorer is told when Desktop items went");
+
     Console.WriteLine("Doomsday:");
     try { Vault.Restore("wrong password 1"); } catch (VaultError) { }
     try { Vault.Restore("wrong password 2"); Check(false, "last try warning"); } catch (VaultError e) { Check(e.Code == "wrong" && e.Left == 1, "one try left"); }

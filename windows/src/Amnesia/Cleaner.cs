@@ -122,8 +122,11 @@ static class Cleaner
         t.Join(3000);
     }
 
-    static CleanEngine Engine() => new()
+    static CleanEngine Engine(bool explorerLiveOk = false) => new()
     {
+        // v0.7.1: Explorer's icon cache, thumbnails and shellbags only go when Explorer is not running or the session
+        // really ends (it made Explorer flicker and spin when they went under it, e.g. at a panic sign out)
+        ExplorerLiveOk = explorerLiveOk,
         SystemTraces = SystemTraces,
         // Edge (and its "startup boost" helper) keeps its profile open: close it first, or the files can't be moved
         BeforeMove = items =>
@@ -153,11 +156,31 @@ static class Cleaner
     /// <summary>"Show preview": what WOULD be deleted. Touches nothing.</summary>
     public static Task<CleanResult> PreviewAsync() => Task.Run(() => Engine().Run("now", dryRun: true));
 
-    /// <summary>The real cleanup (sign out / sign in / panic). The engine itself checks that Amnesia is on and not paused.</summary>
-    public static CleanResult Run(string mode)
+    /// <summary>The real cleanup (sign out / sign in / panic). The engine itself checks that Amnesia is on and not paused.
+    /// endSession: Windows is really ending the session (WM_ENDSESSION), so Explorer is closing too.</summary>
+    public static CleanResult Run(string mode, bool endSession = false)
     {
-        var r = Engine().Run(mode, dryRun: false);
+        bool liveOk = mode == "logout" && (endSession || !ExplorerRunning());
+        if (mode == "logout" && !liveOk) AppInfo.Trace("Explorer still runs: its caches wait for the next sign out");
+        var r = Engine(liveOk).Run(mode, dryRun: false);
         if (r.Blocked > 0) Settings.Set("LAST_BLOCKED", $"{DateTime.Now:yyyy-MM-dd HH:mm} {r.Blocked}");
         return r;
+    }
+
+    /// <summary>Is Explorer (Desktop, taskbar) running in this Windows session?</summary>
+    static bool ExplorerRunning()
+    {
+        var me = System.Diagnostics.Process.GetCurrentProcess().SessionId;
+        return System.Diagnostics.Process.GetProcessesByName("explorer").Any(p => { try { return p.SessionId == me; } catch { return false; } });
+    }
+
+    /// <summary>v0.7.1: after the sign in check took Desktop or Start items away while Explorer was already running,
+    /// Explorer kept looking for their icons (flicker, high CPU, fixed by restarting Explorer). One "file types and
+    /// icons changed" makes it drop what it remembers and read again. Only once, and never with the caches deleted
+    /// under it (that was the loop in v0.5.2).</summary>
+    public static void NotifyShell()
+    {
+        try { SHChangeNotify(0x08000000 /* ASSOCCHANGED */, 0x0000 /* IDLIST */, IntPtr.Zero, IntPtr.Zero); AppInfo.Trace("told Explorer the icons changed"); }
+        catch { }
     }
 }

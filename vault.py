@@ -394,19 +394,44 @@ def set_panic(word, full=False):
 
 
 # ---------------- snapshot (tanpa password) ----------------
+def _is_running(app):
+    """App GUI sedang jalan? (tanpa membukanya)"""
+    try:
+        r = subprocess.run(["osascript", "-e", f'application "{app}" is running'],
+                           capture_output=True, text=True, timeout=10)
+        return r.stdout.strip() == "true"
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
 def quit_apps(names):
-    """Tutup app dengan sopan dulu (data tersimpan), baru paksa. Mencegah profil corrupt."""
+    """Tutup app dengan sopan dulu (data tersimpan), baru paksa. Mencegah profil corrupt.
+    Hasil (v5.21): app yang tadi sedang jalan, supaya bisa dibuka lagi setelah restore."""
     if not shutil.which("osascript") or os.environ.get("AMNESIA_HOME"):   # bukan macOS / home palsu (tes, screenshot)
-        return
-    gui = [APPS[n]["quit"] for n in names if APPS[n]["quit"]]
+        return []
+    # v5.21: lewat items(), karena folder pilihan ("~/<folder>") tidak ada di APPS
+    gui = [q for q in (items().get(n, {}).get("quit") for n in names) if q]
     if not gui:
-        return
+        return []
+    running = [q for q in gui if _is_running(q)]
     for q in gui:
         subprocess.run(["osascript", "-e", f'quit app "{q}"'], capture_output=True)
     time.sleep(3)
     for q in gui:
         subprocess.run(["killall", q], capture_output=True)
     time.sleep(1)
+    return running
+
+
+def reopen_apps(apps):
+    """v5.21: buka lagi app yang ditutup untuk restore (sekarang dengan profil yang sudah kembali)."""
+    if not apps or not shutil.which("open") or os.environ.get("AMNESIA_HOME"):
+        return
+    for q in apps:
+        try:
+            subprocess.run(["open", "-a", q], capture_output=True, timeout=15)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
 
 
 WEBSTORE = "clients2.google.com/service/update2/crx"
@@ -669,7 +694,9 @@ def restore(password):
                 raise VaultError(T(f"Restore of {label} failed:\n", f"Restore {label} gagal:\n") + r.stderr[-300:])
             done += weight[i]
         _progress(92, f"swap 1/1 {names[0]}")
-        quit_apps(names)
+        # v5.21: app yang sempat terbuka (mis. dibuka otomatis saat login, dengan profil kosong) ditutup dulu,
+        # lalu dibuka lagi setelah datanya kembali
+        was_running = quit_apps(names)
         with _no_cancel():                           # mulai di sini: data lama diganti, tidak boleh terpotong
             # data app yang sekarang DIPINDAH (bukan dihapus) ke BEFORE_RESTORE; isi restore sebelumnya dibuang
             shutil.rmtree(BEFORE_RESTORE, ignore_errors=True)
@@ -690,6 +717,7 @@ def restore(password):
         shutil.rmtree(F_STAGE, ignore_errors=True)
     _progress(96, f"check 1/1 {names[0]}")
     history("restore", ", ".join(names))
+    reopen_apps(was_running)
     return names, check_restore(names)
 
 

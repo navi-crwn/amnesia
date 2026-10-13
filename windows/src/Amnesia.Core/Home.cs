@@ -20,6 +20,10 @@ public static class Home
 
     public static string Version = "0.0.0";
 
+    /// <summary>v0.7 Keep lock: the app opens the locked Keep folder for a moment around work that needs it.</summary>
+    public static Action<Action>? WithKeep;
+    public static void UseKeep(Action work) { if (WithKeep != null) WithKeep(work); else work(); }
+
     /// <summary>One line in trace.log: time + step. Steps only, never file names (a log is a trace too).</summary>
     public static void Trace(string who, string step)
     {

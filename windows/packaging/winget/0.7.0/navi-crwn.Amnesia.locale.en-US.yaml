@@ -1,0 +1,16 @@
+PackageIdentifier: navi-crwn.Amnesia
+PackageVersion: 0.7.0
+PackageLocale: en-US
+Publisher: navi-crwn
+PublisherUrl: https://github.com/navi-crwn
+PackageName: Amnesia
+PackageUrl: https://navi-crwn.github.io/amnesia/win/
+License: MIT
+LicenseUrl: https://github.com/navi-crwn/amnesia/blob/main/LICENSE
+ShortDescription: Your PC forgets everything at sign out, except what you choose to keep.
+Tags:
+  - privacy
+  - cleanup
+ReleaseNotesUrl: https://github.com/navi-crwn/amnesia/blob/main/CHANGELOG.md
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

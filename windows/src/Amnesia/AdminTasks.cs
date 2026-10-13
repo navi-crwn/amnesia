@@ -9,6 +9,10 @@
 //   telemetry Windows sends the least diagnostic data the edition allows
 //   sysclean  one time: empty Prefetch (list of programs run), Windows\Temp, crash reports and memory dumps
 //   leftovers one time: delete the leftover folders you picked (Find leftovers)
+//   v0.7: labon:<folder>  lab lock: copy lab.conf + keep.conf into %ProgramData%\Amnesia\lab (admins only) + HKLM Run
+//         laboff          lab lock off: remove that folder and the HKLM Run entry
+using System.Security.AccessControl;
+using System.Security.Principal;
 using Microsoft.Win32;
 
 namespace Amnesia;
@@ -49,7 +53,7 @@ static class AdminTasks
     {
         try
         {
-            var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!, $"--admin {spec}") { UseShellExecute = true, Verb = "runas" });
+            var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!, $"--admin \"{spec}\"") { UseShellExecute = true, Verb = "runas" });
             p?.WaitForExit(120_000);
             AppInfo.Trace($"admin switches: {spec} (exit {p?.ExitCode})");
             return p?.ExitCode == 0;
@@ -60,6 +64,8 @@ static class AdminTasks
     /// <summary>Runs in the elevated copy (Amnesia.exe --admin pagefile=1,hiber=1,...). Returns the exit code.</summary>
     public static int RunElevated(string spec)
     {
+        if (spec.StartsWith("labon:")) return LabOn(spec[6..]);
+        if (spec == "laboff") return LabOff();
         try
         {
             foreach (var part in spec.Split(',', StringSplitOptions.RemoveEmptyEntries))
@@ -110,6 +116,47 @@ static class AdminTasks
                         break;
                 }
             }
+            return 0;
+        }
+        catch { return 1; }
+    }
+
+    const string HklmRun = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+
+    /// <summary>v0.7 lab lock on (elevated copy). The folder is made fresh with permissions only administrators and
+    /// SYSTEM can change (normal users can read), so a user can't edit or delete the lock.</summary>
+    static int LabOn(string stage)
+    {
+        try
+        {
+            var conf = File.ReadAllLines(Path.Combine(stage, "lab.conf"));
+            var exe = conf.FirstOrDefault(l => l.StartsWith("EXE="))?[4..];
+            var root = Path.GetDirectoryName(Core.Lab.Dir)!; // %ProgramData%\Amnesia
+            if (Directory.Exists(root)) Directory.Delete(root, true); // also if a user made it first (then they would own it)
+            var sec = new DirectorySecurity();
+            sec.SetAccessRuleProtection(true, false);
+            var inherit = InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
+            sec.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null), FileSystemRights.FullControl, inherit, PropagationFlags.None, AccessControlType.Allow));
+            sec.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), FileSystemRights.FullControl, inherit, PropagationFlags.None, AccessControlType.Allow));
+            sec.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), FileSystemRights.ReadAndExecute, inherit, PropagationFlags.None, AccessControlType.Allow));
+            new DirectoryInfo(root).Create(sec);
+            Directory.CreateDirectory(Core.Lab.Dir);
+            File.Copy(Path.Combine(stage, "keep.conf"), Core.Lab.KeepFile, true);
+            File.Copy(Path.Combine(stage, "lab.conf"), Core.Lab.ConfFile, true); // last: this file is what switches the lock on
+            if (!string.IsNullOrEmpty(exe))
+                using (var k = Registry.LocalMachine.CreateSubKey(HklmRun)) k.SetValue("Amnesia", $"\"{exe}\" --login");
+            return 0;
+        }
+        catch { return 1; }
+    }
+
+    static int LabOff()
+    {
+        try
+        {
+            var root = Path.GetDirectoryName(Core.Lab.Dir)!;
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+            using (var k = Registry.LocalMachine.OpenSubKey(HklmRun, writable: true)) k?.DeleteValue("Amnesia", false);
             return 0;
         }
         catch { return 1; }

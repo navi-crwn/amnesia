@@ -4,6 +4,8 @@
 //   --quit         closes the running Amnesia (used by Setup.exe before it updates or uninstalls; never a cleanup)
 //   --off          Turn Off (used by the uninstaller), then --quit
 //   --admin spec   the Windows protections switches (Settings → Advanced), in a copy Windows started as administrator
+//   --lab-check    v0.7, used by the uninstaller: when the lab lock is on, asks its PIN and removes it (exit 0 = go ahead)
+//   --open-keep    v0.7, the Desktop shortcut while the Keep lock is on: asks the Keep password, then opens Keep
 namespace Amnesia;
 
 static class Program
@@ -11,12 +13,21 @@ static class Program
     static Mutex? single;
     public static EventWaitHandle ShowSignal = new(false, EventResetMode.AutoReset, @"Local\Amnesia.Show");
     public static EventWaitHandle QuitSignal = new(false, EventResetMode.AutoReset, @"Local\Amnesia.Quit");
+    public static EventWaitHandle OpenKeepSignal = new(false, EventResetMode.AutoReset, @"Local\Amnesia.OpenKeep");
 
     [STAThread]
     static int Main(string[] args)
     {
         Core.Home.Version = AppInfo.Version;
         if (args.Length >= 2 && args[0] == "--admin") return AdminTasks.RunElevated(args[1]);
+        if (args.Contains("--lab-check"))
+        {
+            ApplicationConfiguration.Initialize();
+            if (!Amnesia.Core.Lab.Active) return 0;
+            // the PIN, then the lab lock is removed for good (one Windows prompt), so nothing stays in HKLM\...\Run
+            string? pin = PinPrompt.Ask(null, Text2.LabTitle, Text2.LabAsk, digitsOnly: true, check: Amnesia.Core.Lab.Check);
+            try { return pin != null && LabLock.TurnOff(pin) ? 0 : 1; } catch { return 1; }
+        }
         if (args.Contains("--off"))
         {
             Setup.TurnOff();
@@ -35,13 +46,15 @@ static class Program
         single = new Mutex(true, @"Local\Amnesia.SingleInstance", out bool first);
         if (!first)
         {
-            ShowSignal.Set(); // already running: ask it to show its window
+            if (args.Contains("--open-keep")) OpenKeepSignal.Set();
+            else if (!args.Contains("--login")) ShowSignal.Set(); // already running: ask it to show its window
             return 0;
         }
 
         bool atLogin = args.Contains("--login");
         ApplicationConfiguration.Initialize();
-        bool trayOnly = args.Contains("--login-tray");
+        bool trayOnly = args.Contains("--login-tray") || args.Contains("--open-keep");
+        if (args.Contains("--open-keep")) OpenKeepSignal.Set(); // picked up by the tray once it runs
         Application.Run(new TrayApp(showWindow: !atLogin && !trayOnly, cleanAtLogin: atLogin));
         try { single?.ReleaseMutex(); } catch { }
         return 0;

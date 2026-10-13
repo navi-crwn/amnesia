@@ -4,7 +4,8 @@ namespace Amnesia.Core;
 
 public static class KeepList
 {
-    public static string File => Path.Combine(Home.Dir, "keep.conf");
+    /// <summary>v0.7: while the lab lock is on, the administrator's locked copy is the Keep List.</summary>
+    public static string File => Lab.Active ? Lab.KeepFile : Path.Combine(Home.Dir, "keep.conf");
 
     /// <summary>The paths on the Keep List, cleaned up (always with /, no slash at the ends).</summary>
     public static List<string> Paths()

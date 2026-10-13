@@ -415,6 +415,8 @@ struct FoundApp: Identifiable {
     let icon: NSImage
     let paths: [String]      // relatif dari home
     let inVault: Bool
+    var symbol: String? = nil    // v5.20: ada isinya = bukan app, tapi pengaturan alat developer (ikon SF Symbol)
+    var vm: Bool = false         // v5.21: app mesin virtual (VM), datanya otomatis disimpan
     var id: String { name }
 }
 
@@ -429,6 +431,9 @@ func pathKind(_ p: String) -> (icon: String, label: String) {
     if p.hasPrefix("Library/Containers/") { return ("shippingbox.fill", T("App data (sandbox)", "Data app (sandbox)")) }
     if p.hasPrefix("Library/Group Containers/") { return ("square.stack.3d.up.fill", T("Shared data", "Data bersama")) }
     if p.hasPrefix("Library/Preferences/") { return ("slider.horizontal.3", T("Settings", "Pengaturan")) }
+    if p.hasPrefix("Library/HTTPStorages/") { return ("network", T("Web logins (cookies)", "Login web (cookie)")) }
+    if p.hasPrefix("Library/WebKit/") { return ("globe", T("Web data", "Data web")) }
+    if p.hasPrefix(".") { return ("terminal.fill", T("Config", "Pengaturan")) }
     return ("doc.fill", T("Files", "File"))
 }
 
@@ -449,51 +454,195 @@ func keepMatches(_ path: String, _ entries: [String]) -> Bool {
     entries.contains { fnmatch($0, path, 0) == 0 || path.hasPrefix($0 + "/") }
 }
 
+/// v5.20: cari data 1 app lewat bundle id di ~/Library (ide dari Pearcleaner, kode sendiri).
+/// Hanya cek nama yang sudah pasti (fileExists), tanpa menelusuri isi folder, jadi tetap cepat.
+/// Caches dan Saved Application State sengaja tidak diambil: itu sampah yang boleh ikut dihapus.
+func appDataPaths(bid: String, names: [String], groups: [String]) -> [String] {
+    let fm = FileManager.default
+    let lib = P.home + "/Library/"
+    var p: [String] = []
+    func add(_ c: String) {
+        let rel = "Library/" + c
+        if !p.contains(rel) && fm.fileExists(atPath: lib + c) { p.append(rel) }
+    }
+    for n in names where !n.isEmpty && !n.contains("/") { add("Application Support/" + n) }
+    add("Application Support/" + bid)
+    add("Containers/" + bid)
+    // Group Containers: "group.<bid>", "<TEAMID>.<bid>", atau nama lain yang memuat bundle id
+    let low = bid.lowercased()
+    for g in groups where !g.hasPrefix("group.com.apple.") {
+        let gl = g.lowercased()
+        if gl == low || gl.hasSuffix("." + low) || gl.contains(low) { add("Group Containers/" + g) }
+    }
+    if fm.fileExists(atPath: lib + "Preferences/\(bid).plist") { p.append("Library/Preferences/\(bid)*") }
+    add("HTTPStorages/" + bid)
+    add("HTTPStorages/\(bid).binarycookies")
+    add("WebKit/" + bid)
+    return p
+}
+
+/// v5.20: pengaturan alat developer / CLI yang umum (ide dari Mackup, daftar sendiri).
+/// Hanya muncul kalau file/foldernya memang ada. Path relatif dari home.
+let devConfigs: [(name: String, symbol: String, paths: [String])] = [
+    ("Git", "arrow.triangle.branch", [".gitconfig", ".config/git"]),
+    ("SSH", "key.fill", [".ssh"]),
+    ("GitHub CLI", "chevron.left.forwardslash.chevron.right", [".config/gh"]),
+    ("Zsh", "terminal.fill", [".zshrc", ".zprofile", ".zshenv"]),
+    ("Bash", "terminal.fill", [".bashrc", ".bash_profile"]),
+    ("Vim", "pencil.and.outline", [".vimrc", ".vim"]),
+    ("Neovim", "pencil.and.outline", [".config/nvim"]),
+    ("tmux", "rectangle.split.3x1", [".tmux.conf", ".config/tmux"]),
+    ("npm", "shippingbox.fill", [".npmrc"]),
+    ("Docker", "shippingbox.fill", [".docker/config.json"]),
+    ("AWS CLI", "cloud.fill", [".aws"]),
+    ("Google Cloud CLI", "cloud.fill", [".config/gcloud"]),
+    ("Kubernetes (kubectl)", "circle.hexagongrid.fill", [".kube"]),
+    ("OpenCode", "sparkles", [".config/opencode"]),
+    ("Claude Code", "sparkles", [".claude", ".claude.json"]),
+    ("Codex CLI", "sparkles", [".codex"]),
+    ("Gemini CLI", "sparkles", [".gemini"]),
+]
+
+/// v5.21: app mesin virtual (VM). Disk VM bisa puluhan GB dan tidak bisa dibuat ulang, jadi kalau datanya ada
+/// otomatis masuk Keep List (lihat VMKeep). Path relatif dari home. groupSuffix: Group Containers "<TEAMID><suffix>".
+let vmApps: [(name: String, bids: [String], paths: [String], groupSuffix: String)] = [
+    ("UTM", ["com.utmapp.UTM"], ["Library/Containers/com.utmapp.UTM"], ""),
+    ("Parallels Desktop", ["com.parallels.desktop.console", "com.parallels.desktop.appstore"],
+     ["Parallels", "Documents/Parallels"], ".com.parallels.desktop.appstore"),
+    ("VirtualBox", ["org.virtualbox.app.VirtualBox"], ["VirtualBox VMs", "Library/VirtualBox"], ""),
+    ("VMware Fusion", ["com.vmware.fusion"], ["Virtual Machines.localized", "Documents/Virtual Machines.localized"], ""),
+]
+
+/// Data VM dari 1 app di daftar atas yang memang ada di Mac ini.
+func vmDataPaths(_ v: (name: String, bids: [String], paths: [String], groupSuffix: String)) -> [String] {
+    let fm = FileManager.default
+    var out = v.paths.filter { fm.fileExists(atPath: P.home + "/" + $0) }
+    if !v.groupSuffix.isEmpty {
+        let base = "Library/Group Containers"
+        let names = ((try? fm.contentsOfDirectory(atPath: P.home + "/" + base)) ?? []).sorted()
+        out += names.filter { $0.hasSuffix(v.groupSuffix) }.map { base + "/" + $0 }
+    }
+    return out
+}
+
+/// File / folder mesin virtual (untuk peringatan di "Yang Akan Dihapus").
+func isVMData(_ path: String) -> Bool {
+    let low = path.lowercased()
+    let exts = [".utm", ".pvm", ".vbox", ".vdi", ".vmdk", ".vmwarevm", ".qcow2", ".vhd", ".vhdx"]
+    if low.split(separator: "/").contains(where: { c in exts.contains { c.hasSuffix($0) } }) { return true }
+    return ["com.utmapp.utm", "com.parallels.desktop", "virtualbox vms", "virtual machines.localized"].contains { low.contains($0) }
+}
+
+/// v5.21: data VM yang ada otomatis masuk Keep List, sekali per path (seperti kartu Akun Apple).
+/// Kalau kamu mematikannya di Pilih App, tidak dinyalakan lagi. Path yang sudah diurus dicatat di VM_KEEP_SEEN.
+enum VMKeep {
+    static var seen: Set<String> { Set(Config.get("VM_KEEP_SEEN").split(separator: "|").map(String.init)) }
+
+    /// Ada data VM di antara path ini yang belum pernah diurus?
+    static func isNew(_ paths: [String]) -> Bool {
+        let s = seen
+        let data = Set(vmApps.flatMap { vmDataPaths($0) })
+        return paths.contains { data.contains($0) && !s.contains($0) }
+    }
+
+    static func applyDefaults() {
+        var s = seen
+        let before = s.count
+        let kept = Keep.entries()
+        var add: [String] = []
+        for v in vmApps {
+            for p in vmDataPaths(v) where !s.contains(p) {
+                s.insert(p)
+                if !keepMatches(p, kept) && !add.contains(p) { add.append(p) }
+            }
+        }
+        guard s.count != before else { return }
+        if !add.isEmpty {
+            Keep.add(add)
+            trace("vm keep: \(add.count) path(s) added to the Keep List")
+        }
+        Config.set("VM_KEEP_SEEN", s.sorted().joined(separator: "|"))
+    }
+}
+
+/// Alat developer dari daftar di atas yang ada di Mac ini. Path yang sudah diurus bagian Apple
+/// (mis. .gitconfig di "Pengaturan git") tidak diambil lagi, supaya tidak dobel.
+func scanDevConfigs(skipNames: Set<String>) -> [FoundApp] {
+    let fm = FileManager.default
+    let apple = applePaths
+    var out: [FoundApp] = []
+    for d in devConfigs {
+        let p = d.paths.filter { !apple.contains($0) && fm.fileExists(atPath: P.home + "/" + $0) }
+        guard !p.isEmpty else { continue }
+        let name = T("\(d.name) settings", "Pengaturan \(d.name)")
+        guard !skipNames.contains(name) else { continue }
+        out.append(FoundApp(name: name, icon: NSImage(), paths: p, inVault: false, symbol: d.symbol))
+    }
+    return out
+}
+
 func scanApps() -> [FoundApp] {
     let fm = FileManager.default
     let lib = P.home + "/Library/"
     let groups = (try? fm.contentsOfDirectory(atPath: lib + "Group Containers")) ?? []
     var out: [FoundApp] = []
     var seen = Set<String>()
+    var vmFound = Set<String>()
     for dir in ["/Applications", P.home + "/Applications"] {
         for f in ((try? fm.contentsOfDirectory(atPath: dir)) ?? []).sorted() where f.hasSuffix(".app") {
             let path = dir + "/" + f
-            guard let bid = Bundle(path: path)?.bundleIdentifier, !bid.hasPrefix("com.apple."),
+            guard let bundle = Bundle(path: path), let bid = bundle.bundleIdentifier, !bid.hasPrefix("com.apple."),
                   bid != Bundle.main.bundleIdentifier, !seen.contains(bid) else { continue }
             seen.insert(bid)
             let name = String(f.dropLast(4))
-            var p: [String] = []
-            for c in ["Application Support/" + name, "Application Support/" + bid, "Containers/" + bid]
-            where fm.fileExists(atPath: lib + c) {
-                p.append("Library/" + c)
-            }
-            p += groups.filter { $0.localizedCaseInsensitiveContains(bid) }.map { "Library/Group Containers/" + $0 }
-            if fm.fileExists(atPath: lib + "Preferences/\(bid).plist") { p.append("Library/Preferences/\(bid)*") }
+            // nama folder di Application Support kadang nama asli app (CFBundleName), bukan nama file .app
+            let info = bundle.infoDictionary ?? [:]
+            let names = [name, info["CFBundleName"] as? String ?? "", info["CFBundleDisplayName"] as? String ?? ""]
+            var p = appDataPaths(bid: bid, names: names, groups: groups)
             // Google Drive menyimpan datanya di Application Support/Google/DriveFS (bukan nama app-nya)
             if bid == "com.google.drivefs", fm.fileExists(atPath: lib + "Application Support/Google/DriveFS") {
                 p.append("Library/Application Support/Google/DriveFS")
             }
+            // v5.21: app VM: folder VM-nya (mis. ~/VirtualBox VMs) ikut disimpan
+            var isVM = false
+            if let v = vmApps.first(where: { $0.bids.contains(bid) }) {
+                isVM = true
+                vmFound.insert(v.name)
+                for x in vmDataPaths(v) where !p.contains(x) { p.append(x) }
+            }
             guard !p.isEmpty else { continue }
             out.append(FoundApp(name: name, icon: NSWorkspace.shared.icon(forFile: path), paths: p,
-                                inVault: vaultApps.contains(name)))
+                                inVault: vaultApps.contains(name), vm: isVM))
         }
     }
-    return out
+    // v5.21: data VM yang app-nya tidak ketemu di Applications tetap bisa dipilih
+    let names = Set(out.map(\.name))
+    for v in vmApps where !vmFound.contains(v.name) && !names.contains(v.name) {
+        let p = vmDataPaths(v)
+        guard !p.isEmpty else { continue }
+        out.append(FoundApp(name: v.name, icon: NSImage(), paths: p, inVault: false, symbol: "desktopcomputer", vm: true))
+    }
+    return out + scanDevConfigs(skipNames: Set(out.map(\.name)))
 }
 
 func defaultPicks(_ apps: [FoundApp]) -> Set<String> {
     let kept = Keep.entries()
+    // v5.20: cukup 1 path yang sudah di-keep. App yang dulu di-keep utuh tetap menyala walau sekarang ada path baru
+    // (HTTPStorages, WebKit, dll.), jadi Simpan menambah path baru itu, bukan mengeluarkan yang lama.
     return Set(apps.filter { a in
-        a.paths.allSatisfy { keepMatches($0, kept) }
+        a.paths.contains { keepMatches($0, kept) }
             || (!a.inVault && suggestWords.contains { a.name.lowercased().contains($0) })
+            || (a.vm && VMKeep.isNew(a.paths))      // v5.21: VM baru, belum pernah kamu matikan
     }.map(\.name))
 }
 
 /// Tambah app yang dipilih ke Keep List; app yang dimatikan dihapus (hanya baris yang persis miliknya).
 func applyPicks(_ apps: [FoundApp], _ picked: Set<String>) {
     let kept = Keep.entries()
+    // v5.20: path yang juga dipakai app lain yang dinyalakan (mis. folder bersama) tidak dikeluarkan
+    let need = Set(apps.filter { picked.contains($0.name) }.flatMap(\.paths))
     for a in apps where !picked.contains(a.name) {
-        for p in a.paths where kept.contains(p) { Keep.remove(p) }
+        for p in a.paths where kept.contains(p) && !need.contains(p) { Keep.remove(p) }
     }
     let add = apps.filter { picked.contains($0.name) }.flatMap(\.paths).filter { !keepMatches($0, kept) }
     if !add.isEmpty { Keep.add(add) }
@@ -717,7 +866,9 @@ struct DryItem: Identifiable, Hashable, Sendable {
     let thumb: Bool          // buat thumbnail asli (hanya Desktop, Downloads, Documents, Pictures)
     let keychain: Bool
     var id: String { (keychain ? "kc:" : "") + rel }
-    var shown: String { keychain ? "Keychain: " + rel : "~/" + rel }
+    /// v5.21: rel yang diawali "/" = path lengkap (app di /Applications), bukan relatif dari home
+    var shown: String { keychain ? "Keychain: " + rel : (rel.hasPrefix("/") ? rel : "~/" + rel) }
+    var fullPath: String { rel.hasPrefix("/") ? rel : P.home + "/" + rel }
 }
 
 struct DryGroup: Identifiable, Sendable {
@@ -753,6 +904,8 @@ func parseDry(_ text: String) -> [DryEntry] {
         let kind = String(parts[0])
         let item = parts[1].trimmingCharacters(in: .whitespaces)
         if kind.hasPrefix("KEYCHAIN") { return DryEntry(keychain: true, web: kind == "KEYCHAIN-WEB", rel: item) }
+        // v5.21: app yang dipasang belakangan (remove_new_apps): path lengkap, mis. /Applications/ProtonVPN.app
+        if kind == "APP" { return item.hasPrefix("/") ? DryEntry(keychain: false, web: false, rel: item) : nil }
         guard kind == "HAPUS" else { return nil }
         return DryEntry(keychain: false, web: false, rel: item.hasPrefix("~/") ? String(item.dropFirst(2)) : item)
     }
@@ -852,6 +1005,12 @@ func categorize(_ entries: [DryEntry], patterns: [String: [String]]) -> [DryGrou
             continue
         }
         let rel = e.rel
+        // v5.21: app yang dipasang belakangan (path lengkap, bukan relatif dari home)
+        if rel.hasPrefix("/") {
+            let name = ((rel as NSString).lastPathComponent as NSString).deletingPathExtension
+            put("newapps", DryItem(rel: rel, title: name, detail: rel, icon: .app(rel), thumb: false, keychain: false))
+            continue
+        }
         let full = P.home + "/" + rel
         let comps = rel.split(separator: "/").map(String.init)
         // pintasan buatan Amnesia sendiri (dibuat ulang otomatis): tidak perlu ditampilkan
@@ -868,6 +1027,12 @@ func categorize(_ entries: [DryEntry], patterns: [String: [String]]) -> [DryGrou
             continue
         }
         guard let first = comps.first else { continue }
+        // v5.21: Trash punya kelompok sendiri, supaya jelas isinya ikut dikosongkan
+        if first == ".Trash" {
+            put("trash", DryItem(rel: rel, title: comps.last ?? rel, detail: T("in the Trash", "di Trash"),
+                                 icon: .file(full), thumb: false, keychain: false))
+            continue
+        }
         if userDirs.contains(first) {
             let parent = comps.dropLast().joined(separator: "/")
             put("files", DryItem(rel: rel, title: comps.last ?? rel,
@@ -925,6 +1090,14 @@ func categorize(_ entries: [DryEntry], patterns: [String: [String]]) -> [DryGrou
         ("files", T("Your files", "File kamu"),
          T("Move anything you need to your Keep folder (\(KeepDir.shown)) first.", "Pindahkan yang masih perlu ke folder Keep (\(KeepDir.shown)) dulu."),
          "doc.fill", false),
+        ("trash", T("Trash (emptied at logout)", "Trash (dikosongkan saat logout)"),
+         T("Everything in the Trash is deleted for good. Take back what you still need first.",
+           "Semua isi Trash dihapus permanen. Kembalikan dulu yang masih perlu."),
+         "trash.fill", false),
+        ("newapps", T("Apps installed later", "App yang dipasang belakangan"),
+         T("Installed after you switched on \"Remove apps installed later\". Keep them in Settings → Advanced.",
+           "Dipasang setelah \"Hapus app yang dipasang belakangan\" dinyalakan. Simpan lewat Pengaturan → Lanjutan."),
+         "arrow.down.app.fill", false),
         ("apple", T("Apple accounts & sync", "Akun & sinkronisasi Apple"),
          T("Switched off in Keep List → Apple accounts & data.", "Dimatikan di Keep List → Akun & data Apple."),
          "applelogo", false),
@@ -946,12 +1119,29 @@ func categorize(_ entries: [DryEntry], patterns: [String: [String]]) -> [DryGrou
     }
 }
 
+/// v5.21: ukuran tiap item dalam KB (kunci = DryItem.id). 1 kali du per 200 path, jadi tetap cepat.
+func itemSizes(_ items: [DryItem]) -> [String: Int64] {
+    var byPath: [String: String] = [:]
+    for i in items where !i.keychain { byPath[i.fullPath] = i.id }
+    let paths = Array(byPath.keys)
+    var out: [String: Int64] = [:]
+    for chunk in stride(from: 0, to: paths.count, by: 200) {
+        let part = Array(paths[chunk..<min(chunk + 200, paths.count)])
+        for line in sh("/usr/bin/du", ["-sk"] + part, timeout: 60).out.split(separator: "\n") {
+            let f = line.split(separator: "\t", maxSplits: 1)
+            guard f.count == 2, let kb = Int64(f[0]), let id = byPath[String(f[1])] else { continue }
+            out[id] = kb
+        }
+    }
+    return out
+}
+
 /// Ukuran beberapa path (relatif dari home) yang mudah dibaca, mis. "1,2 GB".
 func pathsSize(_ rels: [String]) -> String {
     guard !rels.isEmpty else { return "" }
     var kb = 0
     for chunk in stride(from: 0, to: rels.count, by: 200) {
-        let part = rels[chunk..<min(chunk + 200, rels.count)].map { P.home + "/" + $0 }
+        let part = rels[chunk..<min(chunk + 200, rels.count)].map { $0.hasPrefix("/") ? $0 : P.home + "/" + $0 }
         kb += sh("/usr/bin/du", ["-sk"] + part, timeout: 60).out.split(separator: "\n")
             .compactMap { Int($0.split(separator: "\t").first ?? "") }.reduce(0, +)
     }
@@ -1768,6 +1958,7 @@ final class Model: ObservableObject {
         AppleKeep.applyDefaultsOnce()        // v5.10: "Akun & data Apple" otomatis dicentang (sekali saja)
         if let c = cachedReport() { rawReport = c.entries; reportTime = c.time; regroup() }
         if Shots.on { state = .active; refreshVault(); return }    // mode screenshot: tanpa timer & backup
+        VMKeep.applyDefaults()               // v5.21: data virtual machine (UTM, Parallels, …) otomatis disimpan
         Agent.migrate()
         Agent.LoginItem.sync()
         // v5.19: update dari app mematikan Amnesia dulu; app versi baru menyalakannya lagi di sini
@@ -1795,7 +1986,7 @@ final class Model: ObservableObject {
         backupTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.autoBackup() }
         }
-        // v5.19: logout otomatis kalau Mac ditinggal (Lanjutan), cek update sehari sekali
+        // v5.19: logout otomatis kalau Mac ditinggal (Lanjutan). v5.20: cek update seminggu / 2 minggu / sebulan sekali
         Task { @MainActor in
             IdleWatch.shared.start()
             Updater.shared.startSchedule()
@@ -1835,6 +2026,7 @@ final class Model: ObservableObject {
     func updateReport() {
         guard !reportBusy else { return }
         reportBusy = true
+        if !Shots.on { VMKeep.applyDefaults() }     // v5.21: VM baru sejak laporan terakhir ikut disimpan dulu
         quiet({ dryRun() }) { e in
             self.rawReport = e
             self.reportTime = Date()
@@ -2716,7 +2908,7 @@ struct MainView: View {
                 case .backup: BackupView(back: { goHome() })
                 case .move: MoveView(back: { m.page = .vault })
                 case .history: HistoryView(back: { goHome() })
-                case .advanced: AdvancedView(back: { m.page = .settings })
+                case .advanced: SettingsView(back: { goHome() }, jumpToAdvanced: true)   // v5.20: Lanjutan ada di Pengaturan
                 }
                 }
             }
@@ -2766,7 +2958,8 @@ struct MainView: View {
                 .transition(.opacity)
             }
         }
-        .frame(width: 480, height: 690)
+        // v5.20: jendela bisa diubah ukurannya (audit 117). Awalnya 480×690, paling kecil 440×560.
+        .frame(minWidth: 440, idealWidth: 480, maxWidth: .infinity, minHeight: 560, idealHeight: 690, maxHeight: .infinity)
         .tint(Th.indigo)
         .background(WindowKeeper())
         .animation(.easeInOut(duration: 0.2), value: m.page)
@@ -4255,13 +4448,25 @@ struct AppPickList: View {
     var body: some View {
         RoomyScroll(vertical: false) {
             LazyVStack(spacing: 6) {
-                ForEach(apps) { a in row(a) }
+                ForEach(apps.filter { $0.symbol == nil || $0.vm }) { a in row(a) }
+                // v5.20: pengaturan alat developer / CLI (hanya yang ada di Mac ini)
+                if apps.contains(where: { $0.symbol != nil && !$0.vm }) {
+                    Text(T("Developer tools & terminal", "Alat developer & terminal"))
+                        .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 8).padding(.leading, 4)
+                    ForEach(apps.filter { $0.symbol != nil && !$0.vm }) { a in row(a) }
+                }
             }
         }
         .scrollIndicators(.never)
     }
 
     private func subtitle(_ a: FoundApp, _ on: Bool) -> String {
+        if a.vm {      // v5.21
+            return on ? T("Kept: your virtual machines stay", "Disimpan: virtual machine kamu tetap ada")
+                      : T("Wiped at logout, virtual machines too!", "Dihapus saat logout, termasuk virtual machine-nya!")
+        }
         switch (a.inVault, on) {
         case (true, true): return T("Kept whole, not encrypted", "Disimpan utuh, tidak dienkripsi")
         case (true, false): return T("Logins go in the Profile Vault (encrypted)", "Login masuk Profile Vault (terenkripsi)")
@@ -4274,7 +4479,11 @@ struct AppPickList: View {
         let on = picked.contains(a.name)
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Image(nsImage: a.icon).resizable().frame(width: 30, height: 30)
+                if let sym = a.symbol {
+                    IconBadge(icon: sym, colors: Pal.gray, size: 30)
+                } else {
+                    Image(nsImage: a.icon).resizable().frame(width: 30, height: 30)
+                }
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 5) {
                         Text(a.name).font(.system(size: 13, weight: .semibold))
@@ -4385,9 +4594,9 @@ struct KeepSetupView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(T("What should stay?", "Apa yang tetap disimpan?")).font(.system(size: 26, weight: .heavy))
                 Text(T("These apps are on your Mac. Switch on the ones that should keep their data; we already "
-                       + "switched on VPNs and password managers. Switch one on to see exactly what's kept.",
-                       "Ini app yang ada di Mac kamu. Nyalakan yang datanya mau disimpan; VPN dan password manager "
-                       + "sudah dinyalakan. Nyalakan satu untuk lihat apa saja yang disimpan."))
+                       + "switched on VPNs, password managers and virtual machine apps. Switch one on to see exactly what's kept.",
+                       "Ini app yang ada di Mac kamu. Nyalakan yang datanya mau disimpan; VPN, password manager dan app "
+                       + "virtual machine sudah dinyalakan. Nyalakan satu untuk lihat apa saja yang disimpan."))
                     .font(.system(size: 13)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -5859,6 +6068,9 @@ struct BackupView: View {
 struct SettingsView: View {
     @EnvironmentObject var m: Model
     let back: () -> Void
+    var jumpToAdvanced = false          // v5.20: dibuka lewat halaman lama "Lanjutan" → langsung ke grup Lanjutan
+    @State private var query = ""       // v5.20: kolom cari
+    @State private var fda = Engine.hasFullDisk
     @State private var auto = Setting.autoSnapshot.isOn
     @State private var notify = Setting.notify.isOn
     @State private var preview = Setting.preview.isOn
@@ -5867,112 +6079,240 @@ struct SettingsView: View {
     @State private var keepShortcut = Setting.keepShortcut.isOn
     @State private var keepSidebar = Setting.keepSidebar.isOn
 
+    // v5.20: teks tiap kartu dalam 2 bahasa (+ kata lain), supaya pencarian cocok apa pun bahasa yang dipakai
+    static let tLanguage = SetText(en: "Language", id: "Bahasa",
+                                   subEn: "For the app and notifications.", subId: "Untuk app dan notifikasi.",
+                                   tags: "english indonesia inggris translate terjemahan")
+    static let tAuto = SetText(
+        en: "Auto snapshot at logout", id: "Snapshot otomatis saat logout",
+        subEn: "Every time you log out, restart or shut down the normal way (not with Save & Log Out), Amnesia "
+            + "first saves your app logins to the vault, then cleans the Mac.\n"
+            + "• Only apps whose data changed since their last snapshot are saved.\n"
+            + "• It takes at most 150 seconds. If it takes longer, it stops and the old snapshot stays.\n"
+            + "• Skipped if you just used Save & Log Out (last 10 minutes) or Pause 1 Session is on.\n"
+            + "Off: a normal logout cleans right away without saving, so logins you didn't save are lost. "
+            + "Needs a vault.",
+        subId: "Setiap kali kamu logout, restart, atau mematikan Mac dengan cara biasa (bukan lewat tombol "
+            + "Simpan & Logout), Amnesia lebih dulu menyimpan login app ke vault, baru kemudian membersihkan Mac.\n"
+            + "• Yang disimpan hanya app yang datanya berubah sejak snapshot terakhir.\n"
+            + "• Paling lama 150 detik. Kalau lebih lama, penyimpanan dibatalkan dan snapshot lama tetap dipakai.\n"
+            + "• Dilewati kalau kamu baru saja menekan Simpan & Logout (10 menit terakhir) atau sedang memakai Jeda 1 Sesi.\n"
+            + "Kalau dimatikan: logout biasa langsung membersihkan tanpa menyimpan, jadi login yang belum "
+            + "disimpan ikut hilang. Butuh vault yang sudah dibuat.",
+        tags: "backup save simpan profile profil")
+    static let tNotify = SetText(
+        en: "Notification after login", id: "Notifikasi setelah login",
+        subEn: "After you log in, a notification tells you the Mac was cleaned and reminds you to press Restore Profiles "
+            + "to bring your profiles back from the vault.",
+        subId: "Setelah kamu login, muncul pemberitahuan bahwa Mac sudah dibersihkan, sekaligus pengingat untuk "
+            + "mengembalikan profil dari vault (Restore Profil).",
+        tags: "alert pemberitahuan reminder pengingat pesan message")
+    static let tPreview = SetText(
+        en: "Check before logout", id: "Cek dulu sebelum logout",
+        subEn: "When you log out, restart or shut down, Amnesia stops it for a moment and shows the list of what "
+            + "will be deleted. Press Continue to go on, or Cancel to stay logged in. Only while Amnesia is on.",
+        subId: "Saat kamu logout, restart, atau mematikan Mac, Amnesia menahannya sebentar dan menampilkan daftar "
+            + "yang akan dihapus. Tekan Lanjut untuk meneruskan, atau Batal untuk tetap login. Hanya saat "
+            + "Amnesia aktif.",
+        tags: "preview confirm konfirmasi warning peringatan")
+    static let tAtLogin = SetText(
+        en: "Open at login", id: "Buka saat login",
+        subEn: "Every time you log in, Amnesia starts by itself as an icon in the menu bar (no window), also while "
+            + "it is turned off. Takes effect from the next login.",
+        subId: "Setiap kamu login, Amnesia otomatis jalan sebagai ikon di menu bar (tanpa jendela), juga saat "
+            + "sedang dimatikan. Berlaku mulai login berikutnya.",
+        tags: "startup start mulai autostart login item")
+    static let tBgStart = SetText(
+        en: "Run in the background", id: "Jalan di background",
+        subEn: "On: when you log in, Amnesia only appears as the icon in the menu bar, no window pops up. "
+            + "Off: the Amnesia window opens every time you log in.",
+        subId: "Nyala: saat kamu login, Amnesia hanya muncul sebagai ikon di menu bar, tanpa jendela. "
+            + "Mati: jendela Amnesia ikut terbuka setiap kamu login.",
+        tags: "hidden tersembunyi window jendela latar")
+    static let tKeepShortcut = SetText(
+        en: "Keep shortcut on the Desktop", id: "Alias Keep di Desktop",
+        subEn: "A shortcut to your Keep folder on the Desktop. Amnesia puts it back after every cleanup. "
+            + "Shortcuts you make yourself on the Desktop are wiped like any other file.",
+        subId: "Alias ke folder Keep di Desktop. Amnesia memasangnya lagi setiap selesai membersihkan. "
+            + "Alias yang kamu buat sendiri di Desktop tetap ikut terhapus seperti file lain.",
+        tags: "alias link pintasan")
+    static let tKeepSidebar = SetText(
+        en: "Keep in the Finder sidebar", id: "Keep di sidebar Finder",
+        subEn: "Puts your Keep folder under Favorites in the Finder sidebar. The sidebar list is wiped at logout "
+            + "(it shows folders you used), so Amnesia adds Keep again after every login.",
+        subId: "Menaruh folder Keep di Favorit pada sidebar Finder. Daftar sidebar ikut dibersihkan saat logout "
+            + "(isinya menunjukkan folder yang kamu pakai), jadi Amnesia menambahkan Keep lagi setiap login.",
+        tags: "favorites favorit shortcut pintasan")
+    static let tSeeNow = SetText(en: "See what would be deleted now", id: "Lihat yang akan dihapus sekarang",
+                                 tags: "preview dry run list daftar delete hapus")
+    static let tKeepFolder = SetText(
+        en: "Keep folder", id: "Folder Keep",
+        subEn: "Files in here are never wiped. Put it anywhere and call it anything, even on an external drive.",
+        subId: "File di sini tidak pernah dihapus. Taruh di mana saja dan beri nama apa saja, bahkan di drive eksternal.",
+        tags: "location lokasi change ganti move pindah")
+    static let tEncryption = SetText(en: "Disk encryption (FileVault)", id: "Enkripsi disk (FileVault)",
+                                     tags: "encrypt security keamanan password")
+    static let tUpdate = SetText(
+        en: "Updates", id: "Update",
+        subEn: "Check for updates. Download new versions by themselves. Every week, every 2 weeks, every month.",
+        subId: "Cek update. Unduh versi baru otomatis. Seminggu, 2 minggu, sebulan sekali.",
+        tags: "version versi upgrade new baru github perbarui pembaruan")
+    static let tFullDisk = SetText(
+        en: "Full Disk Access", id: "Akses Disk Penuh",
+        subEn: "Give Amnesia Full Disk Access once, so macOS stops asking about every folder.",
+        subId: "Beri Amnesia Akses Disk Penuh sekali, supaya macOS tidak tanya per folder.",
+        tags: "permission izin privacy privasi")
+    static let tTour = SetText(en: "Show the welcome tour again", id: "Tampilkan tur perkenalan lagi",
+                               tags: "onboarding intro help bantuan guide panduan")
+    static let tUninstall = SetText(en: "Uninstall Amnesia", id: "Hapus Amnesia",
+                                    tags: "remove delete copot buang trash")
+    static let tPrivacy = SetText(
+        en: "Privacy", id: "Privasi",
+        subEn: "Everything stays on this Mac. No servers, no tracking and no analytics.",
+        subId: "Semua tetap di Mac ini. Tidak punya server, tidak melacak, tidak mengumpulkan data.",
+        tags: "tracking analytics data")
+
+    private var searching: Bool { !query.trimmingCharacters(in: .whitespaces).isEmpty }
+    private func show(_ t: SetText) -> Bool { t.hit(query) }
+
+    /// Tidak ada satu pun kartu yang cocok dengan pencarian.
+    private var nothingFound: Bool {
+        guard searching else { return false }
+        var all = [Self.tLanguage, Self.tAuto, Self.tNotify, Self.tPreview, Self.tAtLogin, Self.tBgStart,
+                   Self.tKeepShortcut, Self.tKeepSidebar, Self.tSeeNow, Self.tKeepFolder, Self.tEncryption,
+                   Self.tUpdate, Self.tTour, Self.tUninstall, Self.tPrivacy]
+        all += AdvancedGroup.texts
+        if !fda { all.append(Self.tFullDisk) }
+        return !all.contains { $0.hit(query) }
+    }
+
     var body: some View {
-        RoomyScroll {
-            VStack(spacing: 14) {
-                PageHeader(title: T("Settings", "Pengaturan"), icon: "gearshape.fill", colors: Pal.gray, back: back)
-                language
-                row(T("Auto snapshot at logout", "Snapshot otomatis saat logout"),
-                    T("Every time you log out, restart or shut down the normal way (not with Save & Log Out), Amnesia "
-                      + "first saves your app logins to the vault, then cleans the Mac.\n"
-                      + "• Only apps whose data changed since their last snapshot are saved.\n"
-                      + "• It takes at most 150 seconds. If it takes longer, it stops and the old snapshot stays.\n"
-                      + "• Skipped if you just used Save & Log Out (last 10 minutes) or Pause 1 Session is on.\n"
-                      + "Off: a normal logout cleans right away without saving, so logins you didn't save are lost. "
-                      + "Needs a vault.",
-                      "Setiap kali kamu logout, restart, atau mematikan Mac dengan cara biasa (bukan lewat tombol "
-                      + "Simpan & Logout), Amnesia lebih dulu menyimpan login app ke vault, baru kemudian membersihkan Mac.\n"
-                      + "• Yang disimpan hanya app yang datanya berubah sejak snapshot terakhir.\n"
-                      + "• Paling lama 150 detik. Kalau lebih lama, penyimpanan dibatalkan dan snapshot lama tetap dipakai.\n"
-                      + "• Dilewati kalau kamu baru saja menekan Simpan & Logout (10 menit terakhir) atau sedang memakai Jeda 1 Sesi.\n"
-                      + "Kalau dimatikan: logout biasa langsung membersihkan tanpa menyimpan, jadi login yang belum "
-                      + "disimpan ikut hilang. Butuh vault yang sudah dibuat."),
-                    "camera.fill", Pal.vault, $auto) { Setting.autoSnapshot.set($0) }
-                row(T("Notification after login", "Notifikasi setelah login"),
-                    T("After you log in, a notification tells you the Mac was cleaned and reminds you to press Restore Profiles "
-                      + "to bring your profiles back from the vault.",
-                      "Setelah kamu login, muncul pemberitahuan bahwa Mac sudah dibersihkan, sekaligus pengingat untuk "
-                      + "mengembalikan profil dari vault (Restore Profil)."),
-                    "bell.badge.fill", Pal.pause, $notify) { Setting.notify.set($0) }
-                row(T("Check before logout", "Cek dulu sebelum logout"),
-                    T("When you log out, restart or shut down, Amnesia stops it for a moment and shows the list of what "
-                      + "will be deleted. Press Continue to go on, or Cancel to stay logged in. Only while Amnesia is on.",
-                      "Saat kamu logout, restart, atau mematikan Mac, Amnesia menahannya sebentar dan menampilkan daftar "
-                      + "yang akan dihapus. Tekan Lanjut untuk meneruskan, atau Batal untuk tetap login. Hanya saat "
-                      + "Amnesia aktif."),
-                    "eye.fill", Pal.logout, $preview) { Setting.preview.set($0) }
-                row(T("Open at login", "Buka saat login"),
-                    T("Every time you log in, Amnesia starts by itself as an icon in the menu bar (no window), also while "
-                      + "it is turned off. Takes effect from the next login.",
-                      "Setiap kamu login, Amnesia otomatis jalan sebagai ikon di menu bar (tanpa jendela), juga saat "
-                      + "sedang dimatikan. Berlaku mulai login berikutnya."),
-                    "power.circle.fill", Pal.keep, $atLogin) { Setting.openAtLogin.set($0); Agent.LoginItem.sync() }
-                row(T("Run in the background", "Jalan di background"),
-                    T("On: when you log in, Amnesia only appears as the icon in the menu bar, no window pops up. "
-                      + "Off: the Amnesia window opens every time you log in.",
-                      "Nyala: saat kamu login, Amnesia hanya muncul sebagai ikon di menu bar, tanpa jendela. "
-                      + "Mati: jendela Amnesia ikut terbuka setiap kamu login."),
-                    "menubar.rectangle", Pal.keep, $bgStart) { Setting.bgStart.set($0); Agent.LoginItem.sync() }
-                row(T("Keep shortcut on the Desktop", "Alias Keep di Desktop"),
-                    T("A shortcut to your Keep folder on the Desktop. Amnesia puts it back after every cleanup. "
-                      + "Shortcuts you make yourself on the Desktop are wiped like any other file.",
-                      "Alias ke folder Keep di Desktop. Amnesia memasangnya lagi setiap selesai membersihkan. "
-                      + "Alias yang kamu buat sendiri di Desktop tetap ikut terhapus seperti file lain."),
-                    "tray.full.fill", Pal.keep, $keepShortcut) { Setting.keepShortcut.set($0); KeepLinks.sync() }
-                row(T("Keep in the Finder sidebar", "Keep di sidebar Finder"),
-                    T("Puts your Keep folder under Favorites in the Finder sidebar. The sidebar list is wiped at logout "
-                      + "(it shows folders you used), so Amnesia adds Keep again after every login.",
-                      "Menaruh folder Keep di Favorit pada sidebar Finder. Daftar sidebar ikut dibersihkan saat logout "
-                      + "(isinya menunjukkan folder yang kamu pakai), jadi Amnesia menambahkan Keep lagi setiap login."),
-                    "sidebar.left", Pal.keep, $keepSidebar) { Setting.keepSidebar.set($0); KeepLinks.sync() }
-                Button { m.page = .preview } label: {
-                    Label(T("See what would be deleted now", "Lihat yang akan dihapus sekarang"), systemImage: "list.bullet.rectangle")
-                }
-                .buttonStyle(Pill(colors: Pal.backup))
-                KeepFolderCard()
-                EncryptionCard()
-                UpdateCard()
-                if !Engine.hasFullDisk {
-                    Card {
-                        Note(text: T("Give Amnesia Full Disk Access once, so macOS stops asking about every folder.",
-                                     "Beri Amnesia Akses Disk Penuh sekali, supaya macOS tidak tanya per folder."),
-                             icon: "lock.open.fill", color: Th.orange)
-                        Note(text: T("Pressed \"Limit Access\" or \"Don't Allow\" by mistake? Open Privacy Settings → "
-                                     + "Full Disk Access, switch Amnesia on, then Quit & Reopen.",
-                                     "Terlanjur menekan \"Limit Access\" atau \"Don't Allow\"? Buka Pengaturan Privasi → "
-                                     + "Full Disk Access, nyalakan Amnesia, lalu Tutup & Buka Lagi."))
-                        HStack {
-                            Button(T("Open Privacy Settings", "Buka Pengaturan Privasi")) { Engine.openFullDiskSettings() }
-                            Button(T("Quit & Reopen", "Tutup & Buka Lagi")) { Engine.relaunch() }
-                                .disabled(m.busy != nil)
-                                .help(T("Wait until the current job is finished.", "Tunggu sampai proses yang sedang berjalan selesai."))
+        ScrollViewReader { proxy in
+            RoomyScroll {
+                VStack(spacing: 14) {
+                    PageHeader(title: T("Settings", "Pengaturan"), icon: "gearshape.fill", colors: Pal.gray, back: back)
+                    searchField
+                    general
+                    more
+                    // v5.19: pengaturan yang bisa menghapus lebih banyak. v5.20: bukan halaman sendiri lagi, tapi grup di sini
+                    AdvancedGroup(query: query).id("advanced")
+                    if show(Self.tUninstall) {
+                        Button { m.uninstall() } label: {
+                            Label(Self.tUninstall.title, systemImage: "trash.fill")
                         }
+                        .buttonStyle(Pill(colors: Pal.danger))
+                        .disabled(m.busy != nil)
+                        .help(T("Turns Amnesia off safely and moves the app to the Trash. You choose whether the vault goes too.",
+                                "Mematikan Amnesia dengan aman dan memindah app ke Trash. Kamu yang memilih vault ikut dihapus atau tidak."))
                     }
+                    if nothingFound { notFound }
+                    if show(Self.tPrivacy) { PrivacyNote().padding(.horizontal, 4) }
                 }
-                // v5.19: pengaturan yang bisa menghapus lebih banyak / butuh pemahaman ada di Lanjutan
-                Button { m.page = .advanced } label: {
-                    Label(T("Advanced", "Lanjutan"), systemImage: "exclamationmark.shield.fill")
+            }
+            .scrollIndicators(.never)
+            .onAppear {
+                guard jumpToAdvanced else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo("advanced", anchor: .top) }
                 }
-                .buttonStyle(Pill(colors: Pal.pause))
-                .help(T("Settings that can delete more or act on their own: auto logout, removing new apps, panic word, "
-                        + "moving to a new Mac.",
-                        "Pengaturan yang bisa menghapus lebih banyak atau berjalan sendiri: logout otomatis, hapus app baru, "
-                        + "kata panik, pindah Mac."))
-                Button { m.showTour() } label: {
-                    Label(T("Show the welcome tour again", "Tampilkan tur perkenalan lagi"), systemImage: "sparkles")
-                }
-                .buttonStyle(Pill(colors: Pal.vault))
-                Button { m.uninstall() } label: {
-                    Label(T("Uninstall Amnesia", "Hapus Amnesia"), systemImage: "trash.fill")
-                }
-                .buttonStyle(Pill(colors: Pal.danger))
-                .disabled(m.busy != nil)
-                .help(T("Turns Amnesia off safely and moves the app to the Trash. You choose whether the vault goes too.",
-                        "Mematikan Amnesia dengan aman dan memindah app ke Trash. Kamu yang memilih vault ikut dihapus atau tidak."))
-                PrivacyNote().padding(.horizontal, 4)
             }
         }
-        .scrollIndicators(.never)
+    }
+
+    /// v5.20: kolom cari di atas Pengaturan (juga mencari di grup Lanjutan)
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField(T("Search settings", "Cari pengaturan"), text: $query)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+            if !query.isEmpty {
+                Button { query = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(T("Clear the search", "Hapus pencarian"))
+            }
+        }
+        .padding(9)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Th.tint))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Th.line2, lineWidth: 1))
+    }
+
+    private var notFound: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").font(.system(size: 24, weight: .semibold)).foregroundStyle(.secondary)
+            Text(T("Nothing found for \"\(query)\".", "Tidak ada yang cocok dengan \"\(query)\"."))
+                .font(.system(size: 13, weight: .semibold))
+            Text(T("Try another word. English and Indonesian both work.",
+                   "Coba kata lain. Bahasa Inggris dan Indonesia sama-sama bisa."))
+                .font(.system(size: 12)).foregroundStyle(.secondary)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+    }
+
+    /// Pengaturan biasa (nyala/mati)
+    @ViewBuilder private var general: some View {
+        if show(Self.tLanguage) { language }
+        if show(Self.tAuto) {
+            row(Self.tAuto, "camera.fill", Pal.vault, $auto) { Setting.autoSnapshot.set($0) }
+        }
+        if show(Self.tNotify) {
+            row(Self.tNotify, "bell.badge.fill", Pal.pause, $notify) { Setting.notify.set($0) }
+        }
+        if show(Self.tPreview) {
+            row(Self.tPreview, "eye.fill", Pal.logout, $preview) { Setting.preview.set($0) }
+        }
+        if show(Self.tAtLogin) {
+            row(Self.tAtLogin, "power.circle.fill", Pal.keep, $atLogin) { Setting.openAtLogin.set($0); Agent.LoginItem.sync() }
+        }
+        if show(Self.tBgStart) {
+            row(Self.tBgStart, "menubar.rectangle", Pal.keep, $bgStart) { Setting.bgStart.set($0); Agent.LoginItem.sync() }
+        }
+        if show(Self.tKeepShortcut) {
+            row(Self.tKeepShortcut, "tray.full.fill", Pal.keep, $keepShortcut) { Setting.keepShortcut.set($0); KeepLinks.sync() }
+        }
+        if show(Self.tKeepSidebar) {
+            row(Self.tKeepSidebar, "sidebar.left", Pal.keep, $keepSidebar) { Setting.keepSidebar.set($0); KeepLinks.sync() }
+        }
+    }
+
+    /// Kartu lain: daftar hapus, folder Keep, enkripsi, update, izin, tur
+    @ViewBuilder private var more: some View {
+        if show(Self.tSeeNow) {
+            Button { m.page = .preview } label: {
+                Label(Self.tSeeNow.title, systemImage: "list.bullet.rectangle")
+            }
+            .buttonStyle(Pill(colors: Pal.backup))
+        }
+        if show(Self.tKeepFolder) { KeepFolderCard() }
+        if show(Self.tEncryption) { EncryptionCard() }
+        if show(Self.tUpdate) { UpdateCard() }
+        if !fda && show(Self.tFullDisk) {
+            Card {
+                Note(text: T("Give Amnesia Full Disk Access once, so macOS stops asking about every folder.",
+                             "Beri Amnesia Akses Disk Penuh sekali, supaya macOS tidak tanya per folder."),
+                     icon: "lock.open.fill", color: Th.orange)
+                Note(text: T("Pressed \"Limit Access\" or \"Don't Allow\" by mistake? Open Privacy Settings → "
+                             + "Full Disk Access, switch Amnesia on, then Quit & Reopen.",
+                             "Terlanjur menekan \"Limit Access\" atau \"Don't Allow\"? Buka Pengaturan Privasi → "
+                             + "Full Disk Access, nyalakan Amnesia, lalu Tutup & Buka Lagi."))
+                HStack {
+                    Button(T("Open Privacy Settings", "Buka Pengaturan Privasi")) { Engine.openFullDiskSettings() }
+                    Button(T("Quit & Reopen", "Tutup & Buka Lagi")) { Engine.relaunch() }
+                        .disabled(m.busy != nil)
+                        .help(T("Wait until the current job is finished.", "Tunggu sampai proses yang sedang berjalan selesai."))
+                }
+            }
+        }
+        if show(Self.tTour) {
+            Button { m.showTour() } label: {
+                Label(Self.tTour.title, systemImage: "sparkles")
+            }
+            .buttonStyle(Pill(colors: Pal.vault))
+        }
     }
 
     private var language: some View {
@@ -5980,8 +6320,8 @@ struct SettingsView: View {
             HStack(spacing: 12) {
                 IconBadge(icon: "globe", colors: Pal.keep, size: 34)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(T("Language", "Bahasa")).font(.system(size: 14, weight: .semibold))
-                    Text(T("For the app and notifications.", "Untuk app dan notifikasi."))
+                    Text(Self.tLanguage.title).font(.system(size: 14, weight: .semibold))
+                    Text(Self.tLanguage.sub)
                         .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
@@ -5994,14 +6334,14 @@ struct SettingsView: View {
         }
     }
 
-    private func row(_ title: String, _ sub: String, _ icon: String, _ colors: [Color], _ value: Binding<Bool>,
+    private func row(_ t: SetText, _ icon: String, _ colors: [Color], _ value: Binding<Bool>,
                      save: @escaping (Bool) -> Void) -> some View {
         Card {
             HStack(alignment: .top, spacing: 12) {
                 IconBadge(icon: icon, colors: colors, size: 34)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.system(size: 14, weight: .semibold))
-                    MoreText(sub).font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text(t.title).font(.system(size: 14, weight: .semibold))
+                    MoreText(t.sub).font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
                 Toggle("", isOn: Binding(get: { value.wrappedValue },
@@ -6058,12 +6398,54 @@ struct PreviewView: View {
     let back: () -> Void
     @State private var open: Set<String> = []
     @State private var showPath: Set<String> = []
-    @State private var sizes: [String: String] = [:]
     @State private var showSystem = false
+    // v5.21: cari, filter per kelompok, urut menurut ukuran, dan peringatan data besar
+    @State private var query = ""
+    @State private var groupFilter = "all"
+    @State private var bySize = false
+    @State private var itemKB: [String: Int64] = [:]     // ukuran tiap item (KB), kunci = DryItem.id
+    @State private var sized = false                     // ukuran semua item sudah dihitung
 
     private var all: [DryGroup] { m.report ?? [] }
     private var shown: [DryGroup] { all.filter { showSystem || !$0.system } }
     private var hiddenCount: Int { all.filter(\.system).reduce(0) { $0 + $1.items.count } }
+    private var searching: Bool { !query.trimmingCharacters(in: .whitespaces).isEmpty }
+    private var filtering: Bool { all.contains { $0.id == groupFilter } }
+
+    /// Kelompok yang tampil setelah filter, pencarian dan urutan.
+    private var visible: [DryGroup] {
+        let base = filtering ? all.filter { $0.id == groupFilter } : shown
+        var out: [DryGroup] = []
+        for g in base {
+            var items = searching ? g.items.filter { i in searchHit(query, i.title + " " + i.detail + " " + i.shown) } : g.items
+            if items.isEmpty { continue }
+            if bySize { items.sort { a, b in kb(a) > kb(b) } }
+            out.append(DryGroup(id: g.id, name: g.name, note: g.note, symbol: g.symbol, system: g.system, items: items))
+        }
+        if bySize { out.sort { a, b in groupKB(a) > groupKB(b) } }
+        return out
+    }
+
+    private func kb(_ i: DryItem) -> Int64 { itemKB[i.id] ?? 0 }
+    private func groupKB(_ g: DryGroup) -> Int64 { g.items.reduce(Int64(0)) { s, i in s + kb(i) } }
+
+    /// Ukuran kelompok, setelah semua item selesai diukur. Keychain tidak punya ukuran.
+    private func sizeText(_ g: DryGroup) -> String? {
+        guard sized, g.items.contains(where: { !$0.keychain }) else { return nil }
+        return bytesText(groupKB(g) * 1024)
+    }
+
+    /// Item 1 GB ke atas, atau data virtual machine (50 MB ke atas, atau belum diukur), yang akan dihapus.
+    /// Vault tidak dihitung: itu kembali lewat Restore.
+    private var bigItems: [DryItem] {
+        let gb: Int64 = 1_048_576       // dalam KB
+        return all.filter { $0.id != "vault" && $0.id != "keychain" }.flatMap(\.items)
+            .filter { i in kb(i) >= gb || (isVMData(i.rel) && (!sized || kb(i) >= 51_200)) }
+            .sorted { a, b in kb(a) > kb(b) }
+    }
+
+    /// Ganti kalau laporan baru masuk: ukuran dihitung ulang.
+    private var sizeKey: String { "\(m.reportTime?.timeIntervalSince1970 ?? 0)|\(total)" }
 
     /// Jam pembaruan yang pasti (misal "Diperbarui hari ini 15:20"), bukan "0 detik lalu".
     private var updated: String {
@@ -6103,10 +6485,15 @@ struct PreviewView: View {
                     Button { m.updateReport() } label: { Label(T("Refresh", "Muat ulang"), systemImage: "arrow.clockwise") }
                         .buttonStyle(.plain).font(.system(size: 11, weight: .semibold)).disabled(m.reportBusy)
                 }
+                searchField
+                filterBar
                 RoomyScroll(vertical: false) {
                     LazyVStack(spacing: 8) {
-                        ForEach(shown) { grp in group(grp) }
-                        if hiddenCount > 0 {
+                        let big = bigItems
+                        if !big.isEmpty && !searching && !filtering { bigWarning(big) }
+                        ForEach(visible) { grp in group(grp) }
+                        if visible.isEmpty && (searching || filtering) { notFound }
+                        if hiddenCount > 0 && !filtering {
                             Toggle(T("Show macOS system data (\(hiddenCount) items, made again automatically)",
                                      "Tampilkan data sistem macOS (\(hiddenCount) item, dibuat ulang otomatis)"), isOn: $showSystem)
                                 .toggleStyle(.checkbox).font(.system(size: 11)).foregroundStyle(.secondary)
@@ -6131,12 +6518,98 @@ struct PreviewView: View {
             }
         }
         .onAppear { load() }
+        .task(id: sizeKey) { await measureAll() }
+    }
+
+    /// v5.21: kolom cari (sama seperti di Pengaturan): nama atau folder, di semua kelompok
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField(T("Search by name or folder", "Cari nama atau folder"), text: $query)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+            if !query.isEmpty {
+                Button { query = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(T("Clear the search", "Hapus pencarian"))
+            }
+        }
+        .padding(9)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Th.tint))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Th.line2, lineWidth: 1))
+    }
+
+    /// v5.21: tampilkan 1 kelompok saja, dan urutkan dari yang terbesar
+    private var filterBar: some View {
+        HStack(spacing: 10) {
+            Picker("", selection: $groupFilter) {
+                Text(T("All groups", "Semua kelompok")).tag("all")
+                ForEach(all) { g in Text(g.name).tag(g.id) }
+            }
+            .labelsHidden()
+            .frame(maxWidth: 250)
+            Spacer(minLength: 6)
+            if bySize && !sized { ProgressView().controlSize(.mini) }
+            Toggle(T("Biggest first", "Terbesar dulu"), isOn: $bySize)
+                .toggleStyle(.checkbox).font(.system(size: 11))
+                .help(T("Sort groups and items by size", "Urutkan kelompok dan item menurut ukuran"))
+        }
+    }
+
+    /// v5.21: peringatan di atas daftar: data besar / virtual machine yang ikut dihapus
+    private func bigWarning(_ big: [DryItem]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(T("Big data will be deleted at logout", "Data besar akan dihapus saat logout"),
+                  systemImage: "exclamationmark.triangle.fill")
+                .font(.system(size: 13, weight: .bold)).foregroundStyle(Th.orange)
+            ForEach(Array(big.prefix(4))) { i in
+                HStack(spacing: 8) {
+                    DryRowIcon(item: i)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(i.title).font(.system(size: 12, weight: .semibold)).lineLimit(1).truncationMode(.middle)
+                        Text(i.shown).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                    }
+                    Spacer(minLength: 6)
+                    Text(kb(i) > 0 ? bytesText(kb(i) * 1024) : "VM").font(.system(size: 11, weight: .bold))
+                }
+                .help(i.shown)
+            }
+            if big.count > 4 {
+                Text(T("…and \(big.count - 4) more", "…dan \(big.count - 4) lagi")).font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            Text(T("Still need it? Move it to your Keep folder (\(KeepDir.shown)), or switch the app on in Keep List → Pick Apps, "
+                   + "before you log out.",
+                   "Masih perlu? Pindahkan ke folder Keep (\(KeepDir.shown)), atau nyalakan app-nya di Keep List → Pilih App, "
+                   + "sebelum logout."))
+                .font(.system(size: 11)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Th.orange.opacity(0.12)))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Th.orange.opacity(0.5), lineWidth: 1))
+    }
+
+    private var notFound: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "magnifyingglass").font(.system(size: 22, weight: .semibold)).foregroundStyle(.secondary)
+            Text(searching ? T("Nothing found for \"\(query)\".", "Tidak ada yang cocok dengan \"\(query)\".")
+                           : T("Nothing in this group.", "Kelompok ini kosong."))
+                .font(.system(size: 13, weight: .semibold))
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
     }
 
     private func colors(_ id: String) -> [Color] {
         switch id {
         case "vault": return Pal.vault
         case "files": return Pal.backup
+        case "trash": return Pal.danger
+        case "newapps": return Pal.logout
         case "apple": return Pal.gray
         case "apps": return Pal.logout
         case "keychain": return Pal.pause
@@ -6146,13 +6619,13 @@ struct PreviewView: View {
     }
 
     private func group(_ grp: DryGroup) -> some View {
-        let isOpen = open.contains(grp.id)
+        // waktu mencari atau memfilter, kelompok langsung terbuka
+        let isOpen = open.contains(grp.id) || searching || filtering
         return VStack(alignment: .leading, spacing: 6) {
             Button {
                 withAnimation(.easeInOut(duration: 0.15)) {
-                    if isOpen { _ = open.remove(grp.id) } else { _ = open.insert(grp.id) }
+                    if open.contains(grp.id) { _ = open.remove(grp.id) } else { _ = open.insert(grp.id) }
                 }
-                if !isOpen { measure(grp) }
             } label: {
                 HStack(spacing: 10) {
                     IconBadge(icon: grp.symbol, colors: colors(grp.id), size: 30)
@@ -6166,7 +6639,7 @@ struct PreviewView: View {
                         Text("\(grp.items.count)").font(.system(size: 12, weight: .bold))
                             .padding(.horizontal, 8).padding(.vertical, 2)
                             .background(Capsule().fill(Th.pink.opacity(0.15)))
-                        if let sz = sizes[grp.id], !sz.isEmpty {
+                        if let sz = sizeText(grp) {
                             Text(sz).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
                         }
                     }
@@ -6195,6 +6668,7 @@ struct PreviewView: View {
     /// 1 baris: ikon + nama yang jelas. Path lengkap muncul saat disorot atau diklik.
     private func row(_ i: DryItem) -> some View {
         let full = showPath.contains(i.id)
+        let size = kb(i)
         return Button {
             if full { _ = showPath.remove(i.id) } else { _ = showPath.insert(i.id) }
         } label: {
@@ -6208,6 +6682,9 @@ struct PreviewView: View {
                         .textSelection(.enabled)
                 }
                 Spacer(minLength: 0)
+                if size > 0 {
+                    Text(bytesText(size * 1024)).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+                }
             }
             .contentShape(Rectangle())
         }
@@ -6215,16 +6692,15 @@ struct PreviewView: View {
         .help(i.shown)
     }
 
-    /// Ukuran kelompok dihitung saat dibuka (di background).
-    private func measure(_ grp: DryGroup) {
-        guard sizes[grp.id] == nil, !Shots.on else { return }
-        let rels = grp.items.filter { !$0.keychain }.map(\.rel)
-        guard !rels.isEmpty else { return }
-        sizes[grp.id] = ""
-        DispatchQueue.global(qos: .utility).async {
-            let s = pathsSize(rels)
-            Task { @MainActor in sizes[grp.id] = s }
-        }
+    /// v5.21: ukuran semua item dihitung sekali di background (untuk ukuran kelompok, urutan, dan peringatan).
+    private func measureAll() async {
+        guard !Shots.on, let groups = m.report else { return }
+        let items = groups.flatMap(\.items)
+        sized = false
+        let r = await Task.detached(priority: .utility) { itemSizes(items) }.value
+        if Task.isCancelled { return }
+        itemKB = r
+        sized = true
     }
 
     /// Laporan lama langsung tampil; yang baru disiapkan di background.
@@ -6457,10 +6933,10 @@ enum Shots {
                                            (.settings, "settings"), (.move, "move"), (.history, "history")]
             for (page, name) in pages {
                 m.page = page
-                await shot(MainView(), out + "/\(name).png")
+                await shot(MainView().frame(width: 480, height: 690), out + "/\(name).png")
             }
             m.page = .home
-            await shot(MainView(), out + "/home-dark.png", dark: true)
+            await shot(MainView().frame(width: 480, height: 690), out + "/home-dark.png", dark: true)
             // v5.17: tidak ada lagi screenshot yang lebih tinggi dari jendela asli (dulu vault/backup/settings-full)
             // v5.16: popup berwarna (sama seperti di app)
             for (name, title, intro, sections, ok, cancel, check) in popups() {
@@ -6477,7 +6953,7 @@ enum Shots {
             m.reportTime = Date()
             log("list has \(g.count) groups")
             m.page = .preview
-            await shot(MainView(), out + "/preview.png")
+            await shot(MainView().frame(width: 480, height: 690), out + "/preview.png")
         }
         log("done")
         running = false
@@ -6692,10 +7168,22 @@ struct WindowKeeper: NSViewRepresentable {
             guard !skip, let w = v.window, w.frameAutosaveName != "AmnesiaMain" else { return }
             w.setFrameUsingName("AmnesiaMain")
             w.setFrameAutosaveName("AmnesiaMain")
+            WindowKeeper.fit(w)
         }
         return v
     }
     func updateNSView(_ nsView: NSView, context: Context) {}
+
+    /// v5.20: layar kecil → jendela dikecilkan (maks. ~90% area layar yang terpakai), lalu ditaruh di tengah.
+    /// Ukuran paling kecil 440×560 tetap dijaga.
+    @MainActor static func fit(_ w: NSWindow) {
+        guard let vf = (w.screen ?? NSScreen.main)?.visibleFrame else { return }
+        let f = w.frame
+        guard f.width > vf.width || f.height > vf.height || !vf.intersects(f) else { return }
+        let nw = max(440, min(f.width, vf.width * 0.9))
+        let nh = max(560, min(f.height, vf.height * 0.9))
+        w.setFrame(NSRect(x: vf.midX - nw / 2, y: vf.midY - nh / 2, width: nw, height: nh), display: true)
+    }
 }
 
 @MainActor
@@ -6783,7 +7271,8 @@ struct AmnesiaApp: App {
             MainView().environmentObject(model)
         }
         .windowStyle(.hiddenTitleBar)
-        .windowResizability(.contentSize)
+        .defaultSize(width: 480, height: 690)     // v5.20: bisa diubah ukurannya, min. 440×560 (lihat MainView)
+        .windowResizability(.contentMinSize)
         .defaultLaunchBehavior(background || Shots.on ? .suppressed : .presented)
         .restorationBehavior(.disabled)      // v5.15: jendela tidak dikembalikan otomatis saat app dibuka
 

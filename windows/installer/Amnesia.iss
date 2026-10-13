@@ -74,6 +74,20 @@ Filename: "{app}\Amnesia.exe"; Parameters: "--login-tray"; Flags: nowait; Check:
 Filename: "{app}\Amnesia.exe"; Parameters: "--off"; Flags: runhidden waituntilterminated; RunOnceId: "AmnesiaOff"
 
 [Code]
+// v0.7: a PC with the lab lock on can only be uninstalled with the lab PIN (Amnesia asks it and removes the lock).
+function InitializeUninstall(): Boolean;
+var
+  Code: Integer;
+begin
+  Result := True;
+  if FileExists(ExpandConstant('{app}\Amnesia.exe')) then
+    if Exec(ExpandConstant('{app}\Amnesia.exe'), '--lab-check', '', SW_SHOW, ewWaitUntilTerminated, Code) and (Code <> 0) then
+    begin
+      MsgBox('This PC has the Amnesia lab lock on. Amnesia stays installed until the lab PIN is entered.', mbInformation, MB_OK);
+      Result := False;
+    end;
+end;
+
 // close a running Amnesia before files are replaced (an update). --quit never cleans anything.
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var

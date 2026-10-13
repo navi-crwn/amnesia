@@ -11,6 +11,13 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
 {
     CancellationTokenSource? job;
 
+    // v0.7 lab lock: what the page may still do while it is locked (look, sign out, open things, enter the PIN)
+    static readonly HashSet<string> WhileLocked = new()
+    {
+        "info", "preview", "history", "encryption", "keepList", "vaultInfo", "backupInfo", "advInfo", "open", "openKeep",
+        "collectLog", "updateCheck", "signOut", "panicNow", "cancel", "labUnlock", "keepLockNow",
+    };
+
     public async Task<string> HandleAsync(string json)
     {
         JsonNode? id = null;
@@ -22,6 +29,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
             var arg = msg["arg"];
             string S(string k) => arg?[k]?.GetValue<string>() ?? "";
             bool B(string k) => arg?[k]?.GetValue<bool>() == true;
+            if (LabLock.Closed && !WhileLocked.Contains(cmd)) throw new InvalidOperationException("lab-locked");
             JsonNode? data = cmd switch
             {
                 "info" => Info(),
@@ -33,8 +41,8 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 "history" => await Task.Run(History),
                 "encryption" => await Task.Run(Encryption),
                 "set" => await Task.Run(() => Set(S("key"), arg?["value"])),
-                "openKeep" => await Do(KeepLinks.OpenKeep),
-                "collectLog" => await Do(CollectLog),
+                "openKeep" => await OpenKeep(S("password")),
+                "collectLog" => await Task.Run(CollectLog),
                 "open" => await Do(() => OpenLink(S("target"))),
                 // Keep List
                 "keepList" => await Task.Run(KeepInfo),
@@ -47,14 +55,14 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 "vaultAddFolder" => await VaultAddFolder(),
                 "vaultRemoveFolder" => await Do(() => Vault.RemoveFolder(S("name")), VaultInfo),
                 "vaultSnapshot" => await Job("vault", (p, c) => { Vault.Snapshot(null, false, null, p, c); return VaultInfo(); }),
-                "vaultRestore" => await Job("vault", (p, c) => { var n = Vault.Restore(S("password"), null, p, c); var i = VaultInfo(); i["restored"] = new JsonArray(n.Select(x => (JsonNode)x!).ToArray()); var pr = new JsonObject(); foreach (var kv in Vault.LastProblems) pr[kv.Key] = kv.Value; i["problems"] = pr; return i; }),
+                "vaultRestore" => await Job("vault", (p, c) => { var n = Vault.Restore(S("password"), null, p, c, B("previous")); var i = VaultInfo(); i["restored"] = new JsonArray(n.Select(x => (JsonNode)x!).ToArray()); var pr = new JsonObject(); foreach (var kv in Vault.LastProblems) pr[kv.Key] = kv.Value; i["problems"] = pr; return i; }),
                 "vaultDelete" => await Do(() => Vault.DeleteSnapshots(S("name") is { Length: > 0 } n ? new[] { n } : null), VaultInfo),
                 "vaultPassword" => await Task.Run(() => { Vault.ChangePassword(S("old"), S("new")); return VaultInfo(); }),
                 "vaultPanic" => await Task.Run(() => { Vault.ChangePanicWord(S("password"), S("word"), B("full")); return VaultInfo(); }),
                 // Backup
                 "backupInfo" => await Task.Run(BackupInfo),
                 "backupFolder" => await BackupFolder(),
-                "backupNow" => await Job("backup", (p, c) => { var w = Backup.Create(p, c); var i = BackupInfo(); i["where"] = w; return i; }),
+                "backupNow" => await Job("backup", (p, c) => { var w = KeepLock.With(() => Backup.Create(p, c)); var i = BackupInfo(); i["where"] = w; return i; }),
                 "backupTest" => await Task.Run(() => (JsonNode)new JsonObject { ["error"] = Ssh.Test() }),
                 "backupRestore" => await BackupRestore(S("password"), S("file")),
                 "backupPick" => await BackupPick(),
@@ -62,7 +70,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 "advInfo" => await Task.Run(AdvInfo),
                 "appsKeep" => await Do(() => Apps.Keep(S("id")), AdvInfo),
                 "appsKeepAll" => await Do(Apps.TakeBaseline, AdvInfo),
-                "appsUninstall" => await Do(() => Apps.RunUninstaller(S("id"))),
+                "appsUninstall" => await Do(() => Apps.RunUninstaller(S("id")), AdvInfo), // v0.7.1: waits, then the list is fresh
                 "usbSet" => await Do(() => { Settings.Set("USB_KEY", S("serial").Length > 0 ? S("serial") : null); Settings.Set("USB_KEY_NAME", S("name").Length > 0 ? S("name") : null); tray.Invoke(tray.Watcher.UsbChanged); }, AdvInfo),
                 "adminApply" => await AdminApply(arg),
                 "dynamicLock" => await Do(() => DynamicLock(B("on")), AdvInfo),
@@ -73,6 +81,15 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 "leftScan" => await Task.Run(LeftScan),
                 "leftDelete" => await LeftDelete(arg),
                 "sandbox" => await Do(() => Extra.OpenSandbox(B("shareKeep"), B("network"))),
+                // v0.7 lab lock + Keep lock
+                "labOn" => await Task.Run(() => { if (!LabLock.TurnOn(S("pin"))) throw new InvalidOperationException("admin-no"); return AdvInfo(); }),
+                "labOff" => await Task.Run(() => { if (!LabLock.TurnOff(S("pin"))) throw new InvalidOperationException("admin-no"); return AdvInfo(); }),
+                "labUnlock" => await Task.Run(() => { if (!LabLock.Unlock(S("pin"))) throw new InvalidOperationException("lab-pin-wrong"); return AdvInfo(); }),
+                "labClose" => await Do(LabLock.Close, AdvInfo),
+                "keepLockOn" => await Do(() => KeepLock.TurnOn(S("password"), int.TryParse(S("minutes"), out var km) ? km : 15), AdvInfo),
+                "keepLockOff" => await Do(() => KeepLock.TurnOff(S("password")), AdvInfo),
+                "keepLockNow" => await Do(() => KeepLock.Lock("app"), AdvInfo),
+                "keepLockMin" => await Do(() => Settings.Set("KEEP_LOCK_MIN", int.TryParse(S("minutes"), out var mm) ? Math.Clamp(mm, 1, 240).ToString() : "15"), AdvInfo),
                 "wipeFree" => await Do(Extra.WipeFreeSpace),
                 "sysClean" => await SysClean(),
                 "signOut" => await Do(Guard.SignOut),
@@ -123,7 +140,9 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
             ["vault"] = Vault.Exists,
             ["vaultAuto"] = Settings.Get("VAULT_AUTO") != "0",
             ["restoreRemind"] = Settings.Get("RESTORE_REMIND") != "0",
-            ["updateCheck"] = Settings.Get("UPDATE_CHECK") != "0",
+            ["updateDays"] = Settings.UpdateDays,
+            ["labOn"] = LabLock.Active,
+            ["labOpen"] = LabLock.Active && !LabLock.Closed,
             ["doomsday"] = Settings.Get("DOOMSDAY") != "0",
             ["idleMin"] = Conf.Int("IDLE_MIN"),
             ["removeNewApps"] = Apps.On,
@@ -148,7 +167,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
             case "welcomeDone": Settings.Set("WELCOME_DONE", "1"); break;
             case "vaultAuto": Settings.Set("VAULT_AUTO", On(true)); break;
             case "restoreRemind": Settings.Set("RESTORE_REMIND", On(true)); break;
-            case "updateCheck": Settings.Set("UPDATE_CHECK", On(true)); break;
+            case "updateDays": Settings.Set("UPDATE_DAYS", V() is "0" or "7" or "14" or "30" ? V() : "7"); break;
             case "doomsday": Settings.Set("DOOMSDAY", On(true)); break;
             case "idleMin": Settings.Set("IDLE_MIN", int.TryParse(V(), out var m) && m is > 0 and <= 240 ? m.ToString() : "0"); break;
             case "removeNewApps":
@@ -199,14 +218,23 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
         return Info();
     }
 
-    /// <summary>Preview + (v0.4) the programs "Remove new apps" would take away. Also used by "Review and sign out".</summary>
+    /// <summary>Preview + (v0.4) the programs "Remove new apps" would take away. Also used by "Review and sign out".
+    /// v0.7.1: with the size of each file and folder (the page sorts and filters by it).</summary>
     static async Task<JsonNode> Preview()
     {
         var r = await Cleaner.PreviewAsync();
+        var sizes = await Task.Run(() =>
+        {
+            var d = new Dictionary<string, long>();
+            Parallel.ForEach(r.Items.Where(i => i.Kind is "file" or "folder" || i.Kind == "trace" && i.Path.StartsWith("AppData\\", StringComparison.OrdinalIgnoreCase)),
+                new ParallelOptions { MaxDegreeOfParallelism = 4 },
+                i => { var n = CleanEngine.SizeOf(Core.Home.Full(i.Path)); lock (d) d[i.Path] = n; });
+            return d;
+        });
         var o = new JsonObject
         {
             ["count"] = r.Count,
-            ["items"] = new JsonArray(r.Items.Select(i => (JsonNode)new JsonObject { ["path"] = i.Path, ["kind"] = i.Kind }).ToArray()),
+            ["items"] = new JsonArray(r.Items.Select(i => (JsonNode)new JsonObject { ["path"] = i.Path, ["kind"] = i.Kind, ["size"] = sizes.GetValueOrDefault(i.Path, -1) }).ToArray()),
             ["kept"] = new JsonArray(r.Kept.Select(k => (JsonNode)k!).ToArray()),
         };
         if (Apps.On)
@@ -249,6 +277,13 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 sugg.Add(new JsonObject { ["name"] = d.Name, ["path"] = rel });
             }
         }
+        // v0.7.1: Claude from the Microsoft Store keeps its data inside Packages (skipped above), not in Roaming\Claude
+        foreach (var store in Directory.Exists(Core.Home.Full("AppData/Local/Packages")) ? new DirectoryInfo(Core.Home.Full("AppData/Local/Packages")).EnumerateDirectories("Claude_*") : Enumerable.Empty<DirectoryInfo>())
+        {
+            var rel = $"AppData/Local/Packages/{store.Name}/LocalCache/Roaming/Claude";
+            if (Directory.Exists(Core.Home.Full(rel)) && !paths.Any(p => Wild.Like(rel, p) || Wild.Like(rel, p + "/*")))
+                sugg.Add(new JsonObject { ["name"] = "Claude (Microsoft Store)", ["path"] = rel });
+        }
         foreach (var dot in new[] { ".ssh", ".gitconfig", ".vscode", ".npmrc" })
             if ((File.Exists(Core.Home.Full(dot)) || Directory.Exists(Core.Home.Full(dot))) && !paths.Contains(dot, StringComparer.OrdinalIgnoreCase))
                 sugg.Insert(0, new JsonObject { ["name"] = dot, ["path"] = dot });
@@ -287,6 +322,9 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 ["chosen"] = chosen.Contains(a.Name),
                 ["time"] = m[a.Name]?["time"]?.GetValue<string>(),
                 ["size"] = m[a.Name]?["size"]?.GetValue<long>(),
+                ["prevTime"] = m[a.Name]?["prevTime"]?.GetValue<string>(),
+                ["shrunk"] = m[a.Name]?["shrunk"]?.GetValue<bool>() ?? false,
+                ["setup"] = m[a.Name]?["setup"]?.GetValue<string>(),
             });
         }
         return new JsonObject
@@ -353,7 +391,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
     async Task<JsonNode> BackupRestore(string password, string file)
     {
         if (!File.Exists(file)) throw new InvalidOperationException("no-file");
-        return await Job("restore", (p, c) => { var n = Backup.Restore(file, password, p, c); return new JsonObject { ["count"] = n }; });
+        return await Job("restore", (p, c) => { var n = KeepLock.With(() => Backup.Restore(file, password, p, c)); return new JsonObject { ["count"] = n }; });
     }
 
     // ---------- Advanced ----------
@@ -372,7 +410,34 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
             ["privacy"] = new JsonObject(Privacy.Status().Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value))),
             ["list"] = ListInfo(),
             ["sandbox"] = Extra.SandboxReady,
+            ["lab"] = new JsonObject
+            {
+                ["on"] = LabLock.Active,
+                ["open"] = LabLock.Active && !LabLock.Closed,
+                ["since"] = Lab.Get("LOCKED"),
+            },
+            ["keepLock"] = new JsonObject
+            {
+                ["on"] = KeepLock.On,
+                ["locked"] = KeepLock.On && KeepLock.IsLocked,
+                ["minutes"] = KeepLock.Minutes,
+            },
         };
+    }
+
+    /// <summary>v0.7: "Open Keep" in the page. A locked Keep needs the Keep password (asked in the page).</summary>
+    static async Task<JsonNode> OpenKeep(string password)
+    {
+        return await Task.Run(() =>
+        {
+            if (KeepLock.On && KeepLock.IsLocked)
+            {
+                if (password.Length == 0) throw new InvalidOperationException("keeplock-ask");
+                if (!KeepLock.UnlockFor(password)) throw new InvalidOperationException("keeplock-wrong");
+            }
+            KeepLinks.OpenKeep();
+            return (JsonNode)new JsonObject();
+        });
     }
 
     static JsonNode ListInfo()
@@ -502,13 +567,16 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
     }
 
     /// <summary>"Collect log" (scripts\collect-log.ps1, only when you press the button): writes amnesia-log.txt in
-    /// Public Documents and opens it in Notepad.</summary>
-    static void CollectLog()
+    /// the Keep folder and opens it in Notepad. v0.7.1: answers with where the file is (the page shows it).</summary>
+    static JsonNode CollectLog()
     {
         var psi = new System.Diagnostics.ProcessStartInfo("powershell.exe") { UseShellExecute = false, CreateNoWindow = true };
         foreach (var a in new[] { "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", Path.Combine(AppInfo.BaseDir, "scripts", "collect-log.ps1"), "-Dir", Settings.KeepDir })
             psi.ArgumentList.Add(a);
-        System.Diagnostics.Process.Start(psi);
+        // v0.7: the log goes into Keep, so a locked Keep is opened for the moment it takes
+        var file = Path.Combine(Settings.KeepDir, "amnesia-log.txt");
+        bool ok = KeepLock.With(() => { using var proc = System.Diagnostics.Process.Start(psi); proc?.WaitForExit(60_000); return File.Exists(file); });
+        return new JsonObject { ["path"] = file, ["ok"] = ok };
     }
 
     /// <summary>BitLocker / device encryption on the Windows drive. Read without admin rights through Explorer's own

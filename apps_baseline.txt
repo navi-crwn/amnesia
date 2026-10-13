@@ -1,0 +1,28 @@
+/Applications/Amnesia.app
+/Applications/Antigravity.app
+/Applications/Brave Browser.app
+/Applications/Claude.app
+/Applications/Cursor.app
+/Applications/Free Download Manager.app
+/Applications/GarageBand.app
+/Applications/Google Chrome.app
+/Applications/Google Docs.app
+/Applications/Google Drive.app
+/Applications/Google Sheets.app
+/Applications/Google Slides.app
+/Applications/Keynote Creator Studio.app
+/Applications/Lightshot Screenshot.app
+/Applications/Mendeley Reference Manager.app
+/Applications/NordVPN.app
+/Applications/Numbers Creator Studio.app
+/Applications/OpenCode.app
+/Applications/Pages Creator Studio.app
+/Applications/Shottr.app
+/Applications/Steam.app
+/Applications/Surfshark.app
+/Applications/Tailscale.app
+/Applications/UTM.app
+/Applications/Windows App.app
+/Applications/iMovie.app
+/Applications/‎WhatsApp.app
+/Users/work/Applications/Claude Code URL Handler.app

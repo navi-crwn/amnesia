@@ -118,6 +118,13 @@ public sealed class CleanEngine
         return ExplorerLive.Any(p => Wild.Like(rel, p) || Wild.Like(rel, p + "/*"));
     }
 
+    /// <summary>v0.7.1: did the cleanup take things Explorer shows (Desktop, recent items, Start menu)? After the sign in
+    /// check Amnesia then tells Explorer once, so it does not keep looking for icons that are gone.</summary>
+    public static bool TouchesShell(IEnumerable<CleanItem> items) => items.Any(i =>
+        i.Path.StartsWith("Desktop\\", StringComparison.OrdinalIgnoreCase)
+        || i.Path.StartsWith(@"AppData\Roaming\Microsoft\Windows\Recent\", StringComparison.OrdinalIgnoreCase)
+        || i.Path.StartsWith(@"AppData\Roaming\Microsoft\Windows\Start Menu\", StringComparison.OrdinalIgnoreCase));
+
     // Edge lives inside AppData\Local\Microsoft (which stays), so it is wiped on its own. On the Keep List? Then it stays.
     static readonly string[] BrowserDirs =
     {
@@ -148,6 +155,9 @@ public sealed class CleanEngine
     public Func<Func<string, bool>, IEnumerable<string>>? ExtraTraces { get; set; }
     /// <summary>Runs after the user folder is done (removes apps installed in this session).</summary>
     public Action<string>? AfterClean { get; set; }
+    /// <summary>v0.7.1: may Explorer's own caches (icon cache, thumbnails, shellbags) go? Only when Explorer is not
+    /// running or the session is really ending. Not set: only at sign out (as before).</summary>
+    public bool? ExplorerLiveOk { get; set; }
 
     public CleanResult Run(string mode, bool dryRun)
     {
@@ -192,7 +202,7 @@ public sealed class CleanEngine
             }
             catch (Exception e) { T($"extra list failed: {e.GetType().Name}"); }
         var system = (Home.Test ? null : SystemTraces?.Invoke())?.ToList() ?? new List<SystemTrace>();
-        if (mode != "logout")
+        if (!(ExplorerLiveOk ?? mode == "logout"))
         {
             int left = items.RemoveAll(i => i.Kind == "trace" && IsExplorerLive(i.Path)) + system.RemoveAll(x => ExplorerLiveKey(x.Label));
             if (left > 0) T($"explorer caches left for sign out: {left}");
@@ -393,7 +403,7 @@ public sealed class CleanEngine
     // ---------- deleting ----------
     static bool Exists(string p) => File.Exists(p) || Directory.Exists(p);
 
-    static long SizeOf(string p)
+    public static long SizeOf(string p)
     {
         try
         {

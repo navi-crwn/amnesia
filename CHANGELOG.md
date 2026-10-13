@@ -7,6 +7,77 @@ Quick backstory: on October 6, 2026 Amnesia was a handful of scripts. Two days a
 
 Your version number is next to the Amnesia title and at the bottom of the menu bar panel.
 
+## v5.21.0 · New apps in the preview, search in "What Gets Deleted", virtual machines kept safe (Oct 13, 2026)
+
+**Turn Off** Amnesia before installing, then turn it on again.
+
+### New
+- **Search in "What Gets Deleted".** A search box (name or path, across every group), a group picker and **Biggest first**. Every row now shows its size right away, without opening its group.
+- **Big file warning.** A warning at the top of the list when files of 1 GB or more, or virtual machine data, are about to be deleted. It shows the four biggest with their sizes and suggests moving them to Keep.
+- **Virtual machines are safe by default.** UTM, Parallels, VirtualBox and VMware Fusion are now in Pick Apps. When Amnesia finds VM data, it adds it to the Keep List automatically (once; if you switch it off, it stays off). Switched off, the row clearly says "Wiped at logout, virtual machines too!".
+- **The Trash has its own group:** "Trash (emptied at logout)", with its size, so nobody is surprised when the Trash is gone.
+
+### Fixed
+- **Apps installed after Amnesia was turned on didn't show in the preview**, although they really are removed at logout. They now show in "Apps installed later", with their icons.
+- Apps that opened by themselves at login (before the vault was restored) are now quit, then opened again once their data is back.
+- Restoring a chosen folder from the vault can no longer fail with an error.
+
+## Windows v0.7.1 · Sign out cleans again, no Explorer flicker, tidier pages (Oct 13, 2026)
+
+Windows test version, still **test it in a virtual machine only**. Turn Amnesia Off before installing over an older version, then turn it On again.
+
+### Fixed
+- **Sign out didn't clean** (files were only removed at the next sign in). The automatic vault snapshot ran first and used up the time Windows gives. Now Amnesia **cleans right away** at sign out, and Windows shows "Amnesia is cleaning up..." until it's done. If the sign out is cancelled, nothing is removed.
+- **The automatic snapshot moved:** vault apps are saved in the background **after you close them** (checked every minute, only when changed). Tools without a window (Claude Code, Git, chosen folders) are saved after 3 minutes without changes. Note: if Edge keeps running in the background ("startup boost"), it is only saved once it really closes.
+- Leftovers of an interrupted snapshot (`*.amv.new`) are removed when Amnesia starts.
+- **The Keep lock made Desktop icons flicker.** The lock now closes what's inside Keep, not the folder itself, so Explorer can still read Keep's icon. Keep leaves the sidebar while locked and comes back when opened. File names in Keep stay visible but can't be opened, and no program can write into Keep.
+- **Explorer flickered after the clean at sign in.** Explorer is now told to reload its icons.
+- Icon and thumbnail caches are never removed while Explorer is running any more (the old cause of flickering icons).
+- False "Edge setup unfinished" warning in the vault.
+- The "wipe free space" question is no longer cut off in a small window.
+- Claude from the Microsoft Store is suggested in the Keep List too.
+- The Keep icon in the sidebar turns purple too.
+- The "Remove new apps" list reloads after an uninstaller finishes.
+
+### Changed
+- **Tighter pages:** a bento-style home page, the footer always at the very bottom, Settings in groups (General, Updates & help, then Advanced: Leaving the PC, Privacy & Windows, Programs, Locks).
+- **Search in "What gets wiped"**: a search box, a folder filter (with counts and sizes) and Biggest first.
+- **Collect log** shows a status and the file location, and its button can't be clicked twice.
+- The Keep shortcut card says "shows up after Turn On" while Amnesia is off.
+- Automatic tests: 207 (was 190).
+
+## v5.20.0 · Search in Settings, a resizable window, smarter app picking (Oct 12, 2026)
+
+Turn Amnesia **Off** before installing, then turn it On again.
+
+### New stuff
+- **Search in Settings.** Settings has a search box on top. Type in English or Indonesian, whatever the app language is, and only the matching settings stay. Other words work too, like "filevault", "password", "startup", "idle", "migrate" or "version". If nothing matches, the app says so.
+- **Advanced is now part of Settings**, as a group at the bottom under the normal settings, and the search covers it too. The separate Advanced page is gone (same as the Windows app).
+- **Resizable window.** Make the main window bigger or smaller, down to 440×560. It still opens at 480×690, and on a small screen it opens smaller so it fits.
+- **Better app detection in "Pick Apps".** Amnesia now finds more of an app's data by its bundle id: web logins (HTTPStorages), WebKit data, team-named shared folders and folders named after the app's real name. Caches and saved window state are left out on purpose.
+- **Developer tools & terminal.** "Pick Apps" has a new section with the settings of SSH, GitHub CLI, zsh/bash, Vim/Neovim, tmux, npm, Docker, AWS, gcloud, kubectl, OpenCode, Claude Code, Codex and Gemini CLI. Only the ones that exist on your Mac show up.
+- **Choose how often to check for updates:** Off, every week, every 2 weeks or every month. The default is every week. The old daily check becomes weekly by itself, and Off stays Off.
+
+### Fixed & safer
+- An app that you kept before shows as ON in "Pick Apps" even when Amnesia now knows extra folders for it, so pressing Save only **adds** lines to your Keep List and never removes your old ones.
+- Switching one app off no longer removes a folder that another app you kept still needs.
+
+## Windows v0.7.0 · Lab lock, Keep lock, a spare vault snapshot and calmer update checks (Oct 12, 2026)
+
+Windows preview, still **test it in a virtual machine only**. Turn Amnesia Off before installing over the old version, then turn it On again.
+
+### New stuff
+- **Lab lock** (Settings → Advanced, for administrators). For a PC many people use, like a computer lab or a library. Set a PIN of 6 or more digits, and Windows asks for administrator permission once. From then on this Windows user can't turn Amnesia off, pause it, quit it, uninstall it, or change the settings and Keep List without the PIN. Amnesia always starts at sign in (started by Windows, not by the user), and the page shows "Locked by the administrator". The PIN opens the settings for 10 minutes. The locked copy lives in `C:\ProgramData\Amnesia\lab`, which normal users can only read. Honest note: someone can still end Amnesia in Task Manager, but the check at the next sign in cleans anyway.
+- **Keep lock** (Settings → Advanced). The Keep folder can only be opened through Amnesia (Open Keep, the tray menu or the Desktop shortcut) with its own password. It locks again after the minutes you pick, when you lock the screen (Win+L), at sign out and when Amnesia starts. Backup, restore, Collect log and Doomsday unlock it by themselves for a moment. Honest note: the files are not encrypted (use BitLocker for that), and someone who signs in as you and knows Windows can remove the lock in the folder's Properties. Forgot the password? Same way: Properties → Security, remove the "Deny" line.
+- **A spare vault snapshot.** Each app keeps the snapshot before the newest one as "previous". If a new snapshot is much smaller than the last one (for example taken from an empty, fresh profile), the vault says so, and ticking **Use the snapshot before the newest one** when you restore brings back the older one.
+- The vault notes when a browser snapshot (Edge, Chrome...) was taken before its first-run setup was finished, because restoring it shows the welcome pages again.
+- **Choose how often to check for updates:** Off, every week, every 2 weeks or every month. The default is every week instead of daily.
+
+### Fixed & safer
+- Uninstalling a PC with the lab lock asks for the lab PIN, and then removes the lab lock completely.
+- "Collect log" waits until the log is really written before it says it's done.
+- New automatic tests (190 in total): PIN, lab lock settings, previous snapshot, smaller snapshot warning and the Edge setup note.
+
 ## Windows v0.6.1 · Same app, fixed GitHub build (Oct 11, 2026)
 
 No changes in the app itself, same as v0.6.0. The license notes file (`THIRD-PARTY-NOTICES.md`) was left out on GitHub because of a "skip .md files" rule, so the automatic Windows build there failed and v0.6.0 never got a download. The rule now lets that file through, and this version makes the release with Setup x64 and arm64.

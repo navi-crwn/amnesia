@@ -6,7 +6,15 @@ public static class Conf
     static readonly object Lock = new();
     static string File => Path.Combine(Home.Dir, "settings.conf");
 
+    /// <summary>A setting. While the lab lock is on, the locked settings come from the administrator's copy (Lab.cs).</summary>
     public static string? Get(string key)
+    {
+        if (Array.IndexOf(Lab.PolicyKeys, key) >= 0 && Lab.Active) return Lab.Get(key);
+        return GetOwn(key);
+    }
+
+    /// <summary>This user's own settings.conf, never the lab copy.</summary>
+    public static string? GetOwn(string key)
     {
         lock (Lock)
         {
@@ -33,9 +41,9 @@ public static class Conf
     public static bool On(string key, bool fallback = false) => Get(key) switch { "1" => true, "0" => false, _ => fallback };
     public static int Int(string key, int fallback = 0) => int.TryParse(Get(key), out var i) ? i : fallback;
 
-    public static bool Enabled => Get("ENABLED") == "1";
+    public static bool Enabled => Lab.Active || Get("ENABLED") == "1";
     public static string PauseFile => Path.Combine(Home.Dir, "pause_once");
-    public static bool Paused => System.IO.File.Exists(PauseFile);
+    public static bool Paused => !Lab.Active && System.IO.File.Exists(PauseFile);
 
     /// <summary>The Keep folder as a path inside the user folder ("Keep", "Documents/Safe"), or "" when it is outside it
     /// (then it is never touched anyway). KEEP_DIR: "~/Something" or a full path. Same rules as the Mac.</summary>

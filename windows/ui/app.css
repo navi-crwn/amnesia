@@ -187,3 +187,42 @@ select.input{flex:0 0 auto;padding-right:28px}
 .list{max-height:260px}
 .foot{font-size:12px}
 @media (max-width:420px){.tiles{grid-template-columns:1fr}}
+
+/* v0.7 lab lock: a thin bar on top of the home page while settings are locked */
+.labbar{padding:10px 14px;border-radius:12px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--orange);font-size:13px;font-weight:500}
+
+/* v0.7.1: the footer always sits at the bottom of the window; tighter bento home; tidier Settings */
+.wrap{display:flex;flex-direction:column;min-height:100vh;gap:12px;padding-bottom:0}
+.wrap>.view{gap:10px}
+.foot{position:sticky;bottom:0;margin-top:auto;padding:10px 2px 12px;background:var(--ground);border-top:1px solid var(--line);z-index:3}
+.tiles{gap:10px;grid-auto-flow:row dense}
+.tile{min-height:60px}
+.tile.big{grid-row:span 2;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:14px;background:linear-gradient(160deg,color-mix(in srgb,var(--indigo) 16%,var(--panel)),var(--panel))}
+.tile.big .ib{width:40px;height:40px;border-radius:12px}
+.tile.big b{font-size:16px;white-space:normal}
+.tile.big>span{flex:0 0 auto}
+.tile.wide,.rowlink.wide{grid-column:1/-1}
+.rowlink.wide{min-height:60px;border-radius:14px}
+.card{padding:14px 16px;gap:10px}
+.sgroup{gap:10px}
+.sgroup+.sgroup{margin-top:6px}
+.gtitle{margin:6px 2px 0}
+.gsub{margin:4px 2px 0;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.card .switch+.switch{margin-top:-2px}
+.card .check{flex:none}
+.card>.row{margin-top:2px}
+@media (max-width:420px){.tile.big{grid-row:auto;flex-direction:row;align-items:center}}
+
+/* v0.7.1 What gets wiped: search, folder, sort; sizes on the right */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.filters .input{flex:1 1 140px}
+.filters #fqQ{flex:2 1 200px}
+.filters select.input{max-width:100%}
+.list li .p{flex:1;min-width:0}
+.list li .sz{flex:none;color:var(--muted);font-size:12px;white-space:nowrap}
+
+/* v0.7.1 questions in the page: long text wraps and scrolls instead of being cut off */
+.ask{width:100%;max-width:460px;max-height:calc(100vh - 40px);overflow:auto}
+.ask p{white-space:pre-wrap;overflow-wrap:anywhere}
+.ask .row{justify-content:flex-end}
+.sgroup{scroll-margin-top:52px}

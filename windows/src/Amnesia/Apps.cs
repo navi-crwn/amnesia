@@ -178,13 +178,24 @@ static class Apps
     }
 
     /// <summary>Uninstall button for a program installed for everyone: runs its own uninstaller (Windows asks for admin).</summary>
+    /// <summary>Starts the program's own uninstaller and waits until it is done (v0.7.1: so the list can be loaded again).
+    /// Many uninstallers start a copy of themselves in Temp and quit at once, so after that Amnesia also waits (at most
+    /// 3 minutes) until the program is gone from the list. Written to trace.log (steps only, no program names).</summary>
     public static void RunUninstaller(string id)
     {
         var app = Current(withStore: false).GetValueOrDefault(id) ?? throw new InvalidOperationException("not found");
         var cmd = app.Uninstall?.Trim() ?? throw new InvalidOperationException("no uninstaller");
         // v0.5 (from Bulk Crap Uninstaller): MSI installs are removed (/X) instead of "repaired" (/I)
         var (exe, args) = UninstallCmd.Parse(cmd, quiet: false);
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe, args) { UseShellExecute = true });
+        var t = System.Diagnostics.Stopwatch.StartNew();
+        AppInfo.Trace($"uninstaller started ({app.Kind})");
+        using var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe, args) { UseShellExecute = true });
+        try { p?.WaitForExit((int)TimeSpan.FromMinutes(30).TotalMilliseconds); } catch { }
+        bool gone = false;
+        for (var until = DateTime.Now.AddMinutes(3); DateTime.Now < until; Thread.Sleep(2000))
+            if (gone = !Current(withStore: false).ContainsKey(id)) break;
+        int? code = null; try { if (p is { HasExited: true }) code = p.ExitCode; } catch { }
+        AppInfo.Trace($"uninstaller finished in {t.Elapsed.TotalSeconds:0} s (exit code {code?.ToString() ?? "?"}, {(gone ? "program gone" : "program still listed")})");
     }
 
     // ---------- v0.5 Find leftovers ----------

@@ -46,6 +46,10 @@
     sum: function (n) { return n + ' item' + (n === 1 ? '' : 's') + ' would be deleted. This is only a preview, nothing was touched.'; },
     more: function (n) { return '...and ' + n + ' more'; },
     file: 'file', folder: 'folder', trace: 'trace', kept: 'stays', app: 'app',
+    fqPh: 'Search by name or path', fqAll: 'All folders', fqName: 'A to Z', fqSize: 'Biggest first', fqTop: 'User folder', fqSys: 'Windows history (registry, Recycle Bin...)',
+    fqShown: function (n, t) { return n + ' of ' + t + ' shown'; }, fqNone: 'Nothing matches.',
+    gHelp: 'Updates and help', gExit: 'Leaving the PC', gPrivacy: 'Privacy and Windows', gApps: 'Programs', gLocks: 'Locks',
+    yes: 'Yes', no: 'No',
     encTitle: 'Disk encryption',
     encOn: 'BitLocker / device encryption is on. Good: your Keep folder is protected too when the PC is off.',
     encOff: 'BitLocker / device encryption is off, or the drive is encrypted but its protection is off (no key yet). Amnesia does not encrypt your Keep folder, so turn on encryption: Settings → Privacy & security → Device encryption (or BitLocker).',
@@ -80,12 +84,14 @@
     vRestoreTitle: 'Restore', vRestoreText: 'Puts every app with a snapshot back. What the app has now is moved to Temp first (wiped at the next sign out).',
     vPwPh: 'Vault password', vRestore: 'Restore', vRestored: function (n) { return 'Back: ' + n.join(', ') + '. Open the apps, you are signed in again.'; },
     vRestoreIssue: function (name, v) { return v === 'failed' ? name + ' could not be put back (its snapshot is still in the vault).' : name + ': ' + v.split(':')[1] + ' file(s) were in use and stayed as they were.'; },
-    vOptions: 'Vault options', vAuto: 'Automatic snapshot at sign out', vAutoText: 'Apps that changed are saved right before the cleanup (at most 60 seconds).',
+    vOptions: 'Vault options', vAuto: 'Automatic snapshot', vAutoText: 'An app that changed is saved automatically after you close it, in the background (never while it runs). Sign out only cleans up, so it is quick.',
     vRemind: 'Remind me after sign in', vRemindText: 'A notification after each sign in: click it to restore.',
     vDoom: 'Doomsday after 3 wrong passwords', vDoomText: 'Three wrong passwords in a row delete the vault for good. Off = no limit.',
     vChangePw: 'Change password', vOldPh: 'Current password', vNewPh: 'New password (12+ characters)', vChangePanic: 'Change panic word', vPanicPh: 'New panic word (empty = none)',
     save: 'Save', saved: 'Saved.', working: 'Working...', done: 'Done.',
     vSaved: function (t) { return 'Saved ' + t; },
+    vRestorePrev: 'Use the snapshot before the newest one (if the newest looks wrong)',
+    vPrev: function (t) { return 'previous: ' + t; }, vShrunk: 'much smaller than the previous one, check it', vSetup: 'browser setup was not finished in this snapshot',
     bTitle: 'Backup', bNeedVault: 'Backups are locked with your vault password, so create the vault first.',
     bText: 'Your Keep folder, Keep List and vault in one locked file. No password needed here: it is locked with your vault. To put a backup back, use "Move to a new PC" below. Old backups are never deleted by Amnesia.',
     bFolder: 'Folder or USB drive', bSsh: 'My server (SSH)',
@@ -107,6 +113,7 @@
     aApps: 'Remove new apps', aAppsSwitch: 'Remove programs installed after Turn On',
     aAppsText: 'Programs installed just for you (and Microsoft Store apps) after Amnesia was turned on are removed at sign out. Press Keep to keep one. Programs for everyone need admin, so they are only listed. Careful: Microsoft Store apps you install after turning this on (Claude, WhatsApp...) are removed too, unless you press Keep.',
     aAppsEmpty: 'No new programs since Turn On.', aKeepAll: 'Keep all of these', keep: 'Keep', uninstall: 'Uninstall', needsAdmin: 'for everyone: needs admin',
+    aUninstalling: 'Waiting for the uninstaller to finish... The list updates by itself after.',
     kUser: 'just for you', kStart: 'Start menu', kRun: 'starts with Windows', kAppx: 'Microsoft Store', kMachine: 'for everyone', kReg: 'settings in the registry',
     aUsbAction: 'When the USB key is pulled out', aUsbSignOut: 'Clean and sign out', aUsbShutdown: 'Clean and shut down (like Tails)',
     pvTitle: 'Stop Windows remembering', pvText: 'Windows\' own privacy switches, just for your account (no admin). Amnesia writes down the old values, so Undo puts back exactly what was there.',
@@ -152,7 +159,18 @@
     pinTitle: 'Keep in Explorer\'s side bar',
     pinText: 'Pins Keep to Quick access in File Explorer. Windows forgets pins at every sign out, so Amnesia pins it again after each sign in.',
     linksNote: 'Only while Amnesia is on. The tray icon\'s menu (right click) also has Open Keep folder and Turn On / Off.',
-    upTitle: 'Update', upCheck: 'Check now', upAuto: 'Check once a day', upAutoText: 'Only asks GitHub for the newest version number. You decide when to install.',
+    linksOff: 'Amnesia is off right now, so these show up after Turn On.',
+    klkTitle: 'Keep lock', klkText: 'Your Keep folder only opens through Amnesia, with its own password. It locks again when you lock the screen (Win+L), after the minutes you pick, at sign out and at sign in. While it is locked, no program can open or write files in Keep (test scripts neither), and Keep leaves Explorer\'s side bar until you open it.',
+    klkHonest: 'Honest note: the files are not encrypted (use BitLocker for that), and their names stay visible while locked. Someone signed in as you who knows Windows well can still remove the lock in the folder\'s Properties. Forgot the password? Same way: Properties, Security, remove the "Deny" lines.',
+    klkPwPh: 'Keep password', klkPw2Ph: 'Same password again', klkAfter: 'Lock again after', klkOn: 'Turn on Keep lock', klkNow: 'Lock now', klkOff: 'Turn off (password)',
+    klkLocked: 'Keep is locked. Open it with Open Keep, the tray menu or the Desktop shortcut.', klkOpen: 'Keep is open right now. It locks again by itself.', klkAsk: 'Keep password',
+    labTitle: 'Lab lock (for administrators)', labText: 'For a PC many people use, like a computer lab or a library. With a PIN, this Windows user can no longer turn Amnesia off, pause it, quit it, uninstall it or change its settings and Keep List. Turning it on or off asks for administrator rights once.',
+    labHonest: 'Honest note: someone can still end Amnesia in Task Manager, but the check at the next sign in cleans anyway. Set your settings and Keep List first, they are locked as they are now.',
+    labPinPh: 'PIN (at least 6 digits)', labPin2Ph: 'Same PIN again', labOn: 'Lock with this PIN', labUnlock: 'Unlock for 10 minutes', labSave: 'Save changes and lock again', labClose: 'Lock again now', labOff: 'Remove lab lock',
+    labState: function (t) { return 'Locked by the administrator' + (t ? ' since ' + t : '') + '.'; }, labOpenNow: 'Unlocked with the PIN for 10 minutes. Change what you need, then press Save changes and lock again.',
+    labBar: 'Locked by the administrator. You can look around; changes need the admin PIN (Settings → Lab lock).', pinMismatch: 'The two entries are not the same.',
+    upTitle: 'Update', upCheck: 'Check now', upAuto: 'Check automatically', upAutoText: 'Only asks GitHub for the newest version number. You decide when to install.',
+    upOff: 'Never (only when I press Check now)', upWeek: 'Every week', up2Weeks: 'Every 2 weeks', upMonth: 'Every month',
     upInstall: 'Install update',
     upNone: function (c) { return 'You have the newest version (' + c + ').'; },
     upNo: function (c) { return 'No Windows release on GitHub yet. You have ' + c + '.'; },
@@ -161,6 +179,7 @@
     upChecking: 'Checking...', checksum: 'The download did not match its checksum and was deleted. Try again later.',
     logTitle: 'Collect log', logText: 'Something not working? This writes one text file (amnesia-log.txt in your Keep folder) and opens it in Notepad. Amnesia\'s steps and Windows errors, no file names. Nothing is sent anywhere.',
     logBtn: 'Collect log', logOpened: 'Making the log, Notepad opens in a moment.',
+    logBusy: 'Collecting the log... (can take up to a minute)', logDone: function (p) { return 'Done: ' + p + ' (opened in Notepad).'; }, logMissing: 'The log could not be written. Try again, or look in trace.log in %USERPROFILE%\\.amnesia.',
     tourTitle: 'Welcome tour', tourText: 'The short introduction from the first start.', tourBtn: 'Show again',
     unTitle: 'Uninstall', unText: 'Turns Amnesia off first, so nothing is wiped any more, then removes the app. Your Keep folder always stays.',
     unApp: 'Uninstall Amnesia', unAllTitle: 'Also delete settings, Keep List and vault',
@@ -176,6 +195,7 @@
     tourNext: 'Next', tourDone: 'Let\'s go', tourSkip: 'Skip',
     err: {
       'short-password': 'The password needs at least 12 characters.', 'panic-same': 'The panic word can\'t be the same as the password.',
+      'lab-locked': 'Locked by the administrator. Unlock with the admin PIN in Settings → Lab lock first.', 'lab-pin-short': 'The PIN needs at least 6 digits.', 'lab-pin-wrong': 'Wrong PIN.', 'admin-no': 'Windows did not get administrator rights (the prompt was answered No).', 'keeplock-short': 'The Keep password needs at least 4 characters.', 'keeplock-wrong': 'Wrong Keep password.',
       'no-vault': 'Create the vault first.', 'nothing': 'Pick at least one app that is on this PC.', 'no-snapshot': 'No snapshot yet. Make one first.', 'restore-failed': 'Nothing could be put back. Your snapshots are still safe in the vault. Close the app (also in Task Manager) and try again.',
       'doomsday': 'DOOMSDAY: the vault was deleted.', 'outside-home': 'Only folders inside your user folder.', 'backup-in-home': 'That folder is inside your user folder and would be wiped at sign out. Pick a USB drive, another drive, a cloud folder or a folder inside Keep.',
       'hotkey-taken': 'Another app already uses this hotkey. Pick another one.', 'admin-no': 'Windows did not get admin rights, nothing changed.',
@@ -211,6 +231,10 @@
     sum: function (n) { return n + ' item akan dihapus. Ini cuma simulasi, tidak ada yang disentuh.'; },
     more: function (n) { return '...dan ' + n + ' lainnya'; },
     file: 'file', folder: 'folder', trace: 'jejak', kept: 'aman', app: 'app',
+    fqPh: 'Cari nama atau path', fqAll: 'Semua folder', fqName: 'A sampai Z', fqSize: 'Terbesar dulu', fqTop: 'Folder user', fqSys: 'Riwayat Windows (registry, Recycle Bin...)',
+    fqShown: function (n, t) { return n + ' dari ' + t + ' ditampilkan'; }, fqNone: 'Tidak ada yang cocok.',
+    gHelp: 'Update dan bantuan', gExit: 'Saat meninggalkan PC', gPrivacy: 'Privasi dan Windows', gApps: 'Program', gLocks: 'Kunci',
+    yes: 'Ya', no: 'Tidak',
     encTitle: 'Enkripsi disk',
     encOn: 'BitLocker / enkripsi perangkat menyala. Bagus: folder Keep kamu ikut terlindungi saat PC mati.',
     encOff: 'BitLocker / enkripsi perangkat mati, atau drive sudah terenkripsi tapi perlindungannya mati (belum ada kunci). Amnesia tidak mengenkripsi folder Keep, jadi nyalakan enkripsi: Settings → Privacy & security → Device encryption (atau BitLocker).',
@@ -245,12 +269,14 @@
     vRestoreTitle: 'Pulihkan', vRestoreText: 'Mengembalikan semua app yang punya snapshot. Data app yang ada sekarang dipindah ke Temp dulu (terhapus saat sign out berikutnya).',
     vPwPh: 'Password vault', vRestore: 'Pulihkan', vRestored: function (n) { return 'Kembali: ' + n.join(', ') + '. Buka app-nya, kamu sudah login lagi.'; },
     vRestoreIssue: function (name, v) { return v === 'failed' ? name + ' tidak bisa dikembalikan (snapshot-nya tetap ada di vault).' : name + ': ' + v.split(':')[1] + ' file sedang dipakai dan dibiarkan seperti semula.'; },
-    vOptions: 'Pilihan vault', vAuto: 'Snapshot otomatis saat sign out', vAutoText: 'App yang berubah disimpan tepat sebelum pembersihan (maksimal 60 detik).',
+    vOptions: 'Pilihan vault', vAuto: 'Snapshot otomatis', vAutoText: 'App yang berubah disimpan otomatis setelah kamu menutupnya, di latar belakang (tidak pernah saat app masih jalan). Sign out cuma membersihkan, jadi cepat.',
     vRemind: 'Ingatkan setelah login', vRemindText: 'Notifikasi setiap habis login: klik untuk memulihkan.',
     vDoom: 'Doomsday setelah 3 password salah', vDoomText: 'Tiga password salah berturut-turut menghapus vault selamanya. Mati = tanpa batas.',
     vChangePw: 'Ganti password', vOldPh: 'Password sekarang', vNewPh: 'Password baru (12+ karakter)', vChangePanic: 'Ganti kata panik', vPanicPh: 'Kata panik baru (kosong = tidak ada)',
     save: 'Simpan', saved: 'Tersimpan.', working: 'Sedang dikerjakan...', done: 'Selesai.',
     vSaved: function (t) { return 'Disimpan ' + t; },
+    vRestorePrev: 'Pakai snapshot sebelum yang terbaru (kalau yang terbaru terlihat salah)',
+    vPrev: function (t) { return 'sebelumnya: ' + t; }, vShrunk: 'jauh lebih kecil dari sebelumnya, coba cek', vSetup: 'setup browser belum selesai di snapshot ini',
     bTitle: 'Backup', bNeedVault: 'Backup dikunci dengan password vault, jadi buat vault dulu.',
     bText: 'Folder Keep, Keep List dan vault dalam satu file terkunci. Tidak perlu password di sini: dikunci dengan vault kamu. Untuk mengembalikan backup, pakai "Pindah ke PC baru" di bawah. Backup lama tidak pernah dihapus Amnesia.',
     bFolder: 'Folder atau flashdisk', bSsh: 'Server saya (SSH)',
@@ -272,6 +298,7 @@
     aApps: 'Hapus app baru', aAppsSwitch: 'Hapus program yang dipasang setelah Amnesia dinyalakan',
     aAppsText: 'Program yang dipasang khusus untuk kamu (dan app Microsoft Store) setelah Amnesia dinyalakan dihapus saat sign out. Tekan Simpan untuk menyimpannya. Program untuk semua user butuh admin, jadi hanya didaftar. Hati-hati: app Microsoft Store yang kamu pasang setelah ini dinyalakan (Claude, WhatsApp...) ikut dihapus, kecuali kamu tekan Simpan.',
     aAppsEmpty: 'Belum ada program baru sejak dinyalakan.', aKeepAll: 'Simpan semua ini', keep: 'Simpan', uninstall: 'Uninstall', needsAdmin: 'untuk semua user: butuh admin',
+    aUninstalling: 'Menunggu uninstaller selesai... Daftarnya diperbarui sendiri setelah itu.',
     kUser: 'khusus kamu', kStart: 'menu Start', kRun: 'jalan saat Windows mulai', kAppx: 'Microsoft Store', kMachine: 'semua user', kReg: 'pengaturan di registry',
     aUsbAction: 'Saat USB key dicabut', aUsbSignOut: 'Bersihkan lalu sign out', aUsbShutdown: 'Bersihkan lalu matikan PC (seperti Tails)',
     pvTitle: 'Supaya Windows tidak mengingat', pvText: 'Pengaturan privasi bawaan Windows, khusus akun kamu (tanpa admin). Amnesia mencatat nilai lamanya, jadi Batalkan mengembalikan persis seperti sebelumnya.',
@@ -317,7 +344,18 @@
     pinTitle: 'Keep di sidebar Explorer',
     pinText: 'Menyematkan Keep ke Quick access di File Explorer. Windows melupakan sematan setiap sign out, jadi Amnesia menyematkannya lagi setelah setiap login.',
     linksNote: 'Hanya saat Amnesia menyala. Menu ikon tray (klik kanan) juga punya Buka folder Keep dan Nyalakan / Matikan.',
-    upTitle: 'Update', upCheck: 'Cek sekarang', upAuto: 'Cek sekali sehari', upAutoText: 'Cuma menanyakan nomor versi terbaru ke GitHub. Kamu yang memutuskan kapan dipasang.',
+    linksOff: 'Amnesia sedang mati, jadi ini baru muncul setelah dinyalakan.',
+    klkTitle: 'Kunci Keep', klkText: 'Folder Keep hanya bisa dibuka lewat Amnesia, dengan password sendiri. Terkunci lagi saat layar dikunci (Win+L), setelah menit yang kamu pilih, saat sign out dan saat sign in. Selama terkunci, tidak ada program yang bisa membuka atau menulis file di Keep (script tes juga tidak), dan Keep hilang dari sidebar Explorer sampai kamu membukanya.',
+    klkHonest: 'Catatan jujur: file-nya tidak dienkripsi (pakai BitLocker untuk itu), dan nama file-nya tetap kelihatan saat terkunci. Orang yang login sebagai kamu dan paham Windows masih bisa melepas kunci lewat Properties folder. Lupa password? Caranya sama: Properties, Security, hapus baris "Deny".',
+    klkPwPh: 'Password Keep', klkPw2Ph: 'Ulangi password', klkAfter: 'Kunci lagi setelah', klkOn: 'Nyalakan kunci Keep', klkNow: 'Kunci sekarang', klkOff: 'Matikan (password)',
+    klkLocked: 'Keep terkunci. Buka lewat Buka Keep, menu tray, atau shortcut di Desktop.', klkOpen: 'Keep sedang terbuka. Nanti terkunci lagi sendiri.', klkAsk: 'Password Keep',
+    labTitle: 'Kunci lab (untuk admin)', labText: 'Untuk PC yang dipakai banyak orang, seperti lab komputer atau perpustakaan. Dengan PIN, user Windows ini tidak bisa lagi mematikan, menjeda, menutup, meng-uninstall Amnesia, atau mengubah pengaturan dan Keep List. Menyalakan atau mematikannya minta izin admin sekali.',
+    labHonest: 'Catatan jujur: orang masih bisa mematikan Amnesia di Task Manager, tapi cek saat sign in berikutnya tetap membersihkan. Atur pengaturan dan Keep List dulu, semuanya dikunci seperti sekarang.',
+    labPinPh: 'PIN (minimal 6 angka)', labPin2Ph: 'Ulangi PIN', labOn: 'Kunci dengan PIN ini', labUnlock: 'Buka 10 menit', labSave: 'Simpan perubahan dan kunci lagi', labClose: 'Kunci lagi sekarang', labOff: 'Lepas kunci lab',
+    labState: function (t) { return 'Dikunci admin' + (t ? ' sejak ' + t : '') + '.'; }, labOpenNow: 'Terbuka dengan PIN selama 10 menit. Ubah yang perlu, lalu tekan Simpan perubahan dan kunci lagi.',
+    labBar: 'Dikunci admin. Kamu bisa melihat-lihat; perubahan butuh PIN admin (Pengaturan → Kunci lab).', pinMismatch: 'Kedua isian tidak sama.',
+    upTitle: 'Update', upCheck: 'Cek sekarang', upAuto: 'Cek otomatis', upAutoText: 'Cuma menanyakan nomor versi terbaru ke GitHub. Kamu yang memutuskan kapan dipasang.',
+    upOff: 'Tidak pernah (hanya saat tekan Cek sekarang)', upWeek: 'Tiap minggu', up2Weeks: 'Tiap 2 minggu', upMonth: 'Tiap bulan',
     upInstall: 'Pasang update',
     upNone: function (c) { return 'Kamu sudah pakai versi terbaru (' + c + ').'; },
     upNo: function (c) { return 'Belum ada rilis Windows di GitHub. Versi kamu ' + c + '.'; },
@@ -326,6 +364,7 @@
     upChecking: 'Sedang mengecek...', checksum: 'File unduhan tidak cocok dengan checksum-nya dan sudah dihapus. Coba lagi nanti.',
     logTitle: 'Kumpulkan log', logText: 'Ada yang tidak jalan? Ini membuat satu file teks (amnesia-log.txt di folder Keep kamu) lalu membukanya di Notepad. Isinya langkah Amnesia dan error Windows, tanpa nama file. Tidak ada yang dikirim.',
     logBtn: 'Kumpulkan log', logOpened: 'Log sedang dibuat, sebentar lagi Notepad terbuka.',
+    logBusy: 'Sedang mengumpulkan log... (bisa sampai semenit)', logDone: function (p) { return 'Selesai: ' + p + ' (sudah dibuka di Notepad).'; }, logMissing: 'Log-nya gagal dibuat. Coba lagi, atau lihat trace.log di %USERPROFILE%\\.amnesia.',
     tourTitle: 'Tur sambutan', tourText: 'Perkenalan singkat dari saat pertama dibuka.', tourBtn: 'Tampilkan lagi',
     unTitle: 'Uninstall', unText: 'Amnesia dimatikan dulu, jadi tidak ada yang dihapus lagi, lalu app-nya dihapus. Folder Keep kamu selalu aman.',
     unApp: 'Uninstall Amnesia', unAllTitle: 'Hapus juga pengaturan, Keep List dan vault',
@@ -341,6 +380,7 @@
     tourNext: 'Lanjut', tourDone: 'Ayo mulai', tourSkip: 'Lewati',
     err: {
       'short-password': 'Password minimal 12 karakter.', 'panic-same': 'Kata panik tidak boleh sama dengan password.',
+      'lab-locked': 'Dikunci admin. Buka dulu dengan PIN admin di Pengaturan → Kunci lab.', 'lab-pin-short': 'PIN minimal 6 angka.', 'lab-pin-wrong': 'PIN salah.', 'admin-no': 'Windows tidak mendapat izin admin (pertanyaannya dijawab No).', 'keeplock-short': 'Password Keep minimal 4 karakter.', 'keeplock-wrong': 'Password Keep salah.',
       'no-vault': 'Buat vault dulu.', 'nothing': 'Pilih minimal satu app yang ada di PC ini.', 'no-snapshot': 'Belum ada snapshot. Buat dulu.', 'restore-failed': 'Tidak ada yang bisa dikembalikan. Snapshot kamu tetap aman di vault. Tutup app-nya (juga di Task Manager), lalu coba lagi.',
       'doomsday': 'DOOMSDAY: vault sudah dihapus.', 'outside-home': 'Hanya folder di dalam folder user kamu.', 'backup-in-home': 'Folder itu ada di dalam folder user kamu dan akan terhapus saat sign out. Pilih flashdisk, drive lain, folder cloud atau folder di dalam Keep.',
       'hotkey-taken': 'Tombol ini sudah dipakai app lain. Pilih yang lain.', 'admin-no': 'Windows tidak mendapat izin admin, tidak ada yang berubah.',
@@ -371,6 +411,7 @@
   }
   function size(b) {
     if (!b) return '0 MB';
+    if (b < 1e6) return Math.max(1, Math.round(b / 1e3)) + ' KB';
     if (b < 1e9) return (b / 1e6).toFixed(b < 1e7 ? 1 : 0) + ' MB';
     return (b / 1e9).toFixed(1) + ' GB';
   }
@@ -380,7 +421,7 @@
   function fill(ul, rows, cap) {
     ul.textContent = '';
     rows.slice(0, cap).forEach(function (r) {
-      var li = el('li'); li.append(el('span', 'k', r.kind), el('span', '', r.path)); ul.append(li);
+      var li = el('li'); li.append(el('span', 'k', r.kind), el('span', 'p', r.path)); if (r.size) li.append(el('span', 'sz', r.size)); ul.append(li);
     });
     if (rows.length > cap) ul.append(el('li', '', L.more(rows.length - cap)));
   }
@@ -391,6 +432,18 @@
     box.hidden = false; box.querySelector('i').style.width = '0';
     return function () { box.hidden = true; delete onProgress[op]; };
   }
+  // v0.7.1: questions in the page instead of window.confirm (Windows' own box cut the text off in a small window)
+  function confirmBox(text) {
+    return new Promise(function (done) {
+      $('cfText').textContent = text;
+      $('cfYes').textContent = L.yes; $('cfNo').textContent = L.cancel;
+      $('confirm').hidden = false; $('cfNo').focus();
+      function end(v) { $('confirm').hidden = true; $('cfYes').onclick = $('cfNo').onclick = null; done(v); }
+      $('cfYes').onclick = function () { end(true); };
+      $('cfNo').onclick = function () { end(false); };
+    });
+  }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('confirm').hidden) { e.stopImmediatePropagation(); $('cfNo').click(); } }, true);
   document.querySelectorAll('[data-cancel]').forEach(function (b) { b.addEventListener('click', function () { ask('cancel'); }); });
   document.querySelectorAll('[data-link]').forEach(function (b) { b.addEventListener('click', function () { ask('open', { target: b.dataset.link }); }); });
 
@@ -414,7 +467,7 @@
     if (sub) setTimeout(function () { $(sub).scrollIntoView(); }, 50);
   }
   $('back').addEventListener('click', function () { go('home'); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && current !== 'home' && $('tour').hidden) go('home'); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && current !== 'home' && $('tour').hidden && $('confirm').hidden) go('home'); });
   document.querySelectorAll('[data-go]').forEach(function (b) { b.addEventListener('click', function () { go(b.dataset.go); }); });
 
   // v0.6: search in Settings. Looks at the English AND Indonesian text of each card, so either language works.
@@ -449,6 +502,7 @@
   });
 
   function show(i) {
+    $('labBar').hidden = !(i.labOn && !i.labOpen);
     info = i;
     var st = !i.enabled ? 'off' : i.paused ? 'paused' : 'on';
     $('status').dataset.state = st;
@@ -465,9 +519,11 @@
     delete $('off').dataset.armed;
     if (i.restarting) { $('stText').textContent = L.restarting; $('onBox').hidden = true; }
     $('keepDir').textContent = i.keepDir || '';
+    $('linksOff').hidden = !!i.enabled;
     document.querySelectorAll('[data-set]').forEach(function (c) { if (c.dataset.set in i) c.checked = !!i[c.dataset.set]; });
     document.querySelectorAll('input[name=lang]').forEach(function (r) { r.checked = r.value === i.langSetting; });
     $('aIdleMin').value = String(i.idleMin || 0);
+    $('upDays').value = String(i.updateDays);
     $('aHotkey').value = i.panicHotkey || '';
     $('aUsbAction').value = i.usbAction || 'signout';
     $('aAppsBox').hidden = !i.removeNewApps;
@@ -502,8 +558,8 @@
     return ask('preview').then(function (r) {
       say(msg, '');
       $(sum).textContent = L.sum(r.count);
-      fill($(list), [].concat(r.items || []).map(function (x) { return { kind: L[x.kind] || x.kind, path: x.path }; }), 500);
-      if (keptList) fill($(keptList), [].concat(r.kept || []).map(function (p) { return { kind: L.kept, path: p }; }), 500);
+      if (list === 'items') { pv = { items: [].concat(r.items || []), kept: [].concat(r.kept || []) }; pvFolders(); showPv(); }
+      else fill($(list), [].concat(r.items || []).map(function (x) { return { kind: L[x.kind] || x.kind, path: x.path }; }), 500);
       if (appsBox) {
         var apps = [].concat(r.apps || []);
         $(appsBox).hidden = apps.length === 0;
@@ -513,6 +569,38 @@
     }).catch(function (e) { say(msg, errText(e), 'bad'); }).then(function () { if (btn) btn.disabled = false; });
   }
   $('run').addEventListener('click', function () { preview(this, 'msg', 'result', 'sum', 'items', 'kept'); });
+
+  // v0.7.1 "What gets wiped": search (name or path, in both lists), one folder only, biggest first
+  var pv = null;
+  function pvGroup(p, kind) {
+    if (kind === 'trace' && !/^AppData\\/i.test(p)) return L.fqSys;
+    var s = p.split('\\');
+    if (s.length === 1) return L.fqTop;
+    return /^AppData$/i.test(s[0]) ? s.slice(0, Math.min(3, s.length - 1)).join('\\') : s[0];
+  }
+  function pvFolders() {
+    var g = {}, sel = $('fqFolder'), was = sel.value;
+    pv.items.forEach(function (x) { var k = pvGroup(x.path, x.kind); g[k] = g[k] || { n: 0, b: 0 }; g[k].n++; g[k].b += Math.max(0, x.size || 0); });
+    sel.textContent = '';
+    var all = el('option', '', L.fqAll); all.value = ''; sel.append(all);
+    Object.keys(g).sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1; }).forEach(function (k) {
+      var o = el('option', '', k + ' (' + g[k].n + (g[k].b ? ', ' + size(g[k].b) : '') + ')'); o.value = k; sel.append(o);
+    });
+    sel.value = g[was] ? was : '';
+  }
+  function showPv() {
+    if (!pv) return;
+    var q = $('fqQ').value.trim().toLowerCase(), g = $('fqFolder').value, big = $('fqSort').value === 'size';
+    function ok(p, kind) { return (!q || p.toLowerCase().indexOf(q) >= 0) && (!g || pvGroup(p, kind) === g); }
+    var items = pv.items.filter(function (x) { return ok(x.path, x.kind); });
+    if (big) items = items.slice().sort(function (a, b) { return (b.size || 0) - (a.size || 0); });
+    fill($('items'), items.map(function (x) { return { kind: L[x.kind] || x.kind, path: x.path, size: x.size >= 0 ? size(x.size) : '' }; }), 500);
+    var kept = pv.kept.filter(function (p) { return ok(p, 'kept'); });
+    fill($('kept'), kept.map(function (p) { return { kind: L.kept, path: p }; }), 500);
+    var filtered = q || g;
+    $('fqShown').textContent = filtered ? (items.length ? L.fqShown(items.length, pv.items.length) : L.fqNone) : '';
+  }
+  ['fqQ', 'fqFolder', 'fqSort'].forEach(function (id) { $(id).addEventListener(id === 'fqQ' ? 'input' : 'change', showPv); });
 
   // ---------- Review and sign out ----------
   loaders.review = function () { preview(null, 'revMsg', 'revResult', 'revSum', 'revItems', null, 'revAppsBox', 'revApps'); };
@@ -541,7 +629,15 @@
     if (!k.suggestions.length) box.append(el('span', 'muted', L.klNone));
   }
   loaders.keep = function () { ask('keepList').then(showKeep); };
-  $('openKeep').addEventListener('click', function () { ask('openKeep'); });
+  // v0.7: a locked Keep asks its password here
+  function openKeep() {
+    ask('openKeep').catch(function (e) {
+      if (e.message !== 'keeplock-ask') return;
+      var pw = window.prompt(L.klkAsk);
+      if (pw) ask('openKeep', { password: pw }).catch(function (e2) { window.alert(errText(e2)); });
+    });
+  }
+  $('openKeep').addEventListener('click', openKeep);
   $('klPick').addEventListener('click', function () { ask('keepAdd', { path: '' }).then(function (k) { showKeep(k); say('klMsg', ''); }).catch(function (e) { say('klMsg', errText(e), 'bad'); }); });
   $('klAdd').addEventListener('click', function () {
     var v = $('klPath').value.trim();
@@ -559,7 +655,7 @@
       var li = el('li'), cb = el('input'), g = el('span', 'grow');
       cb.type = 'checkbox'; cb.checked = a.chosen; cb.disabled = a.folder || !a.present && !a.chosen;
       cb.addEventListener('change', function () { ask('vaultChoose', { name: a.name, on: cb.checked }).then(showVault); });
-      g.append(el('span', '', a.name), el('span', 'meta', (a.time ? L.vSaved(a.time) + (a.size ? ', ' + size(a.size) : '') : L.vNever) + (a.present ? '' : ' · ' + L.vNotHere)));
+      g.append(el('span', '', a.name), el('span', 'meta', (a.time ? L.vSaved(a.time) + (a.size ? ', ' + size(a.size) : '') : L.vNever) + (a.prevTime ? ' · ' + L.vPrev(a.prevTime) : '') + (a.shrunk ? ' · ' + L.vShrunk : '') + (a.setup === 'unfinished' ? ' · ' + L.vSetup : '') + (a.present ? '' : ' · ' + L.vNotHere)));
       li.append(cb, g);
       if (a.time) { var d = el('button', 'btn ghost small', L.vDelete); d.addEventListener('click', function () { ask('vaultDelete', { name: a.name }).then(showVault); }); li.append(d); }
       if (a.folder) { var r = el('button', 'btn ghost small', L.remove); r.addEventListener('click', function () { ask('vaultRemoveFolder', { name: a.name }).then(showVault); }); li.append(r); }
@@ -583,7 +679,7 @@
   });
   $('vRestore').addEventListener('click', function () {
     var b = this, stop = progress('vProg', 'vault'); b.disabled = true; say('vRestoreMsg', L.working);
-    ask('vaultRestore', { password: $('vRestorePw').value }).then(function (v) { $('vRestorePw').value = ''; showVault(v); var pr = v.problems || {}, extra = Object.keys(pr).map(function (k) { return L.vRestoreIssue(k, pr[k]); }); say('vRestoreMsg', [L.vRestored(v.restored || [])].concat(extra).join(' '), extra.length ? 'warn' : 'good'); })
+    ask('vaultRestore', { password: $('vRestorePw').value, previous: $('vRestorePrev').checked }).then(function (v) { $('vRestorePw').value = ''; showVault(v); var pr = v.problems || {}, extra = Object.keys(pr).map(function (k) { return L.vRestoreIssue(k, pr[k]); }); say('vRestoreMsg', [L.vRestored(v.restored || [])].concat(extra).join(' '), extra.length ? 'warn' : 'good'); })
       .catch(function (e) { say('vRestoreMsg', errText(e), 'bad'); if (/doomsday/.test(e.message)) loaders.vault(); })
       .then(function () { stop(); b.disabled = false; });
   });
@@ -643,12 +739,21 @@
   // ---------- Advanced ----------
   var kinds = { user: 'kUser', start: 'kStart', run: 'kRun', appx: 'kAppx', machine: 'kMachine', reg: 'kReg' };
   function showAdv(a) {
+    showLocks(a);
     var ul = $('aAppsList'); ul.textContent = '';
     a.apps.forEach(function (x) {
       var li = el('li'), g = el('span', 'grow');
       g.append(el('span', '', x.name), el('span', 'meta', x.kind === 'machine' ? L.needsAdmin : L[kinds[x.kind]]));
       li.append(g);
-      if (x.canUninstall) { var u = el('button', 'btn ghost small', L.uninstall); u.addEventListener('click', function () { ask('appsUninstall', { id: x.id }); }); li.append(u); }
+      if (x.canUninstall) {
+        var u = el('button', 'btn ghost small', L.uninstall);
+        // v0.7.1: Amnesia waits for the uninstaller, then the list is loaded again
+        u.addEventListener('click', function () {
+          u.disabled = true; say('aAppsMsg', L.aUninstalling);
+          ask('appsUninstall', { id: x.id }).then(function (a) { say('aAppsMsg', L.done, 'good'); showAdv(a); }).catch(function (e) { say('aAppsMsg', errText(e), 'bad'); u.disabled = false; });
+        });
+        li.append(u);
+      }
       var k = el('button', 'btn ghost small', L.keep); k.addEventListener('click', function () { ask('appsKeep', { id: x.id }).then(showAdv); }); li.append(k);
       ul.append(li);
     });
@@ -669,15 +774,47 @@
     $('avCfa').textContent = a.cfa === 'on' ? L.cfaOn : a.cfa === 'off' || a.cfa === 'audit' ? L.cfaOff : L.cfaUnknown;
     $('avCfa').className = a.cfa === 'on' ? 'warn' : 'muted';
   }
+  // v0.7 Keep lock + lab lock
+  function showLocks(a) {
+    var k = a.keepLock || {}, lb = a.lab || {};
+    $('klkOffBox').hidden = !!k.on; $('klkOnBox').hidden = !k.on;
+    $('klkState').textContent = k.locked ? L.klkLocked : L.klkOpen;
+    $('klkMin').value = String(k.minutes || 15);
+    $('labOffBox').hidden = !!lb.on; $('labOnBox').hidden = !lb.on;
+    $('labState').textContent = lb.open ? L.labOpenNow : L.labState(lb.since);
+    $('labOpenBox').hidden = !lb.open;
+    $('labBar').hidden = !(lb.on && !lb.open);
+  }
+  function lockAsk(cmd, arg, msg, clear) {
+    say(msg, L.working);
+    return ask(cmd, arg).then(function (a) { clear.forEach(function (id) { $(id).value = ''; }); showAdv(a); say(msg, L.saved, 'good'); ask('info').then(show); })
+      .catch(function (e) { say(msg, errText(e), 'bad'); });
+  }
+  $('klkOn').addEventListener('click', function () {
+    if ($('klkPw').value !== $('klkPw2').value) return say('klkMsg', L.pinMismatch, 'bad');
+    lockAsk('keepLockOn', { password: $('klkPw').value, minutes: $('klkMinNew').value }, 'klkMsg', ['klkPw', 'klkPw2']);
+  });
+  $('klkOff').addEventListener('click', function () { lockAsk('keepLockOff', { password: $('klkOffPw').value }, 'klkMsg', ['klkOffPw']); });
+  $('klkNow').addEventListener('click', function () { lockAsk('keepLockNow', {}, 'klkMsg', []); });
+  $('klkMin').addEventListener('change', function () { lockAsk('keepLockMin', { minutes: this.value }, 'klkMsg', []); });
+  $('labOn').addEventListener('click', function () {
+    if ($('labPin').value !== $('labPin2').value) return say('labMsg', L.pinMismatch, 'bad');
+    lockAsk('labOn', { pin: $('labPin').value }, 'labMsg', ['labPin', 'labPin2']);
+  });
+  $('labUnlock').addEventListener('click', function () { lockAsk('labUnlock', { pin: $('labPinNow').value }, 'labMsg', ['labPinNow']); });
+  $('labSave').addEventListener('click', function () { var p = window.prompt(L.labPinPh); if (p) lockAsk('labOn', { pin: p }, 'labMsg', []); });
+  $('labClose').addEventListener('click', function () { lockAsk('labClose', {}, 'labMsg', []); });
+  $('labOff').addEventListener('click', function () { var p = window.prompt(L.labPinPh); if (p) lockAsk('labOff', { pin: p }, 'labMsg', []); });
   loaders.advanced = function () { ask('advInfo').then(showAdv).catch(function (e) { say('aMsg', errText(e), 'bad'); }); };
   $('aIdleMin').addEventListener('change', function () { ask('set', { key: 'idleMin', value: this.value }).then(show); });
+  $('upDays').addEventListener('change', function () { ask('set', { key: 'updateDays', value: this.value }).then(show); });
   $('aHotkey').addEventListener('change', function () { var s = this; ask('set', { key: 'panicHotkey', value: s.value }).then(show).catch(function (e) { s.value = ''; say('aMsg', errText(e), 'bad'); }); });
   $('aUsb').addEventListener('change', function () {
     var o = this.selectedOptions[0];
     if (this.value === '=keep') return;
     ask('usbSet', { serial: this.value, name: this.value ? o.dataset.name : '' }).then(showAdv);
   });
-  $('aPanicNow').addEventListener('click', function () { if (confirm(L.aPanicConfirm)) ask('panicNow'); });
+  $('aPanicNow').addEventListener('click', function () { confirmBox(L.aPanicConfirm).then(function (y) { if (y) ask('panicNow'); }); });
   $('aKeepAll').addEventListener('click', function () { ask('appsKeepAll').then(showAdv); });
   $('aDynamic').addEventListener('change', function () { ask('dynamicLock', { on: this.checked }).then(showAdv); });
   $('adApply').addEventListener('click', function () {
@@ -730,7 +867,9 @@
     ask('listDownload').then(function (a) { showAdv(a); say('xlMsg', L.xlDone, 'good'); }).catch(function (e) { say('xlMsg', errText(e), 'bad'); }).then(function () { b.disabled = false; });
   });
   $('sbOpen').addEventListener('click', function () { ask('sandbox', { shareKeep: $('sbKeep').checked, network: $('sbNet').checked }).then(function () { say('sbMsg', ''); }).catch(function (e) { say('sbMsg', errText(e), 'bad'); }); });
-  $('wfRun').addEventListener('click', function () { if (confirm(L.wfConfirm)) ask('wipeFree').then(function () { say('wfMsg', L.wfStarted, 'good'); }).catch(function (e) { say('wfMsg', errText(e), 'bad'); }); });
+  $('wfRun').addEventListener('click', function () {
+    confirmBox(L.wfConfirm).then(function (y) { if (y) ask('wipeFree').then(function () { say('wfMsg', L.wfStarted, 'good'); }).catch(function (e) { say('wfMsg', errText(e), 'bad'); }); });
+  });
   $('adSysClean').addEventListener('click', function () {
     var b = this; b.disabled = true; say('adMsg', L.working);
     ask('sysClean').then(function () { say('adMsg', L.adSysDone, 'good'); }).catch(function (e) { say('adMsg', errText(e), 'bad'); }).then(function () { b.disabled = false; });
@@ -755,9 +894,14 @@
     var stop = progress('upProg', 'update'); this.disabled = true;
     ask('updateInstall').catch(function (e) { $('upText').textContent = errText(e); stop(); $('upInstall').disabled = false; });
   });
-  $('collectLog').addEventListener('click', function () { ask('collectLog').then(function () { say('setMsg', L.logOpened); }).catch(function (e) { say('setMsg', errText(e), 'bad'); }); });
+  // v0.7.1: shows that it works (it takes a while) and can't be started twice
+  $('collectLog').addEventListener('click', function () {
+    var b = this; b.disabled = true; say('logMsg', L.logBusy);
+    ask('collectLog').then(function (r) { say('logMsg', r && r.ok ? L.logDone(r.path) : L.logMissing, r && r.ok ? 'good' : 'bad'); })
+      .catch(function (e) { say('logMsg', errText(e), 'bad'); }).then(function () { b.disabled = false; });
+  });
   $('tourAgain').addEventListener('click', function () { tour(0); });
-  $('unApp').addEventListener('click', function () { if (confirm(L.unConfirm)) ask('uninstall', { all: false }).then(function () { say('setMsg', L.unBye); }); });
+  $('unApp').addEventListener('click', function () { confirmBox(L.unConfirm).then(function (y) { if (y) ask('uninstall', { all: false }).then(function () { say('setMsg', L.unBye); }); }); });
   $('unAll').addEventListener('click', function () {
     if ($('unWord').value.trim().toUpperCase() !== L.unWord) { $('unWord').focus(); return; }
     ask('uninstall', { all: true }).then(function () { say('setMsg', L.unBye); });

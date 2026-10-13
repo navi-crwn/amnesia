@@ -1,5 +1,5 @@
 // Amnesia v5.19: fitur baru di file terpisah supaya Amnesia.swift tidak makin panjang.
-// - Lanjutan (Advanced): logout otomatis, hapus app baru, kata panik, pindah Mac
+// - Lanjutan (Advanced): logout otomatis, hapus app baru, kata panik, pindah Mac (v5.20: grup di Pengaturan)
 // - Cek enkripsi disk (FileVault)
 // - Update dari dalam app (cek, unduh otomatis, pasang dengan 1 tombol)
 import SwiftUI
@@ -19,6 +19,39 @@ enum UpdateFiles {
     /// Dipasang lewat Homebrew: update lewat brew saja, supaya brew tidak bingung versinya.
     static var brew: Bool {
         ["/opt/homebrew/Caskroom/amnesia", "/usr/local/Caskroom/amnesia"].contains { FileManager.default.fileExists(atPath: $0) }
+    }
+}
+
+/// v5.20: seberapa sering cek update otomatis. Dulu sehari sekali (terlalu sering).
+/// settings.conf: UPDATE_CHECK=0 → Mati; UPDATE_DAYS=7|14|30 (default 7). Nilai lama/aneh dianggap 7 (seminggu).
+enum UpdateEvery {
+    static let choices = [0, 7, 14, 30]
+
+    /// 0 = mati, selain itu jumlah hari
+    static var days: Int {
+        guard Setting.updateCheck.isOn else { return 0 }
+        let d = Int(Config.get("UPDATE_DAYS", "7")) ?? 7
+        return choices.contains(d) && d > 0 ? d : 7
+    }
+
+    static func set(_ d: Int) {
+        Setting.updateCheck.set(d > 0)
+        if d > 0 { Config.set("UPDATE_DAYS", String(d)) }
+    }
+
+    /// Sekali saja: pengaturan "sehari sekali" dari versi lama jadi "seminggu sekali".
+    static func migrate() {
+        let d = Config.get("UPDATE_DAYS")
+        if d.isEmpty || !choices.contains(Int(d) ?? -1) || d == "0" { Config.set("UPDATE_DAYS", "7") }
+    }
+
+    static func label(_ d: Int) -> String {
+        switch d {
+        case 0: return T("Off", "Mati")
+        case 7: return T("Every week", "Seminggu sekali")
+        case 14: return T("Every 2 weeks", "2 minggu sekali")
+        default: return T("Every month", "Sebulan sekali")
+        }
     }
 }
 
@@ -141,8 +174,10 @@ final class Updater: ObservableObject {
         }
     }
 
-    /// Cek otomatis: 1 menit setelah app jalan, lalu dicek tiap 6 jam, tapi GitHub hanya ditanya 1x sehari.
+    /// Cek otomatis: 1 menit setelah app jalan, lalu dicek tiap 6 jam, tapi GitHub hanya ditanya
+    /// sesuai pilihan (v5.20: seminggu / 2 minggu / sebulan sekali, atau mati).
     func startSchedule() {
+        UpdateEvery.migrate()
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 6 * 3600, repeats: true) { _ in
             Task { @MainActor in Updater.shared.autoCheck() }
@@ -154,9 +189,11 @@ final class Updater: ObservableObject {
     }
 
     private func autoCheck() {
-        guard Setting.updateCheck.isOn else { return }
+        let days = UpdateEvery.days
+        guard days > 0 else { return }
         let last = Double(Config.get("UPDATE_LAST", "0")) ?? 0
-        guard Date().timeIntervalSince1970 - last > 20 * 3600 else { return }
+        // 4 jam lebih awal boleh, supaya cek mingguan tidak mundur terus karena jadwal 6 jam
+        guard Date().timeIntervalSince1970 - last > Double(days) * 86400 - 4 * 3600 else { return }
         check(manual: false)
     }
 
@@ -304,6 +341,7 @@ func spawnDetached(_ args: [String]) -> Bool {
 struct UpdateCard: View {
     @ObservedObject private var u = Updater.shared
     @State private var check = Setting.updateCheck.isOn
+    @State private var every = UpdateEvery.days
     @State private var auto = Setting.updateAuto.isOn
 
     var body: some View {
@@ -317,10 +355,18 @@ struct UpdateCard: View {
                 }
                 Spacer(minLength: 0)
             }
-            Toggle(T("Check for updates once a day", "Cek update sehari sekali"), isOn: Binding(get: { check }, set: {
-                check = $0; Setting.updateCheck.set($0)
-            }))
-            .font(.system(size: 12))
+            // v5.20: pilih seberapa sering (dulu selalu sehari sekali)
+            HStack(spacing: 8) {
+                Text(T("Check for updates", "Cek update")).font(.system(size: 12))
+                Spacer(minLength: 8)
+                Picker("", selection: Binding(get: { every }, set: { d in
+                    every = d; check = d > 0; UpdateEvery.set(d)
+                })) {
+                    ForEach(UpdateEvery.choices, id: \.self) { d in Text(UpdateEvery.label(d)).tag(d) }
+                }
+                .labelsHidden()
+                .frame(width: 170)
+            }
             Toggle(T("Download new versions by themselves", "Unduh versi baru otomatis"), isOn: Binding(get: { auto }, set: {
                 auto = $0; Setting.updateAuto.set($0)
             }))
@@ -640,38 +686,107 @@ enum NewApps {
     }
 }
 
-// MARK: - Halaman Lanjutan
+// MARK: - Pencarian di Pengaturan (v5.20)
 
-struct AdvancedView: View {
+/// Huruf kecil, tanpa aksen: "Pengaturan" dan "pengaturan" dianggap sama.
+func searchFold(_ s: String) -> String {
+    s.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
+}
+
+/// Semua kata yang diketik harus ada di teks (urutan bebas). Kolom kosong = semua cocok.
+func searchHit(_ query: String, _ hay: String) -> Bool {
+    let words = searchFold(query).split(separator: " ").map(String.init)
+    if words.isEmpty { return true }
+    let h = searchFold(hay)
+    return words.allSatisfy { h.contains($0) }
+}
+
+/// Teks 1 kartu di Pengaturan: judul + penjelasan dalam English dan Indonesia, plus kata lain (tidak ditampilkan).
+/// Pencarian selalu memakai kedua bahasa, apa pun bahasa app yang dipilih.
+struct SetText {
+    let en: String
+    let id: String
+    var subEn = ""
+    var subId = ""
+    var tags = ""
+    var title: String { T(en, id) }
+    var sub: String { T(subEn, subId) }
+    func hit(_ query: String) -> Bool { searchHit(query, [en, id, subEn, subId, tags].joined(separator: " ")) }
+}
+
+// MARK: - Lanjutan (v5.20: grup di dalam Pengaturan, dulu halaman sendiri)
+
+struct AdvancedGroup: View {
     @EnvironmentObject var m: Model
-    let back: () -> Void
+    let query: String
     @State private var idleMin = IdleWatch.minutes
     @State private var newOn = NewApps.on
     @State private var apps: [NewApp] = []
 
+    /// judul grup: mencari "lanjutan" / "advanced" menampilkan semua isinya
+    static let tGroup = SetText(en: "Advanced", id: "Lanjutan", tags: "expert danger bahaya")
+    static let tAutoLogout = SetText(
+        en: "Log out when the Mac is left alone", id: "Logout otomatis kalau Mac ditinggal",
+        subEn: "If nobody touches the keyboard, mouse or trackpad for this long, a 60-second countdown appears, "
+            + "then you are logged out and the session is wiped. Any key or mouse move cancels it. "
+            + "Only while Amnesia is on (not paused). An app with an unsaved document can still stop the logout. "
+            + "Your auto snapshot runs as usual.",
+        subId: "Kalau keyboard, mouse, atau trackpad tidak disentuh selama waktu ini, muncul hitung mundur 60 detik, "
+            + "lalu kamu di-logout dan sesi dibersihkan. Tekan tombol apa saja atau gerakkan mouse untuk batal. "
+            + "Hanya saat Amnesia aktif (tidak dijeda). App dengan dokumen yang belum disimpan masih bisa menahan "
+            + "logout. Snapshot otomatis tetap berjalan seperti biasa.",
+        tags: "idle timer away lock kunci auto")
+    static let tNewApps = SetText(
+        en: "Remove apps installed later", id: "Hapus app yang dipasang belakangan",
+        subEn: "Apps you install after switching this on are removed at every logout, unless you keep them below. "
+            + "Apps that were already installed stay. Apps installed with an admin password are not touched, "
+            + "only noted in History. The vault keeps app data, not the apps themselves.",
+        subId: "App yang kamu pasang setelah ini dinyalakan dihapus setiap logout, kecuali kamu simpan di bawah. "
+            + "App yang sudah terpasang sebelumnya tetap ada. App yang dipasang dengan password admin tidak disentuh, "
+            + "hanya dicatat di Riwayat. Vault menyimpan data app, bukan app-nya.",
+        tags: "uninstall application aplikasi install pasang")
+    static let tPanic = SetText(
+        en: "Panic word", id: "Kata panik",
+        subEn: "A second password for the vault. Typing it deletes the vault for good (and, if you chose so, empties the "
+            + "Keep folder). It can't be undone. Set or change it on the Profile Vault page.",
+        subId: "Password kedua untuk vault. Kalau diketik, vault terhapus selamanya (dan, kalau kamu memilihnya, folder Keep "
+            + "ikut dikosongkan). Tidak bisa dibatalkan. Atur atau ganti di halaman Profile Vault.",
+        tags: "duress emergency darurat wipe")
+    static let tMove = SetText(
+        en: "Move to a New Mac", id: "Pindah Mac",
+        subEn: "Take your vault, Keep List and settings to another Mac, or get the vault back from a backup.",
+        subId: "Bawa vault, Keep List, dan pengaturan ke Mac lain, atau ambil lagi vault dari backup.",
+        tags: "migrate migrasi transfer export import restore")
+    /// semua teks grup ini (untuk "tidak ada yang cocok" di Pengaturan)
+    static var texts: [SetText] { [tGroup, tAutoLogout, tNewApps, tPanic, tMove] }
+
+    private func show(_ t: SetText) -> Bool { Self.tGroup.hit(query) || t.hit(query) }
+    private var anyShown: Bool { [Self.tAutoLogout, Self.tNewApps, Self.tPanic, Self.tMove].contains { show($0) } }
+
     var body: some View {
-        RoomyScroll {
-            VStack(spacing: 14) {
-                PageHeader(title: T("Advanced", "Lanjutan"), icon: "exclamationmark.shield.fill", colors: Pal.pause, back: back)
+        VStack(spacing: 14) {
+            if anyShown {
+                HStack(spacing: 10) {
+                    IconBadge(icon: "exclamationmark.shield.fill", colors: Pal.pause, size: 28)
+                    Text(Self.tGroup.title).font(.system(size: 17, weight: .bold))
+                    Spacer()
+                }
+                .padding(.top, 10)
                 Note(text: T("These settings can delete more, or act by themselves. Read each one before you switch it on.",
                              "Pengaturan di sini bisa menghapus lebih banyak, atau berjalan sendiri. Baca dulu sebelum menyalakannya."),
                      icon: "exclamationmark.triangle.fill", color: Th.orange)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                autoLogout
-                newApps
-                link(T("Panic word", "Kata panik"),
-                     T("A second password for the vault. Typing it deletes the vault for good (and, if you chose so, empties the "
-                       + "Keep folder). It can't be undone. Set or change it on the Profile Vault page.",
-                       "Password kedua untuk vault. Kalau diketik, vault terhapus selamanya (dan, kalau kamu memilihnya, folder Keep "
-                       + "ikut dikosongkan). Tidak bisa dibatalkan. Atur atau ganti di halaman Profile Vault."),
-                     "flame.fill", Pal.danger, T("Open Profile Vault", "Buka Profile Vault")) { m.page = .vault }
-                link(T("Move to a New Mac", "Pindah Mac"),
-                     T("Take your vault, Keep List and settings to another Mac, or get the vault back from a backup.",
-                       "Bawa vault, Keep List, dan pengaturan ke Mac lain, atau ambil lagi vault dari backup."),
-                     "arrow.right.arrow.left.circle.fill", Pal.backup, T("Open Move to a New Mac", "Buka Pindah Mac")) { m.page = .move }
+                if show(Self.tAutoLogout) { autoLogout }
+                if show(Self.tNewApps) { newApps }
+                if show(Self.tPanic) {
+                    link(Self.tPanic, "flame.fill", Pal.danger, T("Open Profile Vault", "Buka Profile Vault")) { m.page = .vault }
+                }
+                if show(Self.tMove) {
+                    link(Self.tMove, "arrow.right.arrow.left.circle.fill", Pal.backup,
+                         T("Open Move to a New Mac", "Buka Pindah Mac")) { m.page = .move }
+                }
             }
         }
-        .scrollIndicators(.never)
         .onAppear { reload() }
     }
 
@@ -682,16 +797,9 @@ struct AdvancedView: View {
             HStack(alignment: .top, spacing: 12) {
                 IconBadge(icon: "moon.zzz.fill", colors: Pal.pause, size: 34)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(T("Log out when the Mac is left alone", "Logout otomatis kalau Mac ditinggal"))
+                    Text(Self.tAutoLogout.title)
                         .font(.system(size: 14, weight: .semibold))
-                    MoreText(T("If nobody touches the keyboard, mouse or trackpad for this long, a 60-second countdown appears, "
-                               + "then you are logged out and the session is wiped. Any key or mouse move cancels it. "
-                               + "Only while Amnesia is on (not paused). An app with an unsaved document can still stop the logout. "
-                               + "Your auto snapshot runs as usual.",
-                               "Kalau keyboard, mouse, atau trackpad tidak disentuh selama waktu ini, muncul hitung mundur 60 detik, "
-                               + "lalu kamu di-logout dan sesi dibersihkan. Tekan tombol apa saja atau gerakkan mouse untuk batal. "
-                               + "Hanya saat Amnesia aktif (tidak dijeda). App dengan dokumen yang belum disimpan masih bisa menahan "
-                               + "logout. Snapshot otomatis tetap berjalan seperti biasa."))
+                    MoreText(Self.tAutoLogout.sub)
                         .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
@@ -727,14 +835,9 @@ struct AdvancedView: View {
             HStack(alignment: .top, spacing: 12) {
                 IconBadge(icon: "trash.square.fill", colors: Pal.danger, size: 34)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(T("Remove apps installed later", "Hapus app yang dipasang belakangan"))
+                    Text(Self.tNewApps.title)
                         .font(.system(size: 14, weight: .semibold))
-                    MoreText(T("Apps you install after switching this on are removed at every logout, unless you keep them below. "
-                               + "Apps that were already installed stay. Apps installed with an admin password are not touched, "
-                               + "only noted in History. The vault keeps app data, not the apps themselves.",
-                               "App yang kamu pasang setelah ini dinyalakan dihapus setiap logout, kecuali kamu simpan di bawah. "
-                               + "App yang sudah terpasang sebelumnya tetap ada. App yang dipasang dengan password admin tidak disentuh, "
-                               + "hanya dicatat di Riwayat. Vault menyimpan data app, bukan app-nya."))
+                    MoreText(Self.tNewApps.sub)
                         .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
@@ -803,14 +906,14 @@ struct AdvancedView: View {
         reload()
     }
 
-    private func link(_ title: String, _ sub: String, _ icon: String, _ colors: [Color], _ button: String,
+    private func link(_ t: SetText, _ icon: String, _ colors: [Color], _ button: String,
                       action: @escaping () -> Void) -> some View {
         Card {
             HStack(alignment: .top, spacing: 12) {
                 IconBadge(icon: icon, colors: colors, size: 34)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.system(size: 14, weight: .semibold))
-                    MoreText(sub).font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text(t.title).font(.system(size: 14, weight: .semibold))
+                    MoreText(t.sub).font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
             }

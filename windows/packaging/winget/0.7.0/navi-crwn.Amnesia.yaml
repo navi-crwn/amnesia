@@ -1,0 +1,7 @@
+# winget version manifest. Fill in the two SHA256 values in navi-crwn.Amnesia.installer.yaml from the release's
+# SHA256SUMS.txt, then send this folder to github.com/microsoft/winget-pkgs (manifests/n/navi-crwn/Amnesia/0.7.0/).
+PackageIdentifier: navi-crwn.Amnesia
+PackageVersion: 0.7.0
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0

@@ -7,6 +7,77 @@ Sedikit cerita: tanggal 6 Oktober 2026 Amnesia masih berupa beberapa skrip. Dua 
 
 Nomor versi kamu ada di samping judul Amnesia dan di bagian bawah panel menu bar.
 
+## v5.21.0 · App baru terlihat di pratinjau, cari di "Yang Akan Dihapus", virtual machine aman (13 Okt 2026)
+
+Matikan (**Turn Off**) Amnesia dulu sebelum install, lalu nyalakan lagi.
+
+### Fitur baru
+- **Cari di "What Gets Deleted".** Ada kotak pencarian (nama atau lokasi file, di semua grup), pilihan grup, dan **Terbesar dulu**. Ukuran tiap baris sekarang langsung tampil, tanpa harus membuka grupnya.
+- **Peringatan file besar.** Di atas daftar muncul peringatan kalau ada file 1 GB atau lebih, atau data virtual machine, yang akan dihapus. Empat yang terbesar ditampilkan beserta ukurannya, dengan saran memindahkannya ke Keep.
+- **Virtual machine aman secara bawaan.** UTM, Parallels, VirtualBox dan VMware Fusion sekarang ada di "Pilih App". Kalau Amnesia menemukan data VM, data itu otomatis dimasukkan ke Keep List (sekali saja; kalau kamu matikan, tetap mati). Kalau dimatikan, barisnya jelas menulis "Dihapus saat logout, virtual machine juga!".
+- **Trash punya grup sendiri:** "Trash (dikosongkan saat logout)", dengan ukurannya, supaya tidak ada yang kaget isi Trash ikut hilang.
+
+### Diperbaiki
+- **App yang dipasang setelah Amnesia nyala tidak tampil di pratinjau**, padahal benar-benar dihapus saat logout. Sekarang tampil di grup "App yang dipasang belakangan", lengkap dengan ikonnya.
+- App yang sempat terbuka sendiri saat login (sebelum vault dipulihkan) sekarang ditutup, lalu dibuka lagi setelah datanya kembali.
+- Memulihkan folder pilihan dari vault tidak lagi bisa error.
+
+## Windows v0.7.1 · Sign out membersihkan lagi, Explorer tidak kedip, tampilan lebih rapi (13 Okt 2026)
+
+Versi percobaan Windows, tetap **tes di virtual machine saja**. Matikan (Turn Off) Amnesia dulu sebelum install di atas versi lama, lalu nyalakan (Turn On) lagi.
+
+### Diperbaiki
+- **Sign out tidak membersihkan** (file baru terhapus saat login berikutnya). Snapshot vault otomatis jalan duluan dan memakan waktu yang diberikan Windows. Sekarang saat sign out Amnesia **langsung membersihkan**, dan Windows menampilkan "Amnesia is cleaning up..." sampai selesai. Kalau sign out dibatalkan, tidak ada yang terhapus.
+- **Snapshot otomatis pindah:** app di vault disimpan di belakang layar **setelah kamu menutupnya** (dicek tiap menit, hanya kalau berubah). Alat tanpa jendela (Claude Code, Git, folder pilihan) disimpan setelah 3 menit tidak berubah. Catatan: kalau Edge tetap jalan di belakang ("startup boost"), Edge baru tersimpan setelah benar-benar tertutup.
+- Sisa snapshot yang terputus (`*.amv.new`) dibersihkan saat Amnesia mulai.
+- **Kunci Keep membuat ikon Desktop kedip.** Kunci sekarang menutup isi Keep, bukan foldernya, jadi Explorer tetap bisa membaca ikon Keep. Keep keluar dari sidebar selama terkunci dan kembali saat dibuka. Nama file di dalam Keep tetap terlihat, tapi tidak bisa dibuka, dan tidak ada program yang bisa menulis ke Keep.
+- **Explorer kedip setelah pembersihan saat login.** Explorer sekarang diberi tahu supaya memuat ulang ikonnya.
+- Cache ikon dan thumbnail tidak pernah dihapus lagi saat Explorer sedang jalan (penyebab lama ikon berkedip).
+- Peringatan palsu "setup Edge belum selesai" di vault.
+- Dialog "hapus ruang kosong" tidak terpotong lagi di jendela kecil.
+- Claude dari Microsoft Store ikut disarankan di Keep List.
+- Ikon Keep di sidebar sekarang ikut ungu.
+- Daftar "Hapus app baru" dimuat ulang setelah uninstaller selesai.
+
+### Berubah
+- **Tampilan lebih rapat:** halaman utama model kotak-kotak (bento), footer selalu di paling bawah, Pengaturan dikelompokkan (Umum, Update & bantuan, lalu Lanjutan: Saat meninggalkan PC, Privasi & Windows, Program, Kunci).
+- **Cari di "Yang akan dihapus"**: kotak pencarian, filter per folder (dengan jumlah dan ukuran), dan Terbesar dulu.
+- **Kumpulkan log** menampilkan status dan lokasi file, dan tombolnya tidak bisa diklik dua kali.
+- Kartu pintasan Keep menulis "muncul setelah Turn On" selama Amnesia mati.
+- Tes otomatis: 207 (sebelumnya 190).
+
+## v5.20.0 · Cari di Pengaturan, jendela bisa diubah ukurannya, pilih app lebih pintar (12 Okt 2026)
+
+Matikan (**Turn Off**) Amnesia dulu sebelum install, lalu nyalakan lagi.
+
+### Fitur baru
+- **Cari di Pengaturan.** Ada kotak pencarian di atas Pengaturan. Ketik dalam bahasa Inggris atau Indonesia, apa pun bahasa app-nya, dan hanya pengaturan yang cocok yang tetap tampil. Kata lain juga bisa, misalnya "filevault", "password", "startup", "idle", "pindah" atau "versi". Kalau tidak ada yang cocok, app memberi tahu.
+- **Lanjutan sekarang ada di dalam Pengaturan**, sebagai grup di bagian bawah, di bawah pengaturan biasa, dan ikut dicari. Halaman Lanjutan yang terpisah sudah tidak ada (sama seperti app Windows).
+- **Ukuran jendela bisa diubah.** Jendela utama bisa dibesarkan atau dikecilkan, minimal 440×560. Tetap terbuka di 480×690, dan di layar kecil otomatis lebih kecil supaya muat.
+- **Deteksi app lebih akurat di "Pilih App".** Amnesia sekarang menemukan lebih banyak data app lewat bundle id: login web (HTTPStorages), data WebKit, folder bersama yang memakai nama tim, dan folder dengan nama asli app. Cache dan posisi jendela sengaja tidak diambil.
+- **Alat developer & terminal.** "Pilih App" punya bagian baru berisi pengaturan SSH, GitHub CLI, zsh/bash, Vim/Neovim, tmux, npm, Docker, AWS, gcloud, kubectl, OpenCode, Claude Code, Codex dan Gemini CLI. Hanya yang ada di Mac kamu yang muncul.
+- **Atur seberapa sering cek update:** Mati, tiap minggu, tiap 2 minggu atau tiap bulan. Bawaannya tiap minggu. Cek harian yang lama otomatis jadi mingguan, dan yang sudah Mati tetap Mati.
+
+### Perbaikan & lebih aman
+- App yang dulu sudah kamu simpan tetap tampil NYALA di "Pilih App" walaupun Amnesia sekarang tahu folder tambahannya, jadi tombol Simpan hanya **menambah** baris di Keep List dan tidak pernah menghapus baris lama.
+- Mematikan satu app tidak lagi menghapus folder yang masih dibutuhkan app lain yang kamu simpan.
+
+## Windows v0.7.0 · Kunci lab, kunci Keep, cadangan snapshot vault, cek update tidak spam (12 Okt 2026)
+
+Versi percobaan Windows, tetap **tes di virtual machine saja**. Matikan (Turn Off) Amnesia dulu sebelum install di atas versi lama, lalu nyalakan (Turn On) lagi.
+
+### Fitur baru
+- **Kunci lab** (Pengaturan → Lanjutan, untuk admin). Untuk PC yang dipakai banyak orang, seperti lab komputer atau perpustakaan. Pasang PIN minimal 6 angka, lalu Windows minta izin admin sekali. Setelah itu user Windows ini tidak bisa mematikan, menjeda, menutup, meng-uninstall Amnesia, atau mengubah pengaturan dan Keep List tanpa PIN. Amnesia selalu jalan saat sign in (dijalankan Windows, bukan oleh user), dan halamannya menampilkan "Dikunci admin". PIN membuka pengaturan selama 10 menit. Salinan yang dikunci ada di `C:\ProgramData\Amnesia\lab`, yang hanya bisa dibaca user biasa. Catatan jujur: orang masih bisa mematikan Amnesia lewat Task Manager, tapi cek saat sign in berikutnya tetap membersihkan.
+- **Kunci Keep** (Pengaturan → Lanjutan). Folder Keep hanya bisa dibuka lewat Amnesia (Buka Keep, menu tray, atau shortcut di Desktop) dengan password sendiri. Terkunci lagi setelah menit yang kamu pilih, saat layar dikunci (Win+L), saat sign out dan saat Amnesia mulai. Backup, pulihkan, Kumpulkan log dan Doomsday membuka kuncinya sebentar secara otomatis. Catatan jujur: file-nya tidak dienkripsi (pakai BitLocker untuk itu), dan orang yang login sebagai kamu dan paham Windows bisa melepas kuncinya lewat Properties folder. Lupa password? Caranya sama: Properties → Security, hapus baris "Deny".
+- **Cadangan snapshot vault.** Setiap app menyimpan snapshot sebelum yang terbaru sebagai "sebelumnya". Kalau snapshot baru jauh lebih kecil dari yang lama (misalnya diambil dari profil baru yang masih kosong), vault memberi tahu, dan mencentang **Pakai snapshot sebelum yang terbaru** saat memulihkan mengembalikan yang lama.
+- Vault memberi catatan kalau snapshot browser (Edge, Chrome...) diambil sebelum setup awalnya selesai, karena saat dipulihkan halaman sambutannya akan muncul lagi.
+- **Atur seberapa sering cek update:** Mati, tiap minggu, tiap 2 minggu atau tiap bulan. Bawaannya tiap minggu, tidak lagi tiap hari.
+
+### Perbaikan & lebih aman
+- Uninstall di PC dengan kunci lab meminta PIN lab, lalu kunci lab dihapus sepenuhnya.
+- "Kumpulkan log" menunggu sampai log benar-benar tersimpan sebelum bilang selesai.
+- Tes otomatis baru (total 190): PIN, pengaturan kunci lab, snapshot sebelumnya, peringatan snapshot mengecil dan catatan setup Edge.
+
 ## Windows v0.6.1 · App sama, build GitHub diperbaiki (11 Okt 2026)
 
 Tidak ada perubahan di app-nya, sama dengan v0.6.0. File catatan lisensi (`THIRD-PARTY-NOTICES.md`) tidak ikut ke GitHub karena aturan "lewati file .md", jadi build Windows otomatis di sana gagal dan v0.6.0 tidak pernah punya file download. Aturannya sekarang mengizinkan file itu, dan versi ini membuat release dengan Setup x64 dan arm64.

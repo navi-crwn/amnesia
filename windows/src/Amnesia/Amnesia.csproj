@@ -10,7 +10,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Amnesia</AssemblyName>
     <RootNamespace>Amnesia</RootNamespace>
-    <Version>0.6.1</Version>
+    <Version>0.7.1</Version>
     <Product>Amnesia</Product>
     <Company>Amnesia (open source, github.com/navi-crwn/amnesia)</Company>
     <Description>Amnesia: wipes your user folder at sign out, keeps only what you choose</Description>

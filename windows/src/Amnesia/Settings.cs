@@ -15,4 +15,6 @@ static class Settings
     public static string KeepDir => Conf.KeepDir;
     public static string PauseFile => Conf.PauseFile;
     public static bool Paused => Conf.Paused;
+    /// <summary>v0.7: days between automatic update checks (0 = never). Old "UPDATE_CHECK=0" (switch off) stays off.</summary>
+    public static int UpdateDays => Get("UPDATE_DAYS") is { } d && int.TryParse(d, out var n) ? n : Get("UPDATE_CHECK") == "0" ? 0 : 7;
 }

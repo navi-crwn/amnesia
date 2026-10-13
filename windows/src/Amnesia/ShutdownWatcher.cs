@@ -9,6 +9,13 @@
 // taskbar, no Alt+Tab, never takes focus), so Windows really shows "Amnesia is cleaning up..." and waits. The
 // snapshot also starts earlier (at "may I end the session?", harmless if the sign out is cancelled) and the cleanup
 // itself comes right after, with a time limit for the snapshot.
+// v0.7.1: sign out still did not clean on a real PC: Windows gave 5 to 7 seconds ("Amnesia.exe is delaying system
+// shutdown after 5265 ms", then sign out anyway). The vault snapshot (Edge, 279 MB) ate all of it and the cleanup never
+// started. Now the cleanup comes FIRST and alone: no snapshot at sign out any more (it happens while you are signed in,
+// right after you close an app, see TrayApp and Core\AutoSnap.cs). "Amnesia is cleaning up..." is set while Windows asks
+// and again around the cleanup. Nothing is touched at "may I end the session?": the cleanup only runs in WM_ENDSESSION
+// once Windows says the session really ends (a cancelled sign out wipes nothing). That handler is also the last moment
+// Windows waits for: Amnesia is ended as soon as it returns.
 using System.Runtime.InteropServices;
 using Amnesia.Core;
 
@@ -52,8 +59,6 @@ sealed class ShutdownWatcher : Form
     /// <summary>Called once at start: a visible (but invisible to you) window is what makes Windows wait at sign out.</summary>
     public void Arm() { Show(); Location = new Point(-32000, -32000); Size = new Size(1, 1); }
 
-    static Thread? snapshot;
-
     /// <summary>(Re)registers the panic hotkey from settings (PANIC_HOTKEY). Returns false when another app already uses it.</summary>
     public bool ApplyHotkey()
     {
@@ -76,21 +81,17 @@ sealed class ShutdownWatcher : Form
             case WM_QUERYENDSESSION:
                 AppInfo.Trace($"query end session (flags {m.LParam.ToInt64():x}, on {Settings.Enabled})");
                 if (Settings.Enabled && (m.LParam.ToInt64() & ENDSESSION_CLOSEAPP) == 0)
-                {
                     Native.ShutdownBlockReasonCreate(Handle, Text2.Cleaning);
-                    StartSnapshot();
-                }
                 m.Result = 1;
                 return;
             case WM_ENDSESSION when m.WParam == IntPtr.Zero:
                 AppInfo.Trace("end session cancelled (another app said no)");
-                snapshot = null;
                 Native.ShutdownBlockReasonDestroy(Handle);
                 break;
             case WM_ENDSESSION:
                 AppInfo.Trace($"end session (flags {m.LParam.ToInt64():x})");
                 if ((m.LParam.ToInt64() & ENDSESSION_CLOSEAPP) != 0) { AppInfo.Trace("closed by an installer, not a sign out: no cleanup"); }
-                else if (Settings.Enabled && !Guard.JustCleaned) SignOutClean();
+                else if (Settings.Enabled && !Guard.JustCleaned) SignOutClean(Handle);
                 Native.ShutdownBlockReasonDestroy(Handle);
                 m.Result = IntPtr.Zero;
                 return;
@@ -110,31 +111,17 @@ sealed class ShutdownWatcher : Form
         base.WndProc(ref m);
     }
 
-    /// <summary>The automatic vault snapshot (apps that changed), started as soon as Windows asks. Saving is harmless
-    /// even if the sign out is cancelled after all; nothing is wiped before WM_ENDSESSION.</summary>
-    static void StartSnapshot()
-    {
-        if (snapshot != null || !Vault.Exists || Settings.Get("VAULT_AUTO") == "0" || Settings.Paused) return;
-        snapshot = new Thread(() =>
-        {
-            var t = System.Diagnostics.Stopwatch.StartNew();
-            AppInfo.Trace("auto snapshot: start");
-            try { var s = Vault.Snapshot(changedOnly: true, budget: TimeSpan.FromSeconds(20)); AppInfo.Trace($"auto snapshot: {s.Count} app(s) in {t.Elapsed.TotalSeconds:0.0} s"); }
-            catch (Exception e) { AppInfo.Trace($"auto snapshot failed: {e.GetType().Name}"); }
-        }) { IsBackground = true };
-        snapshot.Start();
-    }
-
-    static void SignOutClean()
+    /// <summary>The cleanup at sign out / restart / shut down. Runs right inside WM_ENDSESSION (Windows waits while this
+    /// handler runs and shows "Amnesia is cleaning up..."). Cleaning first: moving to .amnesia-trash takes a few seconds.
+    /// The cleanup itself writes "clean logout N bytes" to the History.</summary>
+    static void SignOutClean(IntPtr hwnd)
     {
         var t = System.Diagnostics.Stopwatch.StartNew();
-        // 1. the automatic vault snapshot started at "may I end the session?": wait for it (at most 40 s)
-        StartSnapshot();
-        if (snapshot != null && !snapshot.Join(TimeSpan.FromSeconds(40))) AppInfo.Trace("auto snapshot still busy, cleaning anyway");
-        snapshot = null;
-        // 2. the cleanup
-        try { var r = Cleaner.Run("logout"); AppInfo.Trace($"logout clean finished in {t.Elapsed.TotalSeconds:0.0} s ({r.Skipped ?? r.Count.ToString()})"); }
+        Native.ShutdownBlockReasonCreate(hwnd, Text2.Cleaning);
+        try { var r = Cleaner.Run("logout", endSession: true); AppInfo.Trace($"logout clean finished in {t.Elapsed.TotalSeconds:0.0} s ({r.Skipped ?? r.Count.ToString()})"); }
         catch (Exception e) { AppInfo.Trace($"logout clean failed after {t.Elapsed.TotalSeconds:0.0} s: {e.GetType().Name}"); }
+        // the Keep folder is locked again after the cleanup (it is quick, but the cleanup comes first)
+        KeepLock.Lock("sign out", links: false);
     }
 }
 
@@ -161,6 +148,13 @@ static class Text2
     public static string BackupDone => Id ? "Backup selesai" : "Backup done";
     public static string BackupFailed => Id ? "Backup otomatis gagal. Buka Amnesia untuk detailnya." : "Automatic backup failed. Open Amnesia for details.";
     public static string UpdateTitle => Id ? "Update Amnesia tersedia" : "Amnesia update available";
+    // v0.7 lab lock + Keep lock
+    public static string LabTitle => Id ? "Amnesia dikunci admin" : "Amnesia is locked by the admin";
+    public static string LabAsk => Id ? "Masukkan PIN admin untuk lanjut." : "Enter the admin PIN to go on.";
+    public static string KeepLockTitle => Id ? "Folder Keep terkunci" : "Keep folder is locked";
+    public static string KeepLockAsk => Id ? "Masukkan password Keep untuk membukanya." : "Enter the Keep password to open it.";
+    public static string LabNoOff => Id ? "Kunci lab sedang aktif, jadi Amnesia selalu nyala. Untuk mematikannya, lepas dulu kunci lab di Pengaturan → Lanjutan." : "The lab lock is on, so Amnesia always stays on. To turn it off, remove the lab lock first in Settings → Advanced.";
+    public static string LockKeep => Id ? "Kunci folder Keep sekarang" : "Lock Keep folder now";
     public static string Blocked(int n) => Id
         ? $"{n} item tidak bisa dibersihkan karena diblok Windows Security atau antivirus. Buka Amnesia untuk caranya."
         : $"{n} items could not be cleaned: Windows Security or an antivirus blocked Amnesia. Open Amnesia to see how to fix it.";

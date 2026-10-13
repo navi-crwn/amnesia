@@ -147,6 +147,9 @@ public static class Vault
 
     static string Slug(string name) => new string(name.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '-').ToArray());
     static string Archive(string name) => Path.Combine(AppDir, Slug(name) + ".amv");
+    // v0.7: the snapshot before the newest one. A new snapshot never throws the old one away, so an automatic snapshot of a
+    // half set up or freshly wiped app can't destroy the good one ("Restore the one before" on the Vault page).
+    static string Previous(string name) => Path.Combine(AppDir, Slug(name) + ".prev.amv");
 
     public static JsonObject Manifest()
     {
@@ -210,10 +213,12 @@ public static class Vault
     }
 
     /// <summary>Saves the chosen apps, one locked file per app (replaced only after the new one is complete).
-    /// changedOnly (automatic snapshot at sign out): apps that did not change since their last snapshot are skipped.
-    /// budget: no new app is started after this much time (sign out cannot wait forever).</summary>
+    /// changedOnly (automatic snapshot): apps that did not change since their last snapshot are skipped.
+    /// budget: no new app is started after this much time.
+    /// running (v0.7.1, the automatic snapshot while you are signed in): no app is closed; an app whose program runs
+    /// (again) is skipped, it is saved the next time you close it.</summary>
     public static List<string> Snapshot(IEnumerable<string>? names = null, bool changedOnly = false, TimeSpan? budget = null,
-        Action<double, string>? progress = null, CancellationToken cancel = default)
+        Action<double, string>? progress = null, CancellationToken cancel = default, Func<string, bool>? running = null)
     {
         if (!Exists) throw new VaultError("no-vault");
         var chosen = names?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? Chosen();
@@ -228,7 +233,7 @@ public static class Vault
         }
         var watch = System.Diagnostics.Stopwatch.StartNew();
         var pub = File.ReadAllBytes(FPub);
-        if (!Home.Test) QuitApps?.Invoke(apps.Where(a => a.Process != null).Select(a => a.Process!));
+        if (!Home.Test && running == null) QuitApps?.Invoke(apps.Where(a => a.Process != null).Select(a => a.Process!));
         Directory.CreateDirectory(AppDir);
         var saved = new List<string>();
         for (int i = 0; i < apps.Count; i++)
@@ -236,6 +241,7 @@ public static class Vault
             cancel.ThrowIfCancellationRequested();
             if (budget is { } b && watch.Elapsed > b) { Home.Trace("vault", $"time is up, {apps.Count - i} app(s) left for next time"); break; }
             var a = apps[i];
+            if (running != null && a.Process != null && running(a.Process)) { Home.Trace("vault", $"{a.Name} runs again, saved next time"); continue; }
             progress?.Invoke((double)i / apps.Count, a.Name);
             var arc = Archive(a.Name);
             var tmp = arc + ".new";
@@ -249,22 +255,84 @@ public static class Vault
                 {
                     foreach (var p in Present(a)) skipped += AddToZip(zip, p, a.Chromium, cancel);
                 }
+                if (File.Exists(arc)) File.Move(arc, Previous(a.Name), overwrite: true);
                 File.Move(tmp, arc, overwrite: true);
             }
             finally { try { File.Delete(tmp); } catch { } }
-            m[a.Name] = new JsonObject
+            var before = m[a.Name] as JsonObject;
+            long size = new FileInfo(arc).Length;
+            var entry = new JsonObject
             {
                 ["time"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                 ["ts"] = started.Ticks,
-                ["size"] = new FileInfo(arc).Length,
+                ["size"] = size,
                 ["skipped"] = skipped,
             };
+            if (before != null && File.Exists(Previous(a.Name)))
+            {
+                entry["prevTime"] = before["time"]?.GetValue<string>();
+                entry["prevSize"] = before["size"]?.GetValue<long>();
+                // much smaller than last time: maybe the app was just set up again or wiped; say so (the old one is kept)
+                if (before["size"]?.GetValue<long>() is long old && old > 5_000_000 && size < old / 4)
+                {
+                    entry["shrunk"] = true;
+                    Home.Trace("vault", $"{a.Name}: new snapshot is much smaller than the last one, the last one is kept as 'previous'");
+                }
+            }
+            if (a.Chromium && SetupUnfinished(a)) { entry["setup"] = "unfinished"; Home.Trace("vault", $"{a.Name}: first-run setup not finished in this snapshot"); }
+            m[a.Name] = entry;
             Save(m);
             saved.Add(a.Name);
         }
         progress?.Invoke(1, "");
         if (saved.Count > 0) Home.History("snapshot", (changedOnly ? "auto:" : "") + string.Join(", ", saved));
         return saved;
+    }
+
+    /// <summary>Chromium browsers (Edge, Chrome...): the first-run setup was never finished, so after a restore the
+    /// browser shows its welcome pages again. Read from "Local State" (has_user_completed_fre / fre.completed).
+    /// v0.7.1: Edge leaves has_user_completed_fre at false when you skip its welcome pages, so the setup also counts as
+    /// done when the browser was really used: has_first_visible_browser_session_completed is true, or the Default
+    /// profile already has Cookies or History.</summary>
+    public static bool SetupUnfinished(VaultApp a)
+    {
+        try
+        {
+            foreach (var root in Present(a))
+            {
+                var dir = Home.Full(root);
+                var ls = Path.Combine(dir, "Local State");
+                if (!File.Exists(ls)) continue;
+                using var fs = new FileStream(ls, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                var text = new StreamReader(fs).ReadToEnd();
+                if (!System.Text.RegularExpressions.Regex.IsMatch(text, "\"has_user_completed_fre\"\\s*:\\s*false")) continue;
+                if (System.Text.RegularExpressions.Regex.IsMatch(text, "\"has_first_visible_browser_session_completed\"\\s*:\\s*true")) continue;
+                if (new[] { "Default/Cookies", "Default/Network/Cookies", "Default/History" }.Any(f => File.Exists(Path.Combine(dir, f.Replace('/', Path.DirectorySeparatorChar))))) continue;
+                return true;
+            }
+        }
+        catch { }
+        return false;
+    }
+
+    /// <summary>v0.7.1: a snapshot cut off half way (sign out, power cut) leaves a half written "*.amv.new". The finished
+    /// snapshots are never touched by that; the leftover is deleted at start. Returns how many.</summary>
+    public static int RemoveUnfinished()
+    {
+        int n = 0;
+        if (!Directory.Exists(AppDir)) return 0;
+        foreach (var f in Directory.EnumerateFiles(AppDir, "*.amv.new"))
+            try { File.Delete(f); n++; } catch { }
+        return n;
+    }
+
+    /// <summary>v0.7.1: has the app's data changed since its last snapshot, and stayed untouched for at least quiet?
+    /// (For apps without a program of their own, like Claude Code or a folder.)</summary>
+    public static bool ChangedAndQuiet(VaultApp a, TimeSpan quiet, DateTime nowUtc)
+    {
+        var newest = Newest(a);
+        if (newest == DateTime.MinValue || nowUtc - newest < quiet) return false;
+        return Manifest()[a.Name]?["ts"] is not JsonNode ts || !File.Exists(Archive(a.Name)) || newest.Ticks > ts.GetValue<long>();
     }
 
     /// <summary>Adds a file or folder (path from the user folder) to the zip. Returns how many files were in use and skipped.</summary>
@@ -301,7 +369,7 @@ public static class Vault
             try { Directory.Delete(AppDir, true); } catch { }
             m.Clear();
         }
-        else foreach (var n in names) { try { File.Delete(Archive(n)); } catch { } m.Remove(n); }
+        else foreach (var n in names) { try { File.Delete(Archive(n)); } catch { } try { File.Delete(Previous(n)); } catch { } m.Remove(n); }
         Save(m);
     }
 
@@ -315,7 +383,7 @@ public static class Vault
         if (full)
         {
             var keep = Conf.KeepDir;
-            if (Directory.Exists(keep)) foreach (var c in Directory.EnumerateFileSystemEntries(keep)) CleanEngine.Delete(c);
+            Home.UseKeep(() => { if (Directory.Exists(keep)) foreach (var c in Directory.EnumerateFileSystemEntries(keep)) CleanEngine.Delete(c); });
         }
         try { File.AppendAllText(Path.Combine(Home.Dir, "doomsday.log"), $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} doomsday ({reason}){(full ? " + Keep" : "")}{Environment.NewLine}"); } catch { }
         Home.History("doomsday", full ? "keep" : "");
@@ -377,10 +445,11 @@ public static class Vault
     /// which program holds it, closes that app's own helpers, tries again, and in the end swaps it file by file. Files still
     /// in use stay as they were and are counted in LastProblems. One app that fails never stops the others, and the
     /// snapshots in the vault are never touched by a restore.</summary>
-    public static List<string> Restore(string password, IEnumerable<string>? only = null, Action<double, string>? progress = null, CancellationToken cancel = default)
+    public static List<string> Restore(string password, IEnumerable<string>? only = null, Action<double, string>? progress = null, CancellationToken cancel = default, bool previous = false)
     {
         var m = Manifest();
-        var apps = All().Where(a => m.ContainsKey(a.Name) && File.Exists(Archive(a.Name)) && (only == null || only.Contains(a.Name, StringComparer.OrdinalIgnoreCase))).ToList();
+        string Src(string name) => previous && File.Exists(Previous(name)) ? Previous(name) : Archive(name);
+        var apps = All().Where(a => m.ContainsKey(a.Name) && File.Exists(previous ? Previous(a.Name) : Archive(a.Name)) && (only == null || only.Contains(a.Name, StringComparer.OrdinalIgnoreCase))).ToList();
         if (apps.Count == 0) throw new VaultError("no-snapshot");
         using var rsa = Unlock(password);
         var stage = Path.Combine(V, ".stage");
@@ -395,7 +464,7 @@ public static class Vault
                 var a = apps[i];
                 progress?.Invoke(0.9 * i / apps.Count, a.Name);
                 var zipFile = Path.Combine(Tmp, Slug(a.Name) + ".zip");
-                using (var o = File.Create(zipFile)) Crypto.Open(Archive(a.Name), rsa, o, null, cancel);
+                using (var o = File.Create(zipFile)) Crypto.Open(Src(a.Name), rsa, o, null, cancel);
                 ZipFile.ExtractToDirectory(zipFile, Path.Combine(stage, Slug(a.Name)), overwriteFiles: true);
                 File.Delete(zipFile);
             }
@@ -421,7 +490,7 @@ public static class Vault
         finally { CleanEngine.Delete(stage); CleanEngine.Delete(Tmp); }
         progress?.Invoke(1, "");
         if (done.Count == 0) throw new VaultError("restore-failed");
-        Home.History("restore", string.Join(", ", done));
+        Home.History("restore", (previous ? "previous:" : "") + string.Join(", ", done));
         return done;
     }
 

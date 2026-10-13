@@ -11,6 +11,7 @@
 <!-- v0.4: every text comes from app.js (English + Indonesian), the elements only carry a data-t key -->
 <main class="wrap">
   <!-- v0.6: looks like the Mac app: a home screen with tiles, every other page has a back button (no tabs) -->
+  <p class="labbar" id="labBar" hidden data-t="labBar"></p>
   <header class="top" id="homeHead">
     <img src="logo.png" alt="" width="40" height="40">
     <div class="grow0">
@@ -56,15 +57,16 @@
 
 
 
+    <!-- v0.7.1: bento layout: the vault tile is the big one, history and the preview go across -->
     <div class="tiles">
-      <button class="tile" data-go="vault"><i class="ib c-vault"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V8a3 3 0 0 0-6 0z"/></svg></i><span><b>Profile Vault</b><small data-t="tVaultSub"></small></span></button>
+      <button class="tile big" data-go="vault"><i class="ib c-vault"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V8a3 3 0 0 0-6 0z"/></svg></i><span><b>Profile Vault</b><small data-t="tVaultSub"></small></span></button>
       <button class="tile" data-go="review"><i class="ib c-out"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M10 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-8v-2h7V5h-7zM9 7.5 4.5 12 9 16.5V13h7v-2H9z"/></svg></i><span><b data-t="tOut"></b><small data-t="tOutSub"></small></span></button>
       <button class="tile" id="tPause"><i class="ib c-pause"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg></i><span><b id="tPauseT"></b><small id="tPauseS"></small></span></button>
       <button class="tile" data-go="keep"><i class="ib c-keep"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M15 3l6 6-2 1-3 3 .5 5-1.5 1.5-4-4L6 20l-2 0 0-2 4.5-5-4-4L6 7.5l5 .5 3-3z"/></svg></i><span><b>Keep List</b><small data-t="tKeepSub"></small></span></button>
       <button class="tile" data-go="backup"><i class="ib c-backup"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M4 13h16v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zm2.5 3a1 1 0 1 0 0 2 1 1 0 0 0 0-2zM5.2 5.6A1 1 0 0 1 6.1 5h11.8a1 1 0 0 1 .9.6L20 11H4z"/></svg></i><span><b>Backup</b><small data-t="tBackupSub"></small></span></button>
-      <button class="tile" data-go="history"><i class="ib c-gray"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm-1 4v6l5 3 1-1.6-4-2.4V7z"/></svg></i><span><b data-t="histTitle"></b><small data-t="tHistSub"></small></span></button>
+      <button class="tile wide" data-go="history"><i class="ib c-gray"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm-1 4v6l5 3 1-1.6-4-2.4V7z"/></svg></i><span><b data-t="histTitle"></b><small data-t="tHistSub"></small></span></button>
+    <button class="rowlink wide" data-go="preview"><i class="ib c-preview"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 5c5 0 9 4.5 10 7-1 2.5-5 7-10 7S3 14.5 2 12c1-2.5 5-7 10-7zm0 3.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></svg></i><span><b data-t="previewTitle"></b><small data-t="tPrevSub"></small></span><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
-    <button class="rowlink" data-go="preview"><i class="ib c-preview"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 5c5 0 9 4.5 10 7-1 2.5-5 7-10 7S3 14.5 2 12c1-2.5 5-7 10-7zm0 3.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></svg></i><span><b data-t="previewTitle"></b><small data-t="tPrevSub"></small></span><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   </div>
 
   <!-- ================= What gets wiped (v0.6: own page) ================= -->
@@ -80,7 +82,14 @@
       <p class="muted" id="msg" role="status"></p>
       <div id="result" hidden>
         <p class="sum" id="sum"></p>
-        <ul class="list" id="items"></ul>
+        <!-- v0.7.1: search, one folder, biggest first -->
+        <div class="filters">
+          <input class="input" id="fqQ" type="search" data-ph="fqPh" autocomplete="off" spellcheck="false">
+          <select class="input" id="fqFolder"></select>
+          <select class="input" id="fqSort"><option value="name" data-t="fqName"></option><option value="size" data-t="fqSize"></option></select>
+        </div>
+        <p class="muted small" id="fqShown" role="status"></p>
+        <ul class="list sized" id="items"></ul>
         <details>
           <summary data-t="keptTitle"></summary>
           <ul class="list kept" id="kept"></ul>
@@ -187,6 +196,7 @@
           <input class="input" type="password" id="vRestorePw" data-ph="vPwPh" autocomplete="current-password">
           <button class="btn" id="vRestore" data-t="vRestore"></button>
         </div>
+        <label class="check"><input type="checkbox" id="vRestorePrev"> <span data-t="vRestorePrev"></span></label>
         <p id="vRestoreMsg" role="status" class="muted"></p>
       </section>
       <section class="card">
@@ -297,8 +307,12 @@
       <label class="switch"><input type="checkbox" data-set="keepShortcut"><span><b data-t="shortcutTitle"></b><span class="muted" data-t="shortcutText"></span></span></label>
       <label class="switch"><input type="checkbox" data-set="keepPin"><span><b data-t="pinTitle"></b><span class="muted" data-t="pinText"></span></span></label>
       <p class="muted small" data-t="linksNote"></p>
+      <p class="warn small" id="linksOff" data-t="linksOff" hidden></p>
     </section>
+    </div>
 
+    <div class="sgroup" id="gHelp">
+    <h2 class="gtitle" data-t="gHelp"></h2>
     <section class="card">
       <div class="card-head">
         <div>
@@ -307,7 +321,13 @@
         </div>
         <button class="btn ghost" id="upCheck" data-t="upCheck"></button>
       </div>
-      <label class="switch"><input type="checkbox" data-set="updateCheck"><span><b data-t="upAuto"></b><span class="muted" data-t="upAutoText"></span></span></label>
+      <p class="muted small" data-t="upAutoText"></p>
+      <label class="field inline"><span data-t="upAuto"></span>
+        <select class="input" id="upDays">
+          <option value="0" data-t="upOff"></option><option value="7" data-t="upWeek"></option>
+          <option value="14" data-t="up2Weeks"></option><option value="30" data-t="upMonth"></option>
+        </select>
+      </label>
       <div class="row" id="upBox" hidden><button class="btn" id="upInstall" data-t="upInstall"></button></div>
       <div class="progress" id="upProg" hidden><div class="bar"><i></i></div><span></span></div>
     </section>
@@ -320,6 +340,7 @@
         </div>
         <button class="btn ghost" id="collectLog" data-t="logBtn"></button>
       </div>
+      <p class="muted" id="logMsg" role="status"></p>
     </section>
 
     <section class="card">
@@ -336,6 +357,7 @@
     <div class="sgroup" id="advGroup">
     <h2 class="gtitle" data-t="tabAdvanced"></h2>
     <p class="muted small" data-t="advNote"></p>
+    <h3 class="gsub" data-t="gExit"></h3>
     <section class="card">
       <h2 data-t="aIdle"></h2>
       <p class="muted" data-t="aIdleText"></p>
@@ -346,7 +368,6 @@
         </select>
       </label>
     </section>
-
     <section class="card">
       <h2 data-t="aQuick"></h2>
       <p class="muted" data-t="aQuickText"></p>
@@ -370,7 +391,14 @@
       <p class="muted small" id="aUsbState"></p>
       <div class="row"><button class="btn ghost danger" id="aPanicNow" data-t="aPanicNow"></button></div>
     </section>
-
+    <section class="card">
+      <h2 data-t="aDyn"></h2>
+      <label class="switch"><input type="checkbox" id="aDynamic"><span><b data-t="aDynSwitch"></b><span class="muted" data-t="aDynText"></span></span></label>
+      <div class="row"><button class="btn ghost" data-link="bluetooth" data-t="aBluetooth"></button></div>
+    </section>
+    </div>
+    <div class="sgroup" id="gAdvPrivacy">
+    <h3 class="gsub" data-t="gPrivacy"></h3>
     <section class="card">
       <h2 data-t="pvTitle"></h2>
       <p class="muted" data-t="pvText"></p>
@@ -388,67 +416,6 @@
       <p class="muted small" data-t="pvMac"></p>
       <div class="row"><button class="btn ghost small" data-link="wifi" data-t="pvWifi"></button></div>
     </section>
-
-    <section class="card">
-      <h2 data-t="aApps"></h2>
-      <label class="switch"><input type="checkbox" data-set="removeNewApps"><span><b data-t="aAppsSwitch"></b><span class="muted" data-t="aAppsText"></span></span></label>
-      <div id="aAppsBox" hidden>
-        <ul class="list rows" id="aAppsList"></ul>
-        <p class="muted" id="aAppsEmpty" data-t="aAppsEmpty" hidden></p>
-        <div class="row"><button class="btn ghost" id="aKeepAll" data-t="aKeepAll"></button></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2 data-t="loTitle"></h2>
-      <p class="muted" data-t="loText"></p>
-      <div class="row"><button class="btn ghost" id="loScan" data-t="loScan"></button></div>
-      <div id="loBox" hidden>
-        <ul class="list rows" id="loList"></ul>
-        <div class="row"><button class="btn ghost danger" id="loDelete" data-t="loDelete"></button></div>
-      </div>
-      <p class="muted" id="loMsg" role="status"></p>
-    </section>
-
-    <section class="card">
-      <h2 data-t="xlTitle"></h2>
-      <label class="switch"><input type="checkbox" data-set="extraList"><span><b data-t="xlSwitch"></b><span class="muted" data-t="xlText"></span></span></label>
-      <p class="muted small" id="xlState"></p>
-      <div class="row">
-        <button class="btn ghost" id="xlDownload" data-t="xlDownload"></button>
-        <button class="btn ghost small" data-link="winapp2" data-t="xlAbout"></button>
-      </div>
-      <p class="muted" id="xlMsg" role="status"></p>
-    </section>
-
-    <section class="card">
-      <h2 data-t="sbTitle"></h2>
-      <p class="muted" data-t="sbText"></p>
-      <div id="sbReady">
-        <label class="check"><input type="checkbox" id="sbKeep"> <span data-t="sbKeep"></span></label>
-        <label class="check"><input type="checkbox" id="sbNet" checked> <span data-t="sbNet"></span></label>
-        <div class="row"><button class="btn ghost" id="sbOpen" data-t="sbOpen"></button></div>
-      </div>
-      <div id="sbMissing" hidden>
-        <p class="muted small" data-t="sbMissing"></p>
-        <div class="row"><button class="btn ghost small" data-link="features" data-t="sbFeatures"></button></div>
-      </div>
-      <p class="muted" id="sbMsg" role="status"></p>
-    </section>
-
-    <section class="card">
-      <h2 data-t="wfTitle"></h2>
-      <p class="muted" data-t="wfText"></p>
-      <div class="row"><button class="btn ghost" id="wfRun" data-t="wfRun"></button></div>
-      <p class="muted" id="wfMsg" role="status"></p>
-    </section>
-
-    <section class="card">
-      <h2 data-t="aDyn"></h2>
-      <label class="switch"><input type="checkbox" id="aDynamic"><span><b data-t="aDynSwitch"></b><span class="muted" data-t="aDynText"></span></span></label>
-      <div class="row"><button class="btn ghost" data-link="bluetooth" data-t="aBluetooth"></button></div>
-    </section>
-
     <section class="card">
       <h2 data-t="aAdmin"></h2>
       <p class="muted" data-t="aAdminText"></p>
@@ -463,7 +430,22 @@
       <div class="row"><button class="btn ghost" id="adSysClean" data-t="adSysClean"></button></div>
       <p class="muted" id="adMsg" role="status"></p>
     </section>
-
+    <section class="card">
+      <h2 data-t="xlTitle"></h2>
+      <label class="switch"><input type="checkbox" data-set="extraList"><span><b data-t="xlSwitch"></b><span class="muted" data-t="xlText"></span></span></label>
+      <p class="muted small" id="xlState"></p>
+      <div class="row">
+        <button class="btn ghost" id="xlDownload" data-t="xlDownload"></button>
+        <button class="btn ghost small" data-link="winapp2" data-t="xlAbout"></button>
+      </div>
+      <p class="muted" id="xlMsg" role="status"></p>
+    </section>
+    <section class="card">
+      <h2 data-t="wfTitle"></h2>
+      <p class="muted" data-t="wfText"></p>
+      <div class="row"><button class="btn ghost" id="wfRun" data-t="wfRun"></button></div>
+      <p class="muted" id="wfMsg" role="status"></p>
+    </section>
     <section class="card">
       <h2 data-t="avTitle"></h2>
       <p class="muted" data-t="avText"></p>
@@ -472,6 +454,102 @@
         <button class="btn ghost" data-link="security" data-t="openSecurity"></button>
         <button class="btn ghost" data-link="falsePositive" data-t="reportFp"></button>
       </div>
+    </section>
+    </div>
+    <div class="sgroup" id="gAdvApps">
+    <h3 class="gsub" data-t="gApps"></h3>
+    <section class="card">
+      <h2 data-t="aApps"></h2>
+      <label class="switch"><input type="checkbox" data-set="removeNewApps"><span><b data-t="aAppsSwitch"></b><span class="muted" data-t="aAppsText"></span></span></label>
+      <div id="aAppsBox" hidden>
+        <ul class="list rows" id="aAppsList"></ul>
+        <p class="muted" id="aAppsEmpty" data-t="aAppsEmpty" hidden></p>
+        <div class="row"><button class="btn ghost" id="aKeepAll" data-t="aKeepAll"></button></div>
+        <p class="muted" id="aAppsMsg" role="status"></p>
+      </div>
+    </section>
+    <section class="card">
+      <h2 data-t="loTitle"></h2>
+      <p class="muted" data-t="loText"></p>
+      <div class="row"><button class="btn ghost" id="loScan" data-t="loScan"></button></div>
+      <div id="loBox" hidden>
+        <ul class="list rows" id="loList"></ul>
+        <div class="row"><button class="btn ghost danger" id="loDelete" data-t="loDelete"></button></div>
+      </div>
+      <p class="muted" id="loMsg" role="status"></p>
+    </section>
+    <section class="card">
+      <h2 data-t="sbTitle"></h2>
+      <p class="muted" data-t="sbText"></p>
+      <div id="sbReady">
+        <label class="check"><input type="checkbox" id="sbKeep"> <span data-t="sbKeep"></span></label>
+        <label class="check"><input type="checkbox" id="sbNet" checked> <span data-t="sbNet"></span></label>
+        <div class="row"><button class="btn ghost" id="sbOpen" data-t="sbOpen"></button></div>
+      </div>
+      <div id="sbMissing" hidden>
+        <p class="muted small" data-t="sbMissing"></p>
+        <div class="row"><button class="btn ghost small" data-link="features" data-t="sbFeatures"></button></div>
+      </div>
+      <p class="muted" id="sbMsg" role="status"></p>
+    </section>
+    </div>
+    <div class="sgroup" id="gAdvLocks">
+    <h3 class="gsub" data-t="gLocks"></h3>
+    <section class="card" id="cKeepLock">
+      <h2 data-t="klkTitle"></h2>
+      <p class="muted" data-t="klkText"></p>
+      <p class="muted small" data-t="klkHonest"></p>
+      <div id="klkOffBox">
+        <div class="row">
+          <input class="input" type="password" id="klkPw" data-ph="klkPwPh" autocomplete="new-password">
+          <input class="input" type="password" id="klkPw2" data-ph="klkPw2Ph" autocomplete="new-password">
+        </div>
+        <label class="field inline"><span data-t="klkAfter"></span>
+          <select class="input klkMin" id="klkMinNew">
+            <option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option>
+          </select>
+        </label>
+        <div class="row"><button class="btn" id="klkOn" data-t="klkOn"></button></div>
+      </div>
+      <div id="klkOnBox" hidden>
+        <p id="klkState"></p>
+        <label class="field inline"><span data-t="klkAfter"></span>
+          <select class="input klkMin" id="klkMin">
+            <option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option>
+          </select>
+        </label>
+        <div class="row">
+          <button class="btn ghost" id="klkNow" data-t="klkNow"></button>
+          <input class="input" type="password" id="klkOffPw" data-ph="klkPwPh" autocomplete="current-password">
+          <button class="btn ghost" id="klkOff" data-t="klkOff"></button>
+        </div>
+      </div>
+      <p class="muted" id="klkMsg" role="status"></p>
+    </section>
+    <section class="card" id="cLab">
+      <h2 data-t="labTitle"></h2>
+      <p class="muted" data-t="labText"></p>
+      <p class="muted small" data-t="labHonest"></p>
+      <div id="labOffBox">
+        <div class="row">
+          <input class="input" type="password" inputmode="numeric" id="labPin" data-ph="labPinPh" autocomplete="new-password">
+          <input class="input" type="password" inputmode="numeric" id="labPin2" data-ph="labPin2Ph" autocomplete="new-password">
+        </div>
+        <div class="row"><button class="btn" id="labOn" data-t="labOn"></button></div>
+      </div>
+      <div id="labOnBox" hidden>
+        <p id="labState"></p>
+        <div class="row">
+          <input class="input" type="password" inputmode="numeric" id="labPinNow" data-ph="labPinPh" autocomplete="current-password">
+          <button class="btn" id="labUnlock" data-t="labUnlock"></button>
+        </div>
+        <div class="row" id="labOpenBox" hidden>
+          <button class="btn ghost" id="labSave" data-t="labSave"></button>
+          <button class="btn ghost" id="labClose" data-t="labClose"></button>
+          <button class="btn ghost danger" id="labOff" data-t="labOff"></button>
+        </div>
+      </div>
+      <p class="muted" id="labMsg" role="status"></p>
     </section>
     <p class="muted" id="aMsg" role="status"></p>
     </div>
@@ -509,6 +587,16 @@
     <div class="row">
       <button class="btn ghost" id="tourSkip" data-t="tourSkip"></button>
       <button class="btn" id="tourNext"></button>
+    </div>
+  </div>
+</div>
+<!-- v0.7.1: questions asked in the page (the text wraps and scrolls in a small window) -->
+<div class="overlay" id="confirm" hidden>
+  <div class="card ask" role="dialog" aria-modal="true" aria-labelledby="cfText">
+    <p id="cfText"></p>
+    <div class="row">
+      <button class="btn ghost" id="cfNo"></button>
+      <button class="btn" id="cfYes"></button>
     </div>
   </div>
 </div>
