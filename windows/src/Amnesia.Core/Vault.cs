@@ -43,6 +43,17 @@ public static class Vault
         new("Claude Code", new[] { ".claude", ".claude.json" }, null),
         new("GitHub CLI", new[] { "AppData/Roaming/GitHub CLI" }, null),
         new("Git", new[] { ".gitconfig", ".git-credentials" }, null),
+        // v0.8 (like the Mac in v5.22): more chat and work apps
+        new("Session", new[] { "AppData/Roaming/Session" }, "Session"),
+        new("WhatsApp", new[] { "AppData/Local/Packages/5319275A.WhatsAppDesktop_*/LocalState" }, "WhatsApp"),
+        new("Element", new[] { "AppData/Roaming/Element" }, "Element"),
+        new("Obsidian", new[] { "AppData/Roaming/obsidian" }, "Obsidian"),
+        new("Thunderbird", new[] { "AppData/Roaming/Thunderbird" }, "thunderbird"),
+        new("Bitwarden", new[] { "AppData/Roaming/Bitwarden" }, "Bitwarden"),
+        new("Antigravity", new[] { "AppData/Roaming/Antigravity", ".antigravity" }, "Antigravity"),
+        new("Windsurf", new[] { "AppData/Roaming/Windsurf", ".windsurf", ".codeium" }, "Windsurf"),
+        new("Gemini CLI", new[] { ".gemini" }, null),
+        new("OpenCode", new[] { ".local/share/opencode", ".config/opencode" }, null),
     };
 
     // Not worth saving: big, and the app makes them again by itself.
@@ -323,6 +334,9 @@ public static class Vault
         if (!Directory.Exists(AppDir)) return 0;
         foreach (var f in Directory.EnumerateFiles(AppDir, "*.amv.new"))
             try { File.Delete(f); n++; } catch { }
+        // v0.8: a restore that was cut off left unpacked app data here (readable, not locked)
+        foreach (var d in new[] { Path.Combine(V, ".stage"), Tmp })
+            if (Directory.Exists(d) && CleanEngine.Delete(d)) n++;
         return n;
     }
 
@@ -463,10 +477,15 @@ public static class Vault
             {
                 var a = apps[i];
                 progress?.Invoke(0.9 * i / apps.Count, a.Name);
+                // v0.8: the unpacked zip deletes itself when closed, even if Amnesia is stopped half way
                 var zipFile = Path.Combine(Tmp, Slug(a.Name) + ".zip");
-                using (var o = File.Create(zipFile)) Crypto.Open(Src(a.Name), rsa, o, null, cancel);
-                ZipFile.ExtractToDirectory(zipFile, Path.Combine(stage, Slug(a.Name)), overwriteFiles: true);
-                File.Delete(zipFile);
+                using (var o = new FileStream(zipFile, FileMode.Create, FileAccess.ReadWrite, FileShare.Delete, 1 << 16, FileOptions.DeleteOnClose))
+                {
+                    Crypto.Open(Src(a.Name), rsa, o, null, cancel);
+                    o.Position = 0;
+                    using var z = new ZipArchive(o, ZipArchiveMode.Read, leaveOpen: true);
+                    z.ExtractToDirectory(Path.Combine(stage, Slug(a.Name)), overwriteFiles: true);
+                }
             }
             progress?.Invoke(0.92, "");
             if (!Home.Test) QuitApps?.Invoke(apps.Where(a => a.Process != null).Select(a => a.Process!));

@@ -8,7 +8,7 @@ namespace Amnesia;
 static class Guard
 {
     const uint EWX_LOGOFF = 0x0, EWX_SHUTDOWN = 0x1, EWX_FORCE = 0x4, EWX_POWEROFF = 0x8;
-    [DllImport("user32.dll")] static extern bool ExitWindowsEx(uint flags, uint reason);
+    [DllImport("user32.dll", SetLastError = true)] static extern bool ExitWindowsEx(uint flags, uint reason);
     [DllImport("user32.dll")] static extern bool LockWorkStation();
     [DllImport("user32.dll")] static extern bool GetLastInputInfo(ref LASTINPUTINFO info);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
@@ -36,8 +36,13 @@ static class Guard
         AdjustTokenPrivileges(token, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
     }
 
+    [DllImport("wtsapi32.dll", SetLastError = true)] static extern bool WTSLogoffSession(IntPtr server, int session, bool wait);
+
     /// <summary>Panic / USB key / idle: lock now, (snapshot,) clean, sign out by force. shutdown: turn the PC off instead
-    /// (Settings → Advanced → "When the USB key is pulled out").</summary>
+    /// (Settings → Advanced → "When the USB key is pulled out").
+    /// v0.8 (HIGH-WIN-01): a panic always cleans, also while Amnesia is paused for one session (the pause is cancelled).
+    /// Faster: no sizes counted, Explorer's caches go while it is closed, and the sign out is asked again if Windows
+    /// has not ended the session after 8 seconds (signing in during that time took you back into the old session).</summary>
     public static void QuickExit(string why, bool snapshot = false, bool shutdown = false)
     {
         if (Interlocked.Exchange(ref busy, 1) == 1) return;
@@ -46,6 +51,7 @@ static class Guard
         LockWorkStation();
         var t = new Thread(() =>
         {
+            var w = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 // browsers keep their profile open; close them so their files can move
@@ -53,10 +59,23 @@ static class Guard
                     foreach (var p in System.Diagnostics.Process.GetProcessesByName(name)) try { p.Kill(); } catch { }
                 if (snapshot && Vault.Exists && Settings.Get("VAULT_AUTO") != "0")
                     try { Vault.Snapshot(changedOnly: true, budget: TimeSpan.FromSeconds(45)); } catch (Exception e) { AppInfo.Trace($"auto snapshot failed: {e.GetType().Name}"); }
-                if (Settings.Enabled) { Cleaner.Run("logout"); JustCleaned = true; }
+                if (Settings.Enabled)
+                {
+                    if (Settings.Paused) { try { File.Delete(Settings.PauseFile); } catch { } AppInfo.Trace("quick exit cancels the pause"); }
+                    int caches = Cleaner.StopExplorerAndWipeCaches();
+                    var r = Cleaner.Run("logout");
+                    JustCleaned = r.Skipped == null;
+                    AppInfo.Trace($"quick exit clean: {r.Skipped ?? r.Count.ToString()} (+{caches} Explorer caches) in {w.Elapsed.TotalSeconds:0.0} s");
+                }
             }
             catch (Exception e) { AppInfo.Trace($"quick exit clean failed: {e.GetType().Name}"); }
             if (shutdown) { ShutdownPrivilege(); if (ExitWindowsEx(EWX_SHUTDOWN | EWX_POWEROFF | EWX_FORCE, 0)) return; }
+            bool ok = ExitWindowsEx(EWX_LOGOFF | EWX_FORCE, 0);
+            AppInfo.Trace($"sign out asked after {w.Elapsed.TotalSeconds:0.0} s ({(ok ? "ok" : "error " + Marshal.GetLastWin32Error())})");
+            // still here 8 s later: ask once more, the other way
+            Thread.Sleep(8000);
+            AppInfo.Trace("still signed in after 8 s: asking again");
+            try { WTSLogoffSession(IntPtr.Zero, -1 /* this session */, false); } catch { }
             ExitWindowsEx(EWX_LOGOFF | EWX_FORCE, 0);
         }) { IsBackground = false };
         t.Start();

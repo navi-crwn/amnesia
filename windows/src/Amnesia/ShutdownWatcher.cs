@@ -16,6 +16,11 @@
 // and again around the cleanup. Nothing is touched at "may I end the session?": the cleanup only runs in WM_ENDSESSION
 // once Windows says the session really ends (a cancelled sign out wipes nothing). That handler is also the last moment
 // Windows waits for: Amnesia is ended as soon as it returns.
+// v0.8: sign out still sometimes did not clean (only "query end session" in trace.log, then nothing). Now the list of what
+// goes is made in the background right at "may I end the session?" (nothing is touched yet), and a running vault
+// snapshot is stopped, so WM_ENDSESSION only has to move. Every step writes its time to trace.log. After a panic, the
+// sign out that follows does a quick second pass (files apps had open are free then). The USB key waits a moment and
+// looks again before it acts (a USB stick can "disappear" for a second when the laptop wakes up).
 using System.Runtime.InteropServices;
 using Amnesia.Core;
 
@@ -29,6 +34,10 @@ sealed class ShutdownWatcher : Form
     [DllImport("user32.dll")] static extern bool RegisterHotKey(IntPtr hWnd, int id, uint mods, uint key);
     [DllImport("user32.dll")] static extern bool UnregisterHotKey(IntPtr hWnd, int id);
     bool hotkey, usbSeen;
+    DateTime awake = DateTime.MinValue;
+    readonly System.Windows.Forms.Timer usbCheck = new();
+    /// <summary>v0.8: called when Windows asks "may I end the session?" (TrayApp stops the vault snapshot).</summary>
+    public Action? SessionEnding;
 
     public ShutdownWatcher()
     {
@@ -43,6 +52,32 @@ sealed class ShutdownWatcher : Form
         _ = Handle; // the window exists without ever being shown
         ApplyHotkey();
         usbSeen = Guard.UsbKeyPresent();
+        Microsoft.Win32.SystemEvents.PowerModeChanged += (_, e) =>
+        {
+            if (e.Mode == Microsoft.Win32.PowerModes.Resume) awake = DateTime.Now;
+            else if (e.Mode == Microsoft.Win32.PowerModes.Suspend) awake = DateTime.MaxValue; // asleep: never act until it wakes up
+        };
+        usbCheck.Tick += (_, _) => UsbCheck();
+    }
+
+    /// <summary>v0.8 (MED-WIN-03): the USB key looked gone. Acts only if it is still gone a moment later.</summary>
+    void UsbGone()
+    {
+        bool wokeUp = awake == DateTime.MaxValue || DateTime.Now - awake < TimeSpan.FromSeconds(30);
+        usbCheck.Stop();
+        usbCheck.Interval = wokeUp ? 8000 : 1500;
+        usbCheck.Start();
+        AppInfo.Trace($"usb key gone? looking again in {usbCheck.Interval / 1000.0:0.#} s{(wokeUp ? " (just woke up)" : "")}");
+    }
+
+    void UsbCheck()
+    {
+        usbCheck.Stop();
+        if (awake == DateTime.MaxValue) { usbCheck.Interval = 8000; usbCheck.Start(); return; } // still asleep
+        if (Guard.UsbKeyPresent()) { usbSeen = true; AppInfo.Trace("usb key is back: nothing done"); return; }
+        if (!usbSeen || string.IsNullOrEmpty(Settings.Get("USB_KEY"))) return;
+        usbSeen = false;
+        if (Settings.Enabled) Guard.QuickExit("usb key", shutdown: Settings.Get("USB_ACTION") == "shutdown");
     }
 
     protected override bool ShowWithoutActivation => true;
@@ -79,9 +114,13 @@ sealed class ShutdownWatcher : Form
         switch (m.Msg)
         {
             case WM_QUERYENDSESSION:
-                AppInfo.Trace($"query end session (flags {m.LParam.ToInt64():x}, on {Settings.Enabled})");
+                AppInfo.Trace($"query end session (flags {m.LParam.ToInt64():x}, on {Settings.Enabled}, paused {Settings.Paused})");
                 if (Settings.Enabled && (m.LParam.ToInt64() & ENDSESSION_CLOSEAPP) == 0)
+                {
                     Native.ShutdownBlockReasonCreate(Handle, Text2.Cleaning);
+                    try { SessionEnding?.Invoke(); } catch { }
+                    Cleaner.PrepareLogout();
+                }
                 m.Result = 1;
                 return;
             case WM_ENDSESSION when m.WParam == IntPtr.Zero:
@@ -91,7 +130,8 @@ sealed class ShutdownWatcher : Form
             case WM_ENDSESSION:
                 AppInfo.Trace($"end session (flags {m.LParam.ToInt64():x})");
                 if ((m.LParam.ToInt64() & ENDSESSION_CLOSEAPP) != 0) { AppInfo.Trace("closed by an installer, not a sign out: no cleanup"); }
-                else if (Settings.Enabled && !Guard.JustCleaned) SignOutClean(Handle);
+                else if (Settings.Enabled) SignOutClean(Handle); // v0.8: after a panic too (a quick second pass)
+                else Cleaner.CloseSafe("sign out"); // v0.8: the Safe box closes even while Amnesia is off
                 Native.ShutdownBlockReasonDestroy(Handle);
                 m.Result = IntPtr.Zero;
                 return;
@@ -102,10 +142,7 @@ sealed class ShutdownWatcher : Form
                 int ev = m.WParam.ToInt32();
                 if (ev == DBT_DEVICEARRIVAL && !usbSeen) usbSeen = Guard.UsbKeyPresent();
                 else if (ev == DBT_DEVICEREMOVECOMPLETE && usbSeen && !string.IsNullOrEmpty(Settings.Get("USB_KEY")) && !Guard.UsbKeyPresent())
-                {
-                    usbSeen = false;
-                    if (Settings.Enabled) Guard.QuickExit("usb key", shutdown: Settings.Get("USB_ACTION") == "shutdown");
-                }
+                    UsbGone();
                 break;
         }
         base.WndProc(ref m);
@@ -118,6 +155,7 @@ sealed class ShutdownWatcher : Form
     {
         var t = System.Diagnostics.Stopwatch.StartNew();
         Native.ShutdownBlockReasonCreate(hwnd, Text2.Cleaning);
+        if (Guard.JustCleaned) AppInfo.Trace("second pass after a quick exit");
         try { var r = Cleaner.Run("logout", endSession: true); AppInfo.Trace($"logout clean finished in {t.Elapsed.TotalSeconds:0.0} s ({r.Skipped ?? r.Count.ToString()})"); }
         catch (Exception e) { AppInfo.Trace($"logout clean failed after {t.Elapsed.TotalSeconds:0.0} s: {e.GetType().Name}"); }
         // the Keep folder is locked again after the cleanup (it is quick, but the cleanup comes first)
@@ -155,6 +193,18 @@ static class Text2
     public static string KeepLockAsk => Id ? "Masukkan password Keep untuk membukanya." : "Enter the Keep password to open it.";
     public static string LabNoOff => Id ? "Kunci lab sedang aktif, jadi Amnesia selalu nyala. Untuk mematikannya, lepas dulu kunci lab di Pengaturan → Lanjutan." : "The lab lock is on, so Amnesia always stays on. To turn it off, remove the lab lock first in Settings → Advanced.";
     public static string LockKeep => Id ? "Kunci folder Keep sekarang" : "Lock Keep folder now";
+    // v0.8
+    public static string StartupOffTitle => Id ? "Amnesia tidak jalan saat sign in" : "Amnesia doesn't start at sign in";
+    public static string StartupOffText => Id
+        ? "Amnesia dimatikan di Task Manager → Startup apps, jadi tidak ada yang dibersihkan sampai kamu membukanya. Klik untuk menyalakan lagi."
+        : "Amnesia is switched off in Task Manager → Startup apps, so nothing gets cleaned until you open it. Click to switch it back on.";
+    public static string KeepUninstallTitle => Id ? "Buka kunci folder Keep" : "Unlock the Keep folder";
+    public static string KeepUninstallAsk => Id
+        ? "Folder Keep masih terkunci. Masukkan password Keep supaya terbuka setelah Amnesia dihapus. Batal = Keep tetap terkunci."
+        : "Your Keep folder is still locked. Enter the Keep password so it is open after Amnesia is removed. Cancel = Keep stays locked.";
+    public static string KeepStaysLocked(string dir) => Id
+        ? $"Folder Keep tetap terkunci. Untuk membukanya nanti: pasang Amnesia lagi dan buka dengan password Keep, atau ketik ini di Command Prompt (akun kamu sendiri):\n\nicacls \"{dir}\" /remove:d \"%USERNAME%\" /T"
+        : $"Your Keep folder stays locked. To open it later: install Amnesia again and open it with the Keep password, or type this in Command Prompt (your own account):\n\nicacls \"{dir}\" /remove:d \"%USERNAME%\" /T";
     public static string Blocked(int n) => Id
         ? $"{n} item tidak bisa dibersihkan karena diblok Windows Security atau antivirus. Buka Amnesia untuk caranya."
         : $"{n} items could not be cleaned: Windows Security or an antivirus blocked Amnesia. Open Amnesia to see how to fix it.";

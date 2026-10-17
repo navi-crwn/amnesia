@@ -226,3 +226,27 @@ select.input{flex:0 0 auto;padding-right:28px}
 .ask p{white-space:pre-wrap;overflow-wrap:anywhere}
 .ask .row{justify-content:flex-end}
 .sgroup{scroll-margin-top:52px}
+
+/* v0.8: a bit wider column (the window now grows with Windows scaling), app icons, health check, password meter */
+.wrap{max-width:600px}
+.aicon{flex:none;width:24px;height:24px;border-radius:6px;display:grid;place-items:center;background:var(--panel);border:1px solid var(--line)}
+.aicon img{width:20px;height:20px;object-fit:contain}
+.aicon:empty::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--line-2)}
+.aicon.folder:empty::before{width:14px;height:10px;border-radius:2px 2px 3px 3px;background:var(--orange);opacity:.7}
+.chip .aicon{width:18px;height:18px;border:0;background:none;display:inline-grid;vertical-align:-4px;margin-right:6px}
+.chip .aicon img{width:16px;height:16px}
+.chip:has(.aicon)::before{content:none}
+.list.apps{max-height:340px}
+.list.health li,.list.lim li{font-family:var(--sans);font-size:14px;align-items:flex-start}
+.list.health .dot{width:10px;height:10px;margin-top:6px;box-shadow:none}
+.dot.ok{background:var(--green)}.dot.warn{background:var(--orange)}.dot.bad{background:var(--red)}.dot.info{background:var(--line-2)}
+.list.health li.bad{color:var(--red)}
+.list.lim,.list.health{max-height:none}
+.list.lim li::before{content:"·";color:var(--muted)}
+.meter{height:6px;border-radius:99px;background:var(--panel-2);border:1px solid var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:0;transition:width .2s,background .2s}
+.meter[data-s="0"] i{width:10%;background:var(--red)}
+.meter[data-s="1"] i{width:35%;background:var(--red)}
+.meter[data-s="2"] i{width:65%;background:var(--orange)}
+.meter[data-s="3"] i{width:100%;background:var(--green)}
+@media (max-width:480px){.wrap{padding:16px 12px 28px}.card{padding:16px}.row .input{flex-basis:100%}}

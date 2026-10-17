@@ -44,6 +44,14 @@
       </div>
     </section>
 
+    <!-- v0.8: Windows switched Amnesia's start off (Task Manager > Startup apps): it would silently stop working -->
+    <section class="card alert" id="startupCard" hidden>
+      <h2 data-t="suTitle"></h2>
+      <p data-t="suText"></p>
+      <div class="row"><button class="btn" id="suFix" data-t="suFix"></button></div>
+      <p class="muted" id="suMsg" role="status"></p>
+    </section>
+
     <section class="card alert" id="blockedCard" hidden>
       <h2 data-t="blockedTitle"></h2>
       <p id="blockedText"></p>
@@ -65,8 +73,28 @@
       <button class="tile" data-go="keep"><i class="ib c-keep"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M15 3l6 6-2 1-3 3 .5 5-1.5 1.5-4-4L6 20l-2 0 0-2 4.5-5-4-4L6 7.5l5 .5 3-3z"/></svg></i><span><b>Keep List</b><small data-t="tKeepSub"></small></span></button>
       <button class="tile" data-go="backup"><i class="ib c-backup"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M4 13h16v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zm2.5 3a1 1 0 1 0 0 2 1 1 0 0 0 0-2zM5.2 5.6A1 1 0 0 1 6.1 5h11.8a1 1 0 0 1 .9.6L20 11H4z"/></svg></i><span><b>Backup</b><small data-t="tBackupSub"></small></span></button>
       <button class="tile wide" data-go="history"><i class="ib c-gray"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm-1 4v6l5 3 1-1.6-4-2.4V7z"/></svg></i><span><b data-t="histTitle"></b><small data-t="tHistSub"></small></span></button>
+    <button class="rowlink wide" data-go="health"><i class="ib c-keep"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.3-9.4C1.4 8 3.6 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.7 1.2-1.6 2.8-2.7 4.8-2.7 3.6 0 5.8 3.5 4.5 7.1C19.5 16.4 12 21 12 21z"/></svg></i><span><b data-t="healthTitle"></b><small id="healthSub"></small></span><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <button class="rowlink wide" data-go="preview"><i class="ib c-preview"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 5c5 0 9 4.5 10 7-1 2.5-5 7-10 7S3 14.5 2 12c1-2.5 5-7 10-7zm0 3.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></svg></i><span><b data-t="previewTitle"></b><small data-t="tPrevSub"></small></span><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
+  </div>
+
+  <!-- ================= Health check (v0.8) ================= -->
+  <div class="view" id="health" hidden>
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2 data-t="healthTitle"></h2>
+          <p class="muted" data-t="healthText"></p>
+        </div>
+        <button class="btn ghost" id="hlAgain" data-t="hlAgain"></button>
+      </div>
+      <ul class="list rows health" id="hlList"></ul>
+    </section>
+    <section class="card">
+      <h2 data-t="limTitle"></h2>
+      <p class="muted" data-t="limText"></p>
+      <ul class="list rows lim" id="limList"></ul>
+    </section>
   </div>
 
   <!-- ================= What gets wiped (v0.6: own page) ================= -->
@@ -153,6 +181,34 @@
       </div>
       <p class="muted" id="klMsg" role="status"></p>
     </section>
+    <!-- v0.8 Safe box (experimental): a locked part of Keep -->
+    <section class="card">
+      <h2 data-t="sbTitle"></h2>
+      <p class="muted" data-t="sbText"></p>
+      <p id="sbState" role="status" class="muted"></p>
+      <div class="row" id="sbNew" hidden>
+        <input class="input" type="password" id="sbPw" data-ph="sbPwPh" autocomplete="new-password">
+        <button class="btn" id="sbCreate" data-t="sbCreate"></button>
+      </div>
+      <div class="row" id="sbClosed" hidden>
+        <input class="input" type="password" id="sbOpenPw" data-ph="sbPwPh" autocomplete="current-password">
+        <button class="btn" id="sbOpen" data-t="sbOpen"></button>
+      </div>
+      <div class="row" id="sbOpened" hidden>
+        <button class="btn ghost" id="sbShow" data-t="sbShow"></button>
+        <button class="btn" id="sbClose" data-t="sbClose"></button>
+      </div>
+      <div class="progress" id="sbProg" hidden><div class="bar"><i></i></div><span></span></div>
+      <p class="muted" id="sbMsg" role="status"></p>
+    </section>
+    <!-- v0.8: pick an installed app, Amnesia keeps all of its folders -->
+    <section class="card">
+      <h2 data-t="kaTitle"></h2>
+      <p class="muted" data-t="kaText"></p>
+      <input class="input" id="kaQ" type="search" data-ph="kaPh" autocomplete="off" spellcheck="false">
+      <ul class="list rows apps" id="kaList"></ul>
+      <p class="muted" id="kaEmpty" data-t="kaEmpty" hidden></p>
+    </section>
     <section class="card">
       <h2 data-t="klSuggTitle"></h2>
       <p class="muted" data-t="klSuggText"></p>
@@ -167,6 +223,8 @@
       <p class="muted" data-t="vIntro"></p>
       <p class="muted small" data-t="vLimit"></p>
       <label class="field"><span data-t="vPw"></span><input class="input" type="password" id="vPw1" autocomplete="new-password"></label>
+      <div class="meter" id="vMeter" aria-hidden="true"><i></i></div>
+      <p class="muted small" id="vMeterText" role="status"></p>
       <label class="field"><span data-t="vPw2"></span><input class="input" type="password" id="vPw2" autocomplete="new-password"></label>
       <label class="field"><span data-t="vPanic"></span><input class="input" type="password" id="vPanic" autocomplete="off"></label>
       <p class="muted small" data-t="vPanicText"></p>
@@ -186,6 +244,10 @@
         </div>
         <ul class="list rows" id="vApps"></ul>
         <div class="row"><button class="btn ghost" id="vAddFolder" data-t="vAddFolder"></button></div>
+        <div id="vSuggBox" hidden>
+          <p class="muted small" data-t="vSuggText"></p>
+          <div class="chips" id="vSugg"></div>
+        </div>
         <div class="progress" id="vProg" hidden><div class="bar"><i></i></div><span></span><button class="btn ghost small" data-cancel data-t="cancel"></button></div>
         <p class="muted" id="vMsg" role="status"></p>
       </section>
@@ -308,6 +370,16 @@
       <label class="switch"><input type="checkbox" data-set="keepPin"><span><b data-t="pinTitle"></b><span class="muted" data-t="pinText"></span></span></label>
       <p class="muted small" data-t="linksNote"></p>
       <p class="warn small" id="linksOff" data-t="linksOff" hidden></p>
+    </section>
+
+    <!-- v0.8 -->
+    <section class="card">
+      <h2 data-t="protTitle"></h2>
+      <label class="switch"><input type="checkbox" data-set="openAtLogin"><span><b data-t="oalTitle"></b><span class="muted" data-t="oalText"></span></span></label>
+      <label class="switch"><input type="checkbox" data-set="keepVm"><span><b data-t="vmTitle"></b><span class="muted" data-t="vmText"></span></span></label>
+      <label class="switch"><input type="checkbox" data-set="wipeStore"><span><b data-t="wsTitle"></b><span class="muted" data-t="wsText"></span></span></label>
+      <label class="switch"><input type="checkbox" data-set="wipeCreds"><span><b data-t="wcTitle"></b><span class="muted" data-t="wcText"></span></span></label>
+      <p class="muted small" data-t="cloudNote"></p>
     </section>
     </div>
 
@@ -557,6 +629,8 @@
     <section class="card">
       <h2 data-t="unTitle"></h2>
       <p class="muted" data-t="unText"></p>
+      <!-- v0.8: a locked Keep is unlocked with its password first, or it stays locked after uninstall -->
+      <label class="field" id="unPwBox" hidden><span data-t="unPw"></span><input class="input" type="password" id="unPw" autocomplete="current-password"></label>
       <div class="row"><button class="btn ghost danger" id="unApp" data-t="unApp"></button></div>
       <details>
         <summary data-t="unAllTitle"></summary>

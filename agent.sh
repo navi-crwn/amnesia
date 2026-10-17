@@ -23,12 +23,25 @@ app_gone() {
     sleep 2; [ ! -d "$APP" ]            # cek sekali lagi: jangan salah baca saat app sedang dipasang ulang
 }
 
+# v5.22: dulu agent mati diam-diam kalau Amnesia.app dipindah/di-rename. Sekarang kamu diberi tahu.
+notify_gone() {
+    local msg
+    if grep -qx "LANG=id" "$A/settings.conf" 2>/dev/null; then
+        msg="Amnesia.app tidak ditemukan di tempatnya ($APP). Saat logout tidak ada yang dibersihkan dan Amnesia mati. Kembalikan app ke Applications, buka, lalu tekan Aktifkan."
+    else
+        msg="Amnesia.app is not where it was ($APP). Nothing is wiped at logout and Amnesia turns itself off. Move the app back to Applications, open it and press Turn On."
+    fi
+    msg="${msg//\"/}"
+    osascript -e "display notification \"$msg\" with title \"Amnesia\" sound name \"Basso\"" 2>/dev/null
+}
+
 on_exit() {
     # plist sudah dihapus = Amnesia dimatikan dari app, bukan logout -> jangan bersihkan
     trap ':' TERM INT HUP               # sinyal kedua tidak boleh memulai pembersihan dua kali
     [ -f "$PLIST" ] || { trace "stopped (Amnesia turned off)"; exit 0; }
     if app_gone; then
-        trace "stopped (app removed, nothing wiped)"
+        trace "stopped (app removed or moved, nothing wiped)"
+        notify_gone
         rm -f "$PLIST" "$HOME/Library/LaunchAgents/com.amnesia.menubar.plist"
         exit 0
     fi
@@ -74,4 +87,14 @@ else
     fi
 fi
 
-while :; do sleep 3600 & wait $!; done
+# v5.22: tiap 10 menit cek apakah app masih ada. Kalau dipindah/di-rename, kamu diberi tahu SEKALI selagi masih
+# login (notifikasi saat logout sering tidak terlihat), dan dicatat di trace.log.
+WARNED=0
+while :; do
+    sleep 600 & wait $!
+    if [ "$WARNED" = 0 ] && [ -n "$APP" ] && [ ! -d "$APP" ]; then
+        trace "app not found where it was (moved or renamed?)"
+        notify_gone
+        WARNED=1
+    fi
+done

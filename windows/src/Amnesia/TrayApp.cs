@@ -2,6 +2,9 @@
 // so when it is closed Amnesia is just this small icon. At sign in it starts here, without a window.
 // v0.4: also runs the timers for "sign out when idle", automatic backups and the daily update check.
 // v0.7.1: and the automatic vault snapshot: once a minute it looks which vault apps you closed (Core\AutoSnap.cs).
+// v0.8: the snapshot stops when Windows starts to sign out (no half snapshot). A browser that only runs in the background
+// (Edge "startup boost") counts as closed once its windows are gone. Starts at sign in also while Amnesia is off
+// ("Open at login"), and warns when Windows' Startup apps switched Amnesia off.
 using Amnesia.Core;
 
 namespace Amnesia;
@@ -22,6 +25,7 @@ sealed class TrayApp : ApplicationContext
     readonly AutoSnap autoSnap = new(TimeSpan.FromMinutes(3), TimeSpan.FromMinutes(10));
     DateTime nextAutoSnap = DateTime.Now.AddSeconds(30);
     int snapBusy;
+    CancellationTokenSource? snapCancel;
     /// <summary>Page the window should open on (set by the tray menu / notifications, read by the page).</summary>
     public string? PendingView;
 
@@ -71,12 +75,18 @@ sealed class TrayApp : ApplicationContext
 
         if (Setup.RunningInstalled) Setup.Unblock(Setup.InstallDir);
         Watcher.Arm();
+        Watcher.SessionEnding = () => { try { snapCancel?.Cancel(); } catch { } };
+        if (Setup.RunningInstalled) try { Setup.SyncStartup(); } catch (Exception e) { AppInfo.Trace($"startup entry failed: {e.GetType().Name}"); }
         Vault.QuitApps = QuitApps;
         Backup.Upload = Ssh.Upload;
         Home.WithKeep = a => KeepLock.With(a);
         AppInfo.Trace($"started (sign in: {cleanAtLogin}, on: {Settings.Enabled}, uptime {Environment.TickCount64 / 1000} s)");
         // v0.7.1: a snapshot cut off last time (sign out, power cut) left a half written file in the vault
         try { int n = Vault.RemoveUnfinished(); if (n > 0) AppInfo.Trace($"deleted {n} unfinished snapshot file(s) left from last time"); } catch { }
+        // v0.8: and a restore from a backup that was cut off
+        try { int n = Backup.Sweep(); if (n > 0) AppInfo.Trace($"cleaned {n} leftover(s) of a restore from last time"); } catch { }
+        // v0.8: a Safe box left open (power cut, crash) is locked again (the sign in check does it when it runs)
+        if (!(cleanAtLogin && Settings.Enabled)) Task.Run(() => Cleaner.CloseSafe("start"));
         if (cleanAtLogin && Settings.Enabled) Task.Run(() =>
         {
             var t = System.Diagnostics.Stopwatch.StartNew();
@@ -95,6 +105,12 @@ sealed class TrayApp : ApplicationContext
                 Balloon(Text2.RestoreTitle, Text2.RestoreText, ToolTipIcon.Info, "vault");
         });
         else if (Settings.Enabled) KeepLinks.Sync();
+        // v0.8 (MED-WIN-02): Task Manager → Startup apps can switch Amnesia off without a word; then nothing is cleaned
+        if (Settings.Enabled && Setup.StartupDisabled)
+        {
+            AppInfo.Trace("startup is switched off in Task Manager");
+            Balloon(Text2.StartupOffTitle, Text2.StartupOffText, ToolTipIcon.Warning, "home");
+        }
         tick.Tick += (_, _) => Tick();
         tick.Start();
         if (showWindow) Open();
@@ -146,6 +162,7 @@ sealed class TrayApp : ApplicationContext
     {
         if (!Vault.Exists || !Settings.Enabled || Settings.Paused || Settings.Get("VAULT_AUTO") == "0") return;
         if (Interlocked.Exchange(ref snapBusy, 1) == 1) return;
+        var cancel = snapCancel = new CancellationTokenSource();
         Task.Run(() =>
         {
             try
@@ -154,21 +171,33 @@ sealed class TrayApp : ApplicationContext
                 if (due.Count == 0) return;
                 var t = System.Diagnostics.Stopwatch.StartNew();
                 // looked up again right before each app: you may have opened it again in the meantime
-                var saved = Vault.Snapshot(due, changedOnly: true, budget: TimeSpan.FromMinutes(5), running: n => Running()(n));
+                var saved = Vault.Snapshot(due, changedOnly: true, budget: TimeSpan.FromMinutes(5), cancel: cancel.Token, running: n => Running()(n));
                 AppInfo.Trace($"auto snapshot: {saved.Count} of {due.Count} closed app(s) saved in {t.Elapsed.TotalSeconds:0.0} s");
             }
+            catch (OperationCanceledException) { AppInfo.Trace("auto snapshot stopped: signing out (the last finished snapshot stays)"); }
             catch (Exception e) { AppInfo.Trace($"auto snapshot failed: {e.GetType().Name}"); }
-            finally { snapBusy = 0; }
+            finally { snapBusy = 0; snapCancel = null; cancel.Dispose(); }
         });
     }
 
-    /// <summary>Names of the programs running in this Windows session (other users' programs don't count).</summary>
+    // v0.8 (HIGH-WIN-03): these keep running without a window (Edge "startup boost", "continue running background apps")
+    static readonly string[] Browsers = { "msedge", "chrome", "brave", "vivaldi", "opera" };
+
+    /// <summary>Names of the programs running in this Windows session (other users' programs don't count). A browser
+    /// only counts while it has a window.</summary>
     static Func<string, bool> Running()
     {
         var me = System.Diagnostics.Process.GetCurrentProcess().SessionId;
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var p in System.Diagnostics.Process.GetProcesses())
-            try { if (p.SessionId == me) names.Add(p.ProcessName); } catch { } finally { p.Dispose(); }
+            try
+            {
+                if (p.SessionId != me) continue;
+                if (Browsers.Contains(p.ProcessName, StringComparer.OrdinalIgnoreCase) && p.MainWindowHandle == IntPtr.Zero) continue;
+                names.Add(p.ProcessName);
+            }
+            catch { }
+            finally { p.Dispose(); }
         return names.Contains;
     }
 

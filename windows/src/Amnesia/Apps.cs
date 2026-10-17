@@ -135,6 +135,7 @@ static class Apps
     {
         if (!On || !HasBaseline || Core.Home.Test) return;
         var base_ = Baseline();
+        var rules = Cleaner.Rules();
         int n = 0;
         foreach (var a in Current(withStore: mode != "logout").Values.Where(a => a.Auto && !base_.Contains(a.Id)))
         {
@@ -148,15 +149,20 @@ static class Apps
                         {
                             var loc = k?.GetValue("InstallLocation") as string;
                             var home = Core.Home.User;
-                            // files inside your user folder only (the cleanup already moved most of them)
+                            // v0.8: only an app's own folder in AppData that is not on the Keep List and holds nothing kept,
+                            // and it goes to the Amnesia trash for 3 days instead of being deleted (T7: a Keep folder was lost)
                             if (!string.IsNullOrEmpty(loc) && loc.StartsWith(home + "\\", StringComparison.OrdinalIgnoreCase) && Directory.Exists(loc)
                                 && !loc.Contains(@"\Programs\Amnesia", StringComparison.OrdinalIgnoreCase))
-                                CleanEngine.Delete(loc);
+                            {
+                                if (rules.MayRemoveAppFolder(loc.TrimEnd('\\')))
+                                    AppInfo.Trace(CleanEngine.ToTrash(loc.TrimEnd('\\')) ? $"remove new app: {a.Name} folder moved to the trash (3 days)" : $"remove new app: {a.Name} folder could not be moved, left alone");
+                                else AppInfo.Trace($"remove new app: {a.Name} folder left alone (kept or shared)");
+                            }
                         }
                         Registry.CurrentUser.DeleteSubKeyTree($@"{Uninstall}\{id}", false);
                         break;
                     case "start":
-                        CleanEngine.Delete(Path.Combine(StartMenu, id));
+                        CleanEngine.ToTrash(Path.Combine(StartMenu, id));
                         break;
                     case "run":
                         using (var r = Registry.CurrentUser.OpenSubKey(RunKey, writable: true)) r?.DeleteValue(id, false);

@@ -5,6 +5,7 @@
 #
 #   clean.sh logout|login|now [--dry-run]
 #   --dry-run  : hanya tampilkan apa yang AKAN dihapus, tidak menghapus apa pun
+#   clean.sh --skips : (v5.22) hanya tampilkan folder yang dilewati (symlink, iCloud Desktop & Dokumen), cepat
 #
 # Yang dilindungi: folder Keep (KEEP_DIR di settings.conf, default ~/Keep), ~/.amnesia,
 # isi keep.conf, file sistem Apple.
@@ -24,14 +25,19 @@ case "$KD" in "~/"?*) KD="$H/${KD#\~/}" ;; /?*) ;; *) KD="$H/Keep" ;; esac
 KD="${KD%/}"
 case "$KD" in "$H"|"$H/.amnesia"|"$H/.amnesia/"*|"$H/.Trash"|"$H/.Trash/"*) KD="$H/Keep" ;; esac
 KREL=""; case "$KD" in "$H"/?*) KREL="${KD#"$H"/}" ;; esac      # kosong = di luar home (tidak pernah disentuh)
-MODE="now"; DRY=0
+MODE="now"; DRY=0; SKIPS=0
 for arg in "$@"; do
     case "$arg" in
         --dry-run) DRY=1 ;;
+        --skips) DRY=1; SKIPS=1 ;;
         logout|login|now) MODE="$arg" ;;
     esac
 done
 COUNT=0
+FAIL=0          # v5.22: yang gagal dihapus (tidak dihitung "dibersihkan")
+SLOT=0          # nomor folder di tempat sampah
+LINKSKIP=0
+ICLOUD=""       # v5.22: kenapa iCloud Desktop & Dokumen dianggap aktif (kosong = tidak aktif)
 TRASHROOT="$H/.amnesia-trash"   # v5.14: tempat sampah Amnesia (di disk yang sama, jadi memindah = instan)
 TRASH=""
 TRACE="$A/trace.log"
@@ -47,6 +53,56 @@ limit() {
     kill "$w" 2>/dev/null; wait "$w" 2>/dev/null
     return $rc
 }
+
+# v5.22: apakah salah satu bagian path ini symlink? (mis. ~/Documents -> ~/Keep/Docs atau ke disk eksternal)
+via_link() {
+    local p="" part IFS=/
+    for part in $1; do
+        p="${p:+$p/}$part"
+        [ -L "$H/$p" ] && return 0
+    done
+    return 1
+}
+
+# v5.22: iCloud "Desktop & Documents" aktif? Kalau ya, Desktop dan Documents disinkron ke iCloud: menghapus isinya
+# = menghapus di iCloud dan di semua perangkat Apple kamu. Hanya MEMBACA (folder, atribut, pengaturan Finder).
+# Ragu = dianggap aktif (lebih baik ada file yang tertinggal daripada file di iCloud ikut terhapus).
+icloud_docs() {
+    local cd="$H/Library/Mobile Documents/com~apple~CloudDocs" d v
+    for d in Desktop Documents; do
+        if [ -e "$cd/$d" ] || [ -L "$cd/$d" ]; then ICLOUD="icloud-folder"; return 0; fi
+    done
+    if command -v xattr >/dev/null 2>&1; then
+        for d in Desktop Documents; do
+            [ -d "$H/$d" ] && xattr "$H/$d" 2>/dev/null | grep -q 'com\.apple\.icloud' && { ICLOUD="xattr"; return 0; }
+        done
+    fi
+    if command -v defaults >/dev/null 2>&1 && [ -f "$H/Library/Preferences/com.apple.finder.plist" ]; then
+        for d in FXICloudDriveDesktop FXICloudDriveDocuments; do
+            v="$(defaults read "$H/Library/Preferences/com.apple.finder" "$d" 2>/dev/null)"
+            [ "$v" = 1 ] && { ICLOUD="finder-setting"; return 0; }
+        done
+    fi
+    return 1
+}
+icloud_docs
+
+# ---------- v5.22: hanya daftar folder yang dilewati (untuk app: Cek kesehatan, Yang Akan Dihapus) ----------
+if [ "$SKIPS" = 1 ]; then
+    for d in Desktop Downloads Documents Pictures Movies Music Public .Trash; do
+        [ -L "$H/$d" ] && echo "LEWATI  ~/$d (symlink)"
+    done
+    [ -n "$ICLOUD" ] && { echo "LEWATI  ~/Desktop (icloud)"; echo "LEWATI  ~/Documents (icloud)"; }
+    exit 0
+fi
+
+# ---------- v5.22: Brankas & kunci Keep (keeplock.sh) ----------
+# Brankas (disk terenkripsi di folder Keep) dilepas dulu sebelum pembersihan, dan isi Keep dikunci lagi
+# (kalau Kunci Keep menyala). Juga saat Jeda: keduanya bukan pembersihan.
+if [ "$DRY" = 0 ] && [ -f "$A/keeplock.sh" ] && { [ "$MODE" = logout ] || [ "$MODE" = login ]; }; then
+    limit 30 /bin/bash "$A/keeplock.sh" box-detach >/dev/null 2>&1
+    limit 60 /bin/bash "$A/keeplock.sh" lock >/dev/null 2>&1
+fi
 
 # ---------- Pause 1 sesi ----------
 # Jeda dibuat dari GUI (file pause_once). Logout berikutnya + login berikutnya dilewati,
@@ -91,7 +147,19 @@ KC_KEEP=(
     "TelephonyUtilities" "WiFiAnalytics" "MetadataKeychain" "iCloud"
 )
 # folder Keep (karakter * ? [ ] di namanya dibaca apa adanya, bukan pola)
-[ -n "$KREL" ] && KEEP+=("$(printf '%s' "$KREL" | sed 's/[][*?\\]/\\&/g')")
+# v5.22: pola Keep + bentuk Unicode lainnya (NFC/NFD). APFS menyimpan nama apa adanya, jadi "Café" yang
+# diketik (NFC) dan "Café" dari Finder/backup lama (NFD) beda byte, padahal namanya sama.
+add_keep() {
+    KEEP+=("$1")
+    printf '%s' "$1" | LC_ALL=C grep -q '[^ -~]' || return 0      # hanya huruf ASCII: tidak perlu
+    local v
+    for v in "$(printf '%s' "$1" | iconv -f UTF-8-MAC -t UTF-8 2>/dev/null)" \
+             "$(printf '%s' "$1" | iconv -f UTF-8 -t UTF-8-MAC 2>/dev/null)"; do
+        [ -n "$v" ] && [ "$v" != "$1" ] && KEEP+=("$v")
+    done
+    return 0
+}
+[ -n "$KREL" ] && add_keep "$(printf '%s' "$KREL" | sed 's/[][*?\\]/\\&/g')"
 APP_KEEP=()
 KEEPF="$A/keep.conf"; [ -f "$KEEPF" ] || KEEPF="$A/keep.example.conf"   # keep.conf = milik pribadi (tidak di GitHub)
 if [ -f "$KEEPF" ]; then
@@ -102,7 +170,7 @@ if [ -f "$KEEPF" ]; then
             ""|"#"*) ;;
             keychain:*) KC_KEEP+=("${line#keychain:}") ;;
             app:*) APP_KEEP+=("${line#app:}") ;;          # v5.19: app yang tidak ikut "Hapus app baru"
-            *) KEEP+=("${line#\~/}") ;;
+            *) add_keep "${line#\~/}" ;;
         esac
     done < "$KEEPF"
 fi
@@ -137,21 +205,66 @@ new_trash() {
     touch "$TRASHROOT/.metadata_never_index" 2>/dev/null      # Spotlight tidak mengindeks isinya
 }
 
-remove() {
-    COUNT=$((COUNT + 1))
-    if [ "$DRY" = 1 ]; then echo "HAPUS  ~/$1"; return 0; fi
-    # v5.14: dipindah ke tempat sampah Amnesia (instan, berapa pun ukurannya), lalu dihapus pelan di
-    # background setelah login. Kalau pindah gagal, langsung dihapus seperti dulu.
+# v5.22: pindah ke tempat sampah Amnesia, atau hapus langsung. Hasil 1 = gagal (dicatat, tidak dihitung "dibersihkan").
+# $1 = path lengkap, $2 = bagian untuk trace.log (hanya nama area, mis. "Desktop", tidak pernah nama file)
+trash_or_rm() {
     new_trash
-    mkdir "$TRASH/$COUNT" 2>/dev/null && mv "$H/$1" "$TRASH/$COUNT/" 2>/dev/null && return 0
-    rm -rf "$H/$1" 2>/dev/null
+    SLOT=$((SLOT + 1))
+    mkdir "$TRASH/$SLOT" 2>/dev/null && mv "$1" "$TRASH/$SLOT/" 2>/dev/null && { COUNT=$((COUNT + 1)); return 0; }
+    rm -rf "$1" 2>/dev/null
+    if [ -e "$1" ] || [ -L "$1" ]; then
+        FAIL=$((FAIL + 1))
+        trace "could not delete (in $2)"
+        return 1
+    fi
+    COUNT=$((COUNT + 1))
 }
 
-# isi tempat sampah dihapus di background dengan prioritas rendah, supaya Mac tidak terasa lambat
+remove() {
+    if [ "$DRY" = 1 ]; then COUNT=$((COUNT + 1)); echo "HAPUS  ~/$1"; return 0; fi
+    # v5.14: dipindah ke tempat sampah Amnesia (instan, berapa pun ukurannya), lalu dihapus pelan di
+    # background setelah login. Kalau pindah gagal, langsung dihapus seperti dulu.
+    # v5.22: yang tetap ada (mis. file terkunci) dihitung gagal, bukan "dibersihkan"
+    local area="${1%%/*}"
+    case "$1" in Library/*/*) area="$(printf '%s' "$1" | cut -d/ -f1-2)" ;; */*) ;; *) area="home folder" ;; esac
+    trash_or_rm "$H/$1" "$area"
+}
+
+# v5.22: hapus isi tempat sampah. Yang gagal dicatat di trace.log (jumlahnya saja) dan di trash.failed (untuk app),
+# lalu dicoba lagi di pembersihan berikutnya (sisanya tetap di ~/.amnesia-trash).
+# purge_now <tempat sampah> <trace.log> <file status> <mode>
+purge_now() {
+    local root="$1" left
+    rm -rf "$root" 2>/dev/null
+    if [ -e "$root" ] && command -v chflags >/dev/null 2>&1; then
+        # file yang dikunci (Get Info → Locked) di dalam folder yang sudah dipindah: buka kuncinya, lalu coba lagi
+        chflags -R nouchg "$root" 2>/dev/null
+        rm -rf "$root" 2>/dev/null
+    fi
+    left=0
+    # hanya file yang dihitung (folder yang tertinggal karena isinya tidak bisa dihapus tidak dihitung lagi)
+    if [ -e "$root" ]; then
+        left="$(find "$root" -mindepth 1 ! -type d 2>/dev/null | wc -l | tr -d ' ')"
+        [ "${left:-0}" -gt 0 ] || left=1
+    fi
+    if [ "${left:-0}" -gt 0 ]; then
+        echo "$(date '+%F %T') clean $4: trash: $left items could not be deleted (tried again next time)" >> "$2" 2>/dev/null
+        echo "$left" > "$3" 2>/dev/null
+    else
+        rm -rf "$root" 2>/dev/null
+        echo "$(date '+%F %T') clean $4: trash emptied" >> "$2" 2>/dev/null
+        rm -f "$3"
+    fi
+}
+
+# isi tempat sampah dihapus di background dengan prioritas rendah, supaya Mac tidak terasa lambat.
+# v5.22: dulu "nohup rm" tanpa catatan (kegagalan tidak terlihat). Sekarang hasilnya selalu dicatat.
 purge_trash() {
     [ -d "$TRASHROOT" ] || return 0
-    if [ -n "${AMNESIA_HOME:-}" ]; then rm -rf "$TRASHROOT"; return 0; fi    # mode tes: langsung
-    nohup /usr/bin/nice -n 20 /usr/sbin/taskpolicy -b /bin/rm -rf "$TRASHROOT" >/dev/null 2>&1 &
+    if [ -n "${AMNESIA_HOME:-}" ]; then purge_now "$TRASHROOT" "$TRACE" "$A/trash.failed" "$MODE"; return 0; fi   # mode tes: langsung
+    export -f purge_now
+    nohup /usr/bin/nice -n 20 /usr/sbin/taskpolicy -b /bin/bash -c 'purge_now "$@"' purge \
+        "$TRASHROOT" "$TRACE" "$A/trash.failed" "$MODE" >/dev/null 2>&1 &
 }
 
 # hapus satu path, menghormati keep list
@@ -170,6 +283,13 @@ wipe() {
 wipe_inside() {
     local c
     [ -d "$H/$1" ] || return 0
+    # isi folder yang ternyata symlink TIDAK dikosongkan: targetnya bisa folder Keep, disk lain, atau iCloud
+    if via_link "$1"; then
+        [ "$DRY" = 1 ] && echo "LEWATI  ~/$1 (symlink)"
+        trace "skip symlinked folder"
+        LINKSKIP=$((LINKSKIP + 1))
+        return 0
+    fi
     for c in "$H/$1"/*; do wipe "$1/${c##*/}"; done
 }
 
@@ -270,7 +390,13 @@ wipe_inside "Library/Logs"
 
 # ---------- 3. Folder kerja (paling besar, terakhir) ----------
 trace "3 work folders"
+# v5.22: iCloud Desktop & Documents aktif: Desktop dan Documents tidak disentuh sama sekali (isinya ada di iCloud)
+if [ -n "$ICLOUD" ]; then
+    trace "iCloud Desktop & Documents on ($ICLOUD): Desktop and Documents skipped"
+    [ "$DRY" = 1 ] && { echo "LEWATI  ~/Desktop (icloud)"; echo "LEWATI  ~/Documents (icloud)"; }
+fi
 for d in Desktop Downloads Documents Pictures Movies Music Public .Trash; do
+    [ -n "$ICLOUD" ] && { [ "$d" = Desktop ] || [ "$d" = Documents ]; } && continue
     wipe_inside "$d"
 done
 
@@ -296,11 +422,8 @@ remove_new_apps() {
             ok=0; for k in "${APP_KEEP[@]+"${APP_KEEP[@]}"}"; do [ "$k" = "$app" ] && ok=1; done
             [ "$ok" = 1 ] && continue
             if [ ! -O "$app" ]; then APPS_SKIPPED=$((APPS_SKIPPED + 1)); continue; fi   # milik admin/sistem
-            COUNT=$((COUNT + 1))
-            if [ "$DRY" = 1 ]; then echo "APP  $app"; continue; fi
-            new_trash
-            mkdir "$TRASH/$COUNT" 2>/dev/null && mv "$app" "$TRASH/$COUNT/" 2>/dev/null && continue
-            rm -rf "$app" 2>/dev/null
+            if [ "$DRY" = 1 ]; then COUNT=$((COUNT + 1)); echo "APP  $app"; continue; fi
+            trash_or_rm "$app" "Applications"
         done
         IFS=:
     done
@@ -336,14 +459,16 @@ fi
 
 rm -f "$A/report.txt"     # laporan "yang akan dihapus" berisi nama file: ikut dibuang
 # Log hanya waktu + jumlah, tanpa nama file (log juga jejak)
-echo "$(date '+%F %T') $MODE: $(t "$COUNT items wiped" "$COUNT item dibersihkan")" > "$A/clean.log"
+# v5.22: yang gagal dihapus ikut disebut (jumlahnya saja)
+FAILTXT=""; [ "$FAIL" -gt 0 ] && FAILTXT="$(t "; $FAIL could not be deleted" "; $FAIL gagal dihapus")"
+echo "$(date '+%F %T') $MODE: $(t "$COUNT items wiped" "$COUNT item dibersihkan")$FAILTXT" > "$A/clean.log"
 # v5.19: ukuran yang dibersihkan (KB) ikut dicatat di Riwayat. du dibatasi waktunya: logout tidak boleh tertahan.
 KB=0
 if [ -n "$TRASH" ] && [ -d "$TRASH" ]; then
     KB="$(limit 10 du -sk "$TRASH" 2>/dev/null | cut -f1)"; KB="${KB:-0}"
 fi
-printf '%s\tclean\t%s %s %s\n' "$(date '+%F %T')" "$MODE" "$COUNT" "$KB" >> "$A/history.log"   # halaman Riwayat
+printf '%s\tclean\t%s %s %s %s\n' "$(date '+%F %T')" "$MODE" "$COUNT" "$KB" "$FAIL" >> "$A/history.log"   # halaman Riwayat (v5.22: + gagal)
 [ "$APPS_SKIPPED" -gt 0 ] && printf '%s\tappskip\t%s\n' "$(date '+%F %T')" "$APPS_SKIPPED" >> "$A/history.log"
 [ "$MODE" = logout ] && touch "$A/clean.done"      # login berikutnya cukup cek ringan
 [ "$MODE" = logout ] || purge_trash               # saat logout waktunya terbatas: hapus nanti saja
-trace "done ($COUNT)"
+trace "done ($COUNT, failed $FAIL)"

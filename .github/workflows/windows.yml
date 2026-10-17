@@ -118,4 +118,4 @@ jobs:
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${GITHUB_REF_NAME}" dist/* --latest=false --repo "${GITHUB_REPOSITORY}" --title "Amnesia for Windows ${GITHUB_REF_NAME#win-v}" --notes "Windows preview. Test it in a VM first. Check your download against SHA256SUMS.txt."
+        run: gh release create "${GITHUB_REF_NAME}" dist/* --latest=false --repo "${GITHUB_REPOSITORY}" --title "Amnesia for Windows ${GITHUB_REF_NAME#win-v}" --notes "Amnesia for Windows. Check your download against SHA256SUMS.txt. The developer adds SHA256SUMS.txt.sig (signature for the in-app updater) shortly after this release appears. Amnesia has no paid code signing certificate, so SmartScreen may warn."

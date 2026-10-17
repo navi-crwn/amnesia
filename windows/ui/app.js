@@ -56,17 +56,62 @@
     encPaused: 'BitLocker is paused. Turn it back on in Control Panel → BitLocker.',
     encUnknown: 'Amnesia could not read the encryption state. Check it yourself: Settings → Privacy & security → Device encryption, or Control Panel → BitLocker. (Often in a VM.)',
     histTitle: 'History', histEmpty: 'Nothing yet. After the first sign out with Amnesia on, it shows up here.',
-    hClean: function (d) { var p = d.split(' '); return (p[0] === 'login' ? 'Sign in check' : p[0] === 'logout' ? 'Sign out' : 'Cleanup') + ': ' + (p[1] || 0) + ' items' + (p[2] ? ', ' + size(+p[2]) : ''); },
+    hClean: function (d) { var p = d.split(' '); return (p[0] === 'login' ? 'Sign in check' : p[0] === 'logout' ? 'Sign out' : 'Cleanup') + ': ' + (p[1] || 0) + ' items' + (+p[2] > 0 ? ', ' + size(+p[2]) : ''); },
     hPaused: function (d) { return 'Skipped (paused): ' + (d === 'login' ? 'sign in' : 'sign out'); },
     hSnapshot: function (d) { return (d.indexOf('auto:') === 0 ? 'Automatic snapshot: ' + d.slice(5) : 'Snapshot: ' + d); },
     hRestore: function (d) { return d === 'backup' ? 'Restored from a backup' : 'Restored: ' + d; },
-    hBackup: function (d) { return 'Backup (' + (d === 'ssh' ? 'server' : 'folder') + ')'; },
+    hBackup: function (d) { var p = d.split(' '); return 'Backup (' + (p[0] === 'ssh' ? 'server' : 'folder') + ')' + (p[1] ? ', ' + p[1] + ' file(s) in use left out' : ''); },
     hDoom: function (d) { return 'Doomsday: vault deleted' + (d === 'keep' ? ' + Keep emptied' : ''); },
     hQuick: function (d) { return 'Quick sign out (' + d + ')'; },
     hApps: function (d) { var p = d.split(' '); return 'Removed ' + p[1] + ' new app item(s)'; },
     hLeft: function (d) { return d + ' leftover(s) deleted'; }, hSys: function () { return 'Windows traces cleaned (admin)'; }, hWipe: function (d) { return 'Free space wipe started on ' + d; },
     hBlocked: function (d) { return d + ' items blocked by Windows Security / antivirus'; },
     hVault: function () { return 'Vault created'; },
+    // v0.8
+    hPause: function () { return 'Paused for one session'; }, hResume: function () { return 'Pause cancelled'; },
+    suTitle: 'Amnesia will not start with Windows', suText: 'Its startup entry is switched off (Task Manager > Startup apps). Then nothing is wiped at the next sign in and the tray icon is gone. Switch it back on here.', suFix: 'Switch it back on',
+    healthTitle: 'Health check', healthText: 'Can Amnesia do its job right now? Yellow and red lines tell you what to look at.', hlAgain: 'Check again',
+    hlAllOk: 'All good', hlIssues: function (n) { return n + ' thing' + (n === 1 ? '' : 's') + ' to look at'; },
+    hl: {
+      on: { ok: 'Amnesia is on.', warn: 'Paused: the next sign in is skipped.', bad: 'Amnesia is off: nothing is wiped.' },
+      startup: { ok: 'Starts with Windows.', bad: 'Startup is switched off in Windows. Press "Switch it back on" on the home page.', info: 'Not installed yet (turn it on first).' },
+      lastClean: { ok: function (d) { return 'Last cleanup: ' + d + '.'; }, warn: 'No cleanup has run yet. Sign out once to test it.', info: 'No cleanup yet.' },
+      trash: { ok: 'No files left behind.', warn: function (d) { return d + ' batch(es) of files Windows held open are still waiting. The next sign in tries again.'; } },
+      blocked: { ok: 'Windows Security did not block anything.', warn: 'Windows Security or an antivirus blocked items in the last cleanup. See the home page card.' },
+      cloud: { info: function (d) { return d ? 'Cloud folders left as they are (so the cloud keeps your files): ' + d + '.' : 'No cloud sync folders found (OneDrive, Dropbox, Google Drive... stay untouched when they are there).'; } },
+      vm: { ok: 'Virtual machines and big disc images stay.', warn: 'Virtual machines are wiped like other files (Settings > Protection).' },
+      keepLock: { ok: 'Keep is locked with a password.', info: 'Keep is not locked (optional, Settings > Locks).' },
+      vault: { ok: function (d) { return 'Newest vault snapshot: ' + d + '.'; }, warn: 'The vault has no snapshot yet.', info: 'No vault (optional).' },
+      backup: { ok: function (d) { return 'Last backup: ' + d + '.'; }, warn: 'No recent backup. If this PC breaks, Keep and the vault are gone too.', info: 'No backup set up (optional).' },
+      hotkey: { ok: function (d) { return 'Panic hotkey: ' + d + '.'; }, info: 'No panic hotkey (optional, Settings).' },
+      updates: { ok: 'Updates are checked with the developer\'s signature.', info: 'This copy has no update key: updates open the release page instead of installing by themselves.' }
+    },
+    limTitle: 'What Amnesia can\'t do', limText: 'Honest limits, so you know where you still need care.',
+    lim: [
+      'Windows keeps a few traces outside your user folder (Program Files, ProgramData, event logs, the list of programs you ran). Settings > Windows traces (admin) cleans part of it.',
+      'A wipe moves files away and deletes them, it does not overwrite the disk. Without BitLocker or device encryption, tools can bring deleted files back. Turn device encryption on.',
+      'Saved passwords in Credential Manager stay unless you switch on "Also wipe saved app passwords". Your Microsoft account, OneDrive and Office sign in always stay.',
+      'Microsoft Store apps keep their data in Packages. It stays unless you switch on "Also wipe Store app data".',
+      'Files Windows holds open at sign out are wiped at the next sign in instead.',
+      'Explorer\'s thumbnail cache is cleaned at sign out and quick exit, not while you are signed in (that made the Desktop flicker).',
+      'The vault and backups are as strong as your password. Doomsday deletes the vault on this PC, not a copy someone made before.',
+      'Browser logins in a snapshot are locked to this Windows user. On a new PC you may have to sign in again.',
+      'Amnesia has no paid code signing certificate, so SmartScreen can warn. Compare the SHA256 sums on the release page.'
+    ],
+    kaTitle: 'Keep an app', kaText: 'Pick an installed app: Amnesia keeps all the folders it saves its data in (logins, settings).', kaPh: 'Search apps', kaEmpty: 'No installed apps with their own data folders found.', kaKeep: 'Keep', kaKept: 'Kept', kaStore: 'Store app',
+    protTitle: 'Protection', oalTitle: 'Open at login', oalText: 'Shows the tray icon after you sign in, also while Amnesia is off.',
+    vmTitle: 'Keep virtual machines', vmText: 'VirtualBox, Hyper-V, VMware, WSL and Android emulator disks, plus disc images over 1 GB, stay where they are.',
+    wsTitle: 'Also wipe Store app data', wsText: 'Off: Microsoft Store apps keep their data. On: their own data goes too (not Windows\' own apps, not ones on your Keep List).',
+    wcTitle: 'Also wipe saved app passwords', wcText: 'Removes passwords apps saved in Credential Manager (git, some chat apps). Never your Microsoft account, OneDrive or Office.',
+    cloudNote: 'Cloud folders (OneDrive, Dropbox, Google Drive, iCloud...) are never wiped: moving them would delete your files in the cloud too.',
+    unPw: 'Keep password (Keep is locked)',
+    sbTitle: 'Safe box (experimental)', sbText: 'A locked folder inside Keep for your most private files. Closed, it is one locked file; open, it is Keep\\Safe. Amnesia closes it again at every sign out. Keep it small: closing packs everything again.',
+    sbPwPh: 'Safe box password (at least 12 characters)', sbCreate: 'Create safe box', sbOpen: 'Open', sbShow: 'Show in Explorer', sbClose: 'Close and lock',
+    sbNone: 'No safe box yet.', sbIsOpen: function (d) { return 'Open in ' + d + '. Closes by itself at sign out.'; }, sbIsClosed: function (n) { return 'Closed and locked (' + n + ').'; },
+    sbOpened: function (n) { return n + ' file(s) unpacked.'; }, sbClosedNow: function (n) { return 'Locked again (' + n + ' file(s)).'; },
+    vSuggText: 'Found on this PC, not in the vault yet. Click one to add its folder:',
+    meter: ['Too short', 'Weak: a fast computer guesses this', 'OK, longer is better', 'Strong'],
+    bSkipped: function (n) { return n + ' file(s) were in use and are not in this backup. Close the apps and back up again to get them.'; },
     reviewTitle: 'Review before you sign out', reviewText: 'This is what goes when you sign out now. Want to keep something? Add it to the Keep List first.',
     revApps: 'Programs that will be removed', signOutNow: 'Sign out now', keepFirst: 'Keep something first', cancel: 'Cancel',
     keepTitle: 'Keep folder', keepText: 'Files in here are never wiped. Everything else in your user folder goes at sign out.', openKeep: 'Open Keep',
@@ -86,7 +131,7 @@
     vRestoreIssue: function (name, v) { return v === 'failed' ? name + ' could not be put back (its snapshot is still in the vault).' : name + ': ' + v.split(':')[1] + ' file(s) were in use and stayed as they were.'; },
     vOptions: 'Vault options', vAuto: 'Automatic snapshot', vAutoText: 'An app that changed is saved automatically after you close it, in the background (never while it runs). Sign out only cleans up, so it is quick.',
     vRemind: 'Remind me after sign in', vRemindText: 'A notification after each sign in: click it to restore.',
-    vDoom: 'Doomsday after 3 wrong passwords', vDoomText: 'Three wrong passwords in a row delete the vault for good. Off = no limit.',
+    vDoom: 'Doomsday after 3 wrong passwords', vDoomText: 'Three wrong passwords in a row delete the vault on this PC for good. Off = no limit. It can\'t stop someone who copied the vault file before, so a long password is what really protects it.',
     vChangePw: 'Change password', vOldPh: 'Current password', vNewPh: 'New password (12+ characters)', vChangePanic: 'Change panic word', vPanicPh: 'New panic word (empty = none)',
     save: 'Save', saved: 'Saved.', working: 'Working...', done: 'Done.',
     vSaved: function (t) { return 'Saved ' + t; },
@@ -202,7 +247,8 @@
       'checksum': 'The download did not match its checksum and was deleted. Try again later.', 'busy': 'Another job is still running.', 'cancelled': 'Stopped.',
       'destination-missing': 'The backup folder is not there (USB drive unplugged?).', 'no-destination': 'Choose where backups go first.',
       'no-file': 'Choose a backup file first.', 'not-a-backup': 'That is not an Amnesia backup.', 'no-release': 'No Windows release on GitHub yet.',
-      'offline': 'Could not reach GitHub. Check the internet connection.', 'list-bad': 'The downloaded list did not look right and was not used.', 'sandbox-missing': 'Windows Sandbox is not switched on.'
+      'offline': 'Could not reach GitHub. Check the internet connection.', 'list-bad': 'The downloaded list did not look right and was not used.', 'sandbox-missing': 'Windows Sandbox is not switched on.', 'no-safe': 'Create the safe box first.', 'safe-exists': 'There already is a safe box.',
+      'keeplock-uninstall': 'Keep is locked. Type the Keep password above first: Amnesia unlocks Keep before it is removed.', 'pause-not-saved': 'The pause could not be saved. Try again.', 'backup-in-keep': 'Not inside Keep: every backup would then hold all the older ones. Pick a USB drive, another drive or a cloud folder.', 'keep-not-saved': 'That line did not get saved in the Keep List. Try again, or add the folder with Choose folder.', 'unsigned': 'This release has no developer signature, so it is not installed from the app. Open the release page instead.', 'bad-signature': 'The release signature does not match. Nothing was installed. Tell the developer (GitHub issue).'
     },
     wrong: function (left) { return left < 0 ? 'Wrong password.' : left === 1 ? 'Wrong password. LAST TRY: one more wrong password DELETES the vault for good. Stop and check your password notes first.' : 'Wrong password. Tries left: ' + left; }
   };
@@ -241,17 +287,62 @@
     encPaused: 'BitLocker sedang dijeda. Nyalakan lagi di Control Panel → BitLocker.',
     encUnknown: 'Amnesia tidak bisa membaca status enkripsi. Cek sendiri: Settings → Privacy & security → Device encryption, atau Control Panel → BitLocker. (Sering terjadi di VM.)',
     histTitle: 'Riwayat', histEmpty: 'Belum ada. Setelah sign out pertama dengan Amnesia menyala, riwayatnya muncul di sini.',
-    hClean: function (d) { var p = d.split(' '); return (p[0] === 'login' ? 'Cek saat login' : p[0] === 'logout' ? 'Sign out' : 'Pembersihan') + ': ' + (p[1] || 0) + ' item' + (p[2] ? ', ' + size(+p[2]) : ''); },
+    hClean: function (d) { var p = d.split(' '); return (p[0] === 'login' ? 'Cek saat login' : p[0] === 'logout' ? 'Sign out' : 'Pembersihan') + ': ' + (p[1] || 0) + ' item' + (+p[2] > 0 ? ', ' + size(+p[2]) : ''); },
     hPaused: function (d) { return 'Dilewati (jeda): ' + (d === 'login' ? 'login' : 'sign out'); },
     hSnapshot: function (d) { return (d.indexOf('auto:') === 0 ? 'Snapshot otomatis: ' + d.slice(5) : 'Snapshot: ' + d); },
     hRestore: function (d) { return d === 'backup' ? 'Dipulihkan dari backup' : 'Dipulihkan: ' + d; },
-    hBackup: function (d) { return 'Backup (' + (d === 'ssh' ? 'server' : 'folder') + ')'; },
+    hBackup: function (d) { var p = d.split(' '); return 'Backup (' + (p[0] === 'ssh' ? 'server' : 'folder') + ')' + (p[1] ? ', ' + p[1] + ' file sedang dipakai tidak ikut' : ''); },
     hDoom: function (d) { return 'Doomsday: vault dihapus' + (d === 'keep' ? ' + Keep dikosongkan' : ''); },
     hQuick: function (d) { return 'Sign out cepat (' + d + ')'; },
     hApps: function (d) { var p = d.split(' '); return p[1] + ' app baru dihapus'; },
     hLeft: function (d) { return d + ' sisa app dihapus'; }, hSys: function () { return 'Jejak Windows dibersihkan (admin)'; }, hWipe: function (d) { return 'Hapus ruang kosong dimulai di ' + d; },
     hBlocked: function (d) { return d + ' item diblok Windows Security / antivirus'; },
     hVault: function () { return 'Vault dibuat'; },
+    // v0.8
+    hPause: function () { return 'Dijeda untuk satu sesi'; }, hResume: function () { return 'Jeda dibatalkan'; },
+    suTitle: 'Amnesia tidak ikut menyala bersama Windows', suText: 'Startup-nya dimatikan (Task Manager > Startup apps). Akibatnya tidak ada yang dihapus saat login berikutnya dan ikon tray hilang. Nyalakan lagi di sini.', suFix: 'Nyalakan lagi',
+    healthTitle: 'Cek kesehatan', healthText: 'Apakah Amnesia bisa bekerja sekarang? Baris kuning dan merah menunjukkan yang perlu dicek.', hlAgain: 'Cek lagi',
+    hlAllOk: 'Semua aman', hlIssues: function (n) { return n + ' hal perlu dicek'; },
+    hl: {
+      on: { ok: 'Amnesia menyala.', warn: 'Dijeda: login berikutnya dilewati.', bad: 'Amnesia mati: tidak ada yang dihapus.' },
+      startup: { ok: 'Ikut menyala bersama Windows.', bad: 'Startup dimatikan di Windows. Tekan "Nyalakan lagi" di halaman utama.', info: 'Belum terpasang (nyalakan dulu).' },
+      lastClean: { ok: function (d) { return 'Pembersihan terakhir: ' + d + '.'; }, warn: 'Belum pernah ada pembersihan. Coba sign out sekali.', info: 'Belum ada pembersihan.' },
+      trash: { ok: 'Tidak ada file yang tertinggal.', warn: function (d) { return d + ' kelompok file yang sempat dipakai Windows masih menunggu. Login berikutnya mencoba lagi.'; } },
+      blocked: { ok: 'Windows Security tidak memblok apa pun.', warn: 'Windows Security atau antivirus memblok item di pembersihan terakhir. Lihat kartu di halaman utama.' },
+      cloud: { info: function (d) { return d ? 'Folder cloud dibiarkan apa adanya (supaya file di cloud tetap aman): ' + d + '.' : 'Tidak ada folder sync cloud (OneDrive, Dropbox, Google Drive... tidak disentuh kalau ada).'; } },
+      vm: { ok: 'Virtual machine dan image disk besar tetap aman.', warn: 'Virtual machine ikut dihapus seperti file lain (Pengaturan > Perlindungan).' },
+      keepLock: { ok: 'Keep dikunci dengan password.', info: 'Keep tidak dikunci (opsional, Pengaturan > Kunci).' },
+      vault: { ok: function (d) { return 'Snapshot vault terbaru: ' + d + '.'; }, warn: 'Vault belum punya snapshot.', info: 'Tidak ada vault (opsional).' },
+      backup: { ok: function (d) { return 'Backup terakhir: ' + d + '.'; }, warn: 'Belum ada backup baru. Kalau PC ini rusak, Keep dan vault ikut hilang.', info: 'Backup belum diatur (opsional).' },
+      hotkey: { ok: function (d) { return 'Tombol panik: ' + d + '.'; }, info: 'Belum ada tombol panik (opsional, Pengaturan).' },
+      updates: { ok: 'Update dicek dengan tanda tangan developer.', info: 'Versi ini belum punya kunci update: update membuka halaman rilis, tidak terpasang sendiri.' }
+    },
+    limTitle: 'Yang tidak bisa dilakukan Amnesia', limText: 'Batasan jujur, supaya kamu tahu bagian mana yang masih perlu hati-hati.',
+    lim: [
+      'Windows menyimpan sedikit jejak di luar folder user (Program Files, ProgramData, event log, daftar program yang pernah dijalankan). Pengaturan > Jejak Windows (admin) membersihkan sebagian.',
+      'Menghapus berarti memindahkan lalu menghapus file, bukan menimpa disk. Tanpa BitLocker atau enkripsi perangkat, file yang dihapus bisa dikembalikan dengan tools. Nyalakan enkripsi perangkat.',
+      'Password tersimpan di Credential Manager tetap ada, kecuali kamu nyalakan "Hapus juga password app". Login akun Microsoft, OneDrive dan Office selalu tetap ada.',
+      'App Microsoft Store menyimpan datanya di Packages. Data itu tetap ada, kecuali kamu nyalakan "Hapus juga data app Store".',
+      'File yang sedang dipakai Windows saat sign out akan dihapus saat login berikutnya.',
+      'Cache thumbnail Explorer dibersihkan saat sign out dan sign out cepat, bukan saat kamu sedang login (dulu bikin Desktop berkedip).',
+      'Vault dan backup sekuat password kamu. Doomsday menghapus vault di PC ini, bukan salinan yang dibuat orang lain sebelumnya.',
+      'Login browser di snapshot terkunci ke user Windows ini. Di PC baru mungkin kamu perlu login lagi.',
+      'Amnesia tidak punya sertifikat code signing berbayar, jadi SmartScreen bisa memberi peringatan. Cocokkan SHA256 di halaman rilis.'
+    ],
+    kaTitle: 'Simpan sebuah app', kaText: 'Pilih app yang terpasang: Amnesia menyimpan semua folder tempat app itu menaruh datanya (login, pengaturan).', kaPh: 'Cari app', kaEmpty: 'Tidak ada app terpasang dengan folder data sendiri.', kaKeep: 'Simpan', kaKept: 'Disimpan', kaStore: 'App Store',
+    protTitle: 'Perlindungan', oalTitle: 'Buka saat login', oalText: 'Menampilkan ikon tray setelah login, juga saat Amnesia mati.',
+    vmTitle: 'Simpan virtual machine', vmText: 'Disk VirtualBox, Hyper-V, VMware, WSL dan emulator Android, juga image disk di atas 1 GB, tetap di tempatnya.',
+    wsTitle: 'Hapus juga data app Store', wsText: 'Mati: app Microsoft Store tetap menyimpan datanya. Nyala: datanya ikut dihapus (bukan app bawaan Windows, bukan yang ada di Keep List).',
+    wcTitle: 'Hapus juga password app', wcText: 'Menghapus password yang disimpan app di Credential Manager (git, beberapa app chat). Tidak pernah akun Microsoft, OneDrive atau Office.',
+    cloudNote: 'Folder cloud (OneDrive, Dropbox, Google Drive, iCloud...) tidak pernah dihapus: memindahkannya akan ikut menghapus file kamu di cloud.',
+    unPw: 'Password Keep (Keep sedang dikunci)',
+    sbTitle: 'Brankas (eksperimen)', sbText: 'Folder terkunci di dalam Keep untuk file paling pribadi. Saat tertutup, isinya cuma satu file terkunci; saat dibuka, ada di Keep\\Safe. Amnesia menutupnya lagi setiap sign out. Isinya jangan terlalu besar: menutup berarti mengemas semuanya lagi.',
+    sbPwPh: 'Password brankas (minimal 12 karakter)', sbCreate: 'Buat brankas', sbOpen: 'Buka', sbShow: 'Tampilkan di Explorer', sbClose: 'Tutup dan kunci',
+    sbNone: 'Belum ada brankas.', sbIsOpen: function (d) { return 'Terbuka di ' + d + '. Tertutup sendiri saat sign out.'; }, sbIsClosed: function (n) { return 'Tertutup dan terkunci (' + n + ').'; },
+    sbOpened: function (n) { return n + ' file dibuka.'; }, sbClosedNow: function (n) { return 'Terkunci lagi (' + n + ' file).'; },
+    vSuggText: 'Ada di PC ini, belum masuk vault. Klik salah satu untuk menambah foldernya:',
+    meter: ['Terlalu pendek', 'Lemah: komputer cepat bisa menebaknya', 'Lumayan, lebih panjang lebih baik', 'Kuat'],
+    bSkipped: function (n) { return n + ' file sedang dipakai dan tidak masuk backup ini. Tutup app-nya lalu backup lagi.'; },
     reviewTitle: 'Cek dulu sebelum sign out', reviewText: 'Ini yang hilang kalau kamu sign out sekarang. Mau simpan sesuatu? Masukkan ke Keep List dulu.',
     revApps: 'Program yang akan dihapus', signOutNow: 'Sign out sekarang', keepFirst: 'Simpan sesuatu dulu', cancel: 'Batal',
     keepTitle: 'Folder Keep', keepText: 'File di sini tidak pernah dihapus. Semua yang lain di folder user kamu hilang saat sign out.', openKeep: 'Buka Keep',
@@ -271,7 +362,7 @@
     vRestoreIssue: function (name, v) { return v === 'failed' ? name + ' tidak bisa dikembalikan (snapshot-nya tetap ada di vault).' : name + ': ' + v.split(':')[1] + ' file sedang dipakai dan dibiarkan seperti semula.'; },
     vOptions: 'Pilihan vault', vAuto: 'Snapshot otomatis', vAutoText: 'App yang berubah disimpan otomatis setelah kamu menutupnya, di latar belakang (tidak pernah saat app masih jalan). Sign out cuma membersihkan, jadi cepat.',
     vRemind: 'Ingatkan setelah login', vRemindText: 'Notifikasi setiap habis login: klik untuk memulihkan.',
-    vDoom: 'Doomsday setelah 3 password salah', vDoomText: 'Tiga password salah berturut-turut menghapus vault selamanya. Mati = tanpa batas.',
+    vDoom: 'Doomsday setelah 3 password salah', vDoomText: 'Tiga password salah berturut-turut menghapus vault di PC ini selamanya. Mati = tanpa batas. Ini tidak bisa menghentikan orang yang sudah menyalin file vault sebelumnya, jadi password yang panjang adalah pelindung utamanya.',
     vChangePw: 'Ganti password', vOldPh: 'Password sekarang', vNewPh: 'Password baru (12+ karakter)', vChangePanic: 'Ganti kata panik', vPanicPh: 'Kata panik baru (kosong = tidak ada)',
     save: 'Simpan', saved: 'Tersimpan.', working: 'Sedang dikerjakan...', done: 'Selesai.',
     vSaved: function (t) { return 'Disimpan ' + t; },
@@ -387,7 +478,8 @@
       'checksum': 'File unduhan tidak cocok dengan checksum-nya dan sudah dihapus. Coba lagi nanti.', 'busy': 'Pekerjaan lain masih berjalan.', 'cancelled': 'Dihentikan.',
       'destination-missing': 'Folder backup tidak ada (flashdisk dicabut?).', 'no-destination': 'Pilih tempat backup dulu.',
       'no-file': 'Pilih file backup dulu.', 'not-a-backup': 'Itu bukan file backup Amnesia.', 'no-release': 'Belum ada rilis Windows di GitHub.',
-      'offline': 'Tidak bisa terhubung ke GitHub. Cek koneksi internet.', 'list-bad': 'Daftar yang diunduh tidak terlihat benar dan tidak dipakai.', 'sandbox-missing': 'Windows Sandbox belum aktif.'
+      'offline': 'Tidak bisa terhubung ke GitHub. Cek koneksi internet.', 'list-bad': 'Daftar yang diunduh tidak terlihat benar dan tidak dipakai.', 'sandbox-missing': 'Windows Sandbox belum aktif.', 'no-safe': 'Buat brankas dulu.', 'safe-exists': 'Brankas sudah ada.',
+      'keeplock-uninstall': 'Keep sedang dikunci. Isi password Keep di atas dulu: Amnesia membuka kunci Keep sebelum dihapus.', 'pause-not-saved': 'Jeda gagal disimpan. Coba lagi.', 'backup-in-keep': 'Jangan di dalam Keep: setiap backup nanti ikut berisi semua backup lama. Pilih flashdisk, drive lain atau folder cloud.', 'keep-not-saved': 'Baris itu tidak tersimpan di Keep List. Coba lagi, atau tambahkan foldernya lewat Pilih folder.', 'unsigned': 'Rilis ini belum punya tanda tangan developer, jadi tidak dipasang dari app. Buka halaman rilis saja.', 'bad-signature': 'Tanda tangan rilis tidak cocok. Tidak ada yang dipasang. Kabari developer (GitHub issue).'
     },
     wrong: function (left) { return left < 0 ? 'Password salah.' : left === 1 ? 'Password salah. PERCOBAAN TERAKHIR: salah sekali lagi = vault DIHAPUS PERMANEN. Berhenti dulu dan cek catatan password kamu.' : 'Password salah. Sisa percobaan: ' + left; }
   };
@@ -449,8 +541,8 @@
 
   // ---------- pages ----------
   // v0.6: like the Mac app: Home has tiles, every other page has a back button. Advanced lives inside Settings.
-  var views = ['home', 'review', 'keep', 'vault', 'backup', 'settings', 'preview', 'history'];
-  var titles = { review: 'tOut', keep: 'tabKeep', vault: 'tabVault', backup: 'tabBackup', settings: 'tabSettings', preview: 'previewTitle', history: 'histTitle' };
+  var views = ['home', 'review', 'keep', 'vault', 'backup', 'settings', 'preview', 'history', 'health'];
+  var titles = { review: 'tOut', keep: 'tabKeep', vault: 'tabVault', backup: 'tabBackup', settings: 'tabSettings', preview: 'previewTitle', history: 'histTitle', health: 'healthTitle' };
   var loaders = {}, current = null;
   function title(name) { $('pageTitle').textContent = L[titles[name]] || ''; }
   function go(name) {
@@ -529,7 +621,35 @@
     $('aAppsBox').hidden = !i.removeNewApps;
     $('blockedCard').hidden = !i.lastBlocked;
     if (i.lastBlocked) $('blockedText').textContent = L.blocked(i.lastBlocked);
+    // v0.8
+    $('startupCard').hidden = !i.startupDisabled;
+    $('unPwBox').hidden = !i.keepLocked;
   }
+  $('suFix').addEventListener('click', function () {
+    ask('enableStartup').then(function (i) { show(i); loadHealth(); }).catch(function (e) { say('suMsg', errText(e), 'bad'); });
+  });
+
+  // ---------- Health check (v0.8) ----------
+  function hlLine(x) {
+    var t = (L.hl[x.id] || {})[x.state];
+    return typeof t === 'function' ? t(x.data || '') : t || x.id;
+  }
+  function loadHealth() {
+    return ask('health').then(function (h) {
+      h = [].concat(h || []);
+      var ul = $('hlList'); ul.textContent = '';
+      h.forEach(function (x) {
+        var li = el('li', 'hl ' + x.state); li.append(el('i', 'dot ' + x.state), el('span', 'grow', hlLine(x))); ul.append(li);
+      });
+      var n = h.filter(function (x) { return x.state === 'warn' || x.state === 'bad'; }).length;
+      $('healthSub').textContent = n ? L.hlIssues(n) : L.hlAllOk;
+      $('healthSub').className = n ? 'warn' : '';
+      var lim = $('limList'); lim.textContent = '';
+      L.lim.forEach(function (t) { lim.append(el('li', '', t)); });
+    }).catch(function () { });
+  }
+  loaders.health = loadHealth;
+  $('hlAgain').addEventListener('click', loadHealth);
 
   // ---------- Home ----------
   function loadHistory() {
@@ -537,7 +657,7 @@
       h = [].concat(h || []);
       $('histEmpty').hidden = h.length > 0;
       $('hist').hidden = h.length === 0;
-      var f = { clean: L.hClean, paused: L.hPaused, snapshot: L.hSnapshot, restore: L.hRestore, backup: L.hBackup, doomsday: L.hDoom, quick: L.hQuick, apps: L.hApps, blocked: L.hBlocked, vault: L.hVault, leftovers: L.hLeft, sysclean: L.hSys, wipe: L.hWipe };
+      var f = { clean: L.hClean, paused: L.hPaused, snapshot: L.hSnapshot, restore: L.hRestore, backup: L.hBackup, doomsday: L.hDoom, quick: L.hQuick, apps: L.hApps, blocked: L.hBlocked, vault: L.hVault, leftovers: L.hLeft, sysclean: L.hSys, wipe: L.hWipe, pause: L.hPause, resume: L.hResume };
       fill($('hist'), h.map(function (x) { return { kind: x.time.slice(5, 16), path: f[x.kind] ? f[x.kind](x.data) : x.kind + ' ' + x.data }; }), 50);
     }).catch(function () { });
   }
@@ -572,7 +692,8 @@
 
   // v0.7.1 "What gets wiped": search (name or path, in both lists), one folder only, biggest first
   var pv = null;
-  function pvGroup(p, kind) {
+  function pvGroup(p, kind, app) {
+    if (app) return app; // v0.8: grouped by the app it belongs to
     if (kind === 'trace' && !/^AppData\\/i.test(p)) return L.fqSys;
     var s = p.split('\\');
     if (s.length === 1) return L.fqTop;
@@ -580,7 +701,7 @@
   }
   function pvFolders() {
     var g = {}, sel = $('fqFolder'), was = sel.value;
-    pv.items.forEach(function (x) { var k = pvGroup(x.path, x.kind); g[k] = g[k] || { n: 0, b: 0 }; g[k].n++; g[k].b += Math.max(0, x.size || 0); });
+    pv.items.forEach(function (x) { var k = pvGroup(x.path, x.kind, x.app); g[k] = g[k] || { n: 0, b: 0 }; g[k].n++; g[k].b += Math.max(0, x.size || 0); });
     sel.textContent = '';
     var all = el('option', '', L.fqAll); all.value = ''; sel.append(all);
     Object.keys(g).sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1; }).forEach(function (k) {
@@ -591,10 +712,10 @@
   function showPv() {
     if (!pv) return;
     var q = $('fqQ').value.trim().toLowerCase(), g = $('fqFolder').value, big = $('fqSort').value === 'size';
-    function ok(p, kind) { return (!q || p.toLowerCase().indexOf(q) >= 0) && (!g || pvGroup(p, kind) === g); }
-    var items = pv.items.filter(function (x) { return ok(x.path, x.kind); });
+    function ok(p, kind, app) { return (!q || p.toLowerCase().indexOf(q) >= 0 || app && app.toLowerCase().indexOf(q) >= 0) && (!g || pvGroup(p, kind, app) === g); }
+    var items = pv.items.filter(function (x) { return ok(x.path, x.kind, x.app); });
     if (big) items = items.slice().sort(function (a, b) { return (b.size || 0) - (a.size || 0); });
-    fill($('items'), items.map(function (x) { return { kind: L[x.kind] || x.kind, path: x.path, size: x.size >= 0 ? size(x.size) : '' }; }), 500);
+    fill($('items'), items.map(function (x) { return { kind: x.app || L[x.kind] || x.kind, path: x.path, size: x.size >= 0 ? size(x.size) : '' }; }), 500);
     var kept = pv.kept.filter(function (p) { return ok(p, 'kept'); });
     fill($('kept'), kept.map(function (p) { return { kind: L.kept, path: p }; }), 500);
     var filtered = q || g;
@@ -612,7 +733,10 @@
     var ul = $('klList'); ul.textContent = '';
     k.paths.forEach(function (p) {
       var li = el('li'), g = el('span', 'grow');
-      g.append(el('span', '', p.path.replace(/\//g, '\\')));
+      // v0.8: the app's icon and name, the path under it
+      li.append(appIcon(p.icon, p.app ? null : 'folder'));
+      if (p.app) { g.append(el('span', '', p.app), el('span', 'meta', p.path.replace(/\//g, '\\'))); }
+      else g.append(el('span', '', p.path.replace(/\//g, '\\')));
       if (!p.exists) g.append(el('span', 'meta', L.klMissing));
       var b = el('button', 'btn ghost small', L.remove);
       b.addEventListener('click', function () { ask('keepRemove', { path: p.path }).then(showKeep); });
@@ -621,14 +745,63 @@
     $('klEmpty').hidden = k.paths.length > 0;
     var box = $('klSugg'); box.textContent = '';
     k.suggestions.forEach(function (s) {
-      var c = el('button', 'chip', s.path.replace(/\//g, '\\'));
-      c.title = s.name;
+      var c = el('button', 'chip', s.name);
+      if (s.icon) c.prepend(appIcon(s.icon));
+      c.title = s.path.replace(/\//g, '\\');
       c.addEventListener('click', function () { ask('keepAdd', { path: s.path }).then(showKeep); });
       box.append(c);
     });
     if (!k.suggestions.length) box.append(el('span', 'muted', L.klNone));
+    kaApps = [].concat(k.apps || []);
+    showApps();
   }
-  loaders.keep = function () { ask('keepList').then(showKeep); };
+  // v0.8 "Keep an app"
+  var kaApps = [];
+  function appIcon(src, kind) {
+    var i = el('span', 'aicon' + (kind ? ' ' + kind : ''));
+    if (src) { var img = el('img'); img.src = src; img.alt = ''; img.width = 20; img.height = 20; i.append(img); }
+    return i;
+  }
+  function showApps() {
+    var q = $('kaQ').value.trim().toLowerCase(), ul = $('kaList'); ul.textContent = '';
+    var list = kaApps.filter(function (a) { return !q || a.name.toLowerCase().indexOf(q) >= 0; });
+    list.slice(0, 200).forEach(function (a) {
+      var li = el('li'), g = el('span', 'grow');
+      g.append(el('span', '', a.name), el('span', 'meta', (a.store ? L.kaStore + ' · ' : '') + a.paths.map(function (p) { return p.replace(/\//g, '\\'); }).join(', ')));
+      var b = el('button', 'btn ghost small', a.kept ? L.kaKept : L.kaKeep);
+      b.disabled = a.kept;
+      b.addEventListener('click', function () {
+        b.disabled = true;
+        ask('keepAddApp', { paths: a.paths }).then(function (k) { showKeep(k); say('klMsg', L.saved, 'good'); }).catch(function (e) { b.disabled = false; say('klMsg', errText(e), 'bad'); });
+      });
+      li.append(appIcon(a.icon), g, b); ul.append(li);
+    });
+    $('kaEmpty').hidden = kaApps.length > 0;
+  }
+  $('kaQ').addEventListener('input', showApps);
+  // v0.8 Safe box
+  function showSafe(x) {
+    $('sbNew').hidden = x.exists; $('sbClosed').hidden = !x.exists || x.open; $('sbOpened').hidden = !x.open;
+    $('sbState').textContent = !x.exists ? L.sbNone : x.open ? L.sbIsOpen(x.dir) : L.sbIsClosed(size(x.size));
+  }
+  function loadSafe() { ask('safeInfo').then(showSafe).catch(function () { }); }
+  $('sbCreate').addEventListener('click', function () {
+    var b = this; b.disabled = true;
+    ask('safeCreate', { password: $('sbPw').value }).then(function (x) { $('sbPw').value = ''; showSafe(x); say('sbMsg', L.done, 'good'); })
+      .catch(function (e) { say('sbMsg', errText(e), 'bad'); }).then(function () { b.disabled = false; });
+  });
+  $('sbOpen').addEventListener('click', function () {
+    var b = this, stop = progress('sbProg', 'safe'); b.disabled = true; say('sbMsg', L.working);
+    ask('safeOpen', { password: $('sbOpenPw').value }).then(function (x) { $('sbOpenPw').value = ''; showSafe(x); say('sbMsg', L.sbOpened(x.files), 'good'); })
+      .catch(function (e) { say('sbMsg', errText(e), 'bad'); }).then(function () { stop(); b.disabled = false; });
+  });
+  $('sbClose').addEventListener('click', function () {
+    var b = this, stop = progress('sbProg', 'safe'); b.disabled = true; say('sbMsg', L.working);
+    ask('safeClose').then(function (x) { showSafe(x); say('sbMsg', L.sbClosedNow(x.files), 'good'); })
+      .catch(function (e) { say('sbMsg', errText(e), 'bad'); }).then(function () { stop(); b.disabled = false; });
+  });
+  $('sbShow').addEventListener('click', function () { ask('safeShow'); });
+  loaders.keep = function () { ask('keepList').then(showKeep); loadSafe(); };
   // v0.7: a locked Keep asks its password here
   function openKeep() {
     ask('openKeep').catch(function (e) {
@@ -661,8 +834,32 @@
       if (a.folder) { var r = el('button', 'btn ghost small', L.remove); r.addEventListener('click', function () { ask('vaultRemoveFolder', { name: a.name }).then(showVault); }); li.append(r); }
       ul.append(li);
     });
+    // v0.8: apps found on this PC that the vault does not know yet
+    var sg = $('vSugg'); sg.textContent = '';
+    [].concat(v.suggest || []).forEach(function (s) {
+      var c = el('button', 'chip', s.name);
+      if (s.icon) c.prepend(appIcon(s.icon));
+      c.title = s.path.replace(/\//g, '\\');
+      c.addEventListener('click', function () { ask('vaultAddFolder', { path: s.path }).then(showVault).catch(function (e) { say('vMsg', errText(e), 'bad'); }); });
+      sg.append(c);
+    });
+    $('vSuggBox').hidden = !sg.childElementCount;
   }
   loaders.vault = function () { ask('vaultInfo').then(showVault); };
+  // v0.8: how hard the password is to guess (a rough guide, nothing is sent anywhere)
+  function strength(p) {
+    if (p.length < 12) return 0;
+    var pool = (/[a-z]/.test(p) ? 26 : 0) + (/[A-Z]/.test(p) ? 26 : 0) + (/[0-9]/.test(p) ? 10 : 0) + (/[^a-zA-Z0-9]/.test(p) ? 33 : 0);
+    var uniq = new Set(p.split('')).size;
+    var bits = Math.min(p.length, uniq * 2) * Math.log2(Math.max(pool, 10));
+    if (/^(.)\1+$/.test(p) || /(password|qwerty|123456|amnesia)/i.test(p)) bits = Math.min(bits, 30);
+    return bits < 60 ? 1 : bits < 80 ? 2 : 3;
+  }
+  $('vPw1').addEventListener('input', function () {
+    var v = this.value, s = strength(v);
+    $('vMeter').dataset.s = v ? s : '';
+    $('vMeterText').textContent = v ? L.meter[s] : '';
+  });
   $('vCreateBtn').addEventListener('click', function () {
     var p1 = $('vPw1').value, p2 = $('vPw2').value;
     if (p1 !== p2) return say('vCreateMsg', L.vMismatch, 'bad');
@@ -725,7 +922,7 @@
   $('bEvery').addEventListener('change', function () { ask('set', { key: 'backupEvery', value: this.value }).then(loaders.backup); });
   $('bNow').addEventListener('click', function () {
     var b = this, stop = progress('bProg', 'backup'); b.disabled = true; say('bMsg', L.working);
-    ask('backupNow').then(function (r) { showBackup(r); say('bMsg', L.bDone(r.where), 'good'); }).catch(function (e) { say('bMsg', errText(e), 'bad'); })
+    ask('backupNow').then(function (r) { showBackup(r); say('bMsg', L.bDone(r.where) + (r.skipped ? ' ' + L.bSkipped(r.skipped) : ''), r.skipped ? 'warn' : 'good'); }).catch(function (e) { say('bMsg', errText(e), 'bad'); })
       .then(function () { stop(); b.disabled = false; });
   });
   $('mPick').addEventListener('click', function () { ask('backupPick').then(function (r) { if (r.file) { backupFile = r.file; $('mFile').textContent = r.file; } }); });
@@ -901,10 +1098,12 @@
       .catch(function (e) { say('logMsg', errText(e), 'bad'); }).then(function () { b.disabled = false; });
   });
   $('tourAgain').addEventListener('click', function () { tour(0); });
-  $('unApp').addEventListener('click', function () { confirmBox(L.unConfirm).then(function (y) { if (y) ask('uninstall', { all: false }).then(function () { say('setMsg', L.unBye); }); }); });
+  // v0.8: with the Keep password when Keep is locked (else Keep would stay locked after uninstall)
+  $('unApp').addEventListener('click', function () { confirmBox(L.unConfirm).then(function (y) { if (y) ask('uninstall', { all: false, password: $('unPw').value }).then(function () { say('setMsg', L.unBye); }).catch(function (e) { say('setMsg', errText(e), 'bad'); }); }); });
   $('unAll').addEventListener('click', function () {
     if ($('unWord').value.trim().toUpperCase() !== L.unWord) { $('unWord').focus(); return; }
-    ask('uninstall', { all: true }).then(function () { say('setMsg', L.unBye); });
+    if (info.keepLocked && !$('unPw').value) { say('setMsg', L.err['keeplock-uninstall'], 'bad'); $('unPw').focus(); return; }
+    ask('uninstall', { all: true, password: $('unPw').value }).then(function () { say('setMsg', L.unBye); }).catch(function (e) { say('setMsg', errText(e), 'bad'); });
   });
 
   // ---------- welcome tour ----------
@@ -932,6 +1131,7 @@
     show(i);
     go(i.view || 'home');
     if (!i.welcomeDone) tour(0);
+    loadHealth();
     ask('encryption').then(function (e) {
       $('enc').textContent = { on: L.encOn, off: L.encOff, paused: L.encPaused }[e.state] || L.encUnknown;
       $('enc').className = e.state === 'on' ? 'good' : e.state === 'off' || e.state === 'paused' ? 'warn' : 'muted';

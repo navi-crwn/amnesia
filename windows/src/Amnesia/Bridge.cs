@@ -15,7 +15,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
     static readonly HashSet<string> WhileLocked = new()
     {
         "info", "preview", "history", "encryption", "keepList", "vaultInfo", "backupInfo", "advInfo", "open", "openKeep",
-        "collectLog", "updateCheck", "signOut", "panicNow", "cancel", "labUnlock", "keepLockNow",
+        "collectLog", "updateCheck", "signOut", "panicNow", "cancel", "labUnlock", "keepLockNow", "health", "safeInfo", "safeClose",
     };
 
     public async Task<string> HandleAsync(string json)
@@ -35,7 +35,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 "info" => Info(),
                 "preview" => await Preview(),
                 "turnOn" => await Task.Run(TurnOn),
-                "turnOff" => await Do(Setup.TurnOff),
+                "turnOff" => await Do(() => Setup.TurnOff()),
                 "pause" => await Do(() => Setup.Pause(true)),
                 "resume" => await Do(() => Setup.Pause(false)),
                 "history" => await Task.Run(History),
@@ -48,11 +48,21 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 "keepList" => await Task.Run(KeepInfo),
                 "keepAdd" => await KeepAdd(S("path")),
                 "keepRemove" => await Do(() => KeepList.Remove(S("path")), KeepInfo),
+                "keepAddApp" => await Task.Run(() => KeepAddMany(arg?["paths"]?.AsArray().Select(x => x!.GetValue<string>()) ?? Array.Empty<string>())),
+                // v0.8
+                "health" => await Task.Run(() => (JsonNode)Health.Check()),
+                "safeInfo" => await Task.Run(SafeInfo),
+                "safeCreate" => await Task.Run(() => { KeepLock.With(() => Safe.Create(S("password"))); return SafeInfo(); }),
+                "safeOpen" => await Job("safe", (p, c) => { var n = KeepLock.With(() => Safe.Open(S("password"))); var i = SafeInfo(); i["files"] = n; return i; }),
+                "safeClose" => await Job("safe", (p, c) => { var n = KeepLock.With(() => Safe.Close("app")); var i = SafeInfo(); i["files"] = n; return i; }),
+                "safeShow" => await Do(() => { if (Safe.IsOpen) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{Safe.OpenDir}\"") { UseShellExecute = true }); }),
+                "safeDelete" => await Task.Run(() => { KeepLock.With(() => Safe.Delete(S("password"))); return SafeInfo(); }),
+                "enableStartup" => await Do(Setup.EnableStartup, Info),
                 // Vault
                 "vaultInfo" => await Task.Run(VaultInfo),
                 "vaultCreate" => await Task.Run(() => { Vault.Create(S("password"), S("panic"), B("panicFull")); return VaultInfo(); }),
                 "vaultChoose" => await Do(() => Vault.Choose(S("name"), B("on")), VaultInfo),
-                "vaultAddFolder" => await VaultAddFolder(),
+                "vaultAddFolder" => S("path").Length > 0 ? await Task.Run(() => { if (Vault.AddFolder(Core.Home.Full(S("path"))) == null) throw new InvalidOperationException("outside-home"); return VaultInfo(); }) : await VaultAddFolder(),
                 "vaultRemoveFolder" => await Do(() => Vault.RemoveFolder(S("name")), VaultInfo),
                 "vaultSnapshot" => await Job("vault", (p, c) => { Vault.Snapshot(null, false, null, p, c); return VaultInfo(); }),
                 "vaultRestore" => await Job("vault", (p, c) => { var n = Vault.Restore(S("password"), null, p, c, B("previous")); var i = VaultInfo(); i["restored"] = new JsonArray(n.Select(x => (JsonNode)x!).ToArray()); var pr = new JsonObject(); foreach (var kv in Vault.LastProblems) pr[kv.Key] = kv.Value; i["problems"] = pr; return i; }),
@@ -62,7 +72,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 // Backup
                 "backupInfo" => await Task.Run(BackupInfo),
                 "backupFolder" => await BackupFolder(),
-                "backupNow" => await Job("backup", (p, c) => { var w = KeepLock.With(() => Backup.Create(p, c)); var i = BackupInfo(); i["where"] = w; return i; }),
+                "backupNow" => await Job("backup", (p, c) => { var w = KeepLock.With(() => Backup.Create(p, c)); var i = BackupInfo(); i["where"] = w; i["skipped"] = Backup.LastSkipped; return i; }),
                 "backupTest" => await Task.Run(() => (JsonNode)new JsonObject { ["error"] = Ssh.Test() }),
                 "backupRestore" => await BackupRestore(S("password"), S("file")),
                 "backupPick" => await BackupPick(),
@@ -97,7 +107,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 // Update + uninstall
                 "updateCheck" => await UpdateCheck(),
                 "updateInstall" => await UpdateInstall(),
-                "uninstall" => await Do(() => { Setup.Uninstall(B("all")); tray.Invoke(() => Task.Delay(1500).ContinueWith(_ => tray.Invoke(tray.Quit))); }),
+                "uninstall" => await Do(() => { Setup.Uninstall(B("all"), S("password")); tray.Invoke(() => Task.Delay(1500).ContinueWith(_ => tray.Invoke(tray.Quit))); }),
                 "cancel" => await Do(() => job?.Cancel()),
                 _ => throw new InvalidOperationException($"Unknown command: {cmd}"),
             };
@@ -151,6 +161,14 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
             ["lastBlocked"] = Settings.Get("LAST_BLOCKED") ?? "",
             ["extraList"] = Winapp2.On,
             ["usbAction"] = Settings.Get("USB_ACTION") ?? "signout",
+            // v0.8
+            ["openAtLogin"] = Setup.OpenAtLogin,
+            ["startupDisabled"] = Setup.RunningInstalled && Settings.Enabled && Setup.StartupDisabled,
+            ["keepVm"] = Settings.Get("KEEP_VM") != "0",
+            ["wipeStore"] = Settings.Get("WIPE_STORE") == "1",
+            ["wipeCreds"] = Creds.On,
+            ["keepLocked"] = KeepLock.On,
+            ["signedUpdates"] = Updater.Signed,
         };
     }
 
@@ -183,6 +201,11 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 if (!ok) { Settings.Set("PANIC_HOTKEY", null); throw new InvalidOperationException("hotkey-taken"); }
                 break;
             case "extraList": Settings.Set("EXTRA_LIST", On(false)); break;
+            // v0.8
+            case "openAtLogin": Settings.Set("OPEN_AT_LOGIN", On(true)); if (Setup.RunningInstalled) Setup.SyncStartup(); break;
+            case "keepVm": Settings.Set("KEEP_VM", On(true)); break;
+            case "wipeStore": Settings.Set("WIPE_STORE", On(false) == "1" ? "1" : null); break;
+            case "wipeCreds": Settings.Set("WIPE_CREDS", On(false) == "1" ? "1" : null); break;
             case "usbAction": Settings.Set("USB_ACTION", V() == "shutdown" ? "shutdown" : null); break;
             case "backupEvery": Settings.Set("BACKUP_EVERY", V() is "day" or "week" ? V() : null); break;
             case "backupKind": Settings.Set("BACKUP_KIND", V() == "ssh" ? "ssh" : "folder"); break;
@@ -234,12 +257,28 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
         var o = new JsonObject
         {
             ["count"] = r.Count,
-            ["items"] = new JsonArray(r.Items.Select(i => (JsonNode)new JsonObject { ["path"] = i.Path, ["kind"] = i.Kind, ["size"] = sizes.GetValueOrDefault(i.Path, -1) }).ToArray()),
+            ["items"] = new JsonArray(r.Items.Select(i => (JsonNode)new JsonObject { ["path"] = i.Path, ["kind"] = i.Kind, ["size"] = sizes.GetValueOrDefault(i.Path, -1), ["app"] = AppOf(i.Path) }).ToArray()),
             ["kept"] = new JsonArray(r.Kept.Select(k => (JsonNode)k!).ToArray()),
         };
         if (Apps.On)
             o["apps"] = await Task.Run(() => new JsonArray(Apps.New().Where(a => a.Auto).Select(a => (JsonNode)new JsonObject { ["name"] = a.Name, ["kind"] = a.Kind }).ToArray()));
         return o;
+    }
+
+    static JsonObject SafeInfo() => new()
+    {
+        ["exists"] = Safe.Exists,
+        ["open"] = Safe.IsOpen,
+        ["dir"] = Safe.OpenDir,
+        ["size"] = Safe.Exists ? new FileInfo(Safe.File_).Length : 0,
+        ["min"] = Safe.MinPassword,
+    };
+
+    /// <summary>v0.8: the app an item in "What gets wiped" belongs to (the review groups by it).</summary>
+    static string? AppOf(string path)
+    {
+        if (!path.StartsWith("AppData\\", StringComparison.OrdinalIgnoreCase)) return null;
+        try { return AppCatalog.For(path.Replace('\\', '/'))?.Name; } catch { return null; }
     }
 
     /// <summary>A long job on a worker thread, with progress events to the page.</summary>
@@ -262,10 +301,25 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
     static JsonNode KeepInfo()
     {
         var paths = KeepList.Paths();
-        var list = new JsonArray(paths.Select(p => (JsonNode)new JsonObject { ["path"] = p, ["exists"] = File.Exists(Core.Home.Full(p)) || Directory.Exists(Core.Home.Full(p)) || p.Contains('*') }).ToArray());
+        // v0.8: each line shows the app it belongs to (name + icon) when Amnesia can tell
+        List<CatalogApp> catalog;
+        try { catalog = AppCatalog.Get(); } catch (Exception e) { AppInfo.Trace($"app list failed: {e.GetType().Name}"); catalog = new(); }
+        CatalogApp? Owner(string p) => catalog.FirstOrDefault(a => a.Paths.Any(x => x.Equals(p, StringComparison.OrdinalIgnoreCase) || p.StartsWith(x + "/", StringComparison.OrdinalIgnoreCase)));
+        bool Kept(string rel) => paths.Any(p => Wild.Like(rel, p) || Wild.Like(rel, p + "/*"));
+        var list = new JsonArray(paths.Select(p =>
+        {
+            var app = Owner(p);
+            return (JsonNode)new JsonObject { ["path"] = p, ["exists"] = File.Exists(Core.Home.Full(p)) || Directory.Exists(Core.Home.Full(p)) || p.Contains('*'), ["app"] = app?.Name, ["icon"] = app?.Icon };
+        }).ToArray());
+        // "Keep an app...": installed apps with the folders they keep their data in
+        var apps = new JsonArray(catalog.Select(a => (JsonNode)new JsonObject
+        {
+            ["name"] = a.Name, ["icon"] = a.Icon, ["store"] = a.Store, ["kept"] = a.Paths.All(Kept),
+            ["paths"] = new JsonArray(a.Paths.Select(x => (JsonNode)x!).ToArray()),
+        }).ToArray());
         // suggestions: app data folders found on this PC that are not on the list yet
         var sugg = new JsonArray();
-        var skip = new[] { "Microsoft", "Packages", "Temp", "Amnesia", "Programs", "Comms", "ConnectedDevicesPlatform", "CrashDumps", "D3DSCache", "PeerDistRepub", "Publishers", "VirtualStore", "PlaceholderTileLogoFolder", "OneDrive", "IsolatedStorage", "CoreAIPlatform.00", "Intel", "NVIDIA", "AMD", "Mozilla" };
+        var skip = AppMatch.Skip.Concat(new[] { "Mozilla" }).ToArray();
         foreach (var root in new[] { "AppData/Roaming", "AppData/Local" })
         {
             var dir = Core.Home.Full(root);
@@ -274,7 +328,8 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
             {
                 var rel = $"{root}/{d.Name}";
                 if (skip.Contains(d.Name, StringComparer.OrdinalIgnoreCase) || paths.Any(p => Wild.Like(rel, p) || Wild.Like(rel, p + "/*"))) continue;
-                sugg.Add(new JsonObject { ["name"] = d.Name, ["path"] = rel });
+                var app = Owner(rel);
+                sugg.Add(new JsonObject { ["name"] = app?.Name ?? d.Name, ["path"] = rel, ["icon"] = app?.Icon });
             }
         }
         // v0.7.1: Claude from the Microsoft Store keeps its data inside Packages (skipped above), not in Roaming\Claude
@@ -287,15 +342,35 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
         foreach (var dot in new[] { ".ssh", ".gitconfig", ".vscode", ".npmrc" })
             if ((File.Exists(Core.Home.Full(dot)) || Directory.Exists(Core.Home.Full(dot))) && !paths.Contains(dot, StringComparer.OrdinalIgnoreCase))
                 sugg.Insert(0, new JsonObject { ["name"] = dot, ["path"] = dot });
-        return new JsonObject { ["paths"] = list, ["suggestions"] = sugg, ["keepDir"] = Settings.KeepDir, ["home"] = Core.Home.User };
+        return new JsonObject { ["paths"] = list, ["suggestions"] = sugg, ["apps"] = apps, ["keepDir"] = Settings.KeepDir, ["home"] = Core.Home.User };
     }
 
     async Task<JsonNode> KeepAdd(string path)
     {
         if (path.Length == 0) path = await PickFolder() ?? "";
         if (path.Length == 0) return await Task.Run(KeepInfo);
-        if (KeepList.Add(path) == null && !KeepList.Paths().Contains(KeepList.Norm(path), StringComparer.OrdinalIgnoreCase)) throw new InvalidOperationException("outside-home");
+        await Task.Run(() => AddChecked(path));
         return await Task.Run(KeepInfo);
+    }
+
+    /// <summary>v0.8: adds a line and reads keep.conf back, so a line that did not land (seen in the Windows test with a
+    /// path inside Packages) is an error on the page instead of a silent "done".</summary>
+    static void AddChecked(string path)
+    {
+        var line = KeepList.Add(path);
+        var norm = line ?? KeepList.Norm(path);
+        if (line == null && !KeepList.Paths().Contains(norm, StringComparer.OrdinalIgnoreCase)) throw new InvalidOperationException("outside-home");
+        if (!KeepList.Paths().Contains(line ?? norm, StringComparer.OrdinalIgnoreCase))
+        {
+            AppInfo.Trace("keep list: a new line was not saved");
+            throw new InvalidOperationException("keep-not-saved");
+        }
+    }
+
+    static JsonNode KeepAddMany(IEnumerable<string> paths)
+    {
+        foreach (var p in paths) AddChecked(p);
+        return KeepInfo();
     }
 
     Task<string?> PickFolder(string? start = null) => dialog(owner =>
@@ -337,7 +412,30 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
             ["doomsday"] = Settings.Get("DOOMSDAY") != "0",
             ["auto"] = Settings.Get("VAULT_AUTO") != "0",
             ["apps"] = apps,
+            ["suggest"] = VaultSuggest(),
         };
+    }
+
+    /// <summary>v0.8: installed apps whose data the vault does not know yet (they can be added as a folder).</summary>
+    static JsonArray VaultSuggest()
+    {
+        var arr = new JsonArray();
+        try
+        {
+            var known = Vault.All().SelectMany(Vault.Present).Select(p => p.Replace('\\', '/')).ToList();
+            var home = Core.Home.User.Replace('\\', '/');
+            foreach (var a in AppCatalog.Get())
+            {
+                var p = a.Paths.FirstOrDefault();
+                if (p == null || a.Store) continue;
+                var full = home + "/" + p;
+                if (known.Any(k => k.Equals(full, StringComparison.OrdinalIgnoreCase) || k.StartsWith(full + "/", StringComparison.OrdinalIgnoreCase) || full.StartsWith(k + "/", StringComparison.OrdinalIgnoreCase))) continue;
+                arr.Add(new JsonObject { ["name"] = a.Name, ["icon"] = a.Icon, ["path"] = p });
+                if (arr.Count >= 12) break;
+            }
+        }
+        catch { }
+        return arr;
     }
 
     async Task<JsonNode> VaultAddFolder()
@@ -369,7 +467,11 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
         {
             // a backup folder inside the user folder would be wiped at sign out (unless it is in Keep)
             var home = Core.Home.User + "\\";
-            if (p.StartsWith(home, StringComparison.OrdinalIgnoreCase) && !p.StartsWith(Settings.KeepDir, StringComparison.OrdinalIgnoreCase)
+            // v0.8: and a backup inside Keep would be packed into every next backup (each one twice as big)
+            var keep = Settings.KeepDir.TrimEnd('\\');
+            if (p.Equals(keep, StringComparison.OrdinalIgnoreCase) || p.StartsWith(keep + "\\", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("backup-in-keep");
+            if (p.StartsWith(home, StringComparison.OrdinalIgnoreCase)
                 && !p.Contains("OneDrive", StringComparison.OrdinalIgnoreCase) && !p.Contains("Google Drive", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("backup-in-home");
             Settings.Set("BACKUP_DEST", p);
@@ -536,7 +638,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
             ["current"] = AppInfo.Version,
             ["latest"] = r?.Version,
             ["newer"] = r != null && Updater.Newer(r.Version),
-            ["canInstall"] = r?.Setup != null && r.Sums != null && Updater.FromSetup,
+            ["canInstall"] = r?.Setup != null && r.Sums != null && r.Sig != null && Updater.Signed && Updater.FromSetup,
             ["page"] = r?.Page ?? Updater.Releases,
         };
     }

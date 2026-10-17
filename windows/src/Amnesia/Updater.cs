@@ -1,4 +1,4 @@
-// v0.4 update from the app (Settings → Update). Looks at the project's GitHub releases for the newest Windows release
+// v0.4 update from the app (Settings → Update). v0.8: SHA256SUMS.txt must carry a good signature (UpdateSig). Looks at the project's GitHub releases for the newest Windows release
 // (tag "win-v0.x.y"), downloads Amnesia-Setup-<version>-<x64|arm64>.exe, checks it against SHA256SUMS.txt of that
 // release and runs it. Nothing is sent except a normal download request. Portable copies just open the release page.
 using System.Net.Http.Json;
@@ -22,7 +22,10 @@ static class Updater
         return h;
     }
 
-    public sealed record Release(string Version, string Page, string? Setup, string? Sums);
+    public sealed record Release(string Version, string Page, string? Setup, string? Sums, string? Sig = null);
+
+    /// <summary>v0.8: does this copy know the developer's update key? (Without it: never install from the app.)</summary>
+    public static bool Signed => Core.UpdateSig.HasKey;
 
     /// <summary>The newest Windows release, or null when there is none yet.</summary>
     public static async Task<Release?> LatestAsync()
@@ -34,15 +37,16 @@ static class Updater
             var tag = r?["tag_name"]?.GetValue<string>() ?? "";
             if (!tag.StartsWith("win-v") || r!["draft"]?.GetValue<bool>() == true || r["prerelease"]?.GetValue<bool>() == true) continue;
             var ver = tag[5..];
-            string? setup = null, sums = null;
+            string? setup = null, sums = null, sig = null;
             foreach (var a in r["assets"]?.AsArray() ?? new JsonArray())
             {
                 var name = a?["name"]?.GetValue<string>() ?? "";
                 var url = a?["browser_download_url"]?.GetValue<string>();
                 if (name.Equals($"Amnesia-Setup-{ver}-{Arch}.exe", StringComparison.OrdinalIgnoreCase)) setup = url;
                 if (name.Equals("SHA256SUMS.txt", StringComparison.OrdinalIgnoreCase)) sums = url;
+                if (name.Equals("SHA256SUMS.txt.sig", StringComparison.OrdinalIgnoreCase)) sig = url;
             }
-            return new Release(ver, r["html_url"]?.GetValue<string>() ?? Releases, setup, sums);
+            return new Release(ver, r["html_url"]?.GetValue<string>() ?? Releases, setup, sums, sig);
         }
         return null;
     }
@@ -54,10 +58,15 @@ static class Updater
     public static async Task InstallAsync(Release r, IProgress<double>? progress = null)
     {
         if (r.Setup == null || r.Sums == null) throw new InvalidOperationException("no-setup");
+        // v0.8: the list of checksums must be signed by the developer, or a changed release could pass the check
+        if (!Signed || r.Sig == null) throw new InvalidOperationException("unsigned");
         Directory.CreateDirectory(Dir);
         foreach (var old in Directory.GetFiles(Dir)) try { File.Delete(old); } catch { }
         using var h = Http();
-        var sums = await h.GetStringAsync(r.Sums);
+        var sumsBytes = await h.GetByteArrayAsync(r.Sums);
+        var sigBytes = await h.GetByteArrayAsync(r.Sig);
+        if (!Core.UpdateSig.Verify(sumsBytes, sigBytes)) { AppInfo.Trace($"update {r.Version}: signature does not match, not installed"); throw new InvalidOperationException("bad-signature"); }
+        var sums = System.Text.Encoding.UTF8.GetString(sumsBytes);
         var file = Path.Combine(Dir, Path.GetFileName(new Uri(r.Setup).LocalPath));
         using (var resp = await h.GetAsync(r.Setup, HttpCompletionOption.ResponseHeadersRead))
         {

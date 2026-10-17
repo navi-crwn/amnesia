@@ -7,7 +7,8 @@
 #
 # Order matters: the login agent file is deleted FIRST. The agent checks for that
 # file when it is stopped; without it, it stops WITHOUT wiping anything.
-# Your Keep folder (your own files) is never touched.
+# Your Keep folder (your own files) is never touched. v5.22: if the Keep lock is on, you are asked for the
+# Keep password to unlock it first; without it, Keep stays locked and the recovery command is printed.
 # ============================================
 set -u
 A="$HOME/.amnesia"
@@ -44,6 +45,29 @@ echo
 if [ $YES = 0 ]; then
     r="$(ask "$(t "Continue? (y/n)" "Lanjut? (y/n)")")"
     case "$r" in y|Y|yes|ya|Ya) ;; *) echo "$(t "Cancelled. Nothing changed." "Dibatalkan. Tidak ada yang berubah.")"; exit 0 ;; esac
+fi
+
+# v5.22: Kunci Keep: buka dulu dengan password Keep, kalau tidak isi Keep tetap terkunci setelah Amnesia hilang.
+# Brankas (disk terenkripsi di Keep) ditutup. Isinya tidak disentuh.
+KL="$A/keeplock.sh"
+if [ -f "$KL" ]; then
+    /bin/bash "$KL" box-detach >/dev/null 2>&1
+    if [ "$(/bin/bash "$KL" status 2>/dev/null)" = locked ]; then
+        echo "$(t "Your Keep folder is locked (Keep lock). Type the Keep password to unlock it." \
+                  "Folder Keep kamu terkunci (Kunci Keep). Ketik password Keep untuk membukanya.")"
+        r=""; { printf "%s " "$(t "Keep password (empty = skip):" "Password Keep (kosong = lewati):")" >&2; read -rs r </dev/tty; echo >&2; } 2>/dev/null || r=""
+        PY=/opt/homebrew/bin/python3; [ -x "$PY" ] || PY=/usr/bin/python3
+        if [ -n "$r" ] && printf '%s\n' "$r" | "$PY" "$A/vault.py" keepcheck 2>/dev/null | grep -q '"ok": true' \
+           && [ "$(/bin/bash "$KL" unlock 2>/dev/null)" = open ]; then
+            echo "    $(t "Keep is unlocked." "Keep sudah dibuka.")"
+        else
+            echo "    $(t "Keep stays LOCKED (wrong or no password). Your files are still there. To unlock it yourself later, run:" \
+                          "Keep tetap TERKUNCI (password salah atau dilewati). File kamu tetap ada. Untuk membukanya sendiri nanti, jalankan:")"
+            echo "        chmod -RN ~/Keep"
+            echo "    $(t "(use your own Keep folder path if you moved it)" "(pakai letak folder Keep kamu kalau sudah dipindah)")"
+        fi
+        unset r
+    fi
 fi
 
 echo "1/4 $(t "Turning off the login agent..." "Mematikan agent login...")"

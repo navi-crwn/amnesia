@@ -2,6 +2,10 @@
 // Locked with the vault's key, so automatic backups need no password and opening one needs your vault password.
 // Goes to a folder (USB drive, or a cloud folder such as OneDrive / Google Drive for desktop) or to your server over SSH.
 // Old backups are never deleted by Amnesia. "Move to a new PC" opens a backup there and puts everything back.
+// v0.8: files that could not be read (in use) are counted and shown, no more quiet "done" (HIGH-X-02). A restore
+// unpacks into .amnesia (never Temp), with a file that deletes itself when closed, and the vault you have is only
+// replaced once the one from the backup is completely unpacked (HIGH-WIN-05, HIGH-X-01). Older backups inside Keep
+// are left out of a new one, so a backup folder in Keep doesn't grow forever.
 using System.IO.Compression;
 
 namespace Amnesia.Core;
@@ -17,6 +21,8 @@ public static class Backup
 
     public static string Kind => Conf.Get("BACKUP_KIND") ?? "folder";
     public static string? Folder => Conf.Get("BACKUP_DEST");
+    /// <summary>v0.8: files the last backup could not read (in use or refused). 0 = everything went in.</summary>
+    public static int LastSkipped { get; private set; }
 
     /// <summary>Makes a backup. Returns where it went.</summary>
     public static string Create(Action<double, string>? progress = null, CancellationToken cancel = default)
@@ -36,6 +42,7 @@ public static class Backup
         var part = final + ".partial";
         var files = Collect();
         long total = Math.Max(1, files.Sum(f => f.size)), done = 0;
+        int skipped = 0;
         try
         {
             using (var file = File.Create(part))
@@ -55,8 +62,8 @@ public static class Backup
                         using var dst = e.Open();
                         src.CopyTo(dst);
                     }
-                    catch (IOException) { }
-                    catch (UnauthorizedAccessException) { }
+                    catch (IOException) { skipped++; }
+                    catch (UnauthorizedAccessException) { skipped++; }
                     done += size;
                 }
             }
@@ -77,7 +84,9 @@ public static class Backup
             finally { try { File.Delete(final); } catch { } }
         }
         Conf.Set("BACKUP_LAST", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-        Home.History("backup", ssh ? "ssh" : "folder");
+        LastSkipped = skipped;
+        if (skipped > 0) Home.Trace("backup", $"{skipped} file(s) could not be read (in use) and are not in this backup");
+        Home.History("backup", (ssh ? "ssh" : "folder") + (skipped > 0 ? $" {skipped}" : ""));
         progress?.Invoke(1, "");
         return where;
     }
@@ -90,7 +99,11 @@ public static class Backup
         var keep = Conf.KeepDir;
         if (Directory.Exists(keep))
             foreach (var f in new DirectoryInfo(keep).EnumerateFiles("*", opt))
+            {
+                // older backups in Keep would end up inside every new one
+                if (f.Name.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase) && (f.Name.EndsWith(Ext, StringComparison.OrdinalIgnoreCase) || f.Name.EndsWith(".partial", StringComparison.OrdinalIgnoreCase))) continue;
                 list.Add((f.FullName, "Keep/" + Path.GetRelativePath(keep, f.FullName).Replace('\\', '/'), f.Length));
+            }
         foreach (var n in new[] { "keep.conf", "settings.conf" })
         {
             var f = new FileInfo(Path.Combine(Home.Dir, n));
@@ -104,6 +117,12 @@ public static class Backup
                 if (rel.StartsWith(".tmp/") || rel.StartsWith(".stage/") || rel.EndsWith(".new")) continue;
                 list.Add((f.FullName, "amnesia/vault/" + rel, f.Length));
             }
+        // v0.8: the Safe box (still locked) goes along too
+        foreach (var n in new[] { "public.key", "private.key", "safe.ams" })
+        {
+            var f = new FileInfo(Path.Combine(Home.Dir, "safe", n));
+            if (f.Exists) list.Add((f.FullName, "amnesia/safe/" + n, f.Length));
+        }
         return list;
     }
 
@@ -135,18 +154,24 @@ public static class Backup
         System.Security.Cryptography.RSA rsa;
         try { rsa = Crypto.Unlock(lockedPriv, password); }
         catch (System.Security.Cryptography.CryptographicException) { throw new VaultError("wrong", -1); }
-        var tmpZip = Path.Combine(Path.GetTempPath(), "Amnesia-restore-" + Guid.NewGuid().ToString("N") + ".zip");
+        Directory.CreateDirectory(Home.Dir);
+        Sweep();
+        var tmpZip = Path.Combine(Home.Dir, ".restore-" + Guid.NewGuid().ToString("N") + ".zip");
+        var vaultDir = Path.Combine(Home.Dir, "vault");
+        var incoming = vaultDir + ".incoming";
         int count = 0;
-        try
+        // deleted by Windows as soon as it is closed, also when Amnesia crashes
+        using (var o = new FileStream(tmpZip, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, 1 << 16, FileOptions.DeleteOnClose))
         {
-            using (rsa)
-            using (var o = File.Create(tmpZip))
-                Crypto.Open(file, rsa, o, p => progress?.Invoke(0.5 * p, "open"), cancel);
+            using (rsa) Crypto.Open(file, rsa, o, p => progress?.Invoke(0.5 * p, "open"), cancel);
+            o.Position = 0;
             var keep = Conf.KeepDir;
-            var vaultDir = Path.Combine(Home.Dir, "vault");
-            using var zip = ZipFile.OpenRead(tmpZip);
+            using var zip = new ZipArchive(o, ZipArchiveMode.Read, leaveOpen: true);
             bool hasVault = zip.Entries.Any(e => e.FullName.StartsWith("amnesia/vault/"));
-            if (hasVault) { CleanEngine.Delete(vaultDir); }
+            // v0.8: a Safe box from the backup only when this PC has none (never over a newer one)
+            var safeDir = Path.Combine(Home.Dir, "safe");
+            bool takeSafe = !Safe.Exists;
+            CleanEngine.Delete(incoming);
             int i = 0;
             foreach (var e in zip.Entries)
             {
@@ -155,23 +180,53 @@ public static class Backup
                 if (e.FullName.EndsWith('/')) continue;
                 string? target = null;
                 if (e.FullName.StartsWith("Keep/")) target = Path.Combine(keep, e.FullName[5..].Replace('/', Path.DirectorySeparatorChar));
-                else if (e.FullName.StartsWith("amnesia/vault/")) target = Path.Combine(vaultDir, e.FullName[14..].Replace('/', Path.DirectorySeparatorChar));
+                else if (e.FullName.StartsWith("amnesia/vault/")) target = Path.Combine(incoming, e.FullName[14..].Replace('/', Path.DirectorySeparatorChar));
+                else if (e.FullName.StartsWith("amnesia/safe/") && takeSafe) target = Path.Combine(safeDir, e.FullName[13..].Replace('/', Path.DirectorySeparatorChar));
                 else if (e.FullName == "amnesia/keep.conf") { MergeKeepList(e); continue; }
                 else if (e.FullName == "amnesia/settings.conf") { MergeSettings(e); continue; }
                 if (target == null) continue;
                 // never outside the Keep / vault folder (a damaged or crafted file can't write elsewhere)
-                var root = e.FullName.StartsWith("Keep/") ? keep : vaultDir;
+                var root = e.FullName.StartsWith("Keep/") ? keep : e.FullName.StartsWith("amnesia/safe/") ? safeDir : incoming;
                 var full = Path.GetFullPath(target);
                 if (!full.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) continue;
                 Directory.CreateDirectory(Path.GetDirectoryName(full)!);
                 e.ExtractToFile(full, overwrite: true);
                 count++;
             }
+            // the vault from the backup is complete: only now it takes the place of the one you had
+            if (hasVault && Directory.Exists(incoming))
+            {
+                var old = vaultDir + ".old";
+                CleanEngine.Delete(old);
+                if (Directory.Exists(vaultDir)) Directory.Move(vaultDir, old);
+                Directory.Move(incoming, vaultDir);
+                CleanEngine.Delete(old);
+            }
         }
-        finally { try { File.Delete(tmpZip); } catch { } }
         Home.History("restore", "backup");
         progress?.Invoke(1, "");
         return count;
+    }
+
+    /// <summary>v0.8: leftovers of a restore that was cut off (crash, power cut): the unpacked zip and a half unpacked
+    /// vault go; a vault that was half way through being swapped is put back. Also old Temp files of v0.7 and earlier.
+    /// Called at start and before every restore. Returns how many things were removed.</summary>
+    public static int Sweep()
+    {
+        int n = 0;
+        var vaultDir = Path.Combine(Home.Dir, "vault");
+        try
+        {
+            if (!Directory.Exists(vaultDir) && Directory.Exists(vaultDir + ".old")) Directory.Move(vaultDir + ".old", vaultDir);
+            foreach (var d in new[] { vaultDir + ".incoming", vaultDir + ".old" })
+                if (Directory.Exists(d) && CleanEngine.Delete(d)) n++;
+            if (Directory.Exists(Home.Dir))
+                foreach (var f in Directory.EnumerateFiles(Home.Dir, ".restore-*.zip")) if (CleanEngine.Delete(f)) n++;
+            if (!Home.Test)
+                foreach (var f in Directory.EnumerateFiles(Path.GetTempPath(), "Amnesia-restore-*.zip")) if (CleanEngine.Delete(f)) n++;
+        }
+        catch { }
+        return n;
     }
 
     static void MergeKeepList(ZipArchiveEntry e)

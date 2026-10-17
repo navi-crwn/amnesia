@@ -186,7 +186,17 @@ static class AdminTasks
     static void DeleteLeftovers(string listFile)
     {
         var roots = Apps.LeftoverRoots();
-        foreach (var f in File.ReadAllLines(listFile))
+        // v0.8: only the list Amnesia itself writes (.amnesia\leftovers-delete.txt; with another admin account typed in the
+        // Windows prompt that is in the other user's folder), never any file named on the command line
+        var full = Path.GetFullPath(listFile);
+        if (!Path.GetFileName(full).Equals("leftovers-delete.txt", StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(Path.GetFileName(Path.GetDirectoryName(full)), ".amnesia", StringComparison.OrdinalIgnoreCase)
+            || new FileInfo(full).Attributes.HasFlag(FileAttributes.ReparsePoint) || new FileInfo(full).Length > 1 << 20)
+        {
+            AppInfo.Trace("admin: leftovers list refused (not Amnesia's own file)");
+            return;
+        }
+        foreach (var f in File.ReadAllLines(full))
             if (Core.Leftovers.Allowed(f, roots))
                 try { Core.CleanEngine.Delete(f); } catch { }
     }

@@ -1,0 +1,10 @@
+﻿BEFORE YOU INSTALL
+
+Amnesia is an app that forgets on purpose. After you turn it on, your user folder is cleaned at every sign out, except your Keep folder and your Keep List.
+
+Installing does NOT turn it on. Nothing is deleted until you press Turn On in the app yourself.
+
+Good to know:
+  - Install it in your own Windows account only. A spare test account is a good first step.
+  - If Amnesia was already on and you are updating: turn it Off first, install, then turn it On again.
+  - Make a backup of anything important before you turn it on.

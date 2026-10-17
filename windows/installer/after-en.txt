@@ -1,0 +1,10 @@
+﻿A QUICK TOUR
+
+1. Keep folder: put files you want to keep in "Keep" in your user folder (there is a shortcut on the Desktop).
+2. Keep List: Settings, then Keep List, then "Keep an app..." keeps an app's login and settings.
+3. What gets wiped: look at the list before you turn Amnesia on.
+4. Turn On: from then on your user folder is cleaned at every sign out. Pause skips one session.
+5. Vault (optional): saves app logins encrypted and brings them back after you sign in.
+6. Health check: the home page tells you when something needs a look (startup switched off, cloud folders, big files).
+
+Amnesia lives in the tray next to the clock. Right-click it for the menu.

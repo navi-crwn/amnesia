@@ -82,7 +82,7 @@ gone "Downloads/f.txt"; grep -q "clean login: light=0" "$T/.amnesia/trace.log" |
 ! grep -q "f.txt\|e.txt" "$T/.amnesia/trace.log" || { echo "FAILED: trace.log contains file names"; fail=1; }
 
 # v5.19: Riwayat mencatat ukuran (KB) yang dibersihkan
-grep -qE "	clean	logout [0-9]+ [0-9]+$" "$T/.amnesia/history.log" || { echo "FAILED: history has no size"; fail=1; }
+grep -qE "	clean	logout [0-9]+ [0-9]+( [0-9]+)?$" "$T/.amnesia/history.log" || { echo "FAILED: history has no size"; fail=1; }
 
 # v5.19: "Hapus app baru" (default mati). Hanya app di luar patokan & Keep List, milik user sendiri.
 mkdir -p "$T/Applications/Lama.app" "$T/Applications/Baru.app" "$T/Applications/Disimpan.app" "$T/Applications/Amnesia.app"
@@ -124,5 +124,104 @@ AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
 rm -f "$T/.amnesia/settings.conf"
 AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
 [ -L "$T/Desktop/Keep" ] || { echo "FAILED: Keep alias missing"; fail=1; }
+
+# ---------------- v5.22 ----------------
+# agent: app dipindah/dihapus -> tercatat (dan notifikasi di macOS)
+grep -q "stopped (app removed or moved, nothing wiped)" "$G/.amnesia/trace.log" 2>/dev/null \
+    || { echo "FAILED: agent trace does not say the app was removed or moved"; fail=1; }
+
+# symlink: Documents -> Keep/DocsAsli. Isinya (di Keep) tidak boleh ikut dihapus lewat symlink
+rm -rf "$T/Documents"; mk "Keep/DocsAsli/tesis.docx"; ln -s "$T/Keep/DocsAsli" "$T/Documents"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" --skips | grep -q "^LEWATI  ~/Documents (symlink)" \
+    || { echo "FAILED: --skips does not list the symlinked Documents"; fail=1; }
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout --dry-run | grep -q "tesis.docx" \
+    && { echo "FAILED: dry-run lists a file behind the symlink"; fail=1; }
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+here "Keep/DocsAsli/tesis.docx"; [ -L "$T/Documents" ] || { echo "FAILED: symlink Documents removed"; fail=1; }
+rm -f "$T/Documents"; mkdir -p "$T/Documents"
+
+# NFC/NFD: "Café" di Keep List (NFC) harus juga menyimpan "Café" (NFD) dari Finder/backup lama.
+# Di Linux tidak ada iconv UTF-8-MAC: pakai pengganti kecil (python) yang hanya untuk tes ini.
+SHIM=""
+if ! printf 'x' | iconv -f UTF-8-MAC -t UTF-8 >/dev/null 2>&1; then
+    SHIM="$T/shim"; mkdir -p "$SHIM"
+    cat > "$SHIM/iconv" <<'EOF'
+#!/bin/bash
+# tes saja: -f UTF-8-MAC -> NFC, -t UTF-8-MAC -> NFD
+case "$*" in *"-f UTF-8-MAC"*) f=NFC ;; *"-t UTF-8-MAC"*) f=NFD ;; *) exec cat ;; esac
+exec python3 -c 'import sys,unicodedata; sys.stdout.write(unicodedata.normalize(sys.argv[1], sys.stdin.read()))' "$f"
+EOF
+    chmod +x "$SHIM/iconv"
+fi
+NFC="$(python3 -c 'import unicodedata;print(unicodedata.normalize("NFC","Downloads/Café"))')"
+NFD="$(python3 -c 'import unicodedata;print(unicodedata.normalize("NFD","Downloads/Café"))')"
+cp "$T/.amnesia/keep.example.conf" "$T/keep.bak"
+printf '%s\n' "$NFC" >> "$T/.amnesia/keep.example.conf"
+mkdir -p "$T/$NFD"; echo x > "$T/$NFD/menu.txt"; mk "Downloads/lain2.txt"
+PATH="${SHIM:+$SHIM:}$PATH" AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+[ -f "$T/$NFD/menu.txt" ] || { echo "FAILED: NFD name not kept by an NFC Keep List entry"; fail=1; }
+gone "Downloads/lain2.txt"
+cp "$T/keep.bak" "$T/.amnesia/keep.example.conf"; rm -rf "$T/$NFD"
+
+# gagal dihapus: dicatat (jumlah saja), tidak dihitung "dibersihkan", dicoba lagi lain kali
+lockf() { chattr +i "$1" 2>/dev/null || chflags uchg "$1" 2>/dev/null; }
+unlockf() { chattr -i "$1" 2>/dev/null || chflags nouchg "$1" 2>/dev/null; true; }
+mk "Downloads/terkunci.txt"
+if lockf "$T/Downloads/terkunci.txt"; then
+    trap 'unlockf "$T/Downloads/terkunci.txt"; find "$T" -exec chattr -i {} + 2>/dev/null; rm -rf "$T"' EXIT
+    AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+    here "Downloads/terkunci.txt"
+    grep -q "1 could not be deleted" "$T/.amnesia/clean.log" || { echo "FAILED: clean.log does not report the failed delete"; fail=1; }
+    tail -1 "$T/.amnesia/history.log" | grep -qE "	clean	logout [0-9]+ [0-9]+ 1$" || { echo "FAILED: history has no failed count"; fail=1; }
+    grep -q "could not delete (in Downloads)" "$T/.amnesia/trace.log" || { echo "FAILED: trace has no failed delete"; fail=1; }
+    grep -q "terkunci" "$T/.amnesia/trace.log" && { echo "FAILED: trace.log contains a file name"; fail=1; }
+    unlockf "$T/Downloads/terkunci.txt"
+    AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+    gone "Downloads/terkunci.txt"
+    grep -q "could not be deleted" "$T/.amnesia/clean.log" && { echo "FAILED: clean.log still reports a failure"; fail=1; }
+    # isi tempat sampah yang tidak bisa dihapus: trash.failed (untuk app), lalu hilang setelah berhasil
+    AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" login >/dev/null 2>&1
+    mkdir -p "$T/.amnesia-trash/1/Downloads"; echo x > "$T/.amnesia-trash/1/Downloads/x"; lockf "$T/.amnesia-trash/1/Downloads/x"
+    AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" login >/dev/null 2>&1
+    [ "$(cat "$T/.amnesia/trash.failed" 2>/dev/null)" = 1 ] || { echo "FAILED: trash.failed not written"; fail=1; }
+    grep -q "trash: 1 items could not be deleted" "$T/.amnesia/trace.log" || { echo "FAILED: purge result not logged"; fail=1; }
+    unlockf "$T/.amnesia-trash/1/Downloads/x"
+    AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" login >/dev/null 2>&1
+    [ ! -e "$T/.amnesia/trash.failed" ] || { echo "FAILED: trash.failed not removed after success"; fail=1; }
+    grep -q "trash emptied" "$T/.amnesia/trace.log" || { echo "FAILED: trash emptied not logged"; fail=1; }
+else
+    echo "SKIP: cannot make an undeletable file here (no chattr/chflags): failed-delete test skipped"
+fi
+
+# iCloud Desktop & Documents: keduanya dilewati, dicatat, dan terlihat di --skips / dry-run
+mkdir -p "$T/Library/Mobile Documents/com~apple~CloudDocs/Desktop"
+mk "Desktop/awan.txt"; mk "Documents/awan.txt"; mk "Downloads/awan.txt"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" --skips > "$T/skips.txt"
+grep -q "^LEWATI  ~/Desktop (icloud)" "$T/skips.txt" && grep -q "^LEWATI  ~/Documents (icloud)" "$T/skips.txt" \
+    || { echo "FAILED: --skips does not list iCloud Desktop & Documents"; fail=1; }
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout --dry-run | grep -q "HAPUS  ~/Desktop/awan.txt" \
+    && { echo "FAILED: dry-run lists Desktop although iCloud Desktop is on"; fail=1; }
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+here "Desktop/awan.txt"; here "Documents/awan.txt"; gone "Downloads/awan.txt"
+grep -q "iCloud Desktop & Documents on (icloud-folder): Desktop and Documents skipped" "$T/.amnesia/trace.log" \
+    || { echo "FAILED: iCloud skip not in trace.log"; fail=1; }
+rm -rf "$T/Library/Mobile Documents"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" --skips | grep -q "icloud" && { echo "FAILED: iCloud still detected"; fail=1; }
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+gone "Desktop/awan.txt"; gone "Documents/awan.txt"
+
+# keeplock.sh: di luar macOS "unsupported", dan tidak merusak apa pun
+cp "$DIR/keeplock.sh" "$T/.amnesia/"
+printf 'KEEP_LOCK=1\n' > "$T/.amnesia/settings.conf"; mk "Keep/kunci.txt"
+if [ "$(uname)" != Darwin ]; then
+    [ "$(AMNESIA_HOME="$T" bash "$T/.amnesia/keeplock.sh" status)" = unsupported ] || { echo "FAILED: keeplock status"; fail=1; }
+    AMNESIA_HOME="$T" bash "$T/.amnesia/keeplock.sh" lock >/dev/null && { echo "FAILED: keeplock lock claimed success"; fail=1; }
+    [ "$(AMNESIA_HOME="$T" bash "$T/.amnesia/keeplock.sh" box-status)" = none ] || { echo "FAILED: box-status"; fail=1; }
+    AMNESIA_HOME="$T" bash "$T/.amnesia/keeplock.sh" box-create 1 </dev/null 2>/dev/null && { echo "FAILED: box-create without hdiutil"; fail=1; }
+    AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1    # clean.sh memanggil keeplock: tetap jalan
+    here "Keep/kunci.txt"; [ -f "$T/.amnesia/clean.done" ] || { echo "FAILED: clean.sh broke with keeplock.sh present"; fail=1; }
+    echo "SKIP: Keep lock / Brankas need macOS (ACL, hdiutil): only the 'unsupported' path was tested"
+fi
+rm -f "$T/.amnesia/settings.conf" "$T/.amnesia/keeplock.sh"
 
 [ $fail = 0 ] && echo "OK: all clean.sh tests passed" || exit 1

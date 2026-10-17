@@ -7,6 +7,7 @@ if not os.path.exists(os.environ.get("AMNESIA_7Z", "/opt/homebrew/bin/7zz")):
     os.environ["AMNESIA_7Z"] = shutil.which("7zz") or shutil.which("7z")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import vault as v
+ORIG_KC_SET = v._keychain_set          # v5.22: tes security -i (sebelum diganti versi palsu di bawah)
 
 def mk(rel, text):
     p = os.path.join(T, rel); os.makedirs(os.path.dirname(p), exist_ok=True)
@@ -235,6 +236,83 @@ try:
     hist = open(os.path.join(v.AMNESIA, "history.log")).read()
     assert "\tsnapshot\t" in hist and "\trestore\t" in hist and "\tdoomsday\t" in hist, hist
     assert "login-gmail" not in hist and "Cookies" not in hist, "history has no file names"
+
+    # --- v5.22: kunci privat tidak ke disk, kunci 1 proses, sapu sisa, app tambahan, Keychain lewat stdin ---
+    import fcntl
+    open(os.path.join(v.AMNESIA, "settings.conf"), "w").close()
+    shutil.rmtree(v.VAULT, ignore_errors=True)
+    mk("Library/Application Support/Claude/x.json", "claude-v522")
+    v.create(PW); v.snapshot(["Claude"])
+    real_tmp = v._new_tmp
+    def no_tmp():
+        raise AssertionError("restore must not write the private key to disk (vault/.tmp used)")
+    v._new_tmp = no_tmp
+    v.restore(PW)                                    # lewat _private_pem (memori) + pipe ke openssl
+    v.check_password(PW)
+    v._new_tmp = real_tmp
+    assert not os.path.exists(v.TMP)
+    # sisa dari proses yang terputus disapu saat perintah vault berikutnya mulai
+    mk(".amnesia/vault/.tmp/private.pem", "-----BEGIN PRIVATE KEY-----")
+    mk(".amnesia/vault/.restore/abc/Cookies", "polos")
+    mk(".amnesia/vault/apps/x.7z.new", "setengah")
+    v._cli(["vault.py", "delsnap", "tidak-ada"], None)
+    assert not os.path.exists(v.TMP) and not os.path.exists(v.F_STAGE), "leftovers must be swept"
+    assert not os.path.exists(os.path.join(v.F_APPDIR, "x.7z.new"))
+    os.close(v._LOCK_FD[0]); v._LOCK_FD[0] = None
+    # proses lain memegang kunci -> perintah ini menolak dengan pesan jelas, tidak jalan bersamaan
+    holder = subprocess.Popen([sys.executable, "-c",
+        "import fcntl,os,sys,time; fd=os.open(sys.argv[1], os.O_CREAT|os.O_RDWR); fcntl.flock(fd, fcntl.LOCK_EX); "
+        "print('held', flush=True); time.sleep(30)", v.F_LOCK], stdout=subprocess.PIPE)
+    holder.stdout.readline()
+    try:
+        expect_error(lambda: v._lock_and_sweep(wait=1), "Another vault job")
+    finally:
+        holder.kill(); holder.wait()
+    v._lock_and_sweep(wait=5)
+    os.close(v._LOCK_FD[0]); v._LOCK_FD[0] = None
+    # app baru (Signal, Session, ...) tidak langsung ikut vault
+    mk("Library/Application Support/Signal/config.json", "signal-login")
+    mk("Library/Application Support/Session/config.json", "session-login")
+    assert "Signal" in v.installed_apps() and "Signal" in v.skipped_apps() and "Session" in v.skipped_apps()
+    # app tambahan (deteksi otomatis di app): hanya kalau kamu centang, path aman saja
+    mk("Library/Application Support/MyChat/token", "mychat-login")
+    mk("Library/Containers/com.example.mychat/Data/db", "mychat-db")
+    expect_error(lambda: v.add_custom({"name": "Bad", "paths": ["../luar"]}), "can't go in the vault")
+    expect_error(lambda: v.add_custom({"name": "Bad", "paths": [".amnesia/vault"]}), "can't go in the vault")
+    expect_error(lambda: v.add_custom({"name": "Chrome", "paths": ["Library/Application Support/MyChat"]}), "can't be used")
+    expect_error(lambda: v.add_custom({"name": "A,B", "paths": ["Library/Application Support/MyChat"]}), "can't be used")
+    assert "MyChat" not in v.installed_apps()
+    v._cli(["vault.py", "addapp"], __import__("io").StringIO(
+        '{"name": "MyChat", "quit": "MyChat", "paths": ["Library/Application Support/MyChat", "Library/Containers/com.example.mychat"]}\n'))
+    os.close(v._LOCK_FD[0]); v._LOCK_FD[0] = None
+    assert "MyChat" in v.chosen_apps(), "a ticked app joins the vault"
+    assert "MyChat" in v.snapshot(["MyChat"])
+    shutil.rmtree(os.path.join(T, "Library/Application Support/MyChat"))
+    v.restore(PW)
+    assert open(os.path.join(T, "Library/Application Support/MyChat/token")).read() == "mychat-login"
+    v.remove_custom("MyChat")
+    assert "MyChat" not in v.items() and "MyChat" not in v.manifest().get("per_app", {})
+    # password Kunci Keep: hash PBKDF2 di settings.conf, cek benar/salah
+    expect_error(lambda: v.keep_hash("pendek"), "at least")
+    with open(os.path.join(v.AMNESIA, "settings.conf"), "a") as f:
+        f.write("KEEP_LOCK_PW=" + v.keep_hash("kunci-keep-123") + "\n")
+    v.keep_check("kunci-keep-123")
+    expect_error(lambda: v.keep_check("salah-salah"), "Wrong Keep password")
+    assert "kunci-keep-123" not in open(os.path.join(v.AMNESIA, "settings.conf")).read()
+    # Keychain: secret lewat stdin ke `security -i`, tidak pernah di argumen (security palsu mencatat argv & stdin)
+    fake = os.path.join(T, "fake-security")
+    log = os.path.join(T, "security.log")
+    with open(fake, "w") as f:
+        f.write("#!/bin/bash\necho \"ARGV $*\" >> %s\n[ \"$1\" = -i ] && sed 's/^/STDIN /' >> %s\nexit 0\n" % (log, log))
+    os.chmod(fake, 0o755)
+    old_sec, v.SECURITY = v.SECURITY, fake
+    ORIG_KC_SET("Signal Safe Storage", "Signal Key", "rahasia-signal")
+    v.SECURITY = old_sec
+    text = open(log).read()
+    assert "rahasia-signal" not in text.replace("STDIN", ""), "secret must not be in argv"
+    argv_lines = [l for l in text.splitlines() if l.startswith("ARGV")]
+    assert not any("rahasia" in l or b"rahasia-signal".hex() in l for l in argv_lines), argv_lines
+    assert b"rahasia-signal".hex() in text, "secret goes as hex through stdin"
     print("OK: all vault tests passed")
 finally:
     shutil.rmtree(T)

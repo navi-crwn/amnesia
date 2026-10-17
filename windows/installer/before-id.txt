@@ -1,0 +1,10 @@
+﻿SEBELUM MEMASANG
+
+Amnesia adalah app yang sengaja lupa. Setelah kamu nyalakan, folder user kamu dibersihkan setiap sign out, kecuali folder Keep dan Keep List.
+
+Memasang TIDAK menyalakannya. Tidak ada yang dihapus sampai kamu sendiri menekan Turn On di app.
+
+Perlu diketahui:
+  - Pasang hanya di akun Windows milikmu sendiri. Akun tes cadangan adalah langkah awal yang bagus.
+  - Kalau Amnesia sudah nyala dan kamu sedang update: matikan (Turn Off) dulu, pasang, lalu nyalakan (Turn On) lagi.
+  - Backup dulu semua yang penting sebelum menyalakannya.

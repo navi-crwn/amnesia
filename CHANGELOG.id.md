@@ -7,6 +7,88 @@ Sedikit cerita: tanggal 6 Oktober 2026 Amnesia masih berupa beberapa skrip. Dua 
 
 Nomor versi kamu ada di samping judul Amnesia dan di bagian bawah panel menu bar.
 
+## v5.22.0 · Update bertanda tangan, aman untuk iCloud, Kunci Keep, Cek kesehatan (17 Okt 2026)
+
+**Matikan** Amnesia dulu sebelum memasang, lalu nyalakan lagi.
+
+### Baru
+- **Kunci Keep (baru).** Finder dan app lain tidak bisa membuka atau mengubah isi folder Keep sampai kamu mengetik password Keep di Amnesia. Terkunci lagi setelah 5–60 menit, saat layar terkunci, saat Amnesia ditutup, dan setiap logout dan login. Biar jelas: ini memakai izin macOS, bukan enkripsi. Siapa pun yang login sebagai kamu bisa melepasnya dengan `chmod -RN ~/Keep`. Mati secara default (Pengaturan → Kunci Keep).
+- **Brankas (eksperimen).** Disk terenkripsi (APFS, AES-256) di dalam folder Keep, untuk file yang benar-benar harus rahasia. Amnesia menutupnya sebelum setiap pembersihan. Kalau lupa password-nya, file di dalamnya hilang.
+- **Cek kesehatan.** 1 halaman yang menampilkan:
+  - apakah Amnesia aktif dan agent login menunjuk ke app yang benar-benar ada
+  - Akses Disk Penuh
+  - iCloud Desktop & Documents, dan folder yang berupa symlink
+  - mesin virtual yang tidak disimpan, dan file 1 GB ke atas yang akan dihapus
+  - umur backup terakhir
+  - cek update, Kunci Keep dan FileVault
+
+  Sebagian besar baris punya tombol untuk memperbaikinya.
+- **Halaman Batasan.** Daftar jujur yang tidak bisa dihapus Amnesia: Time Machine dan snapshot APFS, Spotlight, iCloud dan cloud lain, swap dan sleepimage, log sistem, akun lain, dan folder Keep (tidak dienkripsi).
+- **App baru di Profile Vault:** Signal, Session, Element, Telegram, Obsidian, Notion, Zoom dan Bitwarden. Semuanya belum dicentang di awal, jadi kamu yang memilih.
+- **Saran app untuk vault.** Amnesia menampilkan app lain yang kelihatannya menyimpan login (punya item "Safe Storage" di Keychain). Tidak ada yang ditambahkan sebelum kamu centang, dan bisa dikeluarkan lagi.
+- **Meter kekuatan password** untuk password vault, Kunci Keep dan Brankas. Cuma perkiraan kasar, bukan jaminan.
+
+### Diperbaiki
+- **Folder yang berupa symlink tidak pernah dikosongkan lewat link-nya.** Dulu, kalau `~/Documents` menunjuk ke dalam folder Keep, membersihkan Documents ikut mengosongkan Keep.
+- **Nama di Keep List yang pakai aksen ("Café") cocok dalam bentuk mana pun yang dipakai macOS (NFC atau NFD).** Dulu nama yang diketik di Amnesia bisa tidak cocok dengan nama yang sama dari Finder atau backup lama.
+- **iCloud Desktop & Documents: Desktop dan Documents dilewati.** Membersihkannya berarti ikut menghapus file di iCloud dan di perangkat Apple kamu yang lain. Amnesia mencatatnya dan memberi tahu di halaman Yang Akan Dihapus dan di Cek kesehatan. Kalau ragu, dilewati: lebih baik ada file yang tertinggal daripada terhapus dari iCloud.
+- **File yang gagal dihapus tidak dihitung "dibersihkan" lagi.** Baris pembersihan terakhir dan Riwayat sekarang menulis "N gagal dihapus". Amnesia mencobanya lagi lain kali. trace.log hanya mencatat jumlah dan bagiannya (misalnya "Downloads"), tidak pernah nama file.
+- **Pengosongan tempat sampah Amnesia sekarang dicatat.** Dulu jalan diam-diam di background. Sisanya dihitung dan ditampilkan di app.
+- **Pekerjaan vault tidak bisa tumpang tindih.** Snapshot atau restore kedua sekarang menunggu, lalu berhenti dengan pesan yang jelas. Sisa pekerjaan yang terputus dibersihkan dulu.
+- **Restore tidak lagi menulis kunci privat vault ke disk.** Kuncinya tetap di memori.
+- **Menyimpan password backup di Keychain** tidak lagi menaruhnya di baris perintah, yang bisa dilihat program lain di Mac.
+- **Memindah atau mengganti nama Amnesia.app tidak lagi mematikan perlindungan diam-diam.** Muncul notifikasi selagi kamu masih login, dan alasannya dicatat di trace.log.
+
+### Diubah
+- **Update dari dalam app harus bertanda tangan.** Amnesia hanya memasang update kalau `SHA256SUMS.txt` punya tanda tangan developer yang benar (ECDSA P-256). Kalau tanda tangannya tidak ada atau salah, kamu diarahkan ke halaman rilis.
+- **Backup yang sebagian filenya tidak bisa dibaca 7-Zip** (sedang dibuka app lain, tidak ada izin) sekarang "selesai dengan peringatan", bukan "berhasil" biasa. Kamu melihat apa saja yang dilewati. Daftar itu hanya ditampilkan, tidak disimpan.
+- Halaman Backup sekarang menyebut apa yang sengaja tidak ikut: folder bernama `node_modules` atau `.tmp`, dan file `.DS_Store`.
+- Teks Doomsday, kata panik dan Hapus Vault sekarang menjelaskan apa adanya cara menghapusnya:
+  - file dihapus dengan cara biasa, tidak ditimpa
+  - vault-nya sendiri terenkripsi
+  - file yang dikosongkan dari Keep tidak terenkripsi
+  - backup, Time Machine dan cloud tidak disentuh
+- Menghapus Amnesia (dari app atau `uninstall.sh`) meminta password Keep dan membuka Keep dulu. Tanpa password, Keep tetap terkunci dan kamu diberi perintah untuk membukanya: `chmod -RN ~/Keep`.
+
+## Windows v0.8.0 · Keep aman dari "Hapus app baru", folder cloud dan VM tidak disentuh, ada Cek kesehatan (17 Okt 2026)
+
+Matikan Amnesia dulu sebelum memasang di atas versi lama, lalu nyalakan lagi.
+
+Versi ini hasil audit lengkap dan tes di laptop Windows 11 sungguhan. Dua perbaikan pertama yang paling penting: tolong update.
+
+### Diperbaiki (penting)
+- **"Hapus app baru" bisa menghapus folder di dalam Keep.** Saat dites, folder yang ada di Keep List ikut terhapus permanen. Sekarang yang diambil hanya folder milik app itu sendiri di AppData, tidak pernah yang ada di Keep List, tidak pernah folder yang berisi sesuatu yang disimpan, dan tidak pernah folder bersama seperti Programs atau Packages. Dan tidak langsung dihapus lagi: foldernya masuk ke tempat sampah Amnesia dan menunggu **3 hari** dulu.
+- **Folder cloud tidak pernah dihapus lagi.** Dropbox, Google Drive, iCloud Drive, Nextcloud, MEGA, Box, pCloud, Proton Drive dan lainnya tetap di tempatnya, juga semua folder yang dikenal Windows sebagai folder sync. Dulu, memindahkannya terlihat seperti "dihapus" bagi app sync-nya, sehingga file kamu di cloud bisa ikut terhapus. File yang hanya ada di cloud ("Files On-Demand") juga dibiarkan.
+- **Virtual machine dan image disk besar tetap aman.** Disk VirtualBox, Hyper-V, VMware, WSL, Docker dan emulator Android, juga file .iso 1 GB ke atas. Bisa dimatikan di Pengaturan > Perlindungan.
+
+### Diperbaiki
+- **Sign out lebih cepat dan lebih bisa diandalkan.** Amnesia membuat daftar yang akan dihapus begitu Windows meminta sign out, tidak menghitung ukuran, dan menghentikan snapshot vault yang sedang berjalan supaya pembersihan dapat waktunya. trace.log sekarang mencatat lama tiap langkah. (Sign out biasa kadang menunda penghapusan ke login berikutnya; ini masih perlu dites sekali lagi di laptop kamu.)
+- **Tombol panik saat Jeda sekarang jalan.** Sign out cepat membatalkan jeda, menutup Explorer, menghapus cache thumbnail dan ikonnya, membersihkan, lalu sign out. Kalau Windows lambat sign out, dicoba lagi setelah 8 detik.
+- **Startup dimatikan = Amnesia diam-diam berhenti.** Kalau Startup apps di Task Manager mematikan Amnesia, halaman utama sekarang menampilkan peringatan dengan tombol **Nyalakan lagi**. Saat Amnesia mati, dia tidak ikut menyala bersama Windows lagi (switch baru: Pengaturan > Perlindungan > Buka saat login).
+- **Keep tetap terkunci setelah uninstall.** Uninstall dari app sekarang meminta password Keep dan membuka Keep dulu. Uninstall dari Pengaturan Windows juga menanyakannya. Tanpa password, Keep tetap terkunci dan kamu dapat satu perintah untuk membukanya.
+- **Uninstaller tidak lagi menghapus data Amnesia sendiri.** Ditanya dulu (pilihan awal: Tidak), dan tidak pernah saat Keep masih terkunci.
+- **Baris Keep List yang gagal tersimpan** sekarang muncul sebagai error, bukan "Tersimpan" palsu.
+- **Backup:** backup lama di dalam Keep tidak ikut dikemas ke setiap backup baru, folder backup di dalam Keep ditolak, file yang sedang dipakai dihitung dan disebut di hasilnya, dan restore yang terputus (listrik mati) membersihkan sisanya sendiri dan mengembalikan vault lama kamu.
+- **Jendela terlalu sempit di skala 150%.** Sekarang ukurannya ikut skala Windows.
+- Crash saat jendela ditutup sementara pekerjaan panjang masih menjawab.
+- Jeda tercatat di riwayat sebagai "Dijeda untuk satu sesi" (di log dulu tertulis "turned off").
+- Helper admin hanya membaca daftar folder miliknya sendiri.
+
+### Baru
+- **Ikon dan nama app di Keep List.** Barisnya menampilkan "Discord" dengan ikonnya, bukan cuma path. **Simpan sebuah app** menampilkan app yang terpasang (termasuk app Microsoft Store) dan menyimpan semua folder app itu dengan sekali klik.
+- **Cek kesehatan** di halaman utama: Amnesia nyala atau tidak, ikut startup atau tidak, pembersihan terakhir, file yang tertinggal, folder cloud, vault, backup, kunci Keep. Di bawahnya: **Yang tidak bisa dilakukan Amnesia**, batasan yang jujur.
+- **Update bertanda tangan (gratis).** Updater di app sekarang juga mengecek tanda tangan developer pada SHA256SUMS.txt. Tanpa tanda tangan, tidak dipasang dari app: halaman rilis yang dibuka.
+- **Brankas (eksperimen):** folder terkunci di dalam Keep. Saat tertutup isinya satu file terenkripsi, saat dibuka ada di Keep\Safe. Amnesia menutupnya lagi setiap sign out.
+- **Opsional:** hapus juga data app Microsoft Store, dan hapus juga password app di Credential Manager (tidak pernah akun Microsoft, OneDrive atau Office). Keduanya mati secara default.
+- **Vault:** Session, WhatsApp, Element, Obsidian, Thunderbird, Bitwarden, Antigravity, Windsurf, Gemini CLI dan OpenCode. Vault juga menyarankan app terpasang yang belum dikenalnya. Ada pengukur kekuatan password, dan teks Doomsday sekarang jujur soal apa yang tidak bisa dicegahnya.
+- **Setup:** halaman selamat datang, syarat, peringatan singkat sebelum pasang dan tur singkat sesudahnya, dalam bahasa Inggris dan Indonesia.
+- Tes otomatis: 273 (dulu 207).
+
+### Masih perlu dites di PC sungguhan
+- Sign out biasa langsung membersihkan (bukan di login berikutnya).
+- Cache thumbnail setelah sign out biasa.
+- Keep List dengan folder app Microsoft Store.
+
 ## Windows v0.7.2 · Lencana "Tes di VM" hilang, website Windows lengkap (14 Okt 2026)
 
 Matikan (Turn Off) Amnesia dulu sebelum install di atas versi lama, lalu nyalakan (Turn On) lagi.

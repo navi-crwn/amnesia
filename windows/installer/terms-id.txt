@@ -1,0 +1,26 @@
+﻿AMNESIA UNTUK WINDOWS: KETENTUAN PAKAI DAN PERINGATAN
+
+Baca dulu sebelum memasang. Singkat kok.
+
+1. AMNESIA MENGHAPUS DATA. BENERAN.
+Begitu kamu tekan Turn On di app, semua yang ada di folder user kamu di luar folder Keep dan Keep List dihapus setiap sign out, restart dan shutdown, lalu dicek ulang saat sign in berikutnya. Termasuk Desktop, Downloads, Documents, Pictures, riwayat browser, cookie, data app dan login app (kecuali yang kamu simpan).
+File yang dihapus tidak masuk Recycle Bin dan tidak bisa dikembalikan. Tidak oleh kamu, tidak juga oleh kami.
+Setelah dipasang, Amnesia tetap MATI sampai kamu sendiri yang menyalakannya. Sebelum itu:
+  - backup dulu semua yang penting,
+  - buka "Yang akan dihapus" dan baca daftarnya,
+  - pindahkan file penting ke folder Keep.
+
+2. YANG TIDAK DISENTUH AMNESIA
+Folder Keep, semua yang ada di Keep List, OneDrive, folder cloud (Dropbox, Google Drive, iCloud dan lainnya), virtual machine, data app Microsoft Store, dan yang dibutuhkan Windows untuk sign in. Akun user lain dan drive lain tidak pernah disentuh.
+
+3. PASSWORD KAMU CUMA KAMU YANG TAHU
+Vault, backup dan kunci Keep memakai password yang hanya kamu tahu. Kalau lupa, tidak ada yang bisa membukanya: tidak ada reset, tidak ada pintu belakang. Salah password vault 3 kali, atau mengetik kata panik, sengaja memusnahkan vault.
+Kunci Keep adalah pengaman ringan: menahan app lain dan orang yang tidak paham Windows, tapi isinya tidak dienkripsi. Pakai BitLocker / enkripsi perangkat untuk perlindungan sungguhan.
+
+4. TIDAK ADA YANG KELUAR DARI PC KAMU
+Tanpa server, tanpa akun, tanpa pelacakan, tanpa analitik. Yang lewat internet hanya cek update (GitHub) dan backup yang kamu atur sendiri.
+
+5. KAMU YANG PEGANG KENDALI
+Amnesia adalah software gratis dan open-source dengan Lisensi MIT, diberikan apa adanya, tanpa garansi apa pun. Risiko pemakaian ada di kamu. Pembuatnya tidak bertanggung jawab atas data yang hilang, login yang hilang, atau apa pun yang terjadi karena app ini, bug, atau pengaturan. Pasang hanya di PC dan akun milikmu sendiri. App ini belum ditandatangani (code signing), jadi Windows SmartScreen bisa memberi peringatan; semua kodenya ada di GitHub.
+
+Dengan memasang Amnesia kamu setuju dengan semua hal di atas.

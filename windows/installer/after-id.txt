@@ -1,0 +1,10 @@
+﻿TUR SINGKAT
+
+1. Folder Keep: taruh file yang ingin disimpan di "Keep" di folder user kamu (ada shortcut di Desktop).
+2. Keep List: Pengaturan, lalu Keep List, lalu "Simpan app..." untuk menyimpan login dan pengaturan sebuah app.
+3. Yang akan dihapus: lihat daftarnya sebelum menyalakan Amnesia.
+4. Turn On: sejak itu folder user kamu dibersihkan setiap sign out. Pause melewati satu sesi.
+5. Vault (opsional): menyimpan login app secara terenkripsi dan mengembalikannya setelah sign in.
+6. Cek kesehatan: halaman depan memberi tahu kalau ada yang perlu dilihat (startup dimatikan, folder cloud, file besar).
+
+Amnesia ada di tray di dekat jam. Klik kanan untuk menu.

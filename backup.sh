@@ -16,6 +16,9 @@
 # Dibatalkan (SIGTERM dari tombol Batal): semua proses anak ikut dihentikan, file setengah jadi dihapus,
 # backup.log tidak diubah (backup sebelumnya tetap tercatat), keluar dengan kode 130.
 # BACKUP_FOLDERS: daftar dipisah koma. "@keep" = folder Keep, lainnya relatif ke home atau path lengkap.
+# Folder node_modules, .tmp dan file .DS_Store tidak ikut backup (bisa dibuat ulang / sampah).
+# v5.22: kalau 7zz selesai dengan peringatan (kode 1, mis. file sedang dipakai atau tidak boleh dibaca), backup tetap
+# disimpan tapi dilaporkan "selesai dengan peringatan" (baris terakhir "WARN: ..."), bukan sukses biasa.
 # ============================================
 set -uo pipefail
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -29,6 +32,15 @@ AUTO=0; [ "${1:-}" = "--auto" ] && AUTO=1
 cfg() { grep "^$1=" "$CONF" 2>/dev/null | tail -1 | cut -d= -f2-; }
 t() { if [ "$(cfg LANG)" = id ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }   # English / Indonesia
 notify() { [ "$AUTO" = 1 ] && osascript -e "display notification \"$1\" with title \"Amnesia Backup\"" 2>/dev/null; true; }
+# v5.22: Kunci Keep menyala → folder Keep dibuka sebentar untuk backup / pulihkan file, lalu dikunci lagi
+KEEP_RELOCK=0
+keep_borrow() {
+    [ -f "$A/keeplock.sh" ] && [ "$(cfg KEEP_LOCK)" = 1 ] || return 0
+    [ "$(/bin/bash "$A/keeplock.sh" status 2>/dev/null)" = locked ] || return 0
+    /bin/bash "$A/keeplock.sh" unlock >/dev/null 2>&1 && KEEP_RELOCK=1
+}
+keep_return() { [ "$KEEP_RELOCK" = 1 ] && /bin/bash "$A/keeplock.sh" lock >/dev/null 2>&1; KEEP_RELOCK=0; true; }
+trap 'keep_return' EXIT
 fail() { echo "$(date '+%F %T') FAILED: $*" > "$A/backup.log"; printf '%s\tbackupfail\t%s\n' "$(date '+%F %T')" "$AUTO" >> "$A/history.log"; notify "$(t "Backup failed" "Backup gagal"): $*"; echo "FAILED: $*" >&2; exit 1; }
 
 IFS= read -r PW || true
@@ -87,7 +99,7 @@ fi
 if [ "${1:-}" = "--list" ] || [ "${1:-}" = "--restore-files" ]; then
     MODE="$1"; FILE="${2:-}"; shift 2 || true
     [ -f "$FILE" ] || { echo "FAILED: [broken] $(t "backup file not found" "file backup tidak ditemukan")" >&2; exit 1; }
-    TMPR="$(mktemp -d "$H/.amnesia-restore.XXXXXX" 2>/dev/null || mktemp -d)"; trap 'rm -rf "$TMPR"' EXIT
+    TMPR="$(mktemp -d "$H/.amnesia-restore.XXXXXX" 2>/dev/null || mktemp -d)"; trap 'rm -rf "$TMPR"; keep_return' EXIT
     list="$(printf '%s\n' "$PW" | "$SEVENZ" l -slt "$FILE" 2>&1)"
     if [ $? -ne 0 ]; then
         if printf '%s' "$list" | grep -qi "password"; then
@@ -147,6 +159,7 @@ PY
         exit 0
     fi
     # --restore-files
+    keep_borrow
     TO=""; [ "${1:-}" = "--to" ] && { TO="${2:-}"; shift 2; [ -d "$TO" ] || { echo "FAILED: $(t "folder not found" "folder tidak ditemukan"): $TO" >&2; exit 1; }; }
     [ $# -gt 0 ] || { echo "FAILED: $(t "nothing picked" "belum ada yang dipilih")" >&2; exit 1; }
     for p in "$@"; do
@@ -202,6 +215,7 @@ cd "$H" || fail "$(t "home folder not found" "folder home tidak ada")"
 # folder Keep pilihan user (KEEP_DIR, default ~/Keep)
 KD="$(cfg KEEP_DIR)"
 case "$KD" in "~/"?*) KD="$H/${KD#\~/}" ;; /?*) ;; *) KD="$H/Keep" ;; esac
+keep_borrow
 items=()
 IFS=',' read -ra F <<< "$(cfg BACKUP_FOLDERS || true)"
 [ ${#F[@]} -gt 0 ] || F=(@keep)
@@ -228,7 +242,7 @@ json.dump({"made": time.strftime("%Y-%m-%d %H:%M"), "home": home, "items": rows}
 PY
 
 NAME="amnesia_backup_$(date +%Y%m%d_%H%M).7z"
-TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"; keep_return' EXIT
 OUT="$TMP/$NAME"
 PARTIAL=""; REMOTE_CLEAN=()
 
@@ -299,6 +313,15 @@ progress 0 compress 1/2
 wait $!
 rc="$(cat "$TMP/rc" 2>/dev/null || echo 9)"
 { [ "$rc" -le 1 ] && [ -f "$OUT" ]; } || fail "$(t "7zz failed" "7zz gagal") ($rc) $(tail -c 200 "$TMP/err")"
+# v5.22: kode 1 = peringatan: arsip jadi, tapi ada file yang terlewat. Jumlah baris peringatan saja (tanpa nama file)
+# yang dicatat; potongan pesan 7zz hanya ditampilkan di app (stdout), tidak disimpan.
+WARN=0; WARNS=0
+if [ "$rc" = 1 ]; then
+    WARN=1
+    WARNS="$(grep -ci "warning" "$TMP/err" 2>/dev/null)"; WARNS="${WARNS:-0}"
+    echo "$(date '+%F %T') backup: 7zz finished with warnings ($WARNS)" >> "$A/trace.log" 2>/dev/null
+fi
+keep_return
 SHA="$(shasum -a 256 "$OUT" 2>/dev/null || sha256sum "$OUT")"; SHA="${SHA%% *}"
 SIZE="$(du -m "$OUT" | cut -f1)"
 TOTAL="$(fsize "$OUT")"
@@ -375,9 +398,16 @@ trap '' TERM INT HUP          # sudah terkirim: catatan di bawah tidak boleh ter
 
 echo "$SHA  $WHERE/$NAME" >> "$A/backup_checksums.txt"
 TO="$(t to ke)"
-echo "$(date '+%F %T') OK: $NAME (${SIZE} MB) $TO $WHERE" > "$A/backup.log"
-printf '%s\tbackup\t%s %s %s\n' "$(date '+%F %T')" "$AUTO" "$WITHVAULT" "$SIZE" >> "$A/history.log"   # halaman Riwayat
+TAG="OK:"; [ "$WARN" = 1 ] && TAG="WARN:"
+echo "$(date '+%F %T') $TAG $NAME (${SIZE} MB) $TO $WHERE" > "$A/backup.log"
+printf '%s\tbackup\t%s %s %s %s\n' "$(date '+%F %T')" "$AUTO" "$WITHVAULT" "$SIZE" "$WARN" >> "$A/history.log"   # halaman Riwayat (v5.22: + peringatan)
 touch "$A/backup.ok"                                  # dipakai app untuk jadwal backup
 [ "$WITHVAULT" = 1 ] && touch "$A/backup.vault.ok"   # app: vault sudah pernah ikut backup
-notify "$(t "Backup done" "Backup selesai"): ${SIZE} MB $TO $WHERE"
-echo "OK: $NAME (${SIZE} MB) $TO $WHERE"
+if [ "$WARN" = 1 ]; then
+    notify "$(t "Backup finished with warnings: some files could not be read and were left out" "Backup selesai dengan peringatan: beberapa file tidak bisa dibaca dan tidak ikut"). ${SIZE} MB $TO $WHERE"
+    # potongan pesan 7zz untuk app (bisa berisi nama file: hanya ditampilkan, tidak disimpan)
+    grep -i -A1 "warning" "$TMP/err" 2>/dev/null | grep -v "^--$" | tail -n 6 | sed 's/^/SKIPPED: /'
+else
+    notify "$(t "Backup done" "Backup selesai"): ${SIZE} MB $TO $WHERE"
+fi
+echo "$TAG $NAME (${SIZE} MB) $TO $WHERE"

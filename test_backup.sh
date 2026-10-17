@@ -118,4 +118,15 @@ sleep 0.5; pgrep -f "7z.*amnesia_backup" >/dev/null && fail "7z still running af
 ls "$T/Volumes/SSD" | grep -q . && fail "half-written file left"
 cmp -s "$T/home/.amnesia/backup.log" "$T/log.before" || fail "backup.log changed on cancel"
 rm -f "$T/home/Documents/besar.bin"
+
+# v5.22: 7zz kode 1 (peringatan, mis. file sedang dipakai) = "selesai dengan peringatan", bukan sukses biasa / gagal
+W="$T/7z-warn"; printf '#!/bin/bash\n"%s" "$@"; rc=$?\necho "WARNING: test-skip.txt : Permission denied" >&2\n[ $rc = 0 ] && exit 1\nexit $rc\n' "$AMNESIA_7Z" > "$W"; chmod +x "$W"
+OUTW="$(echo "pw-backup-123" | AMNESIA_7Z="$W" bash "$DIR/backup.sh" 2>/dev/null)" || fail "backup with warnings must still finish"
+printf '%s\n' "$OUTW" | tail -1 | grep -q "^WARN: amnesia_backup_" || fail "last line must be WARN: $OUTW"
+printf '%s\n' "$OUTW" | grep -q "^SKIPPED: " || fail "7zz warning text for the app"
+grep -q " WARN: amnesia_backup_" "$T/home/.amnesia/backup.log" || fail "backup.log must say WARN"
+grep -q "test-skip" "$T/home/.amnesia/backup.log" "$T/home/.amnesia/history.log" "$T/home/.amnesia/trace.log" 2>/dev/null && fail "file names must not be stored"
+tail -1 "$T/home/.amnesia/history.log" | grep -qE "	backup	0 1 [0-9]+ 1$" || fail "history must mark the warning"
+grep -q "7zz finished with warnings" "$T/home/.amnesia/trace.log" || fail "trace warning"
+echo "pw-backup-123" | bash "$DIR/backup.sh" >/dev/null 2>&1 && grep -q " OK: " "$T/home/.amnesia/backup.log" || fail "normal backup is OK again"
 echo "OK: all backup tests passed"

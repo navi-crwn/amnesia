@@ -9,6 +9,22 @@ gh auth status >/dev/null 2>&1 || gh auth login --web --git-protocol https
 gh auth status 2>&1 | grep -q "'workflow'" || { echo "GitHub needs one extra permission (workflow) for the Windows build. A browser window opens once."; gh auth refresh -h github.com -s workflow; }
 gh auth setup-git >/dev/null 2>&1 || true   # git push uses the same GitHub login as gh
 V="$(defaults read "$PWD/app/Info" CFBundleShortVersionString)"
+# v5.22: update ditandatangani (ECDSA P-256). Kunci privat HANYA di Mac kamu (tidak pernah ke GitHub).
+# Buat sekali:  openssl ecparam -name prime256v1 -genkey -noout -out ~/Keep/Rahasia/amnesia-update-signing.pem
+SIGN_KEY="$HOME/Keep/Rahasia/amnesia-update-signing.pem"
+if [ ! -f "$SIGN_KEY" ]; then
+  echo "STOP: the update signing key is missing: $SIGN_KEY"
+  echo "      Without it the release can't be signed, and Amnesia refuses to install unsigned updates from the app."
+  echo "      Make it once:  mkdir -p ~/Keep/Rahasia && openssl ecparam -name prime256v1 -genkey -noout -out \"$SIGN_KEY\""
+  echo "      (keep a copy in your backup: if it's lost, older versions can't verify new updates). Nothing was changed."
+  exit 1
+fi
+# kunci publik di app harus pasangan kunci ini (kalau tidak: versi ini tidak bisa mengecek update berikutnya)
+PUB_B64="$(/usr/bin/openssl ec -in "$SIGN_KEY" -pubout -outform DER 2>/dev/null | base64 | tr -d '\n')"
+if [ -z "$PUB_B64" ] || ! grep -qF "$PUB_B64" app/Extras.swift; then
+  echo "     WARNING: app/Extras.swift doesn't hold the public key of $SIGN_KEY."
+  echo "              The app you release can't check future updates (it will send people to the release page instead)."
+fi
 
 echo "1/7  Tidying old files..."
 rm -rf reset.sh clean_keychain.sh keep_apps.conf amnesia_app.py templates __pycache__ app/build/makeicon docs/vault.png
@@ -111,13 +127,18 @@ TXT
 PKG="$(mktemp -d)/Amnesia-v$V.dmg"
 hdiutil create -quiet -volname "Amnesia $V" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$PKG"
 NOTES="$(mktemp)"
-awk -v v="## v$V" '$0 ~ "^"v {on=1; next} on && /^## v/ {exit} on' CHANGELOG.md > "$NOTES"
+awk -v v="## v$V" '$0 ~ "^"v {on=1; next} on && /^## / {exit} on' CHANGELOG.md > "$NOTES"
 
 # Proof the download is clean and unchanged: SHA-256 checksum file + (optional) VirusTotal scan.
 # The VirusTotal key is only read from your Keychain (set it once with: bash ~/.amnesia/app/virustotal_key.sh).
 SUMS="$(dirname "$PKG")/SHA256SUMS.txt"
 ( cd "$(dirname "$PKG")" && shasum -a 256 "Amnesia-v$V.dmg" > SHA256SUMS.txt )
 SHA_DMG="$(awk '{print $1; exit}' "$SUMS")"
+# v5.22: tanda tangan atas isi persis SHA256SUMS.txt (DER ECDSA-SHA256), dicek app sebelum memasang update
+SIG="$SUMS.sig"
+/usr/bin/openssl dgst -sha256 -sign "$SIGN_KEY" -out "$SIG" "$SUMS" || { echo "STOP: signing SHA256SUMS.txt failed. Nothing was released."; exit 1; }
+/usr/bin/openssl ec -in "$SIGN_KEY" -pubout 2>/dev/null | /usr/bin/openssl dgst -sha256 -verify /dev/stdin -signature "$SIG" "$SUMS" >/dev/null \
+  || { echo "STOP: the new signature doesn't verify. Nothing was released."; exit 1; }
 VT_URL=""
 if VT_KEY="$(security find-generic-password -s "Amnesia VirusTotal" -w 2>/dev/null)" && [ -n "$VT_KEY" ]; then
   echo "     VirusTotal: uploading the .dmg for a scan..."
@@ -134,16 +155,17 @@ unset VT_KEY
   echo
   echo "### Check your download"
   echo "- SHA-256 of \`Amnesia-v$V.dmg\`: \`$SHA_DMG\` (also in \`SHA256SUMS.txt\`). Compare on your Mac with \`shasum -a 256 ~/Downloads/Amnesia-v$V.dmg\`."
+  echo "- \`SHA256SUMS.txt.sig\` is an ECDSA P-256 signature of \`SHA256SUMS.txt\`. Amnesia checks it before it installs an update from inside the app."
   [ -n "$VT_URL" ] && echo "- Virus scan by 70+ antivirus engines: [VirusTotal]($VT_URL) (results appear a few minutes after release; a new unsigned app can get 1 or 2 false alarms)."
   echo "- Amnesia is open source: every file in this release is built from the code in this repo."
 } >> "$NOTES"
 
 echo "5/7  Release v$V..."
 if gh release view "v$V" >/dev/null 2>&1; then
-  gh release upload "v$V" "$PKG" "$SUMS" --clobber
+  gh release upload "v$V" "$PKG" "$SUMS" "$SIG" --clobber
   gh release edit "v$V" --notes-file "$NOTES" >/dev/null
 else
-  gh release create "v$V" "$PKG" "$SUMS" --title "Amnesia v$V" --notes-file "$NOTES" >/dev/null
+  gh release create "v$V" "$PKG" "$SUMS" "$SIG" --title "Amnesia v$V" --notes-file "$NOTES" >/dev/null
 fi
 OWNER="$(gh api user -q .login)"; REPO="$(gh repo view --json name -q .name)"
 SITE="https://$OWNER.github.io/$REPO/"

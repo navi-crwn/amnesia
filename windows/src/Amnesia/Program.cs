@@ -6,6 +6,9 @@
 //   --admin spec   the Windows protections switches (Settings → Advanced), in a copy Windows started as administrator
 //   --lab-check    v0.7, used by the uninstaller: when the lab lock is on, asks its PIN and removes it (exit 0 = go ahead)
 //   --open-keep    v0.7, the Desktop shortcut while the Keep lock is on: asks the Keep password, then opens Keep
+//   --keep-check   v0.8, used by the uninstaller: when Keep is locked, asks the Keep password and opens it for good.
+//                  No password: Amnesia is still removed, Keep stays locked and you are told how to open it later.
+//                  Exit 0 = Keep is open (or was never locked), 2 = Keep stays locked.
 namespace Amnesia;
 
 static class Program
@@ -28,9 +31,20 @@ static class Program
             string? pin = PinPrompt.Ask(null, Text2.LabTitle, Text2.LabAsk, digitsOnly: true, check: Amnesia.Core.Lab.Check);
             try { return pin != null && LabLock.TurnOff(pin) ? 0 : 1; } catch { return 1; }
         }
+        if (args.Contains("--keep-check"))
+        {
+            ApplicationConfiguration.Initialize();
+            if (!KeepLock.On) return 0;
+            string? pw = PinPrompt.Ask(null, Text2.KeepUninstallTitle, Text2.KeepUninstallAsk, digitsOnly: false,
+                check: p => Amnesia.Core.Pin.Verify(p, Settings.Get("KEEP_LOCK_PW")));
+            if (pw != null) { try { KeepLock.TurnOff(pw); return 0; } catch { } }
+            AppInfo.Trace("uninstall without the Keep password: Keep stays locked");
+            MessageBox.Show(Text2.KeepStaysLocked(Settings.KeepDir), "Amnesia", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return 2;
+        }
         if (args.Contains("--off"))
         {
-            Setup.TurnOff();
+            Setup.TurnOff(leaveStartup: false);
             Settings.Set("KEEP_SHORTCUT", "0"); Settings.Set("KEEP_PIN", "0");
             KeepLinks.SyncNow();
         }

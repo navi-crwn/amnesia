@@ -7,6 +7,88 @@ Quick backstory: on October 6, 2026 Amnesia was a handful of scripts. Two days a
 
 Your version number is next to the Amnesia title and at the bottom of the menu bar panel.
 
+## v5.22.0 · Signed updates, iCloud-safe cleaning, Keep lock, Health check (Oct 17, 2026)
+
+**Turn Off** Amnesia before installing, then turn it on again.
+
+### New
+- **Keep lock (new).** Finder and other apps can't open or change what's in your Keep folder until you type the Keep password in Amnesia. It locks again after 5–60 minutes, when the screen locks, when Amnesia quits, and at every logout and login. To be clear: this uses macOS permissions, not encryption. Anyone logged in as you can remove it with `chmod -RN ~/Keep`. Off by default (Settings → Keep lock).
+- **Brankas (experimental).** An encrypted disk (APFS, AES-256) inside your Keep folder, for files that really must stay secret. Amnesia closes it before every cleanup. If you forget its password, the files in it are gone.
+- **Health check.** One page that shows:
+  - whether Amnesia is on and the login agent points to a real app
+  - Full Disk Access
+  - iCloud Desktop & Documents, and folders that are symlinks
+  - virtual machines that are not kept, and files of 1 GB or more about to be deleted
+  - how old your last backup is
+  - update check, Keep lock and FileVault
+
+  Most rows have a button that fixes the problem.
+- **Limitations page.** A plain list of what Amnesia can't wipe: Time Machine and APFS snapshots, Spotlight, iCloud and other clouds, swap and sleepimage, system logs, other accounts, and the Keep folder (not encrypted).
+- **More apps in Profile Vault:** Signal, Session, Element, Telegram, Obsidian, Notion, Zoom and Bitwarden. Each one starts unticked, so you pick what goes in.
+- **Vault suggestions.** Amnesia lists other installed apps that look like they keep a login (they have a "Safe Storage" item in Keychain). Nothing is added until you tick it, and you can take it out again.
+- **Password strength meter** for the vault, Keep lock and Brankas passwords. It's a rough guess, not a promise.
+
+### Fixed
+- **Folders that are symlinks are never emptied through the link.** Before, if `~/Documents` pointed into your Keep folder, cleaning Documents emptied Keep.
+- **Keep List names with accents ("Café") match whichever way macOS stores them (NFC or NFD).** Before, a name typed in Amnesia could miss the same name coming from Finder or an old backup.
+- **iCloud Desktop & Documents: Desktop and Documents are skipped.** Wiping them would delete the files in iCloud and on your other Apple devices too. Amnesia logs it and tells you on the What Gets Deleted page and in the Health check. If it isn't sure, it skips them: better a file left behind than one deleted from iCloud.
+- **Files that couldn't be deleted are no longer counted as cleaned.** The last-cleanup line and History now say "N could not be deleted". Amnesia tries them again next time. trace.log only gets the count and the area (like "Downloads"), never file names.
+- **Emptying Amnesia's trash is logged now.** Before, it ran silently in the background. Leftovers are counted and shown in the app.
+- **Vault jobs can't run on top of each other.** A second snapshot or restore now waits, then stops with a clear message. Leftovers from a job that was cut off are cleaned up first.
+- **Restore no longer writes the vault's private key to disk.** It stays in memory.
+- **Saving the backup password in Keychain** no longer puts it in the command line, where other programs on the Mac could see it.
+- **Moving or renaming Amnesia.app no longer turns protection off silently.** You get a notification while you're still logged in, and the reason is in trace.log.
+
+### Changed
+- **Updates from inside the app must be signed.** Amnesia only installs an update if `SHA256SUMS.txt` has a valid developer signature (ECDSA P-256). If the signature is missing or wrong, it sends you to the release page instead.
+- **A backup where 7-Zip could not read some files** (open in another app, no permission) is now "finished with warnings", not plain "done". You see what was skipped. That list is shown only, never saved.
+- The Backup page now says what is left out on purpose: folders named `node_modules` or `.tmp`, and `.DS_Store` files.
+- The Doomsday, panic-word and Delete Vault texts now say plainly how deleting works:
+  - files are removed the normal way, not overwritten
+  - the vault itself is encrypted
+  - files emptied from Keep are not encrypted
+  - backups, Time Machine and the cloud are not touched
+- Uninstalling (from the app or `uninstall.sh`) asks for the Keep password and unlocks Keep first. Without the password, Keep stays locked and you get the command that opens it: `chmod -RN ~/Keep`.
+
+## Windows v0.8.0 · Keep can't be touched by "Remove new apps", cloud folders and VMs stay, a Health check (Oct 17, 2026)
+
+Turn Amnesia Off before installing over an older version, then turn it On again.
+
+This version comes from a full audit and a test on a real Windows 11 laptop. The first two fixes are the big ones: please update.
+
+### Fixed (important)
+- **"Remove new apps" could delete a folder inside Keep.** In the test it took a folder that was on the Keep List, for good. Now it only takes an app's own folder in AppData, never anything on the Keep List, never a folder that holds something kept, and never shared folders like Programs or Packages. And it no longer deletes right away: the folder goes to Amnesia's trash and waits **3 days** first.
+- **Cloud folders are never wiped any more.** Dropbox, Google Drive, iCloud Drive, Nextcloud, MEGA, Box, pCloud, Proton Drive and others stay where they are, plus every folder Windows itself knows as a sync folder. Before, moving them away looked like "deleted" to the sync app, which could then delete your files in the cloud too. Files that are only in the cloud ("Files On-Demand") are left alone too.
+- **Virtual machines and big disc images stay.** VirtualBox, Hyper-V, VMware, WSL, Docker and Android emulator disks, and .iso files of 1 GB or more. You can switch this off in Settings > Protection.
+
+### Fixed
+- **Sign out is faster and more reliable.** Amnesia makes the list of what to wipe the moment Windows asks to sign out, skips counting sizes, and stops a running vault snapshot so the cleanup gets the time. trace.log now writes how long each step took. (Normal sign out sometimes left the wipe for the next sign in; this needs one more test on your laptop.)
+- **Panic while Paused now works.** A quick exit cancels the pause, kills Explorer, wipes its thumbnail and icon caches, cleans, and signs out. If Windows is slow to sign out, it tries again after 8 seconds.
+- **Startup switched off = Amnesia silently stopped.** If Task Manager's Startup apps turns Amnesia off, the home page now shows a warning with a **Switch it back on** button. While Amnesia is off it no longer starts with Windows at all (new switch: Settings > Protection > Open at login).
+- **Keep stayed locked after uninstall.** Uninstalling from the app now asks the Keep password and opens Keep first. Uninstalling from Windows Settings asks it too. Without the password Keep stays locked and you get the one command that opens it.
+- **The uninstaller no longer deletes Amnesia's data by itself.** It asks first (default No), and never while Keep is still locked.
+- **A Keep List line that didn't save** now shows an error instead of a silent "Saved".
+- **Backups:** an old backup inside Keep is no longer packed into every new one, a backup folder inside Keep is refused, files in use are counted and named in the result, and a restore that was cut off (power cut) cleans up after itself and puts your old vault back.
+- **The window was too narrow at 150% scaling.** It now grows with Windows scaling.
+- A crash when the window closed while a long job was still answering.
+- Pause is written in the history as "Paused for one session" (it said "turned off" in the log).
+- The elevated helper only reads its own list of folders to delete.
+
+### New
+- **App icons and names in the Keep List.** Rows show "Discord" with its icon instead of only a path. **Keep an app** lists installed apps (also Microsoft Store apps) and keeps all of an app's folders with one click.
+- **Health check** on the home page: is Amnesia on, does it start with Windows, last cleanup, files left behind, cloud folders, vault, backup, Keep lock. Below it: **What Amnesia can't do**, the honest limits.
+- **Signed updates (free).** The in-app updater now also checks a signature from the developer on SHA256SUMS.txt. No signature, no install from the app: it opens the release page instead.
+- **Safe box (experimental):** a locked folder inside Keep. Closed it is one encrypted file, open it is Keep\Safe. Amnesia closes it again at every sign out.
+- **Optional:** also wipe Microsoft Store app data, and also wipe saved app passwords in Credential Manager (never your Microsoft account, OneDrive or Office). Both off by default.
+- **Vault:** Session, WhatsApp, Element, Obsidian, Thunderbird, Bitwarden, Antigravity, Windsurf, Gemini CLI and OpenCode. The vault also suggests installed apps it doesn't know yet. A password strength meter, and the Doomsday text now says honestly what it can't stop.
+- **Setup:** a welcome page, the terms, a short warning before installing and a short tour after, in English and Indonesian.
+- Automatic tests: 273 (was 207).
+
+### Still needs a test on a real PC
+- Normal sign out cleaning right away (not at the next sign in).
+- Thumbnail cache after a normal sign out.
+- Keep List with Microsoft Store app folders.
+
 ## Windows v0.7.2 · No more "Test in a VM" badge, a full Windows website (Oct 14, 2026)
 
 Turn Amnesia Off before installing over an older version, then turn it On again.

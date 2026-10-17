@@ -15,11 +15,13 @@ sealed class MainWindow : Form
     {
         this.tray = tray;
         Text = "Amnesia";
-        // v0.4: fits small screens (and "Larger text"): at most 90% of the screen, never smaller than 520 x 460
+        // v0.4: fits small screens (and "Larger text"): at most 90% of the screen
         var area = Screen.FromPoint(Cursor.Position).WorkingArea;
         // v0.6: same shape as the Mac window (a narrow column), taller if the screen allows
-        ClientSize = new Size(Math.Min(560, (int)(area.Width * 0.9)), Math.Min(780, (int)(area.Height * 0.9)));
-        MinimumSize = new Size(420, 460);
+        // v0.8: sizes are in real pixels, so at 150% scaling the window was only 373 points wide; now they grow with it
+        var s = Math.Max(1f, DeviceDpi / 96f);
+        ClientSize = new Size(Math.Min((int)(600 * s), (int)(area.Width * 0.9)), Math.Min((int)(800 * s), (int)(area.Height * 0.9)));
+        MinimumSize = new Size(Math.Min((int)(440 * s), area.Width), Math.Min((int)(480 * s), area.Height));
         StartPosition = FormStartPosition.CenterScreen;
         Icon = AppInfo.Icon;
         BackColor = Color.FromArgb(7, 7, 10); // same as the page background, so there is no white flash
@@ -85,7 +87,8 @@ sealed class MainWindow : Form
         {
             if (!e.Source.StartsWith($"https://{Host}/", StringComparison.OrdinalIgnoreCase)) return;
             var answer = await bridge.HandleAsync(e.WebMessageAsJson);
-            core.PostWebMessageAsJson(answer);
+            // v0.8: the window may be closing by the time a long job answers (seen as a crash in the Windows test)
+            try { if (!IsDisposed) core.PostWebMessageAsJson(answer); } catch (Exception ex) { AppInfo.Trace($"page answer lost: {ex.GetType().Name}"); }
         };
 
         // v0.3: the page only scrolls with the mouse wheel when it has the keyboard focus (it sometimes didn't

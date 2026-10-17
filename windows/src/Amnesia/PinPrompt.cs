@@ -26,6 +26,14 @@ static class PinPrompt
             if (check(box.Text)) { result = box.Text; f.DialogResult = DialogResult.OK; f.Close(); }
             else { wrong.Text = AppInfo.Id ? "Salah, coba lagi." : "Wrong, try again."; box.SelectAll(); box.Focus(); }
         };
+        // v0.8: longer texts (the uninstaller's question) get the room they need
+        int extra = Math.Max(0, TextRenderer.MeasureText(text, f.Font, new Size(label.Width, 1000), TextFormatFlags.WordBreak).Height - label.Height);
+        if (extra > 0)
+        {
+            label.Height += extra;
+            foreach (var c in new Control[] { box, wrong, ok, cancel }) c.Top += extra;
+            f.ClientSize = new Size(f.ClientSize.Width, f.ClientSize.Height + extra);
+        }
         f.Controls.AddRange(new Control[] { label, box, wrong, ok, cancel });
         f.AcceptButton = ok; f.CancelButton = cancel;
         f.ShowDialog(owner);

@@ -2,9 +2,11 @@
 // - Lanjutan (Advanced): logout otomatis, hapus app baru, kata panik, pindah Mac (v5.20: grup di Pengaturan)
 // - Cek enkripsi disk (FileVault)
 // - Update dari dalam app (cek, unduh otomatis, pasang dengan 1 tombol)
+// v5.22: update hanya dipasang kalau SHA256SUMS.txt ditandatangani kunci developer (ECDSA P-256, CryptoKit)
 import SwiftUI
 import AppKit
 import CoreGraphics
+import CryptoKit
 
 // MARK: - Update
 
@@ -69,6 +71,30 @@ struct ReleaseInfo: Sendable {
     let version: String
     let dmg: String      // URL unduhan
     let sums: String?    // SHA256SUMS.txt (tanpa ini update dari app ditolak)
+    let sig: String?     // v5.22: SHA256SUMS.txt.sig (tanpa ini update dari app juga ditolak)
+}
+
+/// v5.22: tanda tangan update. SHA256SUMS.txt ditandatangani di Mac developer (openssl dgst -sha256 -sign, kunci
+/// privat tidak pernah di GitHub). App hanya memasang update kalau tanda tangannya cocok dengan kunci publik di bawah.
+/// Hash saja (dulu) hanya melindungi dari unduhan rusak: siapa pun yang bisa mengunggah ke rilis bisa mengganti
+/// .dmg dan SHA256SUMS.txt sekaligus. Tanda tangan tidak bisa dibuat tanpa kunci privat.
+enum UpdateSig {
+    /// Kunci publik ECDSA P-256 (SubjectPublicKeyInfo DER, base64). Diganti oleh script update developer.
+    static let publicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE52jL2iMKP6nxCJ02PXei1luJqVjR7BngXg5FeyHIdlum7BV0b4wXwU5A2b5LvsuexEEQ2WLYuorAu0tqBCghTQ=="
+
+    static var key: P256.Signing.PublicKey? {
+        guard let der = Data(base64Encoded: publicKey) else { return nil }     // teks pengganti = bukan base64
+        return try? P256.Signing.PublicKey(derRepresentation: der)
+    }
+
+    /// Versi ini punya kunci publik yang benar (bukan teks pengganti)?
+    static var ready: Bool { key != nil }
+
+    /// sig = tanda tangan DER atas byte persis SHA256SUMS.txt
+    static func valid(_ sums: Data, _ sig: Data) -> Bool {
+        guard let k = key, let s = try? P256.Signing.ECDSASignature(derRepresentation: sig) else { return false }
+        return k.isValidSignature(s, for: sums)
+    }
 }
 
 /// Tanya GitHub versi terbaru. Hanya 1 permintaan biasa ke api.github.com, tidak ada data pribadi yang dikirim.
@@ -83,47 +109,68 @@ func fetchLatest() -> ReleaseInfo? {
         assets.first { ($0["name"] as? String) == name }?["browser_download_url"] as? String
     }
     guard let dmg = url("Amnesia-v\(v).dmg") else { return nil }
-    return ReleaseInfo(version: v, dmg: dmg, sums: url("SHA256SUMS.txt"))
+    return ReleaseInfo(version: v, dmg: dmg, sums: url("SHA256SUMS.txt"), sig: url("SHA256SUMS.txt.sig"))
 }
 
-/// Unduh .dmg + SHA256SUMS.txt, lalu cocokkan sidiknya. Hasil: path .dmg, atau pesan gagal.
-func downloadRelease(_ rel: ReleaseInfo) -> (path: String?, error: String?) {
+/// Unduh .dmg + SHA256SUMS.txt (+ .sig), cek tanda tangan, lalu cocokkan sidiknya. Hasil: path .dmg, atau pesan gagal.
+/// page = true: kirim kamu ke halaman rilis (tanda tangan tidak ada / tidak cocok), bukan sekadar "coba lagi".
+func downloadRelease(_ rel: ReleaseInfo) -> (path: String?, error: String?, page: Bool) {
     guard let sumsURL = rel.sums else {
         return (nil, T("This release has no SHA256SUMS.txt, so Amnesia can't check the download. Download it from GitHub yourself.",
-                       "Rilis ini tidak punya SHA256SUMS.txt, jadi Amnesia tidak bisa mengecek unduhannya. Unduh sendiri dari GitHub."))
+                       "Rilis ini tidak punya SHA256SUMS.txt, jadi Amnesia tidak bisa mengecek unduhannya. Unduh sendiri dari GitHub."), true)
+    }
+    guard let sigURL = rel.sig else {
+        return (nil, T("This release isn't signed (no SHA256SUMS.txt.sig), so Amnesia won't install it by itself. "
+                       + "Open the release page, check it, and install it by hand if you trust it.",
+                       "Rilis ini tidak ditandatangani (tidak ada SHA256SUMS.txt.sig), jadi Amnesia tidak mau memasangnya sendiri. "
+                       + "Buka halaman rilis, cek dulu, lalu pasang sendiri kalau kamu percaya."), true)
     }
     let fm = FileManager.default
     try? fm.createDirectory(atPath: UpdateFiles.dir, withIntermediateDirectories: true)
     let name = "Amnesia-v\(rel.version).dmg"
-    let file = UpdateFiles.dir + "/" + name, sums = UpdateFiles.dir + "/SHA256SUMS.txt"
+    let file = UpdateFiles.dir + "/" + name, sums = UpdateFiles.dir + "/SHA256SUMS.txt", sig = sums + ".sig"
     // unduhan lama dari versi lain dibuang
     for f in (try? fm.contentsOfDirectory(atPath: UpdateFiles.dir)) ?? [] where f != name {
         try? fm.removeItem(atPath: UpdateFiles.dir + "/" + f)
     }
     guard sh("/usr/bin/curl", ["-fsSL", "-m", "60", "-o", sums, sumsURL], timeout: 70).code == 0,
-          let text = try? String(contentsOfFile: sums, encoding: .utf8) else {
-        return (nil, T("Could not download SHA256SUMS.txt.", "Gagal mengunduh SHA256SUMS.txt."))
+          let sumsData = try? Data(contentsOf: URL(fileURLWithPath: sums)),
+          let text = String(data: sumsData, encoding: .utf8) else {
+        return (nil, T("Could not download SHA256SUMS.txt.", "Gagal mengunduh SHA256SUMS.txt."), false)
+    }
+    guard sh("/usr/bin/curl", ["-fsSL", "-m", "60", "-o", sig, sigURL], timeout: 70).code == 0,
+          let sigData = try? Data(contentsOf: URL(fileURLWithPath: sig)) else {
+        return (nil, T("Could not download SHA256SUMS.txt.sig.", "Gagal mengunduh SHA256SUMS.txt.sig."), false)
+    }
+    guard UpdateSig.valid(sumsData, sigData) else {
+        try? fm.removeItem(atPath: sums)
+        try? fm.removeItem(atPath: sig)
+        trace("update signature bad")
+        return (nil, T("The signature of this release doesn't match the developer's key, so Amnesia did not install it. "
+                       + "It may have been changed by someone else. Open the release page and don't install it unless you're sure.",
+                       "Tanda tangan rilis ini tidak cocok dengan kunci developer, jadi Amnesia tidak memasangnya. "
+                       + "Mungkin sudah diubah orang lain. Buka halaman rilis, dan jangan pasang kecuali kamu yakin."), true)
     }
     let want = text.split(separator: "\n").map { $0.split(separator: " ", omittingEmptySubsequences: true) }
         .first { $0.count >= 2 && $0.last.map { String($0).trimmingCharacters(in: CharacterSet(charactersIn: "*")) } == name }?
         .first.map(String.init)?.lowercased()
     guard let want, want.count == 64 else {
-        return (nil, T("SHA256SUMS.txt has no line for \(name).", "SHA256SUMS.txt tidak berisi baris untuk \(name)."))
+        return (nil, T("SHA256SUMS.txt has no line for \(name).", "SHA256SUMS.txt tidak berisi baris untuk \(name)."), true)
     }
     func hash() -> String {
         sh("/usr/bin/shasum", ["-a", "256", file], timeout: 120).out.split(separator: " ").first.map(String.init)?.lowercased() ?? ""
     }
-    if fm.fileExists(atPath: file), hash() == want { return (file, nil) }      // sudah diunduh sebelumnya
+    if fm.fileExists(atPath: file), hash() == want { return (file, nil, false) }      // sudah diunduh sebelumnya
     guard sh("/usr/bin/curl", ["-fsSL", "-m", "900", "-o", file, rel.dmg], timeout: 920).code == 0 else {
         try? fm.removeItem(atPath: file)
-        return (nil, T("The download failed. Check your internet and try again.", "Unduhan gagal. Cek internet, lalu coba lagi."))
+        return (nil, T("The download failed. Check your internet and try again.", "Unduhan gagal. Cek internet, lalu coba lagi."), false)
     }
     guard hash() == want else {
         try? fm.removeItem(atPath: file)
         return (nil, T("The downloaded file doesn't match SHA256SUMS.txt, so it was deleted. Try again later.",
-                       "File yang diunduh tidak cocok dengan SHA256SUMS.txt, jadi dihapus. Coba lagi nanti."))
+                       "File yang diunduh tidak cocok dengan SHA256SUMS.txt, jadi dihapus. Coba lagi nanti."), false)
     }
-    return (file, nil)
+    return (file, nil, false)
 }
 
 /// Buka .dmg, salin Amnesia.app ke folder sementara, cek versinya. Hasil: path app baru, atau pesan gagal.
@@ -144,7 +191,7 @@ func unpackRelease(_ dmg: String, version: String) -> (app: String?, error: Stri
     guard v == version else {
         return (nil, T("The app in the .dmg is not version \(version).", "App di dalam .dmg bukan versi \(version)."))
     }
-    // sidik file sudah cocok dengan SHA256SUMS.txt, jadi tanda "diunduh dari internet" boleh dilepas
+    // sidik file sudah cocok dengan SHA256SUMS.txt yang tanda tangannya benar, jadi tanda "diunduh dari internet" boleh dilepas
     sh("/usr/bin/xattr", ["-dr", "com.apple.quarantine", app], timeout: 60)
     return (app, nil)
 }
@@ -163,6 +210,8 @@ final class Updater: ObservableObject {
     }
 
     @Published var phase: Phase = .idle
+    /// v5.22: unduhan ditolak karena tanda tangan: tampilkan tombol ke halaman rilis
+    @Published var sendToPage = false
     private var release: ReleaseInfo?
     private var file: String?
     private var timer: Timer?
@@ -221,12 +270,14 @@ final class Updater: ObservableObject {
     func download() {
         guard let rel = release else { return }
         phase = .downloading(rel.version)
+        sendToPage = false
         Model.shared.quiet({ downloadRelease(rel) }) { r in
             if let f = r.path {
                 self.file = f
                 self.phase = .ready(rel.version)
                 trace("update downloaded: \(rel.version)")
             } else {
+                self.sendToPage = r.page
                 self.phase = .failed(r.error ?? "")
                 trace("update download failed")
             }
@@ -238,6 +289,12 @@ final class Updater: ObservableObject {
         if UpdateFiles.brew {
             return T("You installed Amnesia with Homebrew. Update it in Terminal: brew upgrade --cask amnesia",
                      "Amnesia dipasang lewat Homebrew. Update lewat Terminal: brew upgrade --cask amnesia")
+        }
+        if !UpdateSig.ready {
+            return T("This copy of Amnesia has no update key, so it can't check that an update really comes from the "
+                     + "developer. Download the new version from the release page and install it yourself.",
+                     "Salinan Amnesia ini tidak punya kunci update, jadi tidak bisa memastikan update benar dari developer. "
+                     + "Unduh versi baru dari halaman rilis, lalu pasang sendiri.")
         }
         if !Model.shared.installedApp {
             return T("Amnesia is not in the Applications folder, so it can't update itself.",
@@ -391,8 +448,8 @@ struct UpdateCard: View {
                                      icon: "sparkles", color: Th.indigo)
         case .downloading(let v): Note(text: T("Downloading Amnesia \(v)…", "Mengunduh Amnesia \(v)…"),
                                        icon: "arrow.down.circle", color: Th.indigo)
-        case .ready(let v): Note(text: T("Amnesia \(v) is downloaded and checked (SHA-256). Ready to install.",
-                                         "Amnesia \(v) sudah diunduh dan dicek (SHA-256). Siap dipasang."),
+        case .ready(let v): Note(text: T("Amnesia \(v) is downloaded and checked (signature + SHA-256). Ready to install.",
+                                         "Amnesia \(v) sudah diunduh dan dicek (tanda tangan + SHA-256). Siap dipasang."),
                                  icon: "checkmark.seal.fill", color: Th.green)
         case .installing: Note(text: T("Installing…", "Memasang…"), icon: "hourglass")
         case .failed(let e): Note(text: e, icon: "exclamationmark.triangle.fill", color: Th.orange)
@@ -413,6 +470,10 @@ struct UpdateCard: View {
             }
         case .ready:
             Button(T("Install & Reopen", "Pasang & Buka Lagi")) { u.install() }.buttonStyle(Pill(colors: Pal.accent))
+        case .failed where u.sendToPage:
+            Button(T("Open Release Page", "Buka Halaman Rilis")) { NSWorkspace.shared.open(URL(string: UpdateFiles.page)!) }
+                .buttonStyle(Pill(colors: Pal.gray))
+            Button(T("Check Again", "Cek Lagi")) { u.check(manual: true) }.buttonStyle(Pill(colors: Pal.gray))
         case .checking, .downloading, .installing:
             Button(T("Please wait…", "Tunggu…")) {}.buttonStyle(Pill(colors: Pal.gray)).disabled(true)
         default:
@@ -950,7 +1011,9 @@ enum KeepLinks {
         }
     }
 
-    static func open() {
+    /// v5.22: Kunci Keep menyala dan terkunci → minta password Keep dulu.
+    @MainActor static func open() {
+        guard KeepLock.askUnlock(T("Open the Keep folder in Finder.", "Buka folder Keep di Finder.")) else { return }
         try? FileManager.default.createDirectory(atPath: KeepDir.path, withIntermediateDirectories: true)
         NSWorkspace.shared.open(URL(fileURLWithPath: KeepDir.path))
     }

@@ -240,6 +240,18 @@ try
         File.WriteAllBytes(where + "-cut", File.ReadAllBytes(where)[..^100]);
         try { Backup.Restore(where + "-cut", "correct horse battery"); Check(false, "cut backup refused"); }
         catch (Exception e) { Check(e is System.Security.Cryptography.CryptographicException or InvalidDataException or EndOfStreamException, "cut backup refused"); }
+
+        Console.WriteLine("v0.8 backup and restore leftovers:");
+        Conf.Set("BACKUP_DEST", dest); Make("Keep/amnesia_backup_2026-01-01_000000.amb"); Make("Keep/amnesia_backup_half.amb.partial");
+        var where2 = Backup.Create();
+        CleanEngine.Delete(Path.Combine(fake, "Keep"));
+        Backup.Restore(where2, "correct horse battery");
+        Check(There("Keep/important.txt") && !There("Keep/amnesia_backup_2026-01-01_000000.amb") && !There("Keep/amnesia_backup_half.amb.partial"), "an old backup inside Keep is not packed again");
+        Check(!Directory.EnumerateFiles(Path.Combine(fake, ".amnesia"), ".restore-*.zip").Any(), "the unpacked restore file is gone");
+        Check(!There(".amnesia/vault.incoming") && !There(".amnesia/vault.old") && Vault.Exists, "vault swapped in whole, nothing left over");
+        var vd = Path.Combine(fake, ".amnesia", "vault");
+        Directory.Move(vd, vd + ".old"); Make(".amnesia/vault.incoming/half.amv"); Make(".amnesia/.restore-abc.zip");
+        Check(Backup.Sweep() >= 2 && Vault.Exists && !There(".amnesia/vault.incoming") && !There(".amnesia/.restore-abc.zip"), "a restore cut half way: old vault put back, leftovers gone");
     }
     finally { Directory.Delete(dest, true); }
 
@@ -435,6 +447,133 @@ try
     var liveYes = new CleanEngine { ExplorerLiveOk = true }.Run("logout", true).Items.Select(i => i.Path).ToList();
     Check(liveYes.Contains("AppData\\Local\\Microsoft\\Windows\\Explorer\\iconcache_48.db"), "at the real end of the session it goes");
     Check(CleanEngine.TouchesShell(new[] { new CleanItem("Desktop\\notes.txt", "file") }) && !CleanEngine.TouchesShell(new[] { new CleanItem("Downloads\\a.zip", "file") }), "Explorer is told when Desktop items went");
+
+    Console.WriteLine("v0.8 cloud folders and virtual machines:");
+    Settings("ENABLED=1", $"APP_PATH={exe}");
+    File.WriteAllLines(Conf2, new[] { "Keep/ignored", "AppData/Roaming/Code*/User" });
+    foreach (var f in new[] { "Dropbox/a.txt", "Dropbox (Work)/b.txt", "Google Drive/c.txt", "iCloudDrive/d.txt", "MyCloud/e.txt",
+                 "VirtualBox VMs/win/win.vdi", "Downloads/disk.vhdx", "Downloads/small.iso", "Documents/Lab/vm/disk.vmdk", "Documents/Lab/notes.txt",
+                 "AppData/Local/wsl/abc/ext4.vhdx", "AppData/Local/wsl/abc/other", ".android/avd/pixel.avd/x", ".android/cache/y", "Downloads/plain.txt" })
+        Make(f);
+    using (var bigIso = File.Create(Path.Combine(fake, "Downloads/big.iso"))) bigIso.SetLength(CleanEngine.BigIso); // sparse, takes no real space
+    var cloudEngine = new CleanEngine { CloudRoots = () => new[] { Path.Combine(fake, "MyCloud"), "C:\\Elsewhere\\Sync", Path.GetTempPath() } };
+    var d8 = cloudEngine.Run("now", true).Items.Select(i => i.Path).ToList();
+    foreach (var s in new[] { "Dropbox", "Dropbox (Work)", "Google Drive", "iCloudDrive", "MyCloud" })
+        Check(!d8.Any(d => d == s || d.StartsWith(s + "\\")), $"cloud folder {s} stays (its app would delete it from the cloud)");
+    foreach (var s in new[] { "VirtualBox VMs", "Downloads\\disk.vhdx", "Downloads\\big.iso", "Documents\\Lab\\vm\\disk.vmdk", "AppData\\Local\\wsl", ".android\\avd" })
+        Check(!d8.Any(d => d == s || d.StartsWith(s + "\\") || s.StartsWith(d + "\\")), $"virtual machine data {s} stays");
+    Check(d8.Contains("Downloads\\small.iso"), "a small .iso still goes");
+    Check(d8.Contains("Documents\\Lab\\notes.txt"), "the rest of a folder with a VM disk still goes");
+    Check(d8.Contains(".android\\cache"), "the rest of .android still goes");
+    Check(d8.Contains("Downloads\\plain.txt"), "normal files still go");
+    Settings("ENABLED=1", $"APP_PATH={exe}", "KEEP_VM=0");
+    var d8off = new CleanEngine().Run("now", true).Items.Select(i => i.Path).ToList();
+    Check(d8off.Contains("Downloads\\disk.vhdx") && d8off.Contains("VirtualBox VMs"), "KEEP_VM=0: virtual machines go too");
+    Check(!d8off.Contains("Dropbox"), "KEEP_VM=0 never touches cloud folders");
+    Settings("ENABLED=1", $"APP_PATH={exe}");
+
+    Console.WriteLine("v0.8 Remove new apps never takes protected folders:");
+    foreach (var f in new[] { "Keep/tes-hapus/penting.txt", "AppData/Local/Programs/NewApp/app.exe", "AppData/Roaming/NewTool/x", "AppData/Local/Programs/Amnesia/Amnesia.exe" })
+        Make(f);
+    var rules = new CleanEngine();
+    string F(string rel) => Path.Combine(fake, rel);
+    Check(!rules.MayRemoveAppFolder(F("Keep/tes-hapus")), "a folder in Keep (the T7 test)");
+    Check(!rules.MayRemoveAppFolder(F("Keep")), "the Keep folder itself");
+    Check(!rules.MayRemoveAppFolder(F("Documents")) && !rules.MayRemoveAppFolder(fake), "the user folder and Documents");
+    Check(!rules.MayRemoveAppFolder(F("AppData/Local")) && !rules.MayRemoveAppFolder(F("AppData/Local/Programs")), "AppData\\Local and Programs themselves");
+    Check(!rules.MayRemoveAppFolder(F("AppData/Roaming/Code")), "a folder with something on the Keep List inside");
+    Check(!rules.MayRemoveAppFolder(F("AppData/Local/Programs/Amnesia")), "Amnesia itself");
+    Check(!rules.MayRemoveAppFolder(F("AppData/Local/Packages/App")), "Store app data");
+    Check(!rules.MayRemoveAppFolder(F("AppData/Local/Programs/../../../Keep")), "a path that climbs out with ..");
+    Check(!rules.MayRemoveAppFolder(Path.GetTempPath()) && !rules.MayRemoveAppFolder(""), "outside the user folder / empty");
+    Check(!rules.MayRemoveAppFolder(F("AppData/Local/Programs/Missing")), "a folder that isn't there");
+    Check(rules.MayRemoveAppFolder(F("AppData/Local/Programs/NewApp")) && rules.MayRemoveAppFolder(F("AppData/Roaming/NewTool")), "a new program's own folder may go");
+    Check(CleanEngine.ToTrash(F("AppData/Local/Programs/NewApp")) && !There("AppData/Local/Programs/NewApp"), "it is moved, not deleted");
+    var appsBatch = Directory.GetDirectories(Path.Combine(fake, ".amnesia-trash")).FirstOrDefault(d => d.EndsWith("-apps"));
+    Check(appsBatch != null && File.Exists(Path.Combine(appsBatch, "AppData", "Local", "Programs", "NewApp", "app.exe")), "found in .amnesia-trash");
+    Real("now");
+    Check(appsBatch != null && Directory.Exists(appsBatch), "a cleanup keeps it for 3 days");
+    Check(There("Keep/tes-hapus/penting.txt"), "Keep\\tes-hapus untouched");
+
+    Console.WriteLine("v0.8 Keep List knows which app a folder belongs to:");
+    var cands = new[] { "AppData/Roaming/discord", "AppData/Local/Discord", "AppData/Roaming/Code", "AppData/Local/Google",
+        "AppData/Local/Google/Chrome", "AppData/Roaming/Spotify", "AppData/Local/Microsoft", "AppData/Roaming/Obsidian", "AppData/Local/Temp" };
+    Check(AppMatch.Folders("Discord", "Discord Inc.", null, cands).SequenceEqual(new[] { "AppData/Roaming/discord", "AppData/Local/Discord" }), "Discord: both its folders");
+    Check(AppMatch.Folders("Google Chrome", "Google LLC", @"C:\Program Files\Google\Chrome\Application", cands).SequenceEqual(new[] { "AppData/Local/Google/Chrome" }), "Chrome: Google/Chrome, not all of Google");
+    Check(AppMatch.Folders("Microsoft Visual Studio Code", "Microsoft Corporation", @"C:\Users\x\AppData\Local\Programs\Microsoft VS Code", cands).Count == 0, "no wild guesses (Microsoft is skipped)");
+    Check(AppMatch.Folders("Obsidian", "Obsidian", null, cands).SequenceEqual(new[] { "AppData/Roaming/Obsidian" }), "Obsidian");
+
+    Console.WriteLine("v0.8 signed updates:");
+    using (var ec = System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP256))
+    {
+        var pubKey = Convert.ToBase64String(ec.ExportSubjectPublicKeyInfo());
+        var sums = System.Text.Encoding.UTF8.GetBytes("abc123  Amnesia-Setup-0.8.0-x64.exe\n");
+        var sig = ec.SignData(sums, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.DSASignatureFormat.Rfc3279DerSequence);
+        Check(UpdateSig.Verify(sums, sig, pubKey), "a good signature passes");
+        var changed = (byte[])sums.Clone(); changed[0] ^= 1;
+        Check(!UpdateSig.Verify(changed, sig, pubKey), "a changed checksum list fails");
+        Check(!UpdateSig.Verify(sums, sig), "no key in this copy: nothing passes");
+        Check(!UpdateSig.Verify(sums, new byte[3], pubKey), "a broken signature fails");
+        var sumsFile = Path.Combine(fake, "sums.txt"); File.WriteAllBytes(sumsFile, sums);
+        File.WriteAllText(Path.Combine(fake, "key.pem"), ec.ExportECPrivateKeyPem());
+        var osl = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("openssl", $"dgst -sha256 -sign \"{Path.Combine(fake, "key.pem")}\" -out \"{sumsFile}.sig\" \"{sumsFile}\"") { UseShellExecute = false });
+        osl?.WaitForExit();
+        if (File.Exists(sumsFile + ".sig")) Check(UpdateSig.Verify(sums, File.ReadAllBytes(sumsFile + ".sig"), pubKey), "a signature made with openssl (the publish script) passes");
+    }
+
+    Console.WriteLine("v0.8 Safe box (experimental):");
+    {
+        try { Safe.Create("short"); Check(false, "a short safe password is refused"); } catch (VaultError e) { Check(e.Code == "short-password", "a short safe password is refused"); }
+        Safe.Create("correct horse battery safe");
+        Check(Safe.Exists && Safe.IsOpen, "a new safe starts open (Keep\\Safe)");
+        Make("Keep/Safe/passport.pdf"); Make("Keep/Safe/deep/notes.txt");
+        Check(Safe.Close("test") == 2 && !There("Keep/Safe") && Safe.Exists, "closing packs 2 files and deletes the open copy");
+        Check(!File.ReadAllText(Safe.File_).Contains("passport"), "closed safe is locked (no readable names)");
+        try { Safe.Open("wrong wrong wrong"); Check(false, "wrong safe password"); } catch (VaultError e) { Check(e.Code == "wrong", "wrong safe password: nothing opened"); }
+        Check(!There("Keep/Safe"), "...and nothing unpacked");
+        Check(Safe.Open("correct horse battery safe") == 2 && There("Keep/Safe/passport.pdf") && There("Keep/Safe/deep/notes.txt"), "the right password opens it again");
+        Check(!Directory.EnumerateFiles(Path.Combine(fake, ".amnesia", "safe"), ".open-*").Any(), "no unpacked zip left over");
+        Check(Del(Dry()).All(d => !d.StartsWith("Keep")), "an open safe is never wiped (it is in Keep)");
+        Safe.Close("test");
+        Safe.Delete("correct horse battery safe");
+        Check(!Safe.Exists && !There(".amnesia/safe"), "a deleted safe is gone");
+    }
+
+    Console.WriteLine("v0.8 Store app data (opt-in):");
+    foreach (var f in new[] { "AppData/Local/Packages/SpotifyAB.SpotifyMusic_zpdnekdrzrea0/LocalState/cache.db",
+                 "AppData/Local/Packages/SpotifyAB.SpotifyMusic_zpdnekdrzrea0/Settings/settings.dat",
+                 "AppData/Local/Packages/Microsoft.Windows.Photos_8wekyb3d8bbwe/LocalState/db.sqlite",
+                 "AppData/Local/Packages/5319275A.WhatsAppDesktop_cv1g1gvanyjgm/LocalState/session.db" }) Make(f);
+    Check(!Del(Dry()).Any(d => d.Contains("SpotifyAB")), "off by default: Store app data stays");
+    var storeConf = File.ReadAllText(Path.Combine(fake, ".amnesia/settings.conf"));
+    Conf.Set("WIPE_STORE", "1");
+    File.AppendAllLines(Conf2, new[] { "AppData/Local/Packages/5319275A.WhatsAppDesktop_cv1g1gvanyjgm" });
+    var st = Del(Dry());
+    Check(st.Contains("AppData\\Local\\Packages\\SpotifyAB.SpotifyMusic_zpdnekdrzrea0\\LocalState\\cache.db"), "on: a Store app's own data goes");
+    Check(!st.Any(d => d.Contains("SpotifyAB") && d.Contains("Settings")), "its Settings folder stays");
+    Check(!st.Any(d => d.Contains("Microsoft.Windows.Photos")), "Windows' own apps stay");
+    Check(!st.Any(d => d.Contains("WhatsAppDesktop")), "a Store app on the Keep List stays");
+    File.WriteAllText(Path.Combine(fake, ".amnesia/settings.conf"), storeConf);
+
+    Console.WriteLine("v0.8 sign out list made a moment before:");
+    Make("Downloads/early.txt");
+    var prepared = new CleanEngine { Fast = true };
+    prepared.Prepare("logout");
+    Check(prepared.Planned > 0 && There("Downloads/early.txt"), "Prepare only looks");
+    Make("Downloads/late.txt");
+    var r8 = prepared.Run("logout", false);
+    Check(!There("Downloads/early.txt") && There("Downloads/late.txt"), "the real run uses the list (a later file waits for the sign in check)");
+    Check(r8.Bytes == -1, "fast run: sizes not counted");
+    Check(File.ReadAllText(Path.Combine(fake, ".amnesia/trace.log")).Contains("using the list made"), "trace.log says the list was made before");
+    Real("login");
+    Check(!There("Downloads/late.txt"), "the sign in check takes the later file");
+    var paused8 = new CleanEngine();
+    paused8.Prepare("logout");
+    File.WriteAllText(Path.Combine(fake, ".amnesia/pause_once"), "");
+    Make("Downloads/paused.txt");
+    Check(paused8.Run("logout", false).Skipped == "paused" && There("Downloads/paused.txt"), "a prepared list still obeys Pause");
+    File.Delete(Path.Combine(fake, ".amnesia/pause_once"));
+    File.WriteAllLines(Conf2, new[] { ".ssh" });
 
     Console.WriteLine("Doomsday:");
     try { Vault.Restore("wrong password 1"); } catch (VaultError) { }

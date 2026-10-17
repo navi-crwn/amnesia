@@ -8,8 +8,10 @@ Cara kerja kunci (supaya "Simpan & Logout" tidak perlu ketik password):
   -> tidak butuh password.
 - Restore: password membuka kunci privat -> kunci acak -> profil.
 Password tidak pernah disimpan, dan dikirim ke 7zz lewat stdin (tidak terlihat di `ps`).
+v5.22: kunci privat tidak pernah ditulis ke disk saat restore (tetap di memori, ke openssl lewat pipe), hanya 1
+perintah vault yang boleh jalan sekaligus (flock), dan sisa folder sementara dari proses yang terputus disapu.
 """
-import glob, hashlib, json, os, re, secrets, shutil, signal, subprocess, sys, time
+import fcntl, glob, hashlib, json, os, re, secrets, shutil, signal, subprocess, sys, time
 
 HOME = os.environ.get("AMNESIA_HOME", os.path.expanduser("~"))
 AMNESIA = os.path.join(HOME, ".amnesia")
@@ -63,6 +65,25 @@ APPS = {
             "paths": ["Library/Application Support/Arc/User Data"]},
     "Opera": {"quit": "Opera", "light": "chromium", "new": True,
               "paths": ["Library/Application Support/com.operasoftware.Opera"]},
+    # v5.22: chat & app lain (Electron). Login-nya dikunci kunci Keychain "<Nama> Safe Storage", yang sudah dijaga
+    # baris "keychain:* Safe Storage" di Keep List. Seperti browser di atas: TIDAK langsung ikut vault, kamu yang memilih.
+    "Signal": {"quit": "Signal", "new": True,                  # Keychain: "Signal Safe Storage"
+               "paths": ["Library/Application Support/Signal"]},
+    "Session": {"quit": "Session", "new": True,                # Keychain: "Session Safe Storage"
+                "paths": ["Library/Application Support/Session"]},
+    "Element": {"quit": "Element", "new": True,
+                "paths": ["Library/Application Support/Element"]},
+    "Telegram": {"quit": "Telegram", "new": True,              # versi App Store + Telegram Desktop
+                 "paths": ["Library/Group Containers/*.ru.keepcoder.Telegram",
+                           "Library/Application Support/Telegram Desktop"]},
+    "Obsidian": {"quit": "Obsidian", "new": True,              # pengaturan app; catatan (vault Obsidian) ada di folder kamu sendiri
+                 "paths": ["Library/Application Support/obsidian"]},
+    "Notion": {"quit": "Notion", "new": True,
+               "paths": ["Library/Application Support/Notion"]},
+    "Zoom": {"quit": "zoom.us", "new": True,
+             "paths": ["Library/Application Support/zoom.us"]},
+    "Bitwarden": {"quit": "Bitwarden", "new": True,
+                  "paths": ["Library/Application Support/Bitwarden", "Library/Containers/com.bitwarden.desktop"]},
 }
 # Snapshot ringan untuk browser berbasis Chromium: cache & model tidak disimpan, juga program extension yang
 # dari Web Store (browser mengunduh ulang lewat tombol Repair). Extension lain tetap disimpan (tidak bisa diunduh
@@ -92,6 +113,11 @@ SECURITY = "/usr/bin/security"
 F_ATTEMPTS = os.path.join(VAULT, "attempts.json")
 F_PANIC = os.path.join(VAULT, "panic.json")
 F_LOG = os.path.join(AMNESIA, "doomsday.log")
+F_LOCK = os.path.join(VAULT, ".lock")
+# v5.22: app tambahan yang kamu pilih sendiri dari "Ditemukan di Mac ini" (deteksi otomatis di app)
+F_CUSTOM = os.path.join(AMNESIA, "vault_apps.json")
+KEEPLOCK = os.path.join(AMNESIA, "keeplock.sh")
+MIN_KEEP_PASSWORD = 8
 
 
 def _lang():
@@ -225,6 +251,62 @@ def _clean_tmp():
     shutil.rmtree(TMP, ignore_errors=True)
 
 
+_LOCK_FD = [None]
+
+
+def _lock_and_sweep(wait=20):
+    """v5.22: hanya 1 perintah vault yang mengubah sesuatu boleh jalan sekaligus (mis. snapshot otomatis saat logout
+    dan restore dari app). Setelah kunci didapat, sisa proses yang terputus (crash, mati listrik) disapu: folder
+    sementara (.tmp, .restore) dan file setengah jadi (*.new)."""
+    if not os.path.isdir(VAULT) or _LOCK_FD[0] is not None:
+        return
+    fd = os.open(F_LOCK, os.O_CREAT | os.O_RDWR, 0o600)
+    end = time.time() + wait
+    while True:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            break
+        except OSError:
+            if time.time() >= end:
+                os.close(fd)
+                raise VaultError(T("Another vault job is still running (for example a snapshot). Wait until it's done, then try again.",
+                                   "Masih ada proses vault lain yang berjalan (misalnya snapshot). Tunggu sampai selesai, lalu coba lagi."))
+            time.sleep(0.5)
+    _LOCK_FD[0] = fd
+    for d in (TMP, F_STAGE):
+        shutil.rmtree(d, ignore_errors=True)
+    for f in glob.glob(os.path.join(glob.escape(F_APPDIR), "*.new")) + [F_PRIV + ".new", F_KEYS + ".new", F_KEYSKEY + ".new"]:
+        try:
+            os.remove(f)
+        except OSError:
+            pass
+
+
+def _private_pem(password):
+    """v5.22: kunci privat langsung dari 7zz ke memori (-so = ke stdout), tidak pernah ke disk. None = gagal."""
+    r = subprocess.run([SEVENZ, "e", "-so", "-y", F_PRIV, "private.pem"], input=((password + "\n") * 2).encode(),
+                       capture_output=True)
+    if r.returncode != 0 or b"PRIVATE KEY" not in r.stdout:
+        return None, r.stderr.decode(errors="replace")
+    return r.stdout, ""
+
+
+def _rsa_decrypt(pem, keyfile):
+    """Buka 1 kunci acak dengan kunci privat yang ada di memori. Kunci privat ke openssl lewat pipe (/dev/fd)."""
+    rfd, wfd = os.pipe()
+    try:
+        os.write(wfd, pem)                    # kunci RSA-4096 ±3 KB, jauh di bawah batas buffer pipe
+        os.close(wfd)
+        wfd = None
+        return subprocess.run([OPENSSL, "pkeyutl", "-decrypt", "-inkey", f"/dev/fd/{rfd}",
+                               "-pkeyopt", "rsa_padding_mode:oaep", "-in", keyfile],
+                              check=True, capture_output=True, pass_fds=(rfd,)).stdout
+    finally:
+        os.close(rfd)
+        if wfd is not None:
+            os.close(wfd)
+
+
 def _new_tmp():
     _clean_tmp()
     os.makedirs(TMP, mode=0o700)
@@ -251,9 +333,56 @@ def vault_folders():
     return out
 
 
+def _safe_rel(x):
+    """Path relatif dari home yang boleh dipakai app tambahan (bukan ~/.amnesia, Trash, Keep, atau '..')."""
+    parts = x.split("/")
+    return bool(x) and not os.path.isabs(x) and ".." not in parts and parts[0] not in (".amnesia", ".amnesia-trash", ".Trash") \
+        and not os.path.join(HOME, x).startswith(keep_dir() + os.sep) and "," not in x
+
+
+def custom_apps():
+    """v5.22: app tambahan yang kamu centang sendiri: {nama: {"quit": ..., "paths": [...], "custom": True}}."""
+    out = {}
+    raw = _read_json(F_CUSTOM, [])
+    for a in raw if isinstance(raw, list) else []:
+        if not isinstance(a, dict):
+            continue
+        name, paths = str(a.get("name", "")).strip(), [str(p).strip("/") for p in a.get("paths", []) if isinstance(p, str)]
+        paths = [p for p in paths if _safe_rel(p)]
+        if not name or name in APPS or name.startswith("~/") or not paths:
+            continue
+        quit_name = a.get("quit")
+        out[name] = {"quit": quit_name if isinstance(quit_name, str) and quit_name else None, "paths": paths, "custom": True}
+    return out
+
+
+def add_custom(entry):
+    """Tambah/ganti 1 app tambahan. entry = {"name", "quit", "paths"}."""
+    name = str(entry.get("name", "")).strip()
+    paths = [str(p).strip("/") for p in entry.get("paths", []) if isinstance(p, str)]
+    if not name or name in APPS or name.startswith("~/") or "\n" in name or "," in name:   # "," = pemisah VAULT_SKIP
+        raise VaultError(T("This name can't be used.", "Nama ini tidak bisa dipakai."))
+    bad = [p for p in paths if not _safe_rel(p)]
+    if not paths or bad:
+        raise VaultError(T("These folders can't go in the vault: ", "Folder ini tidak bisa masuk vault: ") + ", ".join(bad or ["-"]))
+    raw = [a for a in _read_json(F_CUSTOM, []) if isinstance(a, dict) and a.get("name") != name]
+    raw.append({"name": name, "quit": entry.get("quit") or None, "paths": paths})
+    os.makedirs(AMNESIA, exist_ok=True)
+    _write_json(F_CUSTOM, raw)
+
+
+def remove_custom(name):
+    """Keluarkan app tambahan dari vault. Snapshot-nya ikut dihapus (supaya tidak ada sisa yang tidak terlihat)."""
+    raw = [a for a in _read_json(F_CUSTOM, []) if isinstance(a, dict) and a.get("name") != name]
+    _write_json(F_CUSTOM, raw)
+    if exists():
+        delete_snapshot([name])
+
+
 def items():
-    """Semua yang bisa disimpan: app di APPS + folder pilihan (nama '~/<folder>')."""
+    """Semua yang bisa disimpan: app di APPS + app tambahan (v5.22) + folder pilihan (nama '~/<folder>')."""
     d = dict(APPS)
+    d.update(custom_apps())
     for f in vault_folders():
         d["~/" + f] = {"quit": None, "paths": [f], "folder": True}
     return d
@@ -605,12 +734,22 @@ def doomsday(full=False, reason=""):
     # isi vault terenkripsi, jadi tanpa password datanya tetap tidak terbaca.
     if full:
         keep = keep_dir()
+        # v5.22: Brankas ditutup dan Kunci Keep dibuka dulu, kalau tidak isinya tidak bisa dihapus
+        if os.path.exists(KEEPLOCK):
+            for c in ("box-detach", "unlock"):
+                try:
+                    subprocess.run(["/bin/bash", KEEPLOCK, c], capture_output=True, timeout=60)
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
         for x in os.listdir(keep) if os.path.isdir(keep) else []:
             p = os.path.join(keep, x)
-            if os.path.isdir(p) and not os.path.islink(p):
-                shutil.rmtree(p, ignore_errors=True)
-            else:
-                os.remove(p)
+            try:
+                if os.path.isdir(p) and not os.path.islink(p):
+                    shutil.rmtree(p, ignore_errors=True)
+                else:
+                    os.remove(p)
+            except OSError:
+                pass
     with open(F_LOG, "a") as f:
         f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} doomsday ({reason}){' + Keep' if full else ''}\n")
     history("doomsday", "keep" if full else "")
@@ -624,12 +763,12 @@ def _unlock_many(password, keyfiles):
     if panic and secrets.compare_digest(_hash(password, panic["salt"]), panic["hash"]):
         doomsday(panic.get("full", False), "kata panik")
         raise VaultError("DOOMSDAY")
-    tmp = _new_tmp()
+    pem = None
     try:
-        r = _7z(["x", "-y", f"-o{tmp}", F_PRIV], password)
-        if r.returncode != 0:
-            if "password" not in (r.stdout + r.stderr).lower():
-                raise VaultError(T("The vault can't be opened (not a password problem):\n", "Vault tidak bisa dibuka (bukan karena password):\n") + r.stderr[-300:])
+        pem, err = _private_pem(password)
+        if pem is None:
+            if "password" not in err.lower():
+                raise VaultError(T("The vault can't be opened (not a password problem):\n", "Vault tidak bisa dibuka (bukan karena password):\n") + err[-300:])
             failed = attempts() + 1
             if failed >= MAX_ATTEMPTS:
                 doomsday(False, f"{failed}x password salah")
@@ -648,13 +787,10 @@ def _unlock_many(password, keyfiles):
             if not os.path.exists(kf):
                 keys.append(None)
                 continue
-            out = subprocess.run([OPENSSL, "pkeyutl", "-decrypt", "-inkey", os.path.join(tmp, "private.pem"),
-                                  "-pkeyopt", "rsa_padding_mode:oaep", "-in", kf],
-                                 check=True, capture_output=True)
-            keys.append(out.stdout.decode())
+            keys.append(_rsa_decrypt(pem, kf).decode())
         return keys
     finally:
-        _clean_tmp()
+        pem = None
 
 
 def _unlock(password, keyfile=None):
@@ -778,12 +914,15 @@ def _keychain_secrets():
 
 
 def _keychain_set(svc, acct, secret):
-    # ponytail: secret lewat argumen -w terlihat sesaat di daftar proses; 'security' tidak punya input
-    # stdin untuk ini. Risiko kecil karena hanya jalan saat user menekan "Pulihkan Kunci".
-    r = subprocess.run([SECURITY, "add-generic-password", "-U", "-s", svc, "-a", acct, "-w", secret],
-                       capture_output=True, text=True)
-    if r.returncode != 0:
-        raise VaultError(T(f"Couldn't save the {svc} key: ", f"Gagal menyimpan kunci {svc}: ") + r.stderr.strip()[-200:])
+    # v5.22: dulu secret lewat argumen -w (terlihat sesaat di `ps`). Sekarang perintahnya dikirim lewat stdin ke
+    # `security -i`, dan secret ditulis sebagai hex (-X), jadi tidak ada tanda kutip yang bisa merusak perintah.
+    if any(c in x for x in (svc, acct) for c in '"\\\n'):
+        raise VaultError(T(f"Couldn't save the {svc} key: unusual name.", f"Gagal menyimpan kunci {svc}: namanya tidak biasa."))
+    cmd = f'add-generic-password -U -s "{svc}" -a "{acct}" -X {secret.encode().hex()}\n'
+    r = subprocess.run([SECURITY, "-i"], input=cmd, capture_output=True, text=True)
+    chk = subprocess.run([SECURITY, "find-generic-password", "-s", svc, "-a", acct], capture_output=True, text=True)
+    if r.returncode != 0 or chk.returncode != 0:
+        raise VaultError(T(f"Couldn't save the {svc} key: ", f"Gagal menyimpan kunci {svc}: ") + (r.stderr or chk.stderr).strip()[-200:])
 
 
 def keys_info():
@@ -874,6 +1013,28 @@ def change_panic(password, word, full=False):
     set_panic(word, full)
 
 
+# ---------------- v5.22: password Kunci Keep (hash PBKDF2, sama seperti kata panik) ----------------
+def keep_hash(word):
+    if len(word) < MIN_KEEP_PASSWORD:
+        raise VaultError(T(f"The Keep password needs at least {MIN_KEEP_PASSWORD} characters.",
+                           f"Password Keep minimal {MIN_KEEP_PASSWORD} karakter."))
+    salt = secrets.token_hex(16)
+    return salt + ":" + _hash(word, salt)
+
+
+def keep_check(word):
+    stored = _setting("KEEP_LOCK_PW", "")
+    salt, _, h = stored.partition(":")
+    if not salt or not h:
+        raise VaultError(T("The Keep lock has no password set.", "Kunci Keep belum punya password."))
+    try:
+        ok = secrets.compare_digest(_hash(word, salt), h)
+    except ValueError:
+        ok = False
+    if not ok:
+        raise VaultError(T("Wrong Keep password.", "Password Keep salah."))
+
+
 def logout():
     """Logout macOS tanpa dialog konfirmasi."""
     subprocess.run(["osascript", "-e", 'tell application "loginwindow" to «event aevtrlgo»'])
@@ -885,11 +1046,14 @@ def _cli(argv, stdin):
     full = "full" in argv[2:]
     line = lambda: stdin.readline().rstrip("\n")
     out = {}
+    if cmd not in ("status", "sizes", "logout", "keephash", "keepcheck"):
+        _lock_and_sweep()                 # v5.22: 1 perintah sekaligus + sapu sisa yang terputus
     if cmd == "status":
         out = {"exists": exists(), "manifest": manifest() or None, "attempts": attempts(),
                "max": MAX_ATTEMPTS, "min": MIN_PASSWORD, "apps": installed_apps(), "skip": skipped_apps(),
                "folders": vault_folders(), "keys": keys_info(),
                "light": [n for n in light_apps() if n in installed_apps()], "full": full_apps(),
+               "custom": sorted(custom_apps()),          # v5.22: app tambahan pilihan kamu
                # path tiap app yang ikut snapshot: dipakai halaman "Yang akan dihapus" (kelompok "dipulihkan dari vault")
                "patterns": {n: items()[n]["paths"] for n in chosen_apps()} if exists() else {}}
     elif cmd == "sizes":
@@ -922,6 +1086,18 @@ def _cli(argv, stdin):
         doomsday(False, "dihapus manual")
     elif cmd == "logout":
         logout()
+    elif cmd == "addapp":                  # v5.22: 1 baris JSON {"name", "quit", "paths"}
+        try:
+            add_custom(json.loads(line() or "{}"))
+        except ValueError:
+            raise VaultError(T("Bad app data.", "Data app tidak valid."))
+    elif cmd == "delapp":
+        for n in argv[2:]:
+            remove_custom(n)
+    elif cmd == "keephash":                # password lewat stdin; hasilnya disimpan app di KEEP_LOCK_PW
+        out = {"hash": keep_hash(line())}
+    elif cmd == "keepcheck":
+        keep_check(line())
     else:
         raise VaultError(T(f"Unknown command: {cmd}", f"Perintah tidak dikenal: {cmd}"))
     return out

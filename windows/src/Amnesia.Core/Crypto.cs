@@ -13,7 +13,7 @@ namespace Amnesia.Core;
 public static class Crypto
 {
     static readonly byte[] Magic = "AMNESIA1"u8.ToArray();
-    public const byte KindSnapshot = 1, KindBackup = 2;
+    public const byte KindSnapshot = 1, KindBackup = 2, KindSafe = 3;
     const int Piece = 1 << 20;
 
     /// <summary>The vault's key pair: the private key locked with your password (PBKDF2-SHA256, 600 000 rounds, AES-256).</summary>

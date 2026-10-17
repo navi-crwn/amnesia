@@ -1,0 +1,26 @@
+﻿AMNESIA FOR WINDOWS: TERMS OF USE AND WARNING
+
+Please read this before you install. It's short.
+
+1. AMNESIA DELETES DATA. FOR REAL.
+Once you press Turn On in the app, everything in your user folder outside your Keep folder and your Keep List is removed at every sign out, restart and shutdown, and checked again at the next sign in. That includes Desktop, Downloads, Documents, Pictures, browser history, cookies, app data and app logins (unless you keep them).
+Removed files don't go to the Recycle Bin and can't be brought back. Not by you, not by us.
+Amnesia stays OFF after installing until you turn it on yourself. Before you do:
+  - back up anything you care about,
+  - open "What gets wiped" and read the list,
+  - move important files into your Keep folder.
+
+2. WHAT AMNESIA LEAVES ALONE
+Your Keep folder, everything on your Keep List, OneDrive, cloud folders (Dropbox, Google Drive, iCloud and others), virtual machines, Microsoft Store app data and what Windows needs to sign you in. Other user accounts and other drives are never touched.
+
+3. YOUR PASSWORDS ARE YOURS ALONE
+The vault, backups and the Keep lock use passwords only you know. Forget them and nobody can open them: no reset, no back door. Three wrong vault passwords, or your panic word, destroy the vault on purpose.
+The Keep lock is light protection: it stops other apps and people who don't know Windows well, but the files are not encrypted. Use BitLocker / device encryption for real protection.
+
+4. NOTHING LEAVES YOUR PC
+No servers, no accounts, no tracking, no analytics. Only update checks (GitHub) and backups you set up yourself go over the internet.
+
+5. YOU'RE IN CHARGE
+Amnesia is free, open-source software under the MIT License, provided as is, without any warranty. You use it at your own risk. The authors aren't responsible for lost data, lost logins or anything else caused by the app, a bug or a setting. Only install it on a PC and account that are yours. The app isn't code-signed yet, so Windows SmartScreen may warn you; the full source code is on GitHub.
+
+By installing Amnesia you agree to all of the above.
