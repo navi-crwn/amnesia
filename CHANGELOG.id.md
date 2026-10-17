@@ -7,6 +7,14 @@ Sedikit cerita: tanggal 6 Oktober 2026 Amnesia masih berupa beberapa skrip. Dua 
 
 Nomor versi kamu ada di samping judul Amnesia dan di bagian bawah panel menu bar.
 
+## Windows v0.7.2 · Lencana "Tes di VM" hilang, website Windows lengkap (14 Okt 2026)
+
+Matikan (Turn Off) Amnesia dulu sebelum install di atas versi lama, lalu nyalakan (Turn On) lagi.
+
+- Lencana "Tes di VM" di samping nama sudah tidak ada, begitu juga "tes di VM sebelum di PC asli" di tur sambutan. Cara kerja app sama dengan v0.7.1.
+- **Website Windows baru:** halaman Windows sekarang seperti halaman Mac, dengan animasi yang sama, screenshot asli app (Inggris dan Indonesia, gelap dan terang), cara pasang plus penjelasan peringatan SmartScreen, kunci Keep dan kunci lab, dan FAQ khusus Windows.
+- **Website Mac:** menampilkan fitur v5.20 dan v5.21 (cari di Pengaturan dan di What Gets Deleted, alat developer, jadwal cek update, virtual machine disimpan, grup Trash) dan memperbaiki jawaban lama "cek update sekali sehari".
+
 ## v5.21.0 · App baru terlihat di pratinjau, cari di "Yang Akan Dihapus", virtual machine aman (13 Okt 2026)
 
 Matikan (**Turn Off**) Amnesia dulu sebelum install, lalu nyalakan lagi.

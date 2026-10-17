@@ -118,7 +118,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
   <div class="wrap two">
     <div class="hero-copy">
-      <a class="hbadge" href="https://github.com/navi-crwn/amnesia"><span class="hb-ver" data-gh="version">v5.18.2</span><svg><use href="#i-github"/></svg><span data-en>Open source on GitHub</span><span data-id>Open source di GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia"><span class="hb-ver" data-gh="version">v5.21.0</span><svg><use href="#i-github"/></svg><span data-en>Open source on GitHub</span><span data-id>Open source di GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
       <h1 id="hero-title">
         <span data-en><span class="split">Your Mac forgets</span> <em class="word">everything.</em><span class="after split">Except what you keep.</span></span>
         <span data-id><span class="split">Mac kamu lupa</span> <em class="word">segalanya.</em><span class="after split">Kecuali yang kamu simpan.</span></span>
@@ -150,7 +150,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
     <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
       <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
       <span class="rc-desc"><span data-en>Your Mac forgets everything at logout, except what you choose to keep.</span><span data-id>Mac kamu lupa segalanya setiap logout, kecuali yang kamu pilih untuk disimpan.</span></span>
-      <span class="rc-meta"><span>MIT</span><span data-gh="version">v5.18.2</span><span class="rc-langs" data-gh="langs-mini"><span><i style="--c:var(--orange)"></i>Swift</span><span><i style="--c:var(--green)"></i>Shell</span></span></span>
+      <span class="rc-meta"><span>MIT</span><span data-gh="version">v5.21.0</span><span class="rc-langs" data-gh="langs-mini"><span><i style="--c:var(--orange)"></i>Swift</span><span><i style="--c:var(--green)"></i>Shell</span></span></span>
     </a>
   </div>
 </section>
@@ -191,7 +191,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <span class="rc-legend" data-gh="langs" hidden></span>
         <span class="rc-stats">
           <span><small><span data-en>License</span><span data-id>Lisensi</span></small><b>MIT</b></span>
-          <span><small><span data-en>Latest release</span><span data-id>Rilis terbaru</span></small><b data-gh="version">v5.18.2</b></span>
+          <span><small><span data-en>Latest release</span><span data-id>Rilis terbaru</span></small><b data-gh="version">v5.21.0</b></span>
           <span><small>Commits</small><b data-gh="commits">–</b></span>
           <span><small>Releases</small><b data-gh="releases">–</b></span>
           <span><small><span data-en>Contributors</span><span data-id>Kontributor</span></small><b data-gh="contributors">–</b></span>
@@ -272,18 +272,20 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
     <div class="head">
       <p class="label"><span class="n">04</span> · <span data-en>What stays</span><span data-id>Yang tetap ada</span></p>
       <h2><span data-en>What gets wiped, <em>what stays.</em></span><span data-id>Yang dihapus, <em>yang tetap aman.</em></span></h2>
-      <p class="lead"><span data-en>Nothing is deleted until you press Turn On, and you can always check the list first.</span><span data-id>Tidak ada yang dihapus sebelum kamu menekan Aktifkan, dan daftarnya selalu bisa kamu cek dulu.</span></p>
+      <p class="lead"><span data-en>Nothing is deleted until you press Turn On, and you can always check the list first. Search it, or put the biggest files on top.</span><span data-id>Tidak ada yang dihapus sebelum kamu menekan Aktifkan, dan daftarnya selalu bisa kamu cek dulu. Bisa dicari, atau diurutkan dari file terbesar.</span></p>
     </div>
     <div class="ledger">
       <div class="col gone"><h3><span data-en>Wiped at logout</span><span data-id>Dihapus saat logout</span></h3><ul>
         <li><span data-en>Browser history and cookies</span><span data-id>Riwayat dan cookie browser</span><i class="strike"></i></li>
         <li>Desktop, Downloads, Documents, Pictures, Movies, Music<i class="strike"></i></li>
         <li><span data-en>Caches, logs, Terminal history</span><span data-id>Cache, log, riwayat Terminal</span><i class="strike"></i></li>
+        <li><span data-en>Everything in the Trash</span><span data-id>Semua isi Trash</span><i class="strike"></i></li>
         <li><span data-en>Data of apps that are not in the vault or on the Keep List</span><span data-id>Data app yang tidak ada di vault atau Keep List</span><i class="strike"></i></li></ul></div>
       <div class="col safe"><h3><span data-en>Stays safe</span><span data-id>Tetap aman</span></h3><ul>
         <li><span data-en>Everything in your Keep folder (any place, any name)</span><span data-id>Semua isi folder Keep (di mana pun letaknya, apa pun namanya)</span></li>
         <li><span data-en>Logins saved in the Profile Vault (back with Restore)</span><span data-id>Login yang tersimpan di Profile Vault (kembali lewat Restore)</span></li>
         <li><span data-en>Apps on your Keep List (VPN, SSH keys, Apple account…)</span><span data-id>App di Keep List (VPN, kunci SSH, akun Apple…)</span></li>
+        <li><span data-en>Virtual machines (UTM, Parallels, VirtualBox, VMware Fusion), kept by default</span><span data-id>Virtual machine (UTM, Parallels, VirtualBox, VMware Fusion), otomatis disimpan</span></li>
         <li><span data-en>Your installed apps themselves</span><span data-id>App yang sudah terpasang</span></li></ul></div>
     </div>
   </div>
@@ -467,13 +469,15 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div><h3><span data-en>Light browser snapshots</span><span data-id>Snapshot browser ringan</span></h3><p><span data-en>Chrome, Brave, Edge, Arc, Vivaldi and Opera can be saved without caches: about 1 GB becomes 150 MB. One switch per browser.</span><span data-id>Chrome, Brave, Edge, Arc, Vivaldi, dan Opera bisa disimpan tanpa cache: dari sekitar 1 GB jadi 150 MB. Satu sakelar untuk tiap browser.</span></p></div>
       <div><h3><span data-en>Save & Log Out</span><span data-id>Simpan & Logout</span></h3><p><span data-en>One click saves your logins, then logs out. If saving fails, the logout is cancelled.</span><span data-id>Sekali klik, login disimpan lalu kamu logout. Kalau gagal menyimpan, logout dibatalkan.</span></p></div>
       <div><h3><span data-en>Auto snapshot</span><span data-id>Snapshot otomatis</span></h3><p><span data-en>Forgot Save & Log Out? A normal logout still saves the apps that changed first.</span><span data-id>Lupa menekan Simpan & Logout? Logout biasa tetap menyimpan app yang berubah lebih dulu.</span></p></div>
-      <div><h3><span data-en>Pick what stays</span><span data-id>Pilih apa yang tetap ada</span></h3><p><span data-en>A Keep folder for your files, and a Keep List for apps like VPNs and SSH keys.</span><span data-id>Folder Keep untuk file kamu, dan Keep List untuk app seperti VPN dan kunci SSH.</span></p></div>
-      <div><h3><span data-en>See it first</span><span data-id>Lihat dulu</span></h3><p><span data-en>"What Gets Deleted" lists everything before anything is deleted. Logout can wait for your OK.</span><span data-id>"Yang Akan Dihapus" menampilkan semuanya sebelum ada yang dihapus. Logout juga bisa menunggu persetujuanmu dulu.</span></p></div>
+      <div><h3><span data-en>Pick what stays</span><span data-id>Pilih apa yang tetap ada</span></h3><p><span data-en>A Keep folder for your files, and a Keep List for apps like VPNs and SSH keys. Virtual machines are on it by default.</span><span data-id>Folder Keep untuk file kamu, dan Keep List untuk app seperti VPN dan kunci SSH. Virtual machine otomatis masuk ke sana.</span></p></div>
+      <div><h3><span data-en>See it first</span><span data-id>Lihat dulu</span></h3><p><span data-en>"What Gets Deleted" lists everything before anything is deleted, with search and Biggest first. Files of 1 GB or more get a warning. Logout can wait for your OK.</span><span data-id>"Yang Akan Dihapus" menampilkan semuanya sebelum ada yang dihapus, lengkap dengan pencarian dan Terbesar dulu. File 1 GB ke atas diberi peringatan. Logout juga bisa menunggu persetujuanmu dulu.</span></p></div>
       <div><h3><span data-en>Pause 1 Session</span><span data-id>Jeda 1 Sesi</span></h3><p><span data-en>Skip the next logout and login once, without turning Amnesia off.</span><span data-id>Lewati satu kali logout dan login berikutnya, tanpa perlu mematikan Amnesia.</span></p></div>
       <div><h3><span data-en>Backup anywhere</span><span data-id>Backup ke mana saja</span></h3><p><span data-en>USB drive, your own server over SSH, Google Drive, Dropbox, OneDrive, Box or pCloud. Daily or weekly, and you can check a backup file.</span><span data-id>Ke flashdisk, server sendiri lewat SSH, Google Drive, Dropbox, OneDrive, Box, atau pCloud. Bisa harian atau mingguan, dan file backup-nya bisa dicek.</span></p></div>
       <div><h3><span data-en>History</span><span data-id>Riwayat</span></h3><p><span data-en>When the Mac was cleaned, which apps were saved, when backups ran. Never file names.</span><span data-id>Kapan Mac dibersihkan, app apa yang disimpan, dan kapan backup berjalan. Tanpa nama file.</span></p></div>
       <div><h3><span data-en>Panic word</span><span data-id>Kata panik</span></h3><p><span data-en>Type it, or get the password wrong 3 times, and the vault is gone for good.</span><span data-id>Ketik kata itu, atau salah password 3 kali, dan vault langsung terhapus selamanya.</span></p></div>
       <div><h3><span data-en>Move to a new Mac</span><span data-id>Pindah Mac</span></h3><p><span data-en>Take your vault and the Keychain keys with you, so your apps open logged in on the new Mac.</span><span data-id>Bawa vault dan kunci Keychain, jadi app di Mac baru langsung terbuka dalam keadaan sudah login.</span></p></div>
+      <div><h3><span data-en>Developer tools</span><span data-id>Alat developer</span></h3><p><span data-en>Keep your SSH, GitHub CLI, shell, editor, Docker, cloud and AI CLI settings. Pick Apps only shows the ones on your Mac.</span><span data-id>Simpan pengaturan SSH, GitHub CLI, shell, editor, Docker, cloud, dan AI CLI. Pilih App hanya menampilkan yang ada di Mac kamu.</span></p></div>
+      <div><h3><span data-en>Find any setting</span><span data-id>Cari pengaturan apa pun</span></h3><p><span data-en>Type in the search box on top of Settings, in English or Indonesian. The window resizes too.</span><span data-id>Ketik di kotak pencarian di atas Pengaturan, dalam bahasa Inggris atau Indonesia. Jendelanya juga bisa diubah ukurannya.</span></p></div>
     </div>
   </div>
 </section>
@@ -525,7 +529,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="aw-bar"><i></i><i></i><i></i></div>
         <div class="aw-head">
           <img src="logo.png" alt="" width="36" height="36">
-          <div><b>Amnesia <span class="ver" data-gh="version">v5.18.2</span></b><small><span data-en>Your Mac forgets everything, except what you choose.</span><span data-id>Mac kamu lupa semuanya, kecuali yang kamu pilih.</span></small></div>
+          <div><b>Amnesia <span class="ver" data-gh="version">v5.21.0</span></b><small><span data-en>Your Mac forgets everything, except what you choose.</span><span data-id>Mac kamu lupa semuanya, kecuali yang kamu pilih.</span></small></div>
           <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span data-en>Settings</span><span data-id>Pengaturan</span></span>
         </div>
         <div class="aw-hero pc" data-p="home">
@@ -552,7 +556,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <article class="pz-step" data-p="home"><p class="label"><span class="n">01</span> / 10</p>
           <h3><span data-en>Home</span><span data-id>Halaman utama</span></h3>
           <p><span data-en>The colored card shows whether Amnesia is On, Off or paused, and when it last cleaned. Its big button turns Amnesia on or off.</span><span data-id>Kartu berwarna menunjukkan apakah Amnesia sedang Aktif, Mati, atau dijeda, dan kapan terakhir membersihkan. Tombol besarnya untuk menyalakan atau mematikan Amnesia.</span></p>
-          <p><span data-en>Close the window and Amnesia keeps running in the menu bar.</span><span data-id>Jendela boleh ditutup, Amnesia tetap jalan di menu bar.</span></p>
+          <p><span data-en>Drag the window bigger or smaller. Close it and Amnesia keeps running in the menu bar.</span><span data-id>Jendelanya bisa diperbesar atau diperkecil. Kalau ditutup, Amnesia tetap jalan di menu bar.</span></p>
         </article>
         <article class="pz-step" data-p="menu"><p class="label"><span class="n">02</span> / 10</p>
           <h3>Menu bar</h3>
@@ -582,10 +586,20 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
           <h3>Keep List <span data-en>& Keep folder</span><span data-id>& folder Keep</span></h3>
           <p><span data-en>The Keep folder holds files that are never wiped. The Keep List keeps app data like VPNs, SSH keys and your Apple account.</span><span data-id>Folder Keep berisi file yang tidak pernah dihapus. Keep List menjaga data app seperti VPN, kunci SSH, dan akun Apple.</span></p>
           <p><span data-en>Amnesia scans your apps and suggests what to keep.</span><span data-id>Amnesia memindai app kamu dan menyarankan apa saja yang sebaiknya disimpan.</span></p>
+          <ul>
+            <li><b><span data-en>Pick Apps</span><span data-id>Pilih App</span></b> <span data-en>finds more of each app's data, like web logins.</span><span data-id>menemukan lebih banyak data tiap app, misalnya login web.</span></li>
+            <li><b><span data-en>Developer tools & terminal</span><span data-id>Alat developer & terminal</span></b>: <span data-en>SSH, GitHub CLI, zsh, Vim, Docker, AWS, Claude Code and more.</span><span data-id>SSH, GitHub CLI, zsh, Vim, Docker, AWS, Claude Code, dan lainnya.</span></li>
+            <li><span data-en>Virtual machines (UTM, Parallels, VirtualBox, VMware Fusion) are kept by default.</span><span data-id>Virtual machine (UTM, Parallels, VirtualBox, VMware Fusion) otomatis disimpan.</span></li>
+          </ul>
         </article>
         <article class="pz-step" data-p="preview"><p class="label"><span class="n">07</span> / 10</p>
           <h3><span data-en>What Gets Deleted</span><span data-id>Yang Akan Dihapus</span></h3>
           <p><span data-en>The full list of what the next logout deletes, grouped by meaning. Opening it deletes nothing.</span><span data-id>Daftar lengkap yang akan dihapus saat logout berikutnya, dikelompokkan per jenis. Membuka daftar ini tidak menghapus apa pun.</span></p>
+          <ul>
+            <li><span data-en>Search by name or folder, show one group, or tick</span><span data-id>Cari nama atau folder, tampilkan satu kelompok, atau centang</span> <b><span data-en>Biggest first</span><span data-id>Terbesar dulu</span></b>.</li>
+            <li><span data-en>Files of 1 GB or more and virtual machine data get a warning on top.</span><span data-id>File 1 GB ke atas dan data virtual machine diberi peringatan di atas.</span></li>
+            <li><span data-en>The Trash has its own group, because it's emptied at logout too.</span><span data-id>Trash punya kelompok sendiri, karena ikut dikosongkan saat logout.</span></li>
+          </ul>
           <p><span data-en>With "Check before logout" on, logout waits here for Continue or Cancel.</span><span data-id>Kalau "Cek dulu sebelum logout" nyala, logout menunggu di sini sampai kamu menekan Lanjut atau Batal.</span></p>
         </article>
         <article class="pz-step" data-p="backup"><p class="label"><span class="n">08</span> / 10</p>
@@ -605,6 +619,10 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <article class="pz-step" data-p="settings"><p class="label"><span class="n">10</span> / 10</p>
           <h3><span data-en>Settings</span><span data-id>Pengaturan</span></h3>
           <p><span data-en>Auto snapshot at logout, a reminder after login, check before logout, open at login, your Keep folder and language.</span><span data-id>Snapshot otomatis saat logout, pengingat setelah login, cek dulu sebelum logout, buka saat login, folder Keep, dan bahasa.</span></p>
+          <ul>
+            <li><b><span data-en>Search</span><span data-id>Cari</span></b> <span data-en>on top finds any setting, in English or Indonesian.</span><span data-id>di bagian atas menemukan pengaturan apa pun, dalam bahasa Inggris atau Indonesia.</span></li>
+            <li><span data-en>Update check: off, every week, every 2 weeks or every month.</span><span data-id>Cek update: mati, seminggu, 2 minggu, atau sebulan sekali.</span></li>
+          </ul>
           <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span data-en>Move to a New Mac carries your vault and Keychain keys over.</span><span data-id>Pindah Mac membawa vault dan kunci Keychain ke Mac baru.</span></p>
           <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span data-en>Uninstall with "also delete the vault" ticked.</span><span data-id>Hapus Amnesia, dengan pilihan ikut menghapus vault.</span></p>
         </article>
@@ -691,7 +709,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <p class="label"><span class="n">10</span> · <span data-en>Install</span><span data-id>Pasang</span></p>
       <h2><span data-en>Install in <em>one line.</em></span><span data-id>Pasang dengan <em>satu baris.</em></span></h2>
       <div class="badges">
-        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg><use href="#i-tag"/></svg><span>Release</span><b data-gh="version">v5.18.2</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg><use href="#i-tag"/></svg><span>Release</span><b data-gh="version">v5.21.0</b></a>
         <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
         <span class="bdg"><svg><use href="#i-laptop"/></svg><span>macOS</span><b>15+</b></span>
       </div>
@@ -734,7 +752,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <dl class="ghstats">
           <div><dt><span data-en>License</span><span data-id>Lisensi</span></dt><dd>MIT</dd></div>
           <div><dt>Releases</dt><dd data-gh="releases">–</dd></div>
-          <div><dt><span data-en>Latest</span><span data-id>Terbaru</span></dt><dd data-gh="version">v5.18.2</dd></div>
+          <div><dt><span data-en>Latest</span><span data-id>Terbaru</span></dt><dd data-gh="version">v5.21.0</dd></div>
         </dl>
         <div class="cta">
           <a class="btn main" href="https://github.com/navi-crwn/amnesia"><svg><use href="#i-github"/></svg><span data-en>Star this repo</span><span data-id>Kasih star repo ini</span></a>
@@ -868,6 +886,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
                 <div class="grp-b"><p class="dl">Desktop<b>12</b></p><p class="dl dl-dl" data-a="2" data-on=".hint">Downloads<b>48</b></p><p class="dl">Documents<b>7</b></p></div></div>
               <div class="grp"><p class="grp-h"><svg><use href="#i-globe"/></svg><span data-en>Browser data</span><span data-id>Data browser</span><b>4</b></p></div>
               <div class="grp"><p class="grp-h"><svg><use href="#i-grid"/></svg><span data-en>App data</span><span data-id>Data app</span><b>23</b></p></div>
+              <div class="grp"><p class="grp-h"><svg><use href="#i-trash"/></svg><span data-en>Trash (emptied at logout)</span><span data-id>Trash (dikosongkan saat logout)</span><b>9</b></p></div>
               <div class="grp back"><p class="grp-h"><svg><use href="#i-lock"/></svg><span data-en>Comes back from the vault</span><span data-id>Kembali dari vault</span><b>6</b></p></div>
               <p class="toast hint"><span data-en>Need it? Move it into ~/Keep first.</span><span data-id>Masih perlu? Pindahkan ke ~/Keep dulu.</span></p>
             </div>
@@ -955,7 +974,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
           <article class="t-step"><p class="label"><span class="n">03</span> / 10</p>
             <h3><span data-en>Pick what stays</span><span data-id>Pilih apa yang tetap ada</span></h3>
             <p><span data-en>Choose your Keep folder (~/Keep by default) and switch on the apps whose data should never be wiped. VPN apps are suggested, and your Apple account is ticked for you.</span><span data-id>Pilih folder Keep (bawaannya ~/Keep), lalu nyalakan app yang datanya tidak boleh dihapus. App VPN sudah disarankan, dan akun Apple sudah otomatis dicentang.</span></p>
-            <ul class="tips"><li><span data-en>You can change this later on the Keep List page.</span><span data-id>Bisa diubah nanti di halaman Keep List.</span></li></ul>
+            <ul class="tips"><li><span data-en>You can change this later on the Keep List page.</span><span data-id>Bisa diubah nanti di halaman Keep List.</span></li><li><span data-en>Code on this Mac? Keep List → Pick Apps → Developer tools & terminal keeps your SSH, Git and CLI settings.</span><span data-id>Ngoding di Mac ini? Keep List → Pilih App → Alat developer & terminal menyimpan pengaturan SSH, Git, dan CLI kamu.</span></li></ul>
           </article>
           <article class="t-step"><p class="label"><span class="n">04</span> / 10</p>
             <h3><span data-en>Create the Profile Vault</span><span data-id>Buat Profile Vault</span></h3>
@@ -975,7 +994,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
           <article class="t-step"><p class="label"><span class="n">07</span> / 10</p>
             <h3><span data-en>Look at the list</span><span data-id>Lihat daftarnya</span></h3>
             <p><span data-en>What Gets Deleted shows everything the next logout would delete, grouped by meaning. Still need something? Move it into your Keep folder or add the app to the Keep List.</span><span data-id>Yang Akan Dihapus menampilkan semua yang akan dihapus saat logout berikutnya, dikelompokkan per jenis. Masih ada yang dibutuhkan? Pindahkan ke folder Keep, atau tambahkan app-nya ke Keep List.</span></p>
-            <ul class="tips"><li><span data-en>Opening the list deletes nothing.</span><span data-id>Membuka daftar ini tidak menghapus apa pun.</span></li></ul>
+            <ul class="tips"><li><span data-en>Opening the list deletes nothing.</span><span data-id>Membuka daftar ini tidak menghapus apa pun.</span></li><li><span data-en>Tick Biggest first, and watch for the orange warning about files of 1 GB or more.</span><span data-id>Centang Terbesar dulu, dan perhatikan peringatan oranye untuk file 1 GB ke atas.</span></li><li><span data-en>With "Remove apps installed later" on, those apps show here too, in "Apps installed later".</span><span data-id>Kalau "Hapus app yang dipasang belakangan" nyala, app itu juga muncul di sini, di "App yang dipasang belakangan".</span></li></ul>
           </article>
           <article class="t-step"><p class="label"><span class="n">08</span> / 10</p>
             <h3><span data-en>Turn On</span><span data-id>Aktifkan</span></h3>
@@ -1018,7 +1037,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div class="fcol">
       <div class="cell fq f-safe">
         <h3 class="fq-h"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><span data-en>Safety</span><span data-id>Keamanan</span></h3>
-        <details><summary><span data-en>Is my data sent anywhere?</span><span data-id>Apakah data saya dikirim ke suatu tempat?</span></summary><p><span data-en>No. Amnesia has no servers, no accounts, no tracking and no analytics. Everything runs on your Mac. Only if you set up a server or cloud backup does a locked .7z file leave your Mac, straight to the place you picked, and nobody can read it without your password. The update check only asks GitHub for the newest version number, once a day, and can be switched off in Settings.</span><span data-id>Tidak. Amnesia tidak punya server, tidak butuh akun, tidak melacak, dan tidak mengumpulkan data. Semuanya berjalan di Mac kamu. File .7z terkunci hanya keluar dari Mac kalau kamu mengatur backup ke server atau cloud, langsung ke tempat yang kamu pilih, dan tidak ada yang bisa membacanya tanpa password kamu. Cek update hanya menanyakan nomor versi terbaru ke GitHub, sehari sekali, dan bisa dimatikan di Pengaturan.</span></p></details>
+        <details><summary><span data-en>Is my data sent anywhere?</span><span data-id>Apakah data saya dikirim ke suatu tempat?</span></summary><p><span data-en>No. Amnesia has no servers, no accounts, no tracking and no analytics. Everything runs on your Mac. Only if you set up a server or cloud backup does a locked .7z file leave your Mac, straight to the place you picked, and nobody can read it without your password. The update check only asks GitHub for the newest version number, once a week by default. In Settings you can make it every 2 weeks, every month, or Off.</span><span data-id>Tidak. Amnesia tidak punya server, tidak butuh akun, tidak melacak, dan tidak mengumpulkan data. Semuanya berjalan di Mac kamu. File .7z terkunci hanya keluar dari Mac kalau kamu mengatur backup ke server atau cloud, langsung ke tempat yang kamu pilih, dan tidak ada yang bisa membacanya tanpa password kamu. Cek update hanya menanyakan nomor versi terbaru ke GitHub, bawaannya seminggu sekali. Di Pengaturan bisa diganti jadi 2 minggu, sebulan sekali, atau Mati.</span></p></details>
     <details><summary><span data-en>Is there a Windows version?</span><span data-id>Ada versi Windows?</span></summary><p><span data-en>Yes. Amnesia for Windows wipes at sign out, restart and shutdown, and has the vault, backups and a Setup.exe with updates from inside the app. See the <a href="win/">Windows page</a>.</span><span data-id>Ada. Amnesia untuk Windows membersihkan saat sign out, restart dan shutdown, lengkap dengan vault, backup dan Setup.exe dengan update dari dalam app. Lihat <a href="win/">halaman Windows</a>.</span></p></details>
     <details><summary><span data-en>Can I try it without deleting anything?</span><span data-id>Bisa dicoba tanpa menghapus apa-apa?</span></summary><p><span data-en>Yes. Amnesia stays off until you press Turn On. What Gets Deleted (or Settings → "See what would be deleted now") shows the full list first.</span><span data-id>Bisa. Amnesia tetap mati sampai kamu menekan Aktifkan. Halaman Yang Akan Dihapus (atau Pengaturan → "Lihat yang akan dihapus sekarang") menampilkan daftarnya lebih dulu.</span></p></details>
     <details><summary><span data-en>Where do wiped files go? Can I get them back?</span><span data-id>File yang dihapus pindah ke mana? Bisa dikembalikan?</span></summary><p><span data-en>At logout they're moved into Amnesia's own folder (~/.amnesia-trash), which is emptied in the background after your next login. They don't go to the macOS Trash and can't be brought back. Anything you need goes into the Keep folder, the Keep List or the vault.</span><span data-id>Saat logout, semuanya dipindah ke folder khusus Amnesia (~/.amnesia-trash), lalu dikosongkan di background setelah login berikutnya. Tidak masuk Trash macOS dan tidak bisa dikembalikan. Yang masih kamu butuhkan, simpan di folder Keep, Keep List, atau vault.</span></p></details>
@@ -1053,6 +1072,8 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <details><summary><span data-en>I need my files tomorrow. What do I do?</span><span data-id>Saya masih butuh file ini besok. Bagaimana?</span></summary><p><span data-en>Move them into your Keep folder before you log out. Or, for a single day, press Pause 1 Session: the next logout and login are not wiped.</span><span data-id>Pindahkan ke folder Keep sebelum logout. Atau, kalau cuma untuk sehari, tekan Jeda 1 Sesi: logout dan login berikutnya tidak dibersihkan.</span></p></details>
     <details><summary><span data-en>Can I cancel a logout?</span><span data-id>Bisakah logout dibatalkan?</span></summary><p><span data-en>Yes, with "Check before logout" on (Settings): logout, restart and shutdown wait on the What Gets Deleted page until you press Continue or Cancel.</span><span data-id>Bisa, kalau "Cek dulu sebelum logout" dinyalakan (di Pengaturan): logout, restart, dan shutdown akan menunggu di halaman Yang Akan Dihapus sampai kamu menekan Lanjut atau Batal.</span></p></details>
     <details><summary><span data-en>The main window opens at login. Why?</span><span data-id>Kenapa jendela utama terbuka saat login?</span></summary><p><span data-en>Older versions were reopened by macOS's "Reopen windows when logging back in". Since v5.15 Amnesia only shows its menu bar icon at login.</span><span data-id>Di versi lama, jendela itu dibuka ulang oleh fitur macOS "Reopen windows when logging back in". Sejak v5.15, Amnesia hanya menampilkan ikon di menu bar saat login.</span></p></details>
+    <details><summary><span data-en>I use virtual machines. Are they wiped?</span><span data-id>Saya pakai virtual machine. Ikut dihapus?</span></summary><p><span data-en>Not by default. When Amnesia finds UTM, Parallels, VirtualBox or VMware Fusion data, it puts it on the Keep List once. Switch it off and it stays off, and the row says it's wiped at logout. What Gets Deleted also warns you about files of 1 GB or more.</span><span data-id>Secara bawaan tidak. Begitu Amnesia menemukan data UTM, Parallels, VirtualBox, atau VMware Fusion, datanya dimasukkan ke Keep List sekali. Kalau kamu matikan, tetap mati, dan barisnya bilang data itu dihapus saat logout. Yang Akan Dihapus juga memberi peringatan untuk file 1 GB ke atas.</span></p></details>
+    <details><summary><span data-en>Is the Trash emptied too?</span><span data-id>Apakah Trash ikut dikosongkan?</span></summary><p><span data-en>Yes, at every logout. What Gets Deleted shows it as its own group, "Trash (emptied at logout)", with its size. Take back what you still need first.</span><span data-id>Ya, setiap logout. Yang Akan Dihapus menampilkannya sebagai kelompok sendiri, "Trash (dikosongkan saat logout)", lengkap dengan ukurannya. Kembalikan dulu yang masih perlu.</span></p></details>
     <details><summary><span data-en>How do I update?</span><span data-id>Bagaimana cara update?</span></summary><p><span data-en>Press Turn Off, install the new version (.dmg or brew upgrade), open Amnesia, press Turn On.</span><span data-id>Tekan Matikan, pasang versi baru (.dmg atau brew upgrade), buka Amnesia, lalu tekan Aktifkan.</span></p></details>
     <details><summary><span data-en>Can I move to a new Mac?</span><span data-id>Bisa pindah ke Mac baru?</span></summary><p><span data-en>Yes, the Move to a New Mac page walks you through it. Prepare Move saves your Keychain keys to the vault, a backup carries it over, and Restore Keys puts them back on the new Mac.</span><span data-id>Bisa. Halaman Pindah Mac memandu langkah-langkahnya. Siapkan Pindah menyimpan kunci Keychain ke vault, backup membawanya ke Mac baru, lalu Pulihkan Kunci memasangnya di sana.</span></p></details>
       </div>
@@ -1099,7 +1120,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="ft-tag"><span data-en>Your Mac forgets everything at logout, except what you choose to keep. Free, open source, and nothing ever leaves your Mac.</span><span data-id>Mac kamu melupakan segalanya setiap logout, kecuali yang kamu pilih untuk disimpan. Gratis, open source, dan tidak ada data yang keluar dari Mac kamu.</span></p>
         <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
           <svg><use href="#i-github"/></svg>
-          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · <span data-gh="version">v5.18.2</span></small></span>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · <span data-gh="version">v5.21.0</span></small></span>
         </a>
       </div>
       <nav class="ft-cols" aria-label="Footer">

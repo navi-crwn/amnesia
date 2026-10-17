@@ -29,7 +29,7 @@
     tBackupSub: 'To a USB drive or server', tHistSub: 'Cleanups, snapshots, backups', tPrevSub: 'A dry run of the next sign out',
     searchPh: 'Search settings (also Advanced)', searchNone: 'Nothing found. Try another word.', gGeneral: 'General',
     advNote: 'For when you want more. All of these are off until you turn them on.',
-    badge: 'Test in a VM', tabHome: 'Home', tabKeep: 'Keep List', tabVault: 'Vault', tabBackup: 'Backup', tabAdvanced: 'Advanced', tabSettings: 'Settings',
+    tabHome: 'Home', tabKeep: 'Keep List', tabVault: 'Vault', tabBackup: 'Backup', tabAdvanced: 'Advanced', tabSettings: 'Settings',
     agree: 'I understand: at every sign out, restart and shut down, everything outside my Keep folder and Keep List is deleted. I tried "Show preview" first.',
     turnOn: 'Turn On', turnOff: 'Turn Off', confirmOff: 'Click again to turn off',
     offTitle: 'Off', offText: 'Nothing gets deleted. Try "Show preview" first, then turn Amnesia on.',
@@ -190,7 +190,7 @@
       ['Welcome to Amnesia', 'Every time you sign out, restart or shut down, Amnesia wipes your user folder. Like a guest account, but it is yours.'],
       ['Your Keep folder', 'Put what you want to keep in Keep (there is a shortcut on the Desktop). Folders like .ssh or an app\'s settings go on the Keep List.'],
       ['Vault for logins', 'The vault saves locked snapshots of your browser and chat apps, so you don\'t sign in again every time.'],
-      ['Try it safely', 'Press "Show preview" first: it only lists what would go. Test in a VM before your real PC.']
+      ['Try it safely', 'Press "Show preview" first: it only lists what would go.']
     ],
     tourNext: 'Next', tourDone: 'Let\'s go', tourSkip: 'Skip',
     err: {
@@ -214,7 +214,7 @@
     tBackupSub: 'Ke flashdisk atau server', tHistSub: 'Pembersihan, snapshot, backup', tPrevSub: 'Simulasi sign out berikutnya',
     searchPh: 'Cari pengaturan (termasuk Lanjutan)', searchNone: 'Tidak ketemu. Coba kata lain.', gGeneral: 'Umum',
     advNote: 'Untuk yang mau lebih. Semua ini mati sampai kamu nyalakan.',
-    badge: 'Tes di VM', tabHome: 'Beranda', tabKeep: 'Keep List', tabVault: 'Vault', tabBackup: 'Backup', tabAdvanced: 'Lanjutan', tabSettings: 'Pengaturan',
+    tabHome: 'Beranda', tabKeep: 'Keep List', tabVault: 'Vault', tabBackup: 'Backup', tabAdvanced: 'Lanjutan', tabSettings: 'Pengaturan',
     agree: 'Saya paham: setiap sign out, restart dan shut down, semua di luar folder Keep dan Keep List dihapus. Saya sudah coba "Lihat simulasi".',
     turnOn: 'Nyalakan', turnOff: 'Matikan', confirmOff: 'Klik sekali lagi untuk mematikan',
     offTitle: 'Mati', offText: 'Tidak ada yang dihapus. Coba "Lihat simulasi" dulu, lalu nyalakan Amnesia.',
@@ -375,7 +375,7 @@
       ['Selamat datang di Amnesia', 'Setiap sign out, restart atau shut down, Amnesia membersihkan folder user kamu. Seperti akun tamu, tapi milikmu sendiri.'],
       ['Folder Keep kamu', 'Taruh yang mau disimpan di Keep (ada shortcut-nya di Desktop). Folder seperti .ssh atau pengaturan app masuk Keep List.'],
       ['Vault untuk login', 'Vault menyimpan snapshot terkunci dari browser dan app chat, jadi kamu tidak perlu login ulang terus.'],
-      ['Coba dengan aman', 'Tekan "Lihat simulasi" dulu: isinya cuma daftar yang akan hilang. Tes di VM sebelum di PC asli.']
+      ['Coba dengan aman', 'Tekan "Lihat simulasi" dulu: isinya cuma daftar yang akan hilang.']
     ],
     tourNext: 'Lanjut', tourDone: 'Ayo mulai', tourSkip: 'Lewati',
     err: {

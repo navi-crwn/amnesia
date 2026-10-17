@@ -240,7 +240,7 @@ Script ini mematikan agent login lebih dulu (supaya waktu dihentikan tidak ada y
 | `keep.example.conf` | Contoh Keep List. `build.sh` menyalinnya jadi `keep.conf` saat pertama dipasang. |
 | `app/` | Kode app SwiftUI, ikon, dan script build/rilis. `app/screenshots.sh` memotret app asli dengan data contoh (opsional). |
 | `docs/` | Website (GitHub Pages). `docs/readme/` berisi gambar README yang diambil dari website. |
-| `windows/` | Versi Windows (**v0.7.1**): app tray C# + halaman HTML, vault, backup dan Setup.exe dengan update dari dalam app. Benar-benar menghapus setelah diaktifkan, jadi cek dulu Yang akan dihapus. Di-build dan dites oleh GitHub Actions (`.github/workflows/windows.yml`); tag `win-v*` membuat release Windows. |
+| `windows/` | Versi Windows (**v0.7.2**): app tray C# + halaman HTML, vault, backup dan Setup.exe dengan update dari dalam app. Benar-benar menghapus setelah diaktifkan, jadi cek dulu Yang akan dihapus. Di-build dan dites oleh GitHub Actions (`.github/workflows/windows.yml`); tag `win-v*` membuat release Windows. |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Tes otomatis di "home palsu", aman dijalankan kapan saja. |
 
 ---

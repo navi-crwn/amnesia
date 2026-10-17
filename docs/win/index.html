@@ -4,17 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Amnesia for Windows</title>
-<meta name="description" content="Amnesia for Windows: your PC forgets everything when you sign out, except the logins and files you keep. Free and open source.">
+<meta name="description" content="Your PC forgets everything when you sign out, restart or shut down, except the files and logins you choose to keep. Free and open source, for Windows 10 and 11.">
 <meta name="theme-color" content="#07070a" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f7f7fb" media="(prefers-color-scheme: light)">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Amnesia for Windows">
-<meta property="og:description" content="Amnesia for Windows: your PC forgets everything when you sign out, except what you keep.">
+<meta property="og:description" content="Your PC forgets everything at sign out, except what you choose to keep. Free and open source.">
 <meta property="og:url" content="https://navi-crwn.github.io/amnesia/win/">
 <meta property="og:image" content="https://navi-crwn.github.io/amnesia/social.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../logo.png">
 <script>
+// Runs before paint: pick the language and theme, and tell CSS that JS is on.
 (function(){var d=document.documentElement,l=null,t=null;d.classList.add('js');
 try{l=localStorage.getItem('lang');t=localStorage.getItem('theme')}catch(e){}
 d.lang=l||((navigator.language||'').indexOf('id')===0?'id':'en');
@@ -22,131 +23,938 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap">
 <link rel="stylesheet" href="../assets/css/site.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
 </head>
 <body class="winpage">
+<a class="skip" href="#main"><span data-en>Skip to content</span><span data-id>Langsung ke isi</span></a>
+<div class="noise" aria-hidden="true"></div>
+
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></symbol>
-    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><path d="m4 17 5-5 4 4 3-3 4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="17" cy="16" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-cookie" viewBox="0 0 24 24"><path d="M20.5 12.5A8.5 8.5 0 1 1 11.5 3.5a3 3 0 0 0 4 3.5 3 3 0 0 0 5 5.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="9" cy="10" r="1.1" fill="currentColor"/><circle cx="14" cy="15" r="1.1" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.1" fill="currentColor"/></symbol>
+    <symbol id="i-stack" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-lines" viewBox="0 0 24 24"><path d="M5 6h14M5 10h10M5 14h14M5 18h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-term" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m7 10 3 2-3 2M12 15h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 19 6v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="m4 7 1.5 1.5L8 6M4 13l1.5 1.5L8 12M4 19l1.5 1.5L8 18M11 7h9M11 13h9M11 19h9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-apps" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 15 12 8l3 7M10 13h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4H6v16h8M10 12h10m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 5 3 3H7l3-3zM12 12v8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-drive" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="12" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path d="M10.3 2.6h3.4l.5 2.6 1.6.9 2.5-.9 1.7 2.9-2 1.7v1.9l2 1.7-1.7 2.9-2.5-.9-1.6.9-.5 2.6h-3.4l-.5-2.6-1.6-.9-2.5.9-1.7-2.9 2-1.7v-1.9l-2-1.7 1.7-2.9 2.5.9 1.6-.9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3 9a13 13 0 0 1 18 0M6 12.5a8.5 8.5 0 0 1 12 0M9 16a4 4 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-batt" viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="17" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="9.5" width="10" height="5" rx="1" fill="currentColor"/><path d="M21.5 10.5v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></symbol>
+    <symbol id="i-brew" viewBox="0 0 24 24"><path d="M5 8h10v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2zM15 10h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2M8 11v6M12 11v6M5 8c0-2 1.5-3 3-3 .5-1.2 1.6-2 3-2s2.6.8 3 2c1.4 0 1 1.5 1 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-dmg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="11" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="11" r=".8" fill="currentColor"/><path d="M7 17h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-chip" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1" fill="currentColor" opacity=".6"/><path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 19h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z" fill="currentColor"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M4 7h16M7 7l-3 7a3 3 0 0 0 6 0zM17 7l-3 7a3 3 0 0 0 6 0z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-fork" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="18" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="19" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 7.2v1.3a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7.2M12 11.5v5.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-issue" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2" fill="currentColor"/></symbol>
+    <symbol id="i-arrow-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12h8m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M4 12h9m0 0-3-3m3 3-3 3M15 6h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 2.5 20h19z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1" fill="currentColor"/></symbol>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8M7.5 6.3a7 7 0 1 0 9 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-usb" viewBox="0 0 24 24"><rect x="8" y="2.5" width="8" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 5v2M13.5 5v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6.5 9.5h11v9a3 3 0 0 1-3 3h-5a3 3 0 0 1-3-3z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2.5 5 13.5h6l-1 8 8-11h-6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 19.5c.6-3.3 3-5.2 6-5.2s5.4 1.9 6 5.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="16.5" cy="9" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16.8 14.3c2.3.2 3.8 1.8 4.2 4.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
   </defs>
 </svg>
 
-<header class="nav solid" id="nav">
+<header class="nav" id="nav">
   <div class="wrap">
-    <a class="brand" href="../"><img src="../logo.png" alt="" width="30" height="30">Amnesia</a>
+    <a class="brand" href="#top"><img src="../logo.png" alt="" width="30" height="30">Amnesia</a>
     <div class="plat" role="group" aria-label="Platform">
       <a href="../">Mac</a>
       <a href="./" aria-current="page">Windows</a>
     </div>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#desk"><span data-en>How it works</span><span data-id>Cara kerja</span></a>
+      <a href="#vault">Vault</a>
+      <a href="#backup">Backup</a>
+      <a href="#exits"><span data-en>Quick exits</span><span data-id>Keluar cepat</span></a>
+      <a href="#tour">App</a>
+      <a href="#install"><span data-en>Install</span><span data-id>Pasang</span></a>
+      <a href="#faq">FAQ</a>
+    </nav>
     <div class="nav-r">
       <button type="button" class="theme" id="theme" aria-label="Light or dark"><svg class="t-sun"><use href="#i-sun"/></svg><svg class="t-moon"><use href="#i-moon"/></svg></button>
       <div class="lang" role="group" aria-label="Language">
         <button type="button" id="lang-en" aria-pressed="true" lang="en">EN</button>
         <button type="button" id="lang-id" aria-pressed="false" lang="id">ID</button>
       </div>
-      <a class="btn main" href="https://github.com/navi-crwn/amnesia"><span data-en>Follow on GitHub</span><span data-id>Ikuti di GitHub</span></a>
+      <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true">Download</a>
     </div>
   </div>
 </header>
 
 <main id="main">
-<section class="win-hero">
-  <div class="wrap">
-    <p class="win-tag"><span data-en>Out now · v0.7.1 · Windows 10 and 11</span><span data-id>Sudah rilis · v0.7.1 · Windows 10 dan 11</span></p>
-    <h1>
-      <span data-en>Amnesia for Windows <em>is here.</em></span>
-      <span data-id>Amnesia untuk Windows <em>sudah hadir.</em></span>
-    </h1>
-    <p class="lead">
-      <span data-en>Same idea as on Mac: your PC forgets everything when you sign out, except the logins and files you keep. Free, open source, and built in public.</span>
-      <span data-id>Idenya sama seperti di Mac: PC kamu lupa segalanya saat kamu sign out, kecuali login dan file yang kamu simpan. Gratis, open source, dan dikembangkan secara terbuka.</span>
-    </p>
-    <div class="cta">
-      <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github"/></svg><span data-en>Download for Windows</span><span data-id>Download untuk Windows</span></a>
-      <a class="btn ghost" href="../"><span data-en>Got a Mac? It's ready there</span><span data-id>Pakai Mac? Di sana sudah siap</span></a>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true"><i class="hb-dots"></i><i class="hb-beam"></i></div>
+  <div class="glow" style="width:520px;height:520px;background:var(--indigo);right:-120px;top:10%" aria-hidden="true"></div>
+  <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="hero-copy">
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.7.2</span><svg><use href="#i-github"/></svg><span data-en>Open source on GitHub</span><span data-id>Open source di GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <h1 id="hero-title">
+        <span data-en><span class="split">Your PC forgets</span> <em class="word">everything.</em><span class="after split">Except what you keep.</span></span>
+        <span data-id><span class="split">PC kamu lupa</span> <em class="word">segalanya.</em><span class="after split">Kecuali yang kamu simpan.</span></span>
+      </h1>
+      <p class="lead">
+        <span data-en>Every time you sign out, restart or shut down, Amnesia wipes your user folder: history, downloads, app data and the traces Windows keeps. Your Keep folder stays, and your logins wait in an encrypted vault.</span>
+        <span data-id>Setiap kali kamu sign out, restart, atau shut down, Amnesia membersihkan folder user kamu: riwayat, download, data app, dan jejak yang disimpan Windows. Folder Keep tetap ada, dan login kamu menunggu di vault terenkripsi.</span>
+      </p>
+      <div class="cta">
+        <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg><span data-en>Download for Windows</span><span data-id>Download untuk Windows</span></a>
+        <a class="btn ghost" href="../"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-laptop"/></svg><span data-en>Got a Mac?</span><span data-id>Pakai Mac?</span></a>
+        <a class="plink" href="#desk"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow-c"/></svg><span data-en>How it works</span><span data-id>Lihat cara kerjanya</span></a>
+      </div>
+      <p class="meta"><span data-en>Free & open source · Windows 10 and 11 · x64 & arm64 · no admin needed</span><span data-id>Gratis & open source · Windows 10 dan 11 · x64 & arm64 · tanpa admin</span></p>
+      <p class="warnline"><span><span data-en>Amnesia really deletes data, and it can't be undone. <a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md">Read the terms</a> before you install.</span><span data-id>Amnesia benar-benar menghapus data, dan itu tidak bisa dibatalkan. <a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.id.md">Baca ketentuannya</a> sebelum memasang.</span></span></p>
+    </div>
+    <div class="shield shield3d" data-shield3d="hero" aria-hidden="true">
+      <svg class="rings" viewBox="0 0 400 400">
+        <defs><linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs>
+        <circle class="r1" cx="200" cy="200" r="190" fill="none" stroke="url(#g-brand)" stroke-opacity=".5" stroke-dasharray="2 10"/>
+        <circle class="r2" cx="200" cy="200" r="150" fill="none" stroke-dasharray="60 20 4 20"/>
+        <circle class="r3" cx="200" cy="200" r="112" fill="none" stroke="url(#g-brand)" stroke-opacity=".35"/>
+        <circle cx="200" cy="10" r="4" fill="#22d3ee"/>
+        <circle cx="350" cy="200" r="3" fill="#ec4899"/>
+      </svg>
+      <img src="../logo.png" alt="" width="512" height="512">
+    </div>
+    <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
+      <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
+      <span class="rc-desc"><span data-en>Your PC forgets everything at sign out, except what you choose to keep.</span><span data-id>PC kamu lupa segalanya setiap sign out, kecuali yang kamu pilih untuk disimpan.</span></span>
+      <span class="rc-meta"><span>MIT</span><span>Windows v0.7.2</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
+    </a>
+  </div>
+</section>
+
+<!-- 01 + 02: the desktop, then sign out -->
+<section id="desk">
+  <div class="wrap pinbox">
+    <div class="two">
+      <div class="desk-copy">
+        <div class="steps">
+          <div class="step s1">
+            <p class="label"><span class="n">01</span> · <span data-en>Your PC, every day</span><span data-id>PC kamu, setiap hari</span></p>
+            <h2><span data-en>All of this, <em>every day?</em></span><span data-id>Semua ini, <em>setiap hari?</em></span></h2>
+            <p class="body"><span data-en>Your browser saves history and cookies. Downloads and Desktop fill up with files you needed once. And Windows keeps its own notes: recent files, what you typed in Run and Explorer, search history, thumbnails, Notepad tabs, clipboard history.</span><span data-id>Browser menyimpan riwayat dan cookie. Downloads dan Desktop penuh file yang cuma dipakai sekali. Windows juga punya catatan sendiri: file terakhir, yang kamu ketik di Run dan Explorer, riwayat pencarian, thumbnail, tab Notepad, riwayat clipboard.</span></p>
+            <p class="body"><span data-en>It piles up until you clean it by hand. Or never.</span><span data-id>Semuanya terus menumpuk sampai kamu bersihkan sendiri. Atau malah tidak pernah.</span></p>
+          </div>
+          <div class="step s2">
+            <p class="label"><span class="n">02</span> · Sign out</p>
+            <h2><span data-en>Sign out. <em>Forgotten.</em></span><span data-id>Sign out. <em>Terlupakan.</em></span></h2>
+            <p class="body"><span data-en>Sign out, restart or shut down and Amnesia wipes all of it. Windows shows "Amnesia is cleaning up..." until it's done. Only what you chose stays: your Keep folder, your Keep List and the logins in your vault. Your installed programs stay too.</span><span data-id>Begitu kamu sign out, restart, atau shut down, Amnesia menghapus semua itu. Windows menampilkan "Amnesia is cleaning up..." sampai selesai. Yang tersisa hanya pilihanmu: folder Keep, Keep List, dan login di vault. Program yang sudah terpasang juga tetap ada.</span></p>
+            <p class="body"><span data-en>At the next sign in it checks once more, so a crash or a power cut doesn't leave traces behind.</span><span data-id>Saat sign in berikutnya, Amnesia mengecek sekali lagi. Jadi crash atau mati listrik pun tidak meninggalkan jejak.</span></p>
+            <p class="def"><span class="tm sel"><i></i>Selective Amnesia</span> <span data-en>is the name for this: everything is forgotten, except what you chose to keep.</span><span data-id>artinya: semua dilupakan, kecuali yang kamu pilih untuk disimpan.</span></p>
+          </div>
+        </div>
+        <div class="pager" data-pager="desk" hidden>
+          <button type="button" class="pg-prev" aria-label="Previous"><svg><use href="#i-chev-l"/></svg></button>
+          <ol class="pg-dots"></ol>
+          <button type="button" class="pg-next" aria-label="Next"><svg><use href="#i-chev-r"/></svg></button>
+        </div>
+      </div>
+      <div class="screen" aria-hidden="true">
+        <div class="bar"><i></i><i></i><i></i><span>C:\Users\you</span></div>
+        <div class="prog"><b></b></div>
+        <div class="icons">
+          <div class="ico" style="color:var(--cyan)"><svg><use href="#i-folder"/></svg><span>Desktop</span></div>
+          <div class="ico" style="color:var(--cyan)"><svg><use href="#i-down"/></svg><span>Downloads</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-folder"/></svg><span>Keep</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--indigo)"><svg><use href="#i-doc"/></svg><span>Documents</span></div>
+          <div class="ico" style="color:var(--pink)"><svg><use href="#i-image"/></svg><span>Pictures</span></div>
+          <div class="ico" style="color:var(--orange)"><svg><use href="#i-globe"/></svg><span><span data-en>History</span><span data-id>Riwayat</span></span></div>
+          <div class="ico" style="color:var(--orange)"><svg><use href="#i-cookie"/></svg><span>Cookies</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-shield"/></svg><span>Vault</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--pink)"><svg><use href="#i-film"/></svg><span>Videos</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-list"/></svg><span>Keep List</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--violet)"><svg><use href="#i-clock"/></svg><span><span data-en>Recent</span><span data-id>Terbaru</span></span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-stack"/></svg><span>Temp</span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-grid"/></svg><span>Thumbnails</span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-term"/></svg><span>PowerShell</span></div>
+          <div class="ico" style="color:var(--indigo)"><svg><use href="#i-lines"/></svg><span>Clipboard</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-apps"/></svg><span><span data-en>Programs</span><span data-id>Program</span></span><b class="halo"></b></div>
+        </div>
+        <div class="logout"><span class="k">Win+X → U → I</span><button type="button" tabindex="-1">Sign out</button></div>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="win-sec">
-  <div class="wrap win-grid">
-    <div class="win-card">
-      <h2><span data-en>Works now</span><span data-id>Sudah jalan</span></h2>
-      <ul class="win-list ok">
-        <li><span data-en><b>Real cleanup:</b> once you turn it on, your user folder is wiped at sign out, restart and shutdown, and checked again at sign in.</span><span data-id><b>Pembersihan sungguhan:</b> setelah diaktifkan, folder user kamu dibersihkan saat sign out, restart dan shutdown, lalu dicek lagi saat sign in.</span></li>
-        <li><span data-en>Windows traces go too: recent files, Run box and Explorer history, searches, thumbnails, Notepad tabs, Paint history, clipboard history, Recycle Bin and more.</span><span data-id>Jejak Windows ikut hilang: file terakhir, riwayat Run dan Explorer, pencarian, thumbnail, tab Notepad, riwayat Paint, riwayat clipboard, Recycle Bin dan lainnya.</span></li>
-        <li><span data-en><b>Profile Vault:</b> an encrypted copy of your logins (Chrome, Edge, Claude, Discord, VS Code and more), saved after you close each app and restored with your password.</span><span data-id><b>Profile Vault:</b> salinan login kamu yang terenkripsi (Chrome, Edge, Claude, Discord, VS Code dan lainnya), disimpan setelah kamu menutup app-nya dan dipulihkan dengan password.</span></li>
-        <li><span data-en>Your Keep folder and Keep List always stay. Pick what stays right in the app.</span><span data-id>Folder Keep dan Keep List selalu aman. Pilih apa yang tetap ada langsung dari app.</span></li>
-        <li><span data-en>Backups to a USB drive, a cloud folder or your own server, plus moving to a new PC.</span><span data-id>Backup ke flashdisk, folder cloud atau server sendiri, plus pindah ke PC baru.</span></li>
-        <li><span data-en>Quick exits: panic hotkey, USB key, sign out when idle, panic word and Doomsday.</span><span data-id>Keluar cepat: hotkey panik, kunci USB, sign out saat idle, panic word dan Doomsday.</span></li>
-        <li><span data-en>Removes apps installed after you turned it on, and finds leftovers.</span><span data-id>Menghapus app yang dipasang setelah Amnesia diaktifkan, dan mencari sisa-sisanya.</span></li>
-        <li><span data-en>Setup.exe with updates from inside the app, a tray app that looks like the Mac one, light and dark, English and Indonesian.</span><span data-id>Setup.exe dengan update dari dalam app, app tray yang tampilannya mirip versi Mac, terang dan gelap, bahasa Inggris dan Indonesia.</span></li>
-      </ul>
+<!-- 03 what stays -->
+<section class="stage" id="stays">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">03</span> · <span data-en>What stays</span><span data-id>Yang tetap ada</span></p>
+      <h2><span data-en>What gets wiped, <em>what stays.</em></span><span data-id>Yang dihapus, <em>yang tetap aman.</em></span></h2>
+      <p class="lead"><span data-en>After you install it, Amnesia is Off. Nothing is deleted until you tick "I understand" and press Turn On, and you can check the list first.</span><span data-id>Setelah dipasang, Amnesia dalam keadaan Mati. Tidak ada yang dihapus sampai kamu mencentang "Saya paham" dan menekan Nyalakan, dan daftarnya bisa kamu cek dulu.</span></p>
     </div>
-    <div class="win-card">
-      <h2><span data-en>Coming next</span><span data-id>Berikutnya</span></h2>
-      <ul class="win-list todo">
-        <li><span data-en>Fixes and ideas from you: <a href="https://github.com/navi-crwn/amnesia/issues">open an issue</a></span><span data-id>Perbaikan dan ide dari kamu: <a href="https://github.com/navi-crwn/amnesia/issues">buka issue</a></span></li>
-        <li><span data-en>A signed app, so Windows stops warning when you install it</span><span data-id>App bertanda tangan, supaya Windows tidak memberi peringatan saat dipasang</span></li>
-        <li><span data-en>Install with winget</span><span data-id>Pasang lewat winget</span></li>
-      </ul>
+    <div class="ledger">
+      <div class="col gone"><h3><span data-en>Wiped at sign out</span><span data-id>Dihapus saat sign out</span></h3><ul>
+        <li><span data-en>Browser history, cookies and logins (Chrome, Edge and others)</span><span data-id>Riwayat, cookie, dan login browser (Chrome, Edge, dan lainnya)</span><i class="strike"></i></li>
+        <li>Desktop, Downloads, Documents, Pictures, Videos, Music<i class="strike"></i></li>
+        <li><span data-en>Windows traces: recent files, Run and Explorer history, searches, thumbnails, Notepad tabs, clipboard history, Recycle Bin</span><span data-id>Jejak Windows: file terakhir, riwayat Run dan Explorer, pencarian, thumbnail, tab Notepad, riwayat clipboard, Recycle Bin</span><i class="strike"></i></li>
+        <li><span data-en>App data that is not in the vault or on the Keep List</span><span data-id>Data app yang tidak ada di vault atau Keep List</span><i class="strike"></i></li></ul></div>
+      <div class="col safe"><h3><span data-en>Stays safe</span><span data-id>Tetap aman</span></h3><ul>
+        <li><span data-en>Everything in your Keep folder (it has a purple icon, a Desktop shortcut and a spot in Explorer's side bar)</span><span data-id>Semua isi folder Keep (ikonnya ungu, ada shortcut di Desktop dan tempat di sidebar Explorer)</span></li>
+        <li><span data-en>Folders on your Keep List, like .ssh or your code editor's settings</span><span data-id>Folder di Keep List, misalnya .ssh atau pengaturan code editor kamu</span></li>
+        <li><span data-en>Logins saved in the vault (back with Restore and your password)</span><span data-id>Login yang tersimpan di vault (kembali lewat Pulihkan dan password kamu)</span></li>
+        <li><span data-en>OneDrive, your installed programs, other drives and what Windows needs to sign you in</span><span data-id>OneDrive, program yang terpasang, drive lain, dan semua yang dibutuhkan Windows untuk sign in</span></li></ul></div>
     </div>
   </div>
 </section>
 
-<section class="win-sec">
+<!-- 04 vault -->
+<section class="stage" id="vault">
+  <div class="glow" style="width:480px;height:480px;background:var(--indigo);left:-200px;top:20%;opacity:.22" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="vaultviz" aria-hidden="true">
+      <svg viewBox="0 0 400 400">
+        <circle class="ring-a" cx="200" cy="200" r="165" fill="none" stroke-dasharray="3 9"/>
+        <circle cx="200" cy="200" r="118" fill="none" stroke="rgba(99,102,241,.25)"/>
+        <g class="v-shield">
+          <path d="M200 92 282 124v74c0 56-34 92-82 112-48-20-82-56-82-112v-74z" fill="rgba(99,102,241,.10)" stroke="url(#g-brand)" stroke-width="2"/>
+          <path class="v-shackle" d="M182 196v-16a18 18 0 0 1 36 0v16" fill="none" stroke-width="5" stroke-linecap="round"/>
+          <rect class="v-body" x="170" y="194" width="60" height="46" rx="8"/>
+          <circle class="v-hole" cx="200" cy="214" r="5"/><rect class="v-hole" x="198" y="216" width="4" height="12" rx="2"/>
+        </g>
+        <g class="v-apps" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" text-anchor="middle">
+          <g class="v-app"><circle cx="200" cy="35" r="22" stroke="#22d3ee"/><text x="200" y="40">Ch</text></g>
+          <g class="v-app"><circle cx="317" cy="83" r="22" stroke="#10b981"/><text x="317" y="88">Ed</text></g>
+          <g class="v-app"><circle cx="365" cy="200" r="22" stroke="#f97316"/><text x="365" y="205">Cl</text></g>
+          <g class="v-app"><circle cx="317" cy="317" r="22" stroke="#a78bfa"/><text x="317" y="322">Dc</text></g>
+          <g class="v-app"><circle cx="200" cy="365" r="22" stroke="#6366f1"/><text x="200" y="370">VS</text></g>
+          <g class="v-app"><circle cx="83" cy="317" r="22" stroke="#ec4899"/><text x="83" y="322">Tg</text></g>
+          <g class="v-app"><circle cx="35" cy="200" r="22" stroke="#e5e7eb"/><text x="35" y="205">gh</text></g>
+          <g class="v-app"><circle cx="83" cy="83" r="22" stroke="#22d3ee"/><text x="83" y="88">Sl</text></g>
+        </g>
+      </svg>
+      <div class="safe3d" data-obj3d="safe"></div>
+      <div class="pw"><span class="lbl">password </span><span class="dots">••••••••••••</span><span class="caret"></span></div>
+    </div>
+    <div class="head">
+      <p class="label"><span class="n">04</span> · Profile Vault</p>
+      <h2><span data-en>One password. <em>Your logins back.</em></span><span data-id>Satu password. <em>Login kembali.</em></span></h2>
+      <p class="lead"><span data-en>An encrypted safe for your app logins: Chrome, Edge, Brave, Firefox, Discord, Telegram, Slack, VS Code, Claude, Git and any folder you add. Sign in to a clean PC, type one password, and they're back.</span><span data-id>Brankas terenkripsi untuk login app kamu: Chrome, Edge, Brave, Firefox, Discord, Telegram, Slack, VS Code, Claude, Git, dan folder apa pun yang kamu tambahkan. Sign in ke PC yang bersih, ketik satu password, dan semuanya kembali.</span></p>
+      <ul class="facts">
+        <li><b>AES-256.</b> <span data-en>Every snapshot gets its own random key, locked with the vault's key. Forget the password and nobody can open it.</span><span data-id>Setiap snapshot punya kunci acak sendiri, dikunci dengan kunci vault. Kalau lupa password, tidak ada yang bisa membukanya.</span></li>
+        <li><b><span data-en>Saved after you close each app.</span><span data-id>Disimpan setelah app ditutup.</span></b> <span data-en>In the background, only when something changed. Sign out just cleans, so it's quick.</span><span data-id>Di latar belakang, hanya kalau ada yang berubah. Sign out cuma membersihkan, jadi cepat.</span></li>
+        <li><b><span data-en>A spare snapshot.</span><span data-id>Snapshot cadangan.</span></b> <span data-en>Each app keeps the one before the newest, in case the newest looks wrong.</span><span data-id>Setiap app menyimpan snapshot sebelum yang terbaru, kalau-kalau yang terbaru terlihat salah.</span></li>
+      </ul>
+      <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span data-en>Restore brings your logins back with your password. A notification after sign in reminds you.</span><span data-id>Pulihkan mengembalikan login kamu dengan password. Notifikasi setelah sign in mengingatkan kamu.</span></p>
+      <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span data-en>3 wrong passwords or your panic word, and the vault is gone for good.</span><span data-id>Salah password 3 kali atau mengetik kata panik, dan vault hilang selamanya.</span></p>
+      <p class="iyk-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span data-en>Honest note: Windows ties saved logins to your Windows user. Snapshots come back on this PC and this user, not on another PC.</span><span data-id>Catatan jujur: Windows mengikat login tersimpan ke user Windows kamu. Snapshot kembali di PC ini dan user ini, bukan di PC lain.</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- 05 daily -->
+<section class="stage" id="how">
   <div class="wrap">
-    <div class="win-card wide">
-      <h2><span data-en>How to install</span><span data-id>Cara pasang</span></h2>
-      <ol class="win-steps">
-        <li><span data-en>Open the <a href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true">newest "Amnesia for Windows" release</a> on GitHub.</span><span data-id>Buka <a href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true">release "Amnesia for Windows" terbaru</a> di GitHub.</span></li>
-        <li><span data-en>Download <code>Amnesia-Setup-…-x64.exe</code> for a normal PC, or <code>-arm64.exe</code> for Windows on ARM (like a Windows VM on a Mac). You can check it against <code>SHA256SUMS.txt</code>.</span><span data-id>Download <code>Amnesia-Setup-…-x64.exe</code> untuk PC biasa, atau <code>-arm64.exe</code> untuk Windows ARM (misalnya VM Windows di Mac). Bisa dicek dengan <code>SHA256SUMS.txt</code>.</span></li>
-        <li><span data-en>Open it. Windows will warn because the app isn't signed yet: <b>More info → Run anyway</b>. It installs just for you, no admin needed, and stays Off until you turn it on.</span><span data-id>Buka file-nya. Windows akan memberi peringatan karena app-nya belum bertanda tangan: <b>More info → Run anyway</b>. Terpasang khusus untuk kamu, tanpa admin, dan tetap Off sampai kamu nyalakan.</span></li>
-        <li><span data-en>Later updates come from inside the app: <b>Settings → Update → Check now</b>. Turn Amnesia off before you install one.</span><span data-id>Update berikutnya dari dalam app: <b>Pengaturan → Update → Cek sekarang</b>. Matikan Amnesia dulu sebelum memasang update.</span></li>
+    <div class="head">
+      <p class="label"><span class="n">05</span> · <span data-en>Every day</span><span data-id>Setiap hari</span></p>
+      <h2><span data-en>A normal day <em>with Amnesia.</em></span><span data-id>Sehari-hari <em>dengan Amnesia.</em></span></h2>
+      <p class="lead"><span data-en>Once it's set up, this is all you do.</span><span data-id>Setelah semuanya disiapkan, cuma ini yang perlu kamu lakukan.</span></p>
+    </div>
+    <div class="daily-track">
+      <svg class="daily-line" viewBox="0 0 1000 2" preserveAspectRatio="none" aria-hidden="true">
+        <line x1="0" y1="1" x2="1000" y2="1" stroke="rgba(255,255,255,.1)" stroke-width="2"/>
+        <line class="draw" x1="0" y1="1" x2="1000" y2="1" stroke="url(#g-line)" stroke-width="2"/>
+        <defs><linearGradient id="g-line" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1000" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset=".6" stop-color="#6366f1"/><stop offset="1" stop-color="#ef4444"/></linearGradient></defs>
+      </svg>
+      <ol class="daily-steps" role="list">
+        <li class="dstep"><span class="node">01</span><h3>Sign in</h3><p><span data-en>Your PC starts clean. Click the reminder, type your vault password, press Restore.</span><span data-id>PC mulai dalam keadaan bersih. Klik pengingatnya, ketik password vault, lalu tekan Pulihkan.</span></p></li>
+        <li class="dstep"><span class="node">02</span><h3><span data-en>Work</span><span data-id>Kerja</span></h3><p><span data-en>Your logins are back. Files you need tomorrow go into your Keep folder.</span><span data-id>Login kamu sudah kembali. File yang masih perlu besok, simpan di folder Keep.</span></p></li>
+        <li class="dstep"><span class="node">03</span><h3><span data-en>Close your apps</span><span data-id>Tutup app</span></h3><p><span data-en>Each vault app is saved by itself after you close it.</span><span data-id>Setiap app di vault tersimpan sendiri setelah kamu menutupnya.</span></p></li>
+        <li class="dstep"><span class="node">04</span><h3><span data-en>Sign out</span><span data-id>Sign out</span></h3><p><span data-en>Everything else is wiped. No traces left.</span><span data-id>Sisanya dihapus, tanpa jejak.</span></p></li>
       </ol>
-      <p class="win-note"><span data-en>Windows 10 or 11. Amnesia really deletes once you turn it on, so put what you need in Keep first and check <b>What gets wiped</b> before your first sign out. Found a bug or want something changed? <a href="https://github.com/navi-crwn/amnesia/issues">Open an issue</a> (no passwords or private file lists, please).</span><span data-id>Windows 10 atau 11. Amnesia benar-benar menghapus setelah diaktifkan, jadi simpan dulu yang kamu perlu di Keep dan cek <b>Yang akan dihapus</b> sebelum sign out pertama. Ketemu bug atau mau ada yang diubah? <a href="https://github.com/navi-crwn/amnesia/issues">Buka issue</a> (tanpa password atau daftar file pribadi ya).</span></p>
     </div>
+    <p class="pausenote"><b><span data-en>Pause one session</span><span data-id>Jeda satu sesi</span></b> <span><span data-en>Skip the next sign out and sign in once, without turning Amnesia off.</span><span data-id>Lewati satu kali sign out dan sign in berikutnya, tanpa mematikan Amnesia.</span></span></p>
+  </div>
+</section>
+
+<!-- 06 backup -->
+<section class="stage" id="backup">
+  <div class="wrap two">
+    <div class="head">
+      <p class="label"><span class="n">06</span> · Backup</p>
+      <h2><span data-en>Backup, <em>and a new PC.</em></span><span data-id>Backup, <em>dan PC baru.</em></span></h2>
+      <p class="lead"><span data-en>Your Keep folder, Keep List and vault in one locked file. It's locked with your vault, so no extra password.</span><span data-id>Folder Keep, Keep List, dan vault dalam satu file terkunci. Dikunci dengan vault kamu, jadi tidak perlu password tambahan.</span></p>
+      <ul class="facts">
+        <li><span data-en>To a USB drive, another drive, a cloud folder (OneDrive, Google Drive for desktop) or your own server over SSH. Every day or every week.</span><span data-id>Ke flashdisk, drive lain, folder cloud (OneDrive, Google Drive for desktop), atau server sendiri lewat SSH. Setiap hari atau setiap minggu.</span></li>
+        <li><span data-en>Every backup is a new dated file. Amnesia never deletes old ones.</span><span data-id>Setiap backup jadi file baru dengan tanggal. Amnesia tidak pernah menghapus yang lama.</span></li>
+      </ul>
+      <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span data-en>Move to a new PC: install Amnesia, pick a backup, type your vault password. Your Keep folder, Keep List and vault come back.</span><span data-id>Pindah ke PC baru: pasang Amnesia, pilih file backup, ketik password vault. Folder Keep, Keep List, dan vault kembali.</span></p>
+    </div>
+    <div class="netviz" aria-hidden="true">
+      <svg viewBox="0 0 640 440">
+        <g class="links" fill="none" stroke="url(#g-brand)" stroke-width="1.5" stroke-opacity=".7">
+          <path id="bk1" d="M262 205C190 205 190 80 128 80"/>
+          <path id="bk2" d="M262 220C200 212 190 228 128 220"/>
+          <path id="bk3" d="M262 235C190 235 190 360 128 360"/>
+          <path id="bk4" d="M378 205C450 205 450 80 512 80"/>
+          <path id="bk5" d="M378 220C440 212 450 228 512 220"/>
+          <path id="bk6" d="M378 235C450 235 450 360 512 360"/>
+        </g>
+        <g class="pkts" fill="#22d3ee">
+          <circle r="3"><animateMotion dur="2.8s" repeatCount="indefinite"><mpath href="#bk1"/></animateMotion></circle>
+          <circle r="3"><animateMotion dur="2.2s" begin=".4s" repeatCount="indefinite"><mpath href="#bk2"/></animateMotion></circle>
+          <circle r="3"><animateMotion dur="3.1s" begin=".9s" repeatCount="indefinite"><mpath href="#bk3"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="2.6s" begin=".2s" repeatCount="indefinite"><mpath href="#bk4"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="2.4s" begin="1.1s" repeatCount="indefinite"><mpath href="#bk5"/></animateMotion></circle>
+          <circle r="3" fill="#10b981"><animateMotion dur="2.9s" begin=".6s" repeatCount="indefinite"><mpath href="#bk6"/></animateMotion></circle>
+        </g>
+        <g class="core">
+          <rect x="262" y="180" width="116" height="80" rx="16" stroke="url(#g-brand)" stroke-width="2"/>
+          <text x="320" y="216" text-anchor="middle" font-size="22" font-weight="500">.amb</text>
+          <text class="mut" x="320" y="240" text-anchor="middle" font-size="11">AES-256</text>
+        </g>
+        <g class="dests" font-size="12" text-anchor="middle">
+          <g class="dest"><rect x="20" y="62" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="84">USB</text></g>
+          <g class="dest"><rect x="20" y="202" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="224">D:\ drive</text></g>
+          <g class="dest"><rect x="20" y="342" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="364">SSH server</text></g>
+          <g class="dest"><rect x="512" y="62" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="84">OneDrive</text></g>
+          <g class="dest"><rect x="512" y="202" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="224">Google Drive</text></g>
+          <g class="dest"><rect x="512" y="342" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="364">New PC</text></g>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 07 quick exits -->
+<section class="stage" id="exits">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">07</span> · <span data-en>Quick exits</span><span data-id>Keluar cepat</span></p>
+      <h2><span data-en>Need to go? <em>It cleans up.</em></span><span data-id>Harus pergi? <em>Langsung bersih.</em></span></h2>
+      <p class="lead"><span data-en>For nosy people, a borrowed PC, or someone pushing you to "just open it". All of these are off until you turn them on in Settings.</span><span data-id>Untuk orang yang kepo, PC yang dipinjam, atau orang yang memaksa "buka sebentar saja". Semua ini mati sampai kamu nyalakan di Pengaturan.</span></p>
+    </div>
+    <div class="bento wx-grid">
+      <div class="cell wx-hot">
+        <div class="i-ico" style="--c:var(--red)"><svg viewBox="0 0 24 24"><use href="#i-bolt"/></svg></div>
+        <h3><span data-en>Panic hotkey</span><span data-id>Tombol panik</span></h3>
+        <p><span data-en>Press Ctrl + Alt + Shift + X (or Q, or F12). The screen locks at once, Amnesia cleans up and signs you out without waiting for other apps.</span><span data-id>Tekan Ctrl + Alt + Shift + X (atau Q, atau F12). Layar langsung terkunci, Amnesia membersihkan dan sign out tanpa menunggu app lain.</span></p>
+        <p class="wx-keys" aria-hidden="true"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>X</kbd></p>
+      </div>
+      <div class="cell">
+        <div class="i-ico" style="--c:var(--cyan)"><svg viewBox="0 0 24 24"><use href="#i-usb"/></svg></div>
+        <h3><span data-en>USB key</span><span data-id>Flashdisk kunci</span></h3>
+        <p><span data-en>Pick a USB drive. Pull it out and Amnesia cleans and signs out, or cleans and shuts down. Your choice.</span><span data-id>Pilih satu flashdisk. Cabut, dan Amnesia membersihkan lalu sign out, atau membersihkan lalu mematikan PC. Kamu yang pilih.</span></p>
+      </div>
+      <div class="cell">
+        <div class="i-ico" style="--c:var(--violet)"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg></div>
+        <h3><span data-en>Sign out when idle</span><span data-id>Sign out saat ditinggal</span></h3>
+        <p><span data-en>Walked away? After 5 to 60 minutes you get a 60 second countdown, then it locks, cleans and signs out. Move the mouse to stop it.</span><span data-id>Lupa ditinggal? Setelah 5 sampai 60 menit muncul hitung mundur 60 detik, lalu layar dikunci, dibersihkan, dan sign out. Gerakkan mouse untuk membatalkan.</span></p>
+      </div>
+      <div class="cell">
+        <div class="i-ico" style="--c:var(--pink)"><svg viewBox="0 0 24 24"><use href="#i-lock"/></svg></div>
+        <h3><span data-en>Panic word</span><span data-id>Kata panik</span></h3>
+        <p><span data-en>Asked for the vault password? Type your panic word instead. The vault is deleted on the spot, and your Keep folder too if you chose so.</span><span data-id>Diminta password vault? Ketik kata panik saja. Vault langsung dihapus, folder Keep juga kalau kamu memilihnya.</span></p>
+      </div>
+      <div class="cell">
+        <div class="i-ico" style="--c:var(--orange)"><svg viewBox="0 0 24 24"><use href="#i-warn"/></svg></div>
+        <h3>Doomsday</h3>
+        <p><span data-en>3 wrong vault passwords in a row delete the vault for good. Amnesia warns you before the last try. You can switch it off.</span><span data-id>Salah password vault 3 kali berturut-turut menghapus vault selamanya. Amnesia memperingatkan sebelum percobaan terakhir. Bisa dimatikan.</span></p>
+      </div>
+    </div>
+    <p class="iyk-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span data-en>Honest fine print: Amnesia protects you <b>after a sign out</b>. While you're signed in, your PC is as open as always, so lock it (Win+L). Quick exits don't wait for unsaved work, and the panic word can't be undone.</span><span data-id>Catatan jujur: Amnesia melindungi kamu <b>setelah sign out</b>. Selama masih sign in, PC kamu terbuka seperti biasa, jadi kunci layarnya (Win+L). Keluar cepat tidak menunggu pekerjaan yang belum disimpan, dan kata panik tidak bisa dibatalkan.</span></p>
+  </div>
+</section>
+
+<!-- 08 locks -->
+<section class="stage" id="locks">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">08</span> · <span data-en>Locks</span><span data-id>Kunci</span></p>
+      <h2><span data-en>Lock it down, <em>honestly.</em></span><span data-id>Kunci rapat, <em>dengan jujur.</em></span></h2>
+      <p class="lead"><span data-en>Two locks in Settings, Advanced. Here's what they do, and what they don't.</span><span data-id>Dua kunci di Pengaturan, Lanjutan. Ini yang bisa, dan yang tidak bisa mereka lakukan.</span></p>
+    </div>
+    <div class="bento wl-grid">
+      <div class="cell">
+        <div class="wl-top"><span class="i-ico" style="--c:var(--violet)"><svg><use href="#i-folder"/></svg></span><h3><span data-en>Keep lock</span><span data-id>Kunci Keep</span></h3></div>
+        <p><span data-en>Your Keep folder only opens through Amnesia, with its own password: Open Keep, the tray menu or the Desktop shortcut. It locks again when you lock the screen (Win+L), after the minutes you pick, and at sign out and sign in. While locked, no program can open or write files in it.</span><span data-id>Folder Keep hanya bisa dibuka lewat Amnesia, dengan password sendiri: Buka Keep, menu tray, atau shortcut di Desktop. Terkunci lagi saat layar dikunci (Win+L), setelah menit yang kamu pilih, serta saat sign out dan sign in. Selama terkunci, tidak ada program yang bisa membuka atau menulis file di sana.</span></p>
+        <ul class="wl-no">
+          <li><span data-en>The files are not encrypted. Use BitLocker for that.</span><span data-id>File-nya tidak dienkripsi. Pakai BitLocker untuk itu.</span></li>
+          <li><span data-en>File names stay visible while it's locked.</span><span data-id>Nama file tetap kelihatan saat terkunci.</span></li>
+          <li><span data-en>Someone signed in as you who knows Windows can remove the lock in the folder's Properties.</span><span data-id>Orang yang sign in sebagai kamu dan paham Windows bisa melepas kuncinya lewat Properties folder.</span></li>
+        </ul>
+      </div>
+      <div class="cell">
+        <div class="wl-top"><span class="i-ico" style="--c:var(--orange)"><svg><use href="#i-users"/></svg></span><h3><span data-en>Lab lock</span><span data-id>Kunci lab</span></h3></div>
+        <p><span data-en>For a PC many people use, like a computer lab or a library. An administrator sets a PIN of 6 or more digits. From then on this Windows user can't turn Amnesia off, pause it, quit it, uninstall it or change its settings and Keep List. Amnesia starts at every sign in, and the PIN opens the settings for 10 minutes.</span><span data-id>Untuk PC yang dipakai banyak orang, seperti lab komputer atau perpustakaan. Administrator memasang PIN minimal 6 angka. Setelah itu user Windows ini tidak bisa mematikan, menjeda, menutup, meng-uninstall Amnesia, atau mengubah pengaturan dan Keep List. Amnesia selalu jalan setiap sign in, dan PIN membuka pengaturan selama 10 menit.</span></p>
+        <ul class="wl-no">
+          <li><span data-en>Someone can still end Amnesia in Task Manager. The check at the next sign in cleans anyway.</span><span data-id>Orang masih bisa menutup Amnesia lewat Task Manager. Pengecekan saat sign in berikutnya tetap membersihkan.</span></li>
+          <li><span data-en>Set your settings and Keep List first. They're locked as they are.</span><span data-id>Atur pengaturan dan Keep List dulu. Semuanya terkunci apa adanya.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 what gets wiped -->
+<section class="stage" id="wiped">
+  <div class="glow" style="width:460px;height:460px;background:var(--cyan);right:-200px;top:18%;opacity:.16" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="head">
+      <p class="label"><span class="n">09</span> · <span data-en>What gets wiped</span><span data-id>Yang dihapus</span></p>
+      <h2><span data-en>Look first. <em>Then decide.</em></span><span data-id>Lihat dulu. <em>Baru putuskan.</em></span></h2>
+      <p class="lead"><span data-en>"What gets wiped" is a dry run of your next sign out. It lists every file, folder and trace that would go. Opening it deletes nothing.</span><span data-id>"Yang dihapus" adalah simulasi sign out berikutnya. Isinya semua file, folder, dan jejak yang akan hilang. Membukanya tidak menghapus apa pun.</span></p>
+      <ul class="facts">
+        <li><b><span data-en>Search.</span><span data-id>Cari.</span></b> <span data-en>Type a name or a path, like "Downloads" or ".pdf".</span><span data-id>Ketik nama atau path, misalnya "Downloads" atau ".pdf".</span></li>
+        <li><b><span data-en>One folder.</span><span data-id>Satu folder.</span></b> <span data-en>Pick a folder, with how many items and how big.</span><span data-id>Pilih satu folder, lengkap dengan jumlah item dan ukurannya.</span></li>
+        <li><b><span data-en>Biggest first.</span><span data-id>Terbesar dulu.</span></b> <span data-en>See what takes the most space.</span><span data-id>Lihat apa yang paling makan tempat.</span></li>
+      </ul>
+      <p class="def"><span class="tm sel"><i></i><span data-en>Review & sign out</span><span data-id>Cek & sign out</span></span> <span data-en>shows the same list right before you sign out, with a button to keep something first.</span><span data-id>menampilkan daftar yang sama tepat sebelum sign out, dengan tombol untuk menyimpan sesuatu dulu.</span></p>
+    </div>
+    <figure class="wwin wwin-solo">
+      <div class="wwin-bar" aria-hidden="true"><img src="../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+      <picture data-wshot="wiped" data-alt-en="What gets wiped in Amnesia for Windows: a search for Downloads, sorted biggest first" data-alt-id="Halaman Yang dihapus di Amnesia untuk Windows: pencarian Downloads, diurutkan dari yang terbesar">
+        <source media="(prefers-color-scheme: light)" srcset="shots/wiped-en-light.webp">
+        <img src="shots/wiped-en-dark.webp" alt="What gets wiped in Amnesia for Windows: a search for Downloads, sorted biggest first" width="1040" height="1400" loading="lazy" decoding="async">
+      </picture>
+    </figure>
+  </div>
+</section>
+
+<!-- 10 private + more -->
+<section class="stage" id="private">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">10</span> · <span data-en>Private</span><span data-id>Privat</span></p>
+      <h2><span data-en>Nothing leaves <em>your PC.</em></span><span data-id>Tidak ada yang keluar <em>dari PC kamu.</em></span></h2>
+      <p class="lead"><span data-en>Amnesia has no servers, no accounts, no tracking and no analytics. The update check only asks GitHub for the newest version number.</span><span data-id>Amnesia tidak punya server, tidak butuh akun, tidak melacak, dan tidak mengumpulkan data. Cek update hanya menanyakan nomor versi terbaru ke GitHub.</span></p>
+    </div>
+    <div class="pills">
+      <span class="pill"><i class="dot"></i><span data-en>No servers</span><span data-id>Tanpa server</span></span>
+      <span class="pill"><i class="dot"></i><span data-en>No accounts</span><span data-id>Tanpa akun</span></span>
+      <span class="pill"><i class="dot"></i><span data-en>No tracking</span><span data-id>Tanpa pelacakan</span></span>
+      <span class="pill"><i class="dot"></i>AES-256</span>
+      <span class="pill"><i class="dot"></i><span data-en>No admin to install</span><span data-id>Pasang tanpa admin</span></span>
+      <span class="pill"><i class="dot"></i><span data-en>No hidden PowerShell</span><span data-id>Tanpa PowerShell tersembunyi</span></span>
+      <span class="pill panic"><i class="dot"></i><span data-en><span class="glitch" data-text="Panic word">Panic word</span></span><span data-id><span class="glitch" data-text="Kata panik">Kata panik</span></span></span>
+    </div>
+
+    <div class="head" id="features" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span data-en>More, <em>when you want it.</em></span><span data-id>Lebih banyak, <em>kalau kamu mau.</em></span></h2>
+      <p class="lead"><span data-en>Everything below is in Settings, and off until you turn it on.</span><span data-id>Semua di bawah ini ada di Pengaturan, dan mati sampai kamu nyalakan.</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span data-en>Stop Windows remembering</span><span data-id>Supaya Windows tidak mengingat</span></h3><p><span data-en>Windows' own privacy switches, just for you: no recent lists, no clipboard history, no web results in Start, no ad ID, Recall and Copilot off. Undo all puts back exactly what was there.</span><span data-id>Pengaturan privasi bawaan Windows, khusus akun kamu: tanpa daftar terbaru, tanpa riwayat clipboard, tanpa hasil web di Start, tanpa ID iklan, Recall dan Copilot mati. Batalkan semua mengembalikan persis seperti sebelumnya.</span></p></div>
+      <div><h3><span data-en>Remove new apps</span><span data-id>Hapus app baru</span></h3><p><span data-en>Programs installed just for you after Turn On are removed at sign out, Microsoft Store apps too. Press Keep to keep one.</span><span data-id>Program yang dipasang khusus untuk kamu setelah Amnesia dinyalakan dihapus saat sign out, app Microsoft Store juga. Tekan Simpan untuk menyimpannya.</span></p></div>
+      <div><h3><span data-en>Find leftovers</span><span data-id>Cari sisa app</span></h3><p><span data-en>Folders and registry settings that uninstalled programs left behind. Nothing goes until you tick it.</span><span data-id>Folder dan pengaturan registry yang ditinggalkan program yang sudah di-uninstall. Tidak ada yang dihapus sampai kamu centang.</span></p></div>
+      <div><h3><span data-en>Throwaway Windows</span><span data-id>Windows sekali pakai</span></h3><p><span data-en>Opens Windows Sandbox for a strange file or website. Gone when you close it. Needs Windows Pro or Enterprise.</span><span data-id>Membuka Windows Sandbox untuk file atau website yang mencurigakan. Hilang saat ditutup. Butuh Windows Pro atau Enterprise.</span></p></div>
+      <div><h3><span data-en>Windows protections</span><span data-id>Perlindungan Windows</span></h3><p><span data-en>For the whole PC (admin, asked once): empty the page file at shut down, hibernation off, Recall and activity history off.</span><span data-id>Untuk seluruh PC (admin, diminta sekali): kosongkan page file saat shut down, hibernasi mati, Recall dan riwayat aktivitas mati.</span></p></div>
+      <div><h3><span data-en>Extra cleaning list</span><span data-id>Daftar pembersihan tambahan</span></h3><p><span data-en>The community list Winapp2 (about 4,000 apps), downloaded from GitHub when you press the button. Saved passwords are never touched.</span><span data-id>Daftar komunitas Winapp2 (sekitar 4.000 app), diunduh dari GitHub saat kamu tekan tombolnya. Password tersimpan tidak pernah disentuh.</span></p></div>
+      <div><h3><span data-en>Antivirus friendly</span><span data-id>Ramah antivirus</span></h3><p><span data-en>The cleanup runs inside Amnesia.exe. If Windows Security blocks something, Home tells you how to allow Amnesia. Never "turn your antivirus off".</span><span data-id>Pembersihan jalan di dalam Amnesia.exe. Kalau Windows Security memblok sesuatu, Beranda memberi tahu cara mengizinkan Amnesia. Tidak pernah "matikan antivirus".</span></p></div>
+      <div><h3><span data-en>History</span><span data-id>Riwayat</span></h3><p><span data-en>When the PC was cleaned, which apps were saved, when backups ran. Never file names.</span><span data-id>Kapan PC dibersihkan, app apa yang disimpan, kapan backup berjalan. Tanpa nama file.</span></p></div>
+      <div><h3><span data-en>Collect log</span><span data-id>Kumpulkan log</span></h3><p><span data-en>Something not working? One text file in your Keep folder, without file names. Nothing is sent. You choose what to share.</span><span data-id>Ada yang tidak jalan? Satu file teks di folder Keep, tanpa nama file. Tidak ada yang dikirim. Kamu yang pilih apa yang dibagikan.</span></p></div>
+      <div><h3><span data-en>Disk encryption check</span><span data-id>Cek enkripsi disk</span></h3><p><span data-en>Settings shows whether BitLocker or device encryption is on, and how to turn it on.</span><span data-id>Pengaturan menunjukkan apakah BitLocker atau enkripsi perangkat menyala, dan cara menyalakannya.</span></p></div>
+      <div><h3><span data-en>Wipe free space</span><span data-id>Hapus ruang kosong</span></h3><p><span data-en>Runs Windows' own cipher /w, so deleted files are harder to bring back. Slow, and it asks first.</span><span data-id>Menjalankan cipher /w bawaan Windows, supaya file yang dihapus lebih sulit dikembalikan. Lambat, dan bertanya dulu.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- running text -->
+<div class="marquee" aria-hidden="true">
+  <div class="mq-row" data-dir="1"><div class="mq-track">
+    <span class="mq-i"><span data-en>Free & open source</span><span data-id>Gratis & open source</span><i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">MIT<i style="--c:var(--indigo)"></i></span>
+    <span class="mq-i"><span data-en>No servers</span><span data-id>Tanpa server</span><i style="--c:var(--pink)"></i></span>
+    <span class="mq-i"><span data-en>No tracking</span><span data-id>Tanpa pelacakan</span><i style="--c:var(--green)"></i></span>
+    <span class="mq-i">AES-256<i style="--c:var(--orange)"></i></span>
+    <span class="mq-i"><span data-en>No admin</span><span data-id>Tanpa admin</span><i style="--c:var(--violet)"></i></span>
+    <span class="mq-i">Windows 10 & 11<i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">x64 & arm64<i style="--c:var(--pink)"></i></span>
+  </div></div>
+  <div class="mq-row ghost" data-dir="-1"><div class="mq-track">
+    <span class="mq-i">Selective Amnesia<i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">Profile Vault<i style="--c:var(--indigo)"></i></span>
+    <span class="mq-i">Memory Recall<i style="--c:var(--green)"></i></span>
+    <span class="mq-i">Keep List<i style="--c:var(--pink)"></i></span>
+    <span class="mq-i">Global Amnesia<i style="--c:var(--red)"></i></span>
+    <span class="mq-i"><span data-en>Review & sign out</span><span data-id>Cek & sign out</span><i style="--c:var(--orange)"></i></span>
+  </div></div>
+</div>
+
+<!-- 11 inside the app: the home window, taken apart one piece at a time -->
+<section class="ref" id="tour">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">11</span> · <span data-en>Inside the app</span><span data-id>Di dalam app</span></p>
+      <h2><span data-en>Every button, <em>one by one.</em></span><span data-id>Setiap tombol, <em>satu per satu.</em></span></h2>
+      <p class="lead"><span data-en>This is the Amnesia home window on Windows. Scroll, or use the arrows, and it comes apart piece by piece until it's whole again.</span><span data-id>Ini jendela utama Amnesia di Windows. Scroll atau pakai tombol panah, dan jendelanya terpecah satu per satu, lalu menyatu lagi.</span></p>
+    </div>
+  </div>
+  <div class="wrap puzzle">
+    <div class="pz-stage" aria-hidden="true">
+      <div class="appwin wapp">
+        <div class="aw-bar"><img src="../logo.png" alt="" width="14" height="14"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+        <div class="aw-head">
+          <img src="../logo.png" alt="" width="36" height="36">
+          <div><b>Amnesia <span class="ver">v0.7.2</span></b><small><span data-en>Your PC forgets everything, except what you choose.</span><span data-id>PC kamu lupa semuanya, kecuali yang kamu pilih.</span></small></div>
+          <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span data-en>Settings</span><span data-id>Pengaturan</span></span>
+        </div>
+        <div class="aw-hero pc" data-p="home">
+          <span class="hb"><svg><use href="#i-power"/></svg></span>
+          <div><b><span data-en>On</span><span data-id>Menyala</span></b>
+          <small><span data-en>At every sign out, restart and shut down your user folder is wiped. At the next sign in Amnesia checks again.</span><span data-id>Setiap sign out, restart dan shut down, folder user kamu dibersihkan. Saat login berikutnya Amnesia mengecek lagi.</span></small></div>
+          <span class="aw-btn"><span data-en>Turn Off</span><span data-id>Matikan</span></span>
+        </div>
+        <div class="aw-grid">
+          <div class="tile big pc" data-p="vault" style="--c:var(--indigo)"><svg><use href="#i-lock"/></svg><b>Profile Vault</b><small><span data-en>Your app logins, locked</span><span data-id>Login app kamu, terkunci</span></small></div>
+          <div class="tile pc" data-p="logout" style="--c:var(--red)"><svg><use href="#i-logout"/></svg><b><span data-en>Review & sign out</span><span data-id>Cek & sign out</span></b><small><span data-en>See what goes, then sign out</span><span data-id>Lihat yang dihapus, lalu sign out</span></small></div>
+          <div class="tile pc" data-p="pause" style="--c:var(--orange)"><svg><use href="#i-pause"/></svg><b><span data-en>Pause one session</span><span data-id>Jeda satu sesi</span></b><small><span data-en>Skip the next cleanup once</span><span data-id>Lewati 1 kali pembersihan</span></small></div>
+          <div class="tile pc" data-p="keep" style="--c:var(--green)"><svg><use href="#i-pin"/></svg><b>Keep List</b><small><span data-en>Never wiped</span><span data-id>Tidak pernah dihapus</span></small></div>
+          <div class="tile pc" data-p="backup" style="--c:var(--cyan)"><svg><use href="#i-drive"/></svg><b>Backup</b><small><span data-en>To a USB drive or server</span><span data-id>Ke flashdisk atau server</span></small></div>
+          <div class="tile wide pc" data-p="history" style="--c:var(--muted)"><svg><use href="#i-clock"/></svg><b><span data-en>History</span><span data-id>Riwayat</span></b><small><span data-en>Cleanups, snapshots, backups</span><span data-id>Pembersihan, snapshot, backup</span></small></div>
+        </div>
+        <div class="tile wide pc" data-p="preview" style="--c:var(--violet)"><svg><use href="#i-eye"/></svg><b><span data-en>What gets wiped</span><span data-id>Yang dihapus</span></b><small><span data-en>A dry run of the next sign out</span><span data-id>Simulasi sign out berikutnya</span></small></div>
+      </div>
+      <div class="menubar taskbar pc" data-p="menu">
+        <span class="mb-l"></span><span class="mb-l w2"></span><span class="mb-l"></span>
+        <span class="mb-r"><svg><use href="#i-wifi"/></svg><img src="../logo.png" alt="" width="18" height="18"><b>17:30</b></span>
+        <div class="mb-drop">
+          <p class="mb-b"><span data-en>Open Amnesia</span><span data-id>Buka Amnesia</span></p>
+          <p><span data-en>Open Keep folder</span><span data-id>Buka folder Keep</span></p>
+          <p class="sep"><span data-en>Review and sign out...</span><span data-id>Cek dulu, lalu sign out...</span></p>
+          <p class="mb-red"><span data-en>Panic sign out now</span><span data-id>Sign out darurat sekarang</span></p>
+          <p class="sep"><span data-en>Turn Off</span><span data-id>Matikan</span></p>
+          <p class="sep"><span data-en>Quit</span><span data-id>Keluar</span></p>
+        </div>
+      </div>
+      <svg class="cursor pz-cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6.2 1.6L10 19z"/></svg>
+      <i class="ripple pz-rip"></i>
+    </div>
+    <div class="pz-text">
+      <div class="pz-steps">
+        <article class="pz-step" data-p="home"><p class="label"><span class="n">01</span> / 10</p>
+          <h3><span data-en>Home</span><span data-id>Beranda</span></h3>
+          <p><span data-en>The colored card shows whether Amnesia is On, Off or paused. To turn it on, tick "I understand" first. Turning it off takes two clicks, so it doesn't happen by accident.</span><span data-id>Kartu berwarna menunjukkan apakah Amnesia Menyala, Mati, atau dijeda. Untuk menyalakan, centang "Saya paham" dulu. Mematikannya butuh dua klik, supaya tidak terjadi tanpa sengaja.</span></p>
+          <p><span data-en>Close the window and Amnesia keeps running in the tray.</span><span data-id>Jendela boleh ditutup, Amnesia tetap jalan di tray.</span></p>
+        </article>
+        <article class="pz-step" data-p="menu"><p class="label"><span class="n">02</span> / 10</p>
+          <h3><span data-en>Tray icon</span><span data-id>Ikon tray</span></h3>
+          <p><span data-en>Right-click the Amnesia icon next to the clock: Open Amnesia, Open Keep folder, Review and sign out, Panic sign out now, Turn On or Off.</span><span data-id>Klik kanan ikon Amnesia di samping jam: Buka Amnesia, Buka folder Keep, Cek dulu lalu sign out, Sign out darurat sekarang, Nyalakan atau Matikan.</span></p>
+          <p><span data-en>It starts by itself after every sign in.</span><span data-id>Ikonnya muncul sendiri setiap kali sign in.</span></p>
+        </article>
+        <article class="pz-step" data-p="vault"><p class="label"><span class="n">03</span> / 10</p>
+          <h3>Profile Vault</h3>
+          <p><span data-en>Tick the apps to keep. Snapshot now saves them, no password needed. Restore needs your password.</span><span data-id>Centang app yang mau disimpan. Snapshot sekarang menyimpannya, tanpa password. Pulihkan butuh password kamu.</span></p>
+          <ul>
+            <li><b><span data-en>Automatic snapshot</span><span data-id>Snapshot otomatis</span></b> <span data-en>after you close an app that changed.</span><span data-id>setelah kamu menutup app yang berubah.</span></li>
+            <li><b><span data-en>Previous snapshot</span><span data-id>Snapshot sebelumnya</span></b> <span data-en>if the newest looks wrong.</span><span data-id>kalau yang terbaru terlihat salah.</span></li>
+          </ul>
+          <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span data-en>3 wrong passwords or the panic word delete the vault for good.</span><span data-id>Salah password 3 kali atau kata panik menghapus vault selamanya.</span></p>
+        </article>
+        <article class="pz-step" data-p="logout"><p class="label"><span class="n">04</span> / 10</p>
+          <h3><span data-en>Review & sign out</span><span data-id>Cek & sign out</span></h3>
+          <p><span data-en>See what goes if you sign out now. Want to keep something? Press "Keep something first". Happy with it? Sign out now.</span><span data-id>Lihat apa yang hilang kalau kamu sign out sekarang. Mau simpan sesuatu? Tekan "Simpan sesuatu dulu". Sudah oke? Sign out sekarang.</span></p>
+        </article>
+        <article class="pz-step" data-p="pause"><p class="label"><span class="n">05</span> / 10</p>
+          <h3><span data-en>Pause one session</span><span data-id>Jeda satu sesi</span></h3>
+          <p><span data-en>Skip the next sign out and sign in once, without turning Amnesia off. After that it's back on by itself.</span><span data-id>Lewati satu kali sign out dan sign in berikutnya, tanpa mematikan Amnesia. Setelah itu menyala lagi sendiri.</span></p>
+        </article>
+        <article class="pz-step" data-p="keep"><p class="label"><span class="n">06</span> / 10</p>
+          <h3>Keep List <span data-en>& Keep folder</span><span data-id>& folder Keep</span></h3>
+          <p><span data-en>The Keep folder holds files that are never wiped. The Keep List keeps folders like .ssh or an app's settings.</span><span data-id>Folder Keep berisi file yang tidak pernah dihapus. Keep List menyimpan folder seperti .ssh atau pengaturan app.</span></p>
+          <p><span data-en>"Apps on this PC" lists app data it found. Click one to keep it.</span><span data-id>"App di PC ini" menampilkan data app yang ditemukan. Klik untuk menyimpannya.</span></p>
+        </article>
+        <article class="pz-step" data-p="preview"><p class="label"><span class="n">07</span> / 10</p>
+          <h3><span data-en>What gets wiped</span><span data-id>Yang dihapus</span></h3>
+          <p><span data-en>A dry run of the next sign out, with search, a folder filter and Biggest first. Opening it deletes nothing.</span><span data-id>Simulasi sign out berikutnya, dengan pencarian, filter folder, dan Terbesar dulu. Membukanya tidak menghapus apa pun.</span></p>
+        </article>
+        <article class="pz-step" data-p="backup"><p class="label"><span class="n">08</span> / 10</p>
+          <h3>Backup</h3>
+          <p><span data-en>Keep folder, Keep List and vault in one locked file.</span><span data-id>Folder Keep, Keep List, dan vault dalam satu file terkunci.</span></p>
+          <ul>
+            <li><span data-en>A folder, USB drive, cloud folder, or your server over SSH.</span><span data-id>Folder, flashdisk, folder cloud, atau server kamu lewat SSH.</span></li>
+            <li><span data-en>Every day or week. Old backups are never deleted.</span><span data-id>Setiap hari atau minggu. Backup lama tidak pernah dihapus.</span></li>
+          </ul>
+          <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span data-en>Move to a new PC puts a backup back.</span><span data-id>Pindah ke PC baru mengembalikan isi backup.</span></p>
+        </article>
+        <article class="pz-step" data-p="history"><p class="label"><span class="n">09</span> / 10</p>
+          <h3><span data-en>History</span><span data-id>Riwayat</span></h3>
+          <p><span data-en>What Amnesia did and when: cleanups, snapshots, restores and backups.</span><span data-id>Catatan apa yang dilakukan Amnesia dan kapan: pembersihan, snapshot, pemulihan, dan backup.</span></p>
+          <p><span data-en>Only times, counts and app names. Never file names.</span><span data-id>Yang dicatat hanya waktu, jumlah, dan nama app. Tidak pernah nama file.</span></p>
+        </article>
+        <article class="pz-step" data-p="settings"><p class="label"><span class="n">10</span> / 10</p>
+          <h3><span data-en>Settings</span><span data-id>Pengaturan</span></h3>
+          <p><span data-en>General, Updates and help, then Advanced: Leaving the PC, Privacy and Windows, Programs, Locks. The search box on top works in English and Indonesian.</span><span data-id>Umum, Update dan bantuan, lalu Lanjutan: Saat meninggalkan PC, Privasi dan Windows, Program, Kunci. Kotak pencarian di atas bisa pakai bahasa Inggris dan Indonesia.</span></p>
+          <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span data-en>Uninstall, with "also delete settings, Keep List and vault".</span><span data-id>Uninstall, dengan pilihan ikut menghapus pengaturan, Keep List, dan vault.</span></p>
+        </article>
+        <article class="pz-step pz-end"><p class="label"><span data-en>All together</span><span data-id>Semuanya</span></p><h3><span data-en>One window. <em>Every piece in its place.</em></span><span data-id>Satu jendela. <em>Semua ada di sana.</em></span></h3></article>
+      </div>
+      <div class="pager" data-pager="tour" hidden>
+        <button type="button" class="pg-prev" aria-label="Previous"><svg><use href="#i-chev-l"/></svg></button>
+        <ol class="pg-dots"></ol>
+        <button type="button" class="pg-next" aria-label="Next"><svg><use href="#i-chev-r"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- the real app, screenshots made from the Windows UI with sample data -->
+  <div class="wrap" id="real">
+    <div class="head sub">
+      <h3 class="minih"><span data-en>And here's <em>the real thing.</em></span><span data-id>Dan ini <em>aslinya.</em></span></h3>
+      <p class="body"><span data-en>Screenshots of Amnesia for Windows v0.7.2, with sample files. They follow the language and light or dark mode of this page.</span><span data-id>Screenshot Amnesia untuk Windows v0.7.2, dengan file contoh. Gambarnya mengikuti bahasa dan mode terang atau gelap halaman ini.</span></p>
+    </div>
+    <div class="wgal">
+      <div class="wgal-tabs" role="tablist" aria-label="Screens">
+        <button type="button" role="tab" id="wt-home" aria-controls="wp-home" aria-selected="true"><span data-en>Home</span><span data-id>Beranda</span></button>
+        <button type="button" role="tab" id="wt-vault" aria-controls="wp-vault" aria-selected="false" tabindex="-1">Vault</button>
+        <button type="button" role="tab" id="wt-wiped" aria-controls="wp-wiped" aria-selected="false" tabindex="-1"><span data-en>What gets wiped</span><span data-id>Yang dihapus</span></button>
+        <button type="button" role="tab" id="wt-settings" aria-controls="wp-settings" aria-selected="false" tabindex="-1"><span data-en>Settings</span><span data-id>Pengaturan</span></button>
+        <button type="button" role="tab" id="wt-keeplock" aria-controls="wp-keeplock" aria-selected="false" tabindex="-1"><span data-en>Keep lock</span><span data-id>Kunci Keep</span></button>
+      </div>
+      <div class="wgal-panels">
+        <div class="wgal-p" role="tabpanel" id="wp-home" aria-labelledby="wt-home">
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="home" data-alt-en="Amnesia for Windows home page: Amnesia is On, with tiles for Vault, Review and sign out, Pause, Keep List, Backup, History and What gets wiped" data-alt-id="Beranda Amnesia untuk Windows: Amnesia Menyala, dengan kotak Vault, Cek dan sign out, Jeda, Keep List, Backup, Riwayat, dan Yang dihapus">
+              <source media="(prefers-color-scheme: light)" srcset="shots/home-en-light.webp">
+              <img src="shots/home-en-dark.webp" alt="Amnesia for Windows home page: Amnesia is On, with tiles for Vault, Review and sign out, Pause, Keep List, Backup, History and What gets wiped" width="1040" height="1280" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span data-en>Home</span><span data-id>Beranda</span></h4>
+            <p><span data-en>The status card on top, every page one click away.</span><span data-id>Kartu status di atas, semua halaman cukup satu klik.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-vault" aria-labelledby="wt-vault" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="vault" data-alt-en="The vault page: Chrome, Edge, Discord, VS Code and Claude ticked, each with the time of its last snapshot" data-alt-id="Halaman vault: Chrome, Edge, Discord, VS Code, dan Claude dicentang, masing-masing dengan waktu snapshot terakhir">
+              <source media="(prefers-color-scheme: light)" srcset="shots/vault-en-light.webp">
+              <img src="shots/vault-en-dark.webp" alt="The vault page: Chrome, Edge, Discord, VS Code and Claude ticked, each with the time of its last snapshot" width="1040" height="1520" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4>Vault</h4>
+            <p><span data-en>Tick the apps, press Snapshot now. Each one shows when it was saved, its size and the previous snapshot.</span><span data-id>Centang app-nya, tekan Snapshot sekarang. Masing-masing menunjukkan kapan disimpan, ukurannya, dan snapshot sebelumnya.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-wiped" aria-labelledby="wt-wiped" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="wiped" data-alt-en="What gets wiped: a search for Downloads shows 8 of 32 items, biggest first" data-alt-id="Yang dihapus: pencarian Downloads menampilkan 8 dari 32 item, terbesar dulu">
+              <source media="(prefers-color-scheme: light)" srcset="shots/wiped-en-light.webp">
+              <img src="shots/wiped-en-dark.webp" alt="What gets wiped: a search for Downloads shows 8 of 32 items, biggest first" width="1040" height="1400" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span data-en>What gets wiped</span><span data-id>Yang dihapus</span></h4>
+            <p><span data-en>Search, one folder, Biggest first. A preview only: nothing was touched.</span><span data-id>Cari, satu folder, Terbesar dulu. Hanya simulasi: tidak ada yang disentuh.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-settings" aria-labelledby="wt-settings" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="settings" data-alt-en="Settings: a search box, disk encryption status, language and quick ways to Keep" data-alt-id="Pengaturan: kotak pencarian, status enkripsi disk, bahasa, dan jalan pintas ke Keep">
+              <source media="(prefers-color-scheme: light)" srcset="shots/settings-en-light.webp">
+              <img src="shots/settings-en-dark.webp" alt="Settings: a search box, disk encryption status, language and quick ways to Keep" width="1040" height="1520" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span data-en>Settings</span><span data-id>Pengaturan</span></h4>
+            <p><span data-en>Search on top. Disk encryption status, language, the Keep shortcut and Explorer side bar, then updates, help and Advanced.</span><span data-id>Pencarian di atas. Status enkripsi disk, bahasa, shortcut Keep dan sidebar Explorer, lalu update, bantuan, dan Lanjutan.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-keeplock" aria-labelledby="wt-keeplock" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="keeplock" data-alt-en="Keep lock in Settings: Keep is locked, with its honest note and the Lock now button" data-alt-id="Kunci Keep di Pengaturan: Keep terkunci, dengan catatan jujurnya dan tombol Kunci sekarang">
+              <source media="(prefers-color-scheme: light)" srcset="shots/keeplock-en-light.webp">
+              <img src="shots/keeplock-en-dark.webp" alt="Keep lock in Settings: Keep is locked, with its honest note and the Lock now button" width="1040" height="1280" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span data-en>Keep lock</span><span data-id>Kunci Keep</span></h4>
+            <p><span data-en>Keep opens only through Amnesia. The app says plainly what the lock can't do.</span><span data-id>Keep hanya terbuka lewat Amnesia. App-nya bilang terus terang apa yang tidak bisa dilakukan kunci ini.</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 install -->
+<section class="ref" id="install">
+  <div class="glow" style="width:520px;height:520px;background:var(--indigo);right:-180px;top:12%;opacity:.16" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">12</span> · <span data-en>Install</span><span data-id>Pasang</span></p>
+      <h2><span data-en>One Setup, <em>no admin.</em></span><span data-id>Satu Setup, <em>tanpa admin.</em></span></h2>
+      <div class="badges">
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.7.2</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
+        <span class="bdg"><svg><use href="#i-laptop"/></svg><span>Windows</span><b>10 · 11</b></span>
+      </div>
+    </div>
+    <div class="warn" role="note">
+      <h3><svg><use href="#i-warn"/></svg><span data-en>Read this before you install</span><span data-id>Baca ini sebelum memasang</span></h3>
+      <p><span data-en>Amnesia really deletes data. Once you turn it on, everything in your user folder outside your Keep folder and Keep List is deleted at every sign out, restart and shut down. It doesn't go to the Recycle Bin and can't be undone. Put what you need in Keep first, and look at What gets wiped before your first sign out. Amnesia is free software, provided as is, and you use it at your own risk.</span><span data-id>Amnesia benar-benar menghapus data. Begitu dinyalakan, semua isi folder user kamu di luar folder Keep dan Keep List dihapus setiap sign out, restart, dan shut down. Tidak masuk Recycle Bin dan tidak bisa dibatalkan. Simpan dulu yang kamu perlukan di Keep, dan lihat Yang dihapus sebelum sign out pertama. Amnesia adalah software gratis yang diberikan apa adanya, dan risiko pemakaiannya ada di tangan kamu.</span></p>
+      <p><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md" data-en>Read the full terms →</a><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.id.md" data-id>Baca ketentuan lengkap →</a></p>
+    </div>
+    <div class="bento installs">
+      <div class="cell i-brew">
+        <div class="i-top"><span class="i-ico" style="--c:var(--cyan)"><svg><use href="#i-down"/></svg></span><div><h3>Setup.exe</h3><p class="small"><span data-en>From GitHub Releases</span><span data-id>Dari GitHub Releases</span></p></div></div>
+        <ol class="mini-steps">
+          <li><span data-en>Open the <a href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true">newest "win-v" release</a> on GitHub.</span><span data-id>Buka <a href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true">release "win-v" terbaru</a> di GitHub.</span></li>
+          <li><span data-en>Download <code>Amnesia-Setup-…-x64.exe</code> (most PCs) or <code>-arm64.exe</code> (Windows on ARM).</span><span data-id>Download <code>Amnesia-Setup-…-x64.exe</code> (kebanyakan PC) atau <code>-arm64.exe</code> (Windows ARM).</span></li>
+          <li><span data-en>Open it. The app isn't signed yet, so Windows warns you: press <b>More info</b>, then <b>Run anyway</b>.</span><span data-id>Buka file-nya. App-nya belum bertanda tangan, jadi Windows memberi peringatan: tekan <b>More info</b>, lalu <b>Run anyway</b>.</span></li>
+          <li><span data-en>It installs just for you, no admin needed. Amnesia stays <b>Off</b> until you turn it on.</span><span data-id>Terpasang khusus untuk kamu, tanpa admin. Amnesia tetap <b>Mati</b> sampai kamu nyalakan.</span></li>
+        </ol>
+        <div class="smart" aria-hidden="true">
+          <div class="sm-box">
+            <svg class="sm-ico"><use href="#i-shield"/></svg>
+            <div class="sm-lines"><i></i><i class="w2"></i><i class="w3"></i></div>
+            <span class="sm-link">More info</span>
+          </div>
+          <svg class="sm-arrow" viewBox="0 0 80 20"><path d="M2 10h70m-8-7 8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 5"/></svg>
+          <div class="sm-box">
+            <div class="sm-lines"><i></i><i class="w2"></i></div>
+            <span class="sm-btn">Run anyway</span>
+          </div>
+        </div>
+        <p class="small"><span data-en>Button names can differ a little in your Windows language.</span><span data-id>Nama tombolnya bisa sedikit berbeda, tergantung bahasa Windows kamu.</span></p>
+      </div>
+      <div class="cell i-dmg">
+        <div class="i-top"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><div><h3><span data-en>Check the file</span><span data-id>Cek file-nya</span></h3><p class="small"><span data-en>Optional</span><span data-id>Opsional</span></p></div></div>
+        <div class="shell">
+          <div class="sh-bar"><i></i><i></i><i></i><span>PowerShell</span></div>
+          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.7.2-x64.exe</code><button class="copy" type="button">Copy</button></div>
+          <pre class="sh-out"><span>Algorithm  Hash</span>
+<span>---------  ----</span>
+<span>SHA256     3F9A…C21E</span>
+<span class="ok">Same as SHA256SUMS.txt</span></pre>
+        </div>
+        <p class="small"><span data-en>Every release has a <code>SHA256SUMS.txt</code>. The hash above is only an example.</span><span data-id>Setiap rilis punya <code>SHA256SUMS.txt</code>. Hash di atas cuma contoh.</span></p>
+      </div>
+      <div class="cell i-gh">
+        <div class="i-top"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><div><h3>navi-crwn/amnesia</h3><p class="small"><span data-en>Open source on GitHub</span><span data-id>Open source di GitHub</span></p></div></div>
+        <dl class="ghstats">
+          <div><dt><span data-en>License</span><span data-id>Lisensi</span></dt><dd>MIT</dd></div>
+          <div><dt>Windows</dt><dd>v0.7.2</dd></div>
+          <div><dt><span data-en>Chips</span><span data-id>Chip</span></dt><dd>x64 · arm64</dd></div>
+        </dl>
+        <div class="cta">
+          <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-down"/></svg><span data-en>Windows releases</span><span data-id>Rilis Windows</span></a>
+          <a class="btn ghost" href="https://github.com/navi-crwn/amnesia"><svg><use href="#i-github"/></svg>GitHub</a>
+        </div>
+      </div>
+      <div class="cell i-req">
+        <p class="cap"><span data-en>What you need</span><span data-id>Yang kamu perlukan</span></p>
+        <ul class="reqs">
+          <li><svg><use href="#i-laptop"/></svg><b>Windows 10 · 11</b><span data-en>Home or Pro</span><span data-id>Home atau Pro</span></li>
+          <li><svg><use href="#i-chip"/></svg><b>x64 & arm64</b><span data-en>A Setup for each</span><span data-id>Setup untuk masing-masing</span></li>
+          <li><svg><use href="#i-lock"/></svg><b><span data-en>No admin</span><span data-id>Tanpa admin</span></b><span data-en>Installs just for you</span><span data-id>Terpasang khusus untuk kamu</span></li>
+        </ul>
+        <p class="cap" style="margin-top:6px"><span data-en>Updating: Settings → Update → Check now, in this order</span><span data-id>Update: Pengaturan → Update → Cek sekarang, dengan urutan ini</span></p>
+        <ol class="flow">
+          <li><span data-en>Turn Off</span><span data-id>Matikan</span></li>
+          <li><span data-en>Install</span><span data-id>Pasang</span></li>
+          <li><span data-en>Turn On</span><span data-id>Nyalakan</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 FAQ -->
+<section class="ref" id="faq">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">13</span> · FAQ</p>
+      <h2><span data-en>Questions, <em>answered.</em></span><span data-id>Pertanyaan, <em>terjawab.</em></span></h2>
+    </div>
+    <div class="bento faq">
+      <div class="fcol">
+      <div class="cell fq f-safe">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><span data-en>Safety</span><span data-id>Keamanan</span></h3>
+        <details><summary><span data-en>Can I try it without deleting anything?</span><span data-id>Bisa dicoba tanpa menghapus apa-apa?</span></summary><p><span data-en>Yes. After you install it, Amnesia is Off and deletes nothing. Open What gets wiped and press Show preview: it only lists what would go. Turn it on when the list looks right.</span><span data-id>Bisa. Setelah dipasang, Amnesia dalam keadaan Mati dan tidak menghapus apa pun. Buka Yang dihapus dan tekan Lihat simulasi: isinya cuma daftar yang akan hilang. Nyalakan kalau daftarnya sudah pas.</span></p></details>
+        <details><summary><span data-en>Where do wiped files go? Can I get them back?</span><span data-id>File yang dihapus pindah ke mana? Bisa dikembalikan?</span></summary><p><span data-en>Nowhere you can reach. They don't go to the Recycle Bin and can't be brought back. Once Amnesia is on, it really deletes, so check What gets wiped first and put what you need in Keep or on the Keep List.</span><span data-id>Tidak ke mana pun yang bisa kamu buka. Tidak masuk Recycle Bin dan tidak bisa dikembalikan. Begitu Amnesia menyala, ia benar-benar menghapus, jadi cek Yang dihapus dulu dan simpan yang kamu perlukan di Keep atau Keep List.</span></p></details>
+        <details><summary><span data-en>Is my Keep folder encrypted?</span><span data-id>Apakah folder Keep dienkripsi?</span></summary><p><span data-en>No. Amnesia keeps it, it doesn't encrypt it. Turn on BitLocker or device encryption: Settings → Privacy & security → Device encryption. Amnesia's Settings shows whether it's on.</span><span data-id>Tidak. Amnesia menyimpannya, tapi tidak mengenkripsinya. Nyalakan BitLocker atau enkripsi perangkat: Settings → Privacy & security → Device encryption. Pengaturan Amnesia menunjukkan apakah sudah menyala.</span></p></details>
+        <details><summary><span data-en>What if the PC crashes or loses power?</span><span data-id>Bagaimana kalau PC crash atau mati listrik?</span></summary><p><span data-en>The check at the next sign in catches it and does the cleanup. If you cancel a sign out, nothing is removed.</span><span data-id>Pengecekan saat sign in berikutnya akan menangkapnya dan membersihkan. Kalau sign out dibatalkan, tidak ada yang dihapus.</span></p></details>
+        <details><summary><span data-en>Is my data sent anywhere?</span><span data-id>Apakah data saya dikirim ke suatu tempat?</span></summary><p><span data-en>No. No servers, no accounts, no tracking. Backups go only where you pick. The update check asks GitHub for the newest version number (every week by default), and you can switch it off.</span><span data-id>Tidak. Tanpa server, tanpa akun, tanpa pelacakan. Backup hanya pergi ke tempat yang kamu pilih. Cek update menanyakan nomor versi terbaru ke GitHub (bawaannya setiap minggu), dan bisa dimatikan.</span></p></details>
+        <details><summary><span data-en>Windows Security or my antivirus blocks it. Now what?</span><span data-id>Windows Security atau antivirus memblokirnya. Lalu?</span></summary><p><span data-en>Home tells you when something was refused. Usually it's Controlled folder access: Windows Security → Virus & threat protection → Ransomware protection → Allow an app, and add Amnesia. Please don't turn your antivirus off.</span><span data-id>Beranda memberi tahu kalau ada yang ditolak. Biasanya ini Controlled folder access: Windows Security → Virus & threat protection → Ransomware protection → Allow an app, lalu tambahkan Amnesia. Jangan matikan antivirus kamu.</span></p></details>
+      </div>
+      <div class="cell fq f-backup">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--orange)"><svg><use href="#i-lock"/></svg></span><span data-en>Locks and quick exits</span><span data-id>Kunci dan keluar cepat</span></h3>
+        <details><summary><span data-en>Can someone get around the Keep lock?</span><span data-id>Bisakah kunci Keep diakali?</span></summary><p><span data-en>Yes, someone signed in as you who knows Windows can remove it in the folder's Properties. The files aren't encrypted either. It stops casual snooping and other programs, not a determined person. For real protection, use BitLocker.</span><span data-id>Bisa, orang yang sign in sebagai kamu dan paham Windows bisa melepasnya lewat Properties folder. File-nya juga tidak dienkripsi. Kunci ini menahan orang iseng dan program lain, bukan orang yang benar-benar niat. Untuk perlindungan sungguhan, pakai BitLocker.</span></p></details>
+        <details><summary><span data-en>I forgot my Keep lock password.</span><span data-id>Saya lupa password kunci Keep.</span></summary><p><span data-en>Open the Keep folder's Properties → Security and remove the "Deny" lines. Your files are still there.</span><span data-id>Buka Properties folder Keep → Security, lalu hapus baris "Deny". File kamu masih ada.</span></p></details>
+        <details><summary><span data-en>What happens with the panic hotkey?</span><span data-id>Apa yang terjadi dengan tombol panik?</span></summary><p><span data-en>The screen locks right away, Amnesia cleans up and signs you out without waiting for other apps. Unsaved work is lost. The tray menu has the same thing: Panic sign out now.</span><span data-id>Layar langsung terkunci, Amnesia membersihkan dan sign out tanpa menunggu app lain. Pekerjaan yang belum disimpan hilang. Menu tray punya hal yang sama: Sign out darurat sekarang.</span></p></details>
+        <details><summary><span data-en>Can the lab lock be stopped?</span><span data-id>Bisakah kunci lab dihentikan?</span></summary><p><span data-en>Someone can end Amnesia in Task Manager. The check at the next sign in still cleans. Changing settings or turning it off needs the administrator's PIN.</span><span data-id>Orang bisa menutup Amnesia lewat Task Manager. Pengecekan saat sign in berikutnya tetap membersihkan. Mengubah pengaturan atau mematikannya butuh PIN administrator.</span></p></details>
+      </div>
+      </div>
+      <div class="fcol">
+      <div class="cell fq f-vault">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--indigo)"><svg><use href="#i-lock"/></svg></span>Profile Vault</h3>
+        <details><summary><span data-en>What if I forget the vault password?</span><span data-id>Kalau lupa password vault?</span></summary><p><span data-en>Then nobody can open it, including you. Make a new vault and sign in to your apps again. Write the password down somewhere safe.</span><span data-id>Tidak ada yang bisa membukanya, termasuk kamu. Buat vault baru, lalu login ulang ke app kamu. Catat password-nya di tempat aman.</span></p></details>
+        <details><summary><span data-en>When is the vault saved?</span><span data-id>Kapan vault disimpan?</span></summary><p><span data-en>After you close an app that changed, in the background (checked every minute). Tools without a window, like Claude Code or Git, after 3 minutes without changes. If Edge keeps running in the background ("startup boost"), it's saved once it really closes.</span><span data-id>Setelah kamu menutup app yang berubah, di latar belakang (dicek setiap menit). Alat tanpa jendela, seperti Claude Code atau Git, setelah 3 menit tanpa perubahan. Kalau Edge tetap jalan di latar belakang ("startup boost"), ia disimpan setelah benar-benar tertutup.</span></p></details>
+        <details><summary><span data-en>Do my logins work on another PC?</span><span data-id>Apakah login saya jalan di PC lain?</span></summary><p><span data-en>Usually not. Windows ties saved logins to your Windows user, so snapshots come back on this PC and this user. Move to a new PC brings your Keep folder, Keep List and vault, but you may need to sign in to some apps again.</span><span data-id>Biasanya tidak. Windows mengikat login tersimpan ke user Windows kamu, jadi snapshot kembali di PC ini dan user ini. Pindah ke PC baru membawa folder Keep, Keep List, dan vault, tapi kamu mungkin perlu login ulang ke beberapa app.</span></p></details>
+        <details><summary><span data-en>The newest snapshot looks wrong.</span><span data-id>Snapshot terbaru terlihat salah.</span></summary><p><span data-en>If a new snapshot is much smaller than the last one, the vault says so. Tick "Use the snapshot before the newest one" when you restore.</span><span data-id>Kalau snapshot baru jauh lebih kecil dari sebelumnya, vault memberi tahu. Centang "Pakai snapshot sebelum yang terbaru" saat memulihkan.</span></p></details>
+        <details><summary><span data-en>What are the panic word and Doomsday?</span><span data-id>Apa itu kata panik dan Doomsday?</span></summary><p><span data-en>The panic word is an optional word you pick. Typed in the password box, it deletes the vault (and your Keep folder too, if you chose so). Doomsday deletes the vault after 3 wrong passwords in a row. You can switch Doomsday off.</span><span data-id>Kata panik adalah kata opsional pilihanmu. Kalau diketik di kolom password, vault terhapus (folder Keep juga, kalau kamu memilihnya). Doomsday menghapus vault setelah 3 kali salah password berturut-turut. Doomsday bisa dimatikan.</span></p></details>
+      </div>
+      <div class="cell fq f-every">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--cyan)"><svg><use href="#i-down"/></svg></span><span data-en>Install and updates</span><span data-id>Pasang dan update</span></h3>
+        <details><summary><span data-en>Why does Windows warn me when I install it?</span><span data-id>Kenapa Windows memberi peringatan saat dipasang?</span></summary><p><span data-en>The app isn't signed yet, so Windows doesn't know it. Press More info, then Run anyway. Want to be sure? Compare the file with SHA256SUMS.txt from the same release.</span><span data-id>App-nya belum bertanda tangan, jadi Windows belum mengenalnya. Tekan More info, lalu Run anyway. Mau lebih yakin? Cocokkan file-nya dengan SHA256SUMS.txt dari rilis yang sama.</span></p></details>
+        <details><summary><span data-en>x64 or arm64?</span><span data-id>x64 atau arm64?</span></summary><p><span data-en>Most PCs need x64. Pick arm64 for Windows on ARM, like a Snapdragon laptop or a Windows virtual machine on a Mac.</span><span data-id>Kebanyakan PC butuh x64. Pilih arm64 untuk Windows ARM, seperti laptop Snapdragon atau mesin virtual Windows di Mac.</span></p></details>
+        <details><summary><span data-en>Does it need admin?</span><span data-id>Perlu admin?</span></summary><p><span data-en>No. It installs just for you. Only a few optional things ask Windows for admin once: Windows protections, deleting leftover folders and the lab lock.</span><span data-id>Tidak. Terpasang khusus untuk kamu. Hanya beberapa hal opsional yang minta izin admin sekali: perlindungan Windows, menghapus folder sisa app, dan kunci lab.</span></p></details>
+        <details><summary><span data-en>How do I update?</span><span data-id>Bagaimana cara update?</span></summary><p><span data-en>Settings → Update → Check now. Turn Amnesia off before you install the update, then turn it on again.</span><span data-id>Pengaturan → Update → Cek sekarang. Matikan Amnesia sebelum memasang update, lalu nyalakan lagi.</span></p></details>
+        <details><summary><span data-en>How do I uninstall it?</span><span data-id>Bagaimana cara menghapus Amnesia?</span></summary><p><span data-en>Settings → Uninstall Amnesia, or Apps & features like any app. It turns off first, so nothing more is wiped. Your Keep folder always stays. To delete settings, Keep List and vault too, type DELETE in the box.</span><span data-id>Pengaturan → Uninstall Amnesia, atau lewat Apps & features seperti app lain. Amnesia mati dulu, jadi tidak ada lagi yang dihapus. Folder Keep selalu tetap ada. Untuk ikut menghapus pengaturan, Keep List, dan vault, ketik DELETE di kotaknya.</span></p></details>
+        <details><summary><span data-en>Is there a Mac version?</span><span data-id>Ada versi Mac?</span></summary><p><span data-en>Yes, and it's been around longer. See the <a href="../">Mac page</a>.</span><span data-id>Ada, dan sudah lebih lama. Lihat <a href="../">halaman Mac</a>.</span></p></details>
+      </div>
+      </div>
+      <div class="cell fq f-ask">
+        <div class="fa-t"><h3 class="fq-h"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><span data-en>Found a bug? Want something changed?</span><span data-id>Ketemu bug? Mau ada yang diubah?</span></h3>
+        <p><span data-en>Open an issue on GitHub. Please don't paste passwords, private file lists or anything personal. Collect log leaves file names out for that reason.</span><span data-id>Buka issue di GitHub. Tolong jangan tempel password, daftar file pribadi, atau hal pribadi lainnya. Kumpulkan log sengaja tidak menyertakan nama file.</span></p></div>
+        <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/issues"><span data-en>Open an issue</span><span data-id>Buka issue</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="glow" style="width:600px;height:600px;background:var(--indigo);left:50%;top:50%;transform:translate(-50%,-50%);opacity:.25" aria-hidden="true"></div>
+  <div class="wrap" style="position:relative">
+    <div class="shield3d small" data-shield3d="final" aria-hidden="true"><img src="../logo.png" alt="" width="160" height="160" loading="lazy"></div>
+    <h2><span data-en>Start every day <em>clean.</em></span><span data-id>Setiap hari, <em>mulai dari bersih.</em></span></h2>
+    <p class="pun"><span data-en>Download it, then forget everything. Pun intended.</span><span data-id>Download, lalu lupakan semuanya. Pun intended.</span></p>
+    <div class="cta">
+      <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg><span data-en>Download for Windows</span><span data-id>Download untuk Windows</span></a>
+      <a class="btn ghost" href="../"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-laptop"/></svg><span data-en>Got a Mac?</span><span data-id>Pakai Mac?</span></a>
+    </div>
+    <p class="w-issue"><span data-en>Found a bug or have an idea? <a href="https://github.com/navi-crwn/amnesia/issues">Open an issue</a>. No passwords or private file lists, please.</span><span data-id>Ketemu bug atau punya ide? <a href="https://github.com/navi-crwn/amnesia/issues">Buka issue</a>. Tanpa password atau daftar file pribadi, ya.</span></p>
   </div>
 </section>
 </main>
 
-<footer class="win-foot">
+<footer class="site-foot">
   <div class="wrap">
-    <p><span data-en>© 2026 navi-crwn. Open source (MIT).</span><span data-id>© 2026 navi-crwn. Open source (MIT).</span>
-      <a href="https://github.com/navi-crwn/amnesia">GitHub</a> ·
-      <a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md" data-en>Terms</a><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.id.md" data-id>Ketentuan</a></p>
-    <p class="ft-tm"><span data-en>Windows is a trademark of Microsoft. Amnesia is an independent project, not affiliated with or endorsed by Microsoft.</span><span data-id>Windows adalah merek dagang Microsoft. Amnesia adalah proyek independen, tidak berafiliasi dengan dan tidak didukung oleh Microsoft.</span></p>
+    <div class="ft-top">
+      <div class="ft-brand">
+        <a class="brand" href="#top"><img src="../logo.png" alt="" width="30" height="30">Amnesia</a>
+        <p class="ft-tag"><span data-en>Your PC forgets everything at sign out, except what you choose to keep. Free, open source, and nothing ever leaves your PC.</span><span data-id>PC kamu melupakan segalanya setiap sign out, kecuali yang kamu pilih untuk disimpan. Gratis, open source, dan tidak ada data yang keluar dari PC kamu.</span></p>
+        <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
+          <svg><use href="#i-github"/></svg>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.7.2</small></span>
+        </a>
+      </div>
+      <nav class="ft-cols" aria-label="Footer">
+        <div><p class="ft-h"><span data-en>Product</span><span data-id>Produk</span></p><ul>
+          <li><a href="#desk"><span data-en>How it works</span><span data-id>Cara kerja</span></a></li>
+          <li><a href="#vault">Profile Vault</a></li>
+          <li><a href="#backup">Backup</a></li>
+          <li><a href="#exits"><span data-en>Quick exits</span><span data-id>Keluar cepat</span></a></li>
+          <li><a href="#install"><span data-en>Install</span><span data-id>Pasang</span></a></li>
+          <li><a href="#faq">FAQ</a></li></ul></div>
+        <div><p class="ft-h"><span data-en>Source</span><span data-id>Sumber</span></p><ul>
+          <li><a href="https://github.com/navi-crwn/amnesia"><span data-en>Repository</span><span data-id>Repositori</span></a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span data-en>Windows releases</span><span data-id>Rilis Windows</span></a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/issues">Issues</a></li>
+          <li><a href="../">Mac</a></li></ul></div>
+        <div><p class="ft-h">Legal</p><ul>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><span data-en>License (MIT)</span><span data-id>Lisensi (MIT)</span></a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md" data-en>Terms</a><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.id.md" data-id>Ketentuan</a></li>
+          <li><a href="#private"><span data-en>Privacy</span><span data-id>Privasi</span></a></li></ul></div>
+      </nav>
+    </div>
+    <div class="ft-bot">
+      <p><span data-en>© 2026 navi-crwn. Made for personal use. Use it wisely: Amnesia really does delete your data.</span><span data-id>© 2026 navi-crwn. Dibuat untuk pemakaian pribadi. Pakai dengan bijak: Amnesia benar-benar menghapus data.</span></p>
+      <p class="ft-tm"><span data-en>Microsoft, Windows, BitLocker, OneDrive, Edge, Google Drive, Chrome, Discord, Telegram, Slack, Claude, GitHub and other names are trademarks of their respective owners. Amnesia is an independent project and is not affiliated with or endorsed by any of them.</span><span data-id>Microsoft, Windows, BitLocker, OneDrive, Edge, Google Drive, Chrome, Discord, Telegram, Slack, Claude, GitHub, dan nama lain adalah merek dagang dari pemiliknya masing-masing. Amnesia adalah proyek independen, tidak berafiliasi dengan dan tidak didukung oleh mereka.</span></p>
+    </div>
   </div>
 </footer>
 
 <script>
-// language + theme, same as the Mac page (assets/js/site.js) without the motion
+// Windows page only: the app screenshots follow the page language and the light/dark switch
+// (the <source> media query covers visitors without JavaScript), and the screenshot tabs.
 (function () {
+  'use strict';
   var root = document.documentElement;
-  function setLang(l) {
-    root.lang = l;
-    document.getElementById('lang-en').setAttribute('aria-pressed', String(l === 'en'));
-    document.getElementById('lang-id').setAttribute('aria-pressed', String(l === 'id'));
-    try { localStorage.setItem('lang', l); } catch (e) {}
+  function theme() {
+    var UI = window.AmnesiaUI;
+    if (UI && UI.theme) return UI.theme();
+    var t = root.getAttribute('data-theme');
+    return t === 'light' || t === 'dark' ? t : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
   }
-  document.getElementById('lang-en').addEventListener('click', function () { setLang('en'); });
-  document.getElementById('lang-id').addEventListener('click', function () { setLang('id'); });
-  setLang(root.lang === 'id' ? 'id' : 'en');
-  var sysLight = window.matchMedia('(prefers-color-scheme: light)');
-  function theme() { var t = root.getAttribute('data-theme'); return t === 'light' || t === 'dark' ? t : (sysLight.matches ? 'light' : 'dark'); }
-  var btn = document.getElementById('theme');
-  function sync() { var l = theme() === 'light'; btn.setAttribute('aria-pressed', String(l)); btn.setAttribute('aria-label', l ? 'Switch to dark mode' : 'Switch to light mode'); }
-  btn.addEventListener('click', function () {
-    var next = theme() === 'light' ? 'dark' : 'light';
-    root.setAttribute('data-theme', next);
-    try { localStorage.setItem('theme', next); } catch (e) {}
-    sync();
+  function shots() {
+    var l = root.lang === 'id' ? 'id' : 'en', t = theme();
+    document.querySelectorAll('picture[data-wshot]').forEach(function (p) {
+      var f = 'shots/' + p.dataset.wshot + '-' + l + '-' + t + '.webp';
+      var s = p.querySelector('source'), img = p.querySelector('img');
+      if (s && s.getAttribute('srcset') !== f) s.setAttribute('srcset', f);
+      if (img.getAttribute('src') !== f) img.setAttribute('src', f);
+      var alt = p.getAttribute('data-alt-' + l);
+      if (alt) img.alt = alt;
+    });
+  }
+  document.addEventListener('amnesia:lang', shots);
+  document.addEventListener('amnesia:theme', shots);
+  shots();
+
+  // tabs: click, or ← → Home End while a tab has focus
+  var tabs = [].slice.call(document.querySelectorAll('.wgal-tabs [role=tab]'));
+  function pick(tab, focus) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (focus) tab.focus();
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { pick(t); });
+    t.addEventListener('keydown', function (e) {
+      var j = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
+      if (j === null) return;
+      e.preventDefault(); e.stopPropagation();
+      pick(tabs[(j + tabs.length) % tabs.length], true);
+    });
   });
-  sync();
 })();
 </script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js"></script>
+<script defer src="../assets/js/scenes/hero.js"></script>
+<script defer src="../assets/js/scenes/desk.js"></script>
+<script defer src="../assets/js/scenes/puzzle.js"></script>
+<script defer src="../assets/js/scenes/story.js"></script>
+<script defer src="../assets/js/site.js"></script>
+<script type="module" src="../assets/js/scenes/shield3d.js"></script>
+<script type="module" src="../assets/js/scenes/objects3d.js"></script>
 </body>
 </html>

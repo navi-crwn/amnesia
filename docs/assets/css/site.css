@@ -990,3 +990,95 @@ html:not(.js) .tp[data-page="0"]{position:relative}
 .win-foot .wrap{display:grid;gap:10px}
 .win-foot a{color:var(--text)}
 .win-foot .ft-tm{font-size:12px}
+
+/* ---------- Windows page, full version (win/index.html, Windows v0.7.1) ----------
+   Added for the rebuilt Windows page. Every rule is scoped to body.winpage,
+   so the Mac page looks exactly the same as before. The older .win-* rules
+   above are no longer used by any page. */
+.winpage .w-issue{margin-top:24px;color:var(--muted);font-size:15px}
+.winpage .w-issue a{color:var(--text);font-weight:600}
+.winpage #vault .iyk-note,.winpage #exits .iyk-note{margin-top:4px}
+.winpage #exits .iyk-note{margin-top:24px}
+
+/* Windows title bar: icon, title, minimize / maximize / close */
+.winpage .wapp{border-radius:12px;padding:0 16px 16px}
+.winpage .wapp .aw-bar,.winpage .wwin-bar{display:flex;align-items:center;gap:8px;font:500 12px var(--sans);color:var(--muted)}
+.winpage .wapp .aw-bar{margin:0 -16px;padding:8px 4px 8px 14px;border-bottom:1px solid var(--line)}
+.winpage .wwin-bar{padding:8px 4px 8px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+.winpage .wapp .aw-bar img,.winpage .wwin-bar img{width:15px;height:15px;border-radius:3px}
+.winpage .wapp .aw-bar i,.winpage .wwin-bar i{position:relative;flex:none;width:30px;height:16px;border-radius:0;background:none;color:var(--muted)}
+.winpage .wapp .aw-bar .wb-min,.winpage .wwin-bar .wb-min{margin-left:auto}
+.winpage .wb-min::before{content:"";position:absolute;left:10px;right:10px;top:50%;height:1px;background:currentColor}
+.winpage .wb-max::before{content:"";position:absolute;left:10px;top:3px;width:10px;height:10px;border:1px solid currentColor;border-radius:2px}
+.winpage .wb-x::before,.winpage .wb-x::after{content:"";position:absolute;left:8px;top:50%;width:13px;height:1px;background:currentColor;transform:rotate(45deg)}
+.winpage .wb-x::after{transform:rotate(-45deg)}
+
+/* the drawn home window (puzzle in #tour) */
+.winpage .wapp .aw-btn{color:var(--red)}
+.winpage .wapp .aw-grid .tile.wide{grid-column:1/-1}
+.winpage .wapp .tile.big{grid-row:span 2;grid-template-columns:minmax(0,1fr);align-content:space-between;gap:4px;background:linear-gradient(160deg,color-mix(in srgb,var(--indigo) 16%,var(--panel)),var(--panel))}
+.winpage .wapp .tile.big svg{grid-row:auto;width:38px;height:38px;margin-bottom:auto}
+.winpage .wapp .tile.big b{font-size:15px}
+.winpage .taskbar{width:min(100%,460px);border-radius:10px}
+.winpage .taskbar .mb-drop{top:auto;bottom:42px;right:24px;width:230px}
+.winpage .mb-drop .mb-b{font-weight:600}
+.winpage .mb-drop .mb-red{color:var(--red)}
+.winpage .mb-drop .sep{border-top:1px solid var(--line);border-radius:0 0 6px 6px;margin-top:3px;padding-top:8px}
+@media (max-width:900px){.winpage .taskbar .mb-drop{right:8px}}
+
+/* app screenshots in a Windows frame */
+.winpage .wwin{margin:0;width:100%;max-width:520px;justify-self:center;border-radius:12px;overflow:hidden;border:1px solid var(--line-2);background:var(--ground);box-shadow:var(--shadow-lg)}
+.winpage .wwin picture,.winpage .wwin picture img{display:block;width:100%;height:auto}
+.winpage .wgal-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.winpage .wgal-tabs button{font:500 14px var(--sans);padding:9px 16px;border-radius:999px;border:1px solid var(--line-2);background:var(--panel);color:var(--muted);cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+.winpage .wgal-tabs button:hover{color:var(--text);border-color:var(--cyan)}
+.winpage .wgal-tabs button[aria-selected=true]{background:var(--text);color:var(--ground);border-color:transparent}
+.winpage .wgal-p{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:clamp(24px,5vw,64px);align-items:start}
+.winpage .wgal-p[hidden]{display:none}
+.winpage .wgal-t{display:grid;gap:10px;align-content:start;padding-top:8px}
+.winpage .wgal-t h4{margin:0;font:600 clamp(22px,2.4vw,30px)/1.2 var(--sans);letter-spacing:-.01em}
+.winpage .wgal-t p{color:var(--muted);max-width:46ch}
+@media (max-width:900px){.winpage .wgal-p{grid-template-columns:minmax(0,1fr)}.winpage .wgal-t{order:-1;padding-top:0}}
+/* no JavaScript: no tabs, every screenshot one under the other */
+html:not(.js) .winpage .wgal-tabs{display:none}
+html:not(.js) .winpage .wgal-panels{display:grid;gap:56px}
+html:not(.js) .winpage .wgal-p[hidden]{display:grid}
+
+/* 07 quick exits */
+.winpage .wx-grid{grid-template-columns:repeat(6,minmax(0,1fr));margin-top:48px}
+.winpage .wx-grid .cell{grid-column:span 2;display:grid;gap:10px;align-content:start}
+.winpage .wx-grid .cell:nth-child(-n+2){grid-column:span 3}
+.winpage .wx-grid h3{font-size:18px}
+.winpage .wx-grid p{color:var(--muted);font-size:15px}
+.winpage .wx-hot{background:linear-gradient(135deg,color-mix(in srgb,var(--red) 10%,var(--panel)),var(--panel));border-color:color-mix(in srgb,var(--red) 30%,var(--line))}
+.winpage .wx-keys{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.winpage .wx-keys kbd{font:600 12.5px var(--mono);color:var(--text);padding:6px 10px;border-radius:8px;border:1px solid var(--line-2);border-bottom-width:3px;background:var(--panel-2)}
+@media (max-width:900px){.winpage .wx-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.winpage .wx-grid .cell,.winpage .wx-grid .cell:nth-child(-n+2){grid-column:span 1}.winpage .wx-grid .cell:first-child{grid-column:1/-1}}
+@media (max-width:560px){.winpage .wx-grid{grid-template-columns:minmax(0,1fr)}.winpage .wx-grid .cell{grid-column:auto!important}}
+
+/* 08 locks: what they do, and what they don't */
+.winpage .wl-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:48px}
+.winpage .wl-grid .cell{padding:24px}
+.winpage .wl-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.winpage .wl-grid p{color:var(--muted)}
+.winpage .wl-no{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:8px}
+.winpage .wl-no li{position:relative;padding:9px 12px 9px 36px;border-radius:10px;font-size:14.5px;color:var(--warn-text);background:color-mix(in srgb,var(--orange) 8%,transparent);border:1px solid color-mix(in srgb,var(--orange) 26%,transparent)}
+.winpage .wl-no li::before{content:"!";position:absolute;left:11px;top:11px;width:16px;height:16px;border-radius:50%;background:var(--orange);color:var(--ground);font:700 11px/16px var(--mono);text-align:center}
+@media (max-width:760px){.winpage .wl-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* 12 install: the "unknown app" warning, drawn (not a copy of the real dialog) */
+.winpage .smart{display:flex;align-items:center;justify-content:center;gap:12px;padding:18px 14px;border-radius:14px;border:1px solid var(--line-2);background:linear-gradient(180deg,var(--tint-2),transparent)}
+.winpage .sm-box{flex:1 1 0;min-width:0;max-width:200px;display:grid;gap:10px;padding:14px;border-radius:8px;background:#1f4fa8;color:#fff;box-shadow:var(--shadow-md)}
+.winpage .sm-ico{width:22px;height:22px}
+.winpage .sm-lines{display:grid;gap:6px}
+.winpage .sm-lines i{height:6px;width:90%;border-radius:3px;background:rgba(255,255,255,.5)}
+.winpage .sm-lines i.w2{width:70%}
+.winpage .sm-lines i.w3{width:48%}
+.winpage .sm-link{font:600 12px var(--sans);text-decoration:underline;text-underline-offset:2px}
+.winpage .sm-btn{justify-self:end;font:600 12px var(--sans);padding:6px 12px;border-radius:4px;border:1px solid rgba(255,255,255,.75);white-space:nowrap}
+.winpage .sm-arrow{flex:none;width:56px;height:20px;color:var(--muted)}
+.winpage .i-gh .btn svg{color:inherit}
+.winpage .ghstats dd{font-size:clamp(15px,1.8vw,20px);overflow-wrap:anywhere}
+@media (max-width:480px){.winpage .ghstats{grid-template-columns:minmax(0,1fr)}.winpage .sm-arrow{width:26px}.winpage .sm-box{padding:10px}}
+@media (min-width:1021px){.winpage .nav-r{margin-left:0}}
+.winpage #wiped{overflow-x:clip}

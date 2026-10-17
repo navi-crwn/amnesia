@@ -7,6 +7,14 @@ Quick backstory: on October 6, 2026 Amnesia was a handful of scripts. Two days a
 
 Your version number is next to the Amnesia title and at the bottom of the menu bar panel.
 
+## Windows v0.7.2 · No more "Test in a VM" badge, a full Windows website (Oct 14, 2026)
+
+Turn Amnesia Off before installing over an older version, then turn it On again.
+
+- The "Test in a VM" badge next to the name is gone, and so is "test in a VM before your real PC" in the welcome tour. The app works the same as v0.7.1.
+- **New Windows website:** the Windows page now looks like the Mac one, with the same animations, real screenshots of the app (English and Indonesian, dark and light), install steps with the SmartScreen warning explained, Keep lock and lab lock, and a Windows FAQ.
+- **Mac website:** shows the v5.20 and v5.21 features (search in Settings and in What Gets Deleted, developer tools, update schedule, virtual machines kept, the Trash group) and fixes the old "checks for updates once a day" answer.
+
 ## v5.21.0 · New apps in the preview, search in "What Gets Deleted", virtual machines kept safe (Oct 13, 2026)
 
 **Turn Off** Amnesia before installing, then turn it on again.
