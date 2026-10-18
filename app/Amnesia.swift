@@ -162,6 +162,18 @@ struct KeysInfo: Decodable {
     let time: String
 }
 
+/// v5.23: app yang datanya di Mac ini lebih baru dari snapshot-nya (vault.py newer)
+struct NewerApp: Decodable {
+    let app: String
+    let snap: String
+}
+
+/// v5.23: restore terakhir yang masih bisa dibatalkan (vault.py status → undo)
+struct UndoInfo: Decodable {
+    let time: String
+    let apps: [String]
+}
+
 struct VaultReply: Decodable {
     let ok: Bool
     let error: String?
@@ -184,11 +196,16 @@ struct VaultReply: Decodable {
     /// v5.22: app tambahan yang kamu pilih sendiri (status), dan hash password Kunci Keep (keephash)
     let custom: [String]?
     let hash: String?
+    /// v5.23: data lebih baru dari snapshot (newer), restore yang bisa dibatalkan (status), dan berapa path yang
+    /// dilewati restore karena ada di Keep List (restore)
+    let newer: [NewerApp]?
+    let undo: UndoInfo?
+    let skipped: Int?
 
     static func fail(_ msg: String) -> VaultReply {
         VaultReply(ok: false, error: msg, exists: nil, manifest: nil, attempts: nil, max: nil, min: nil, apps: nil,
                    keys: nil, skip: nil, folders: nil, patterns: nil, sizes: nil, checks: nil, light: nil, full: nil,
-                   custom: nil, hash: nil)
+                   custom: nil, hash: nil, newer: nil, undo: nil, skipped: nil)
     }
 }
 
@@ -427,6 +444,9 @@ struct FoundApp: Identifiable {
 
 /// App yang login-nya sudah diurus Profile Vault (tetap bisa dipilih untuk di-keep utuh).
 let vaultApps = ["Google Chrome", "Claude", "WhatsApp", "Windows App", "Antigravity"]
+/// v5.23: chat Claude Code (tab Code di Claude Desktop) ada di sini, bukan di Library/Application Support/Claude.
+/// Claude di-keep = ini ikut di-keep (clean.sh juga melakukannya sendiri).
+let claudeCodePaths = [".claude", ".claude.json", ".claude.json.backup"]
 /// App yang disarankan untuk di-keep (VPN & password manager): settingnya tidak rahasia dan repot diatur ulang.
 let suggestWords = ["vpn", "tailscale", "nord", "surfshark", "proton", "mullvad", "1password", "bitwarden"]
 
@@ -438,6 +458,7 @@ func pathKind(_ p: String) -> (icon: String, label: String) {
     if p.hasPrefix("Library/Preferences/") { return ("slider.horizontal.3", T("Settings", "Pengaturan")) }
     if p.hasPrefix("Library/HTTPStorages/") { return ("network", T("Web logins (cookies)", "Login web (cookie)")) }
     if p.hasPrefix("Library/WebKit/") { return ("globe", T("Web data", "Data web")) }
+    if claudeCodePaths.contains(p) { return ("bubble.left.and.bubble.right.fill", T("Claude Code chats", "Chat Claude Code")) }   // v5.23
     if p.hasPrefix(".") { return ("terminal.fill", T("Config", "Pengaturan")) }
     return ("doc.fill", T("Files", "File"))
 }
@@ -607,6 +628,10 @@ func scanApps() -> [FoundApp] {
             // Google Drive menyimpan datanya di Application Support/Google/DriveFS (bukan nama app-nya)
             if bid == "com.google.drivefs", fm.fileExists(atPath: lib + "Application Support/Google/DriveFS") {
                 p.append("Library/Application Support/Google/DriveFS")
+            }
+            // v5.23: Claude Desktop: chat Claude Code (tab Code) ikut disimpan bersama Claude
+            if bid == "com.anthropic.claudefordesktop" {
+                for x in claudeCodePaths where !p.contains(x) { p.append(x) }
             }
             // v5.21: app VM: folder VM-nya (mis. ~/VirtualBox VMs) ikut disimpan
             var isVM = false
@@ -1140,6 +1165,11 @@ func itemSizes(_ items: [DryItem]) -> [String: Int64] {
     }
     return out
 }
+
+/// v5.23: folder sementara Amnesia sendiri di Library/Caches. Isinya antara lain salinan data app dari sebelum restore
+/// vault (bisa belasan GB, dihapus saat logout atau paling lama 3 hari): tidak ditampilkan sebagai "data besar".
+let beforeRestoreRel = "Library/Caches/Amnesia/before-restore"
+func isAmnesiaCache(_ rel: String) -> Bool { rel == "Library/Caches/Amnesia" || rel.hasPrefix("Library/Caches/Amnesia/") }
 
 /// Ukuran beberapa path (relatif dari home) yang mudah dibaca, mis. "1,2 GB".
 func pathsSize(_ rels: [String]) -> String {
@@ -3321,6 +3351,19 @@ struct VaultView: View {
                 .buttonStyle(Pill(colors: Pal.keep))
                 .disabled(pw.isEmpty || v.manifest == nil)
         }
+        if let u = v.undo {         // v5.23: restore terakhir masih bisa dibatalkan (sampai logout berikutnya)
+            Card {
+                Note(text: T("Restore of \(u.time) (\(u.apps.joined(separator: ", "))). The data from before it is in "
+                             + "~/Library/Caches/Amnesia/before-restore until you log out.",
+                             "Restore \(u.time) (\(u.apps.joined(separator: ", "))). Data sebelum restore ada di "
+                             + "~/Library/Caches/Amnesia/before-restore sampai kamu logout."),
+                     icon: "arrow.uturn.backward.circle.fill")
+                Button { undoRestore(u) } label: {
+                    Label(T("Undo Restore", "Kembalikan data sebelum restore"), systemImage: "arrow.uturn.backward")
+                }
+                    .buttonStyle(Pill(colors: Pal.gray))
+            }
+        }
         appsCard(v)
         suggestCard(v)
         lightCard(v)
@@ -3801,14 +3844,45 @@ struct VaultView: View {
                 PopSection(.todo, todo),
                 PopSection(.todo, repair, title: T("Repair extensions", "Perbaiki extension")),
                 PopSection(.note, [T("The app data that was on this Mac before the restore was moved (not deleted) to "
-                                     + "~/Library/Caches/Amnesia/before-restore. It stays there until the next logout.",
+                                     + "~/Library/Caches/Amnesia/before-restore. It can be big. It's removed at the next logout "
+                                     + "(after 3 days at the latest).",
                                      "Data app yang ada di Mac ini sebelum restore dipindah (tidak dihapus) ke "
-                                     + "~/Library/Caches/Amnesia/before-restore. Folder itu tetap ada sampai logout berikutnya.")],
+                                     + "~/Library/Caches/Amnesia/before-restore. Ukurannya bisa besar. Folder itu dihapus saat "
+                                     + "logout berikutnya (paling lama 3 hari)."),
+                                   T("Changed your mind? Press Undo Restore on the Profile Vault page, any time before you log out.",
+                                     "Berubah pikiran? Tekan Kembalikan data sebelum restore di halaman Profile Vault, kapan saja "
+                                     + "sebelum logout."),
+                                   // v5.23: Keep menang: yang ada di Keep List tidak ditimpa
+                                   (r.skipped ?? 0) > 0
+                                       ? T("\(r.skipped ?? 0) item(s) on your Keep List were left as they are (not overwritten).",
+                                           "\(r.skipped ?? 0) item di Keep List dibiarkan apa adanya (tidak ditimpa).") : ""],
                            title: T("Your old app data", "Data app sebelumnya"))]
     }
 
+    /// v5.23: data app di Mac ini lebih baru dari snapshot-nya? Tanya dulu: restore akan memundurkannya.
     private func restore() {
         guard !pw.isEmpty, m.lastTryOK(), ensureFullDisk() else { return }
+        m.background(T("Checking your app data…", "Mengecek data app…"), { vaultCall(["newer"]) }) { n in
+            let newer = n.newer ?? []
+            if !newer.isEmpty {
+                let lines = newer.map { x in
+                    T("\(x.app) data on this Mac is newer than the snapshot from \(x.snap). Restore takes it back to that time.",
+                      "Data \(x.app) di Mac ini lebih baru dari snapshot \(x.snap). Restore akan memundurkannya.")
+                }
+                guard ask(T("Newer data on this Mac", "Data di Mac ini lebih baru"), "",
+                          [PopSection(.warn, lines),
+                           PopSection(.note, [T("The current data is moved to ~/Library/Caches/Amnesia/before-restore, and you "
+                                                + "can undo the restore until you log out.",
+                                                "Data sekarang dipindah ke ~/Library/Caches/Amnesia/before-restore, dan restore "
+                                                + "bisa dibatalkan sampai kamu logout.")])],
+                          ok: T("Restore Anyway", "Tetap Restore")) else { return }
+            }
+            runRestore()
+        }
+    }
+
+    private func runRestore() {
+        guard !pw.isEmpty else { return }
         let input = pw + "\n"
         let job = JobBox()
         m.background(T("Restoring profiles…\nThe apps are closed just before the files are put back.",
@@ -3821,6 +3895,28 @@ struct VaultView: View {
                       "", restoreReport(r), warning: !allOk)
             } else {
                 m.vaultError(r, cancelled: T("Nothing on this Mac was changed.", "Tidak ada yang diubah di Mac ini."))
+            }
+            m.refreshVault()
+        }
+    }
+
+    /// v5.23: data dari sebelum restore kembali ke tempatnya. Hasil restore disingkirkan ke after-restore (tidak dihapus).
+    private func undoRestore(_ u: UndoInfo) {
+        guard ask(T("Undo the restore?", "Kembalikan data sebelum restore?"), "",
+                  [PopSection(.happens, [T("1. These apps are closed: \(u.apps.joined(separator: ", ")).",
+                                           "1. App ini ditutup: \(u.apps.joined(separator: ", "))."),
+                                         T("2. Their data from before the restore of \(u.time) goes back in its place.",
+                                           "2. Data sebelum restore \(u.time) kembali ke tempatnya."),
+                                         T("3. The restored data is moved to ~/Library/Caches/Amnesia/after-restore (removed at logout).",
+                                           "3. Data hasil restore dipindah ke ~/Library/Caches/Amnesia/after-restore (dihapus saat logout).")])],
+                  ok: T("Undo Restore", "Kembalikan")) else { return }
+        m.background(T("Putting your old data back…", "Mengembalikan data sebelumnya…"), { vaultCall(["undo"]) }) { r in
+            if r.ok {
+                info(T("Restore undone", "Restore dibatalkan"),
+                     T("Your data from before the restore is back: ", "Data sebelum restore sudah kembali: ")
+                        + (r.apps ?? u.apps).joined(separator: ", "))
+            } else {
+                m.vaultError(r)
             }
             m.refreshVault()
         }
@@ -3850,7 +3946,7 @@ struct VaultView: View {
         guard ensureFullDisk() else { return }
         let job = JobBox()
         m.background(T("Saving to the vault…", "Menyimpan ke vault…"), job: job,
-                     { vaultCall(["snapshot"] + apps, job: job, progress: Model.progressSink) }) { r in
+                     { vaultCall(["snapshot", "--reopen"] + apps, job: job, progress: Model.progressSink) }) { r in   // v5.23: --reopen
             if r.ok {
                 info("Snapshot", T("Saved: ", "Tersimpan: ") + (r.apps ?? apps).joined(separator: ", "))
             } else {
@@ -4030,6 +4126,8 @@ enum History {
                       auto ? String(data.dropFirst(5)) : data)
         case "restore":
             return ev("arrow.counterclockwise.circle.fill", Th.green, T("Profiles restored", "Profil dikembalikan"), data)
+        case "undo":        // v5.23: Kembalikan data sebelum restore
+            return ev("arrow.uturn.backward.circle.fill", Th.orange, T("Restore undone", "Restore dibatalkan"), data)
         case "backup":
             let auto = w.first == "1", vault = w.count > 1 && w[1] == "1", mb = w.count > 2 ? w[2] : "?"
             let warn = w.count > 3 && w[3] == "1"         // v5.22: selesai dengan peringatan (ada file yang dilewati)
@@ -4729,6 +4827,11 @@ struct AppPickList: View {
                         Task { @MainActor in sizes[p] = s }
                     }
                 }
+            }
+            if a.symbol == nil && a.paths.contains(".claude") {      // v5.23
+                Note(text: T("This also keeps your Claude Code chats (~/.claude), so they're still there after logout.",
+                             "Ini juga menyimpan chat Claude Code (~/.claude), jadi tetap ada setelah logout."),
+                     icon: "bubble.left.and.bubble.right.fill", color: .secondary)
             }
             if a.inVault {
                 Note(text: T("This app doesn't need the vault anymore: it's on the Keep List, so its data isn't wiped at logout.",
@@ -6302,14 +6405,14 @@ struct SettingsView: View {
             + "first saves your app logins to the vault, then cleans the Mac.\n"
             + "• Only apps whose data changed since their last snapshot are saved.\n"
             + "• It takes at most 150 seconds. If it takes longer, it stops and the old snapshot stays.\n"
-            + "• Skipped if you just used Save & Log Out (last 10 minutes) or Pause 1 Session is on.\n"
+            + "• Apps you just saved with Save & Log Out are skipped (nothing changed). Skipped when Pause 1 Session is on.\n"
             + "Off: a normal logout cleans right away without saving, so logins you didn't save are lost. "
             + "Needs a vault.",
         subId: "Setiap kali kamu logout, restart, atau mematikan Mac dengan cara biasa (bukan lewat tombol "
             + "Simpan & Logout), Amnesia lebih dulu menyimpan login app ke vault, baru kemudian membersihkan Mac.\n"
             + "• Yang disimpan hanya app yang datanya berubah sejak snapshot terakhir.\n"
             + "• Paling lama 150 detik. Kalau lebih lama, penyimpanan dibatalkan dan snapshot lama tetap dipakai.\n"
-            + "• Dilewati kalau kamu baru saja menekan Simpan & Logout (10 menit terakhir) atau sedang memakai Jeda 1 Sesi.\n"
+            + "• App yang baru disimpan lewat Simpan & Logout dilewati (tidak berubah). Dilewati juga saat Jeda 1 Sesi.\n"
             + "Kalau dimatikan: logout biasa langsung membersihkan tanpa menyimpan, jadi login yang belum "
             + "disimpan ikut hilang. Butuh vault yang sudah dibuat.",
         tags: "backup save simpan profile profil")
@@ -6680,6 +6783,7 @@ struct PreviewView: View {
     private var bigItems: [DryItem] {
         let gb: Int64 = 1_048_576       // dalam KB
         return all.filter { $0.id != "vault" && $0.id != "keychain" }.flatMap(\.items)
+            .filter { i in !isAmnesiaCache(i.rel) }       // v5.23: salinan sebelum restore, sengaja sementara
             .filter { i in kb(i) >= gb || (isVMData(i.rel) && (!sized || kb(i) >= 51_200)) }
             .sorted { a, b in kb(a) > kb(b) }
     }

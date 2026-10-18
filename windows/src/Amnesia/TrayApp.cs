@@ -71,6 +71,8 @@ sealed class TrayApp : ApplicationContext
         // v0.7 Keep lock: locked again when you lock the screen, and at every start (sign in)
         Microsoft.Win32.SystemEvents.SessionSwitch += (_, e) => { if (e.Reason == Microsoft.Win32.SessionSwitchReason.SessionLock) KeepLock.Lock("screen locked"); };
         KeepLock.Lock("start");
+        // v0.8.1: Keep still locked from an old version while the Keep lock is off: the home page offers to open it
+        try { if (KeepLock.Stale) { AppInfo.Trace("keep still has an old lock, but the Keep lock is off"); Balloon(Text2.KeepAclTitle, Text2.KeepAclText, ToolTipIcon.Warning, "home"); } } catch { }
         new Thread(() => { if (Program.QuitSignal.WaitOne()) ui.Post(_ => { AppInfo.Trace("asked to quit (installer)"); Quit(); }, null); }) { IsBackground = true }.Start();
 
         if (Setup.RunningInstalled) Setup.Unblock(Setup.InstallDir);
@@ -105,15 +107,18 @@ sealed class TrayApp : ApplicationContext
                 Balloon(Text2.RestoreTitle, Text2.RestoreText, ToolTipIcon.Info, "vault");
         });
         else if (Settings.Enabled) KeepLinks.Sync();
-        // v0.8 (MED-WIN-02): Task Manager → Startup apps can switch Amnesia off without a word; then nothing is cleaned
-        if (Settings.Enabled && Setup.StartupDisabled)
-        {
-            AppInfo.Trace("startup is switched off in Task Manager");
-            Balloon(Text2.StartupOffTitle, Text2.StartupOffText, ToolTipIcon.Warning, "home");
-        }
+        // v0.8 (MED-WIN-02): Task Manager → Startup apps can switch Amnesia off without a word; then nothing is cleaned.
+        // v0.8.1: also looked at every minute while Amnesia runs (it is usually switched off while Amnesia is running)
+        CheckStartup();
         tick.Tick += (_, _) => Tick();
         tick.Start();
         if (showWindow) Open();
+    }
+
+    void CheckStartup()
+    {
+        try { if (Setup.CheckStartupOff(out var isNew) && isNew) Balloon(Text2.StartupOffTitle, Text2.StartupOffText, ToolTipIcon.Warning, "home"); }
+        catch { }
     }
 
     void Balloon(string title, string text, ToolTipIcon kind, string? view) => ui.Post(_ =>
@@ -132,7 +137,7 @@ sealed class TrayApp : ApplicationContext
             countdown.FormClosed += (_, _) => countdown = null;
             countdown.Show();
         }
-        if (DateTime.Now >= nextAutoSnap) { nextAutoSnap = DateTime.Now.AddSeconds(60); AutoSnapshot(); }
+        if (DateTime.Now >= nextAutoSnap) { nextAutoSnap = DateTime.Now.AddSeconds(60); AutoSnapshot(); CheckStartup(); }
         if (DateTime.Now < nextSlowCheck) return;
         nextSlowCheck = DateTime.Now.AddMinutes(30);
         // automatic backup (Backup page)

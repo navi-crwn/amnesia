@@ -5,7 +5,7 @@ namespace Amnesia;
 
 static class Native
 {
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     public static extern bool ShutdownBlockReasonCreate(IntPtr hWnd, string reason);
     [DllImport("user32.dll")]
     public static extern bool ShutdownBlockReasonDestroy(IntPtr hWnd);

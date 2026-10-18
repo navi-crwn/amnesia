@@ -236,6 +236,8 @@ select.input{flex:0 0 auto;padding-right:28px}
 .chip .aicon{width:18px;height:18px;border:0;background:none;display:inline-grid;vertical-align:-4px;margin-right:6px}
 .chip .aicon img{width:16px;height:16px}
 .chip:has(.aicon)::before{content:none}
+/* v0.8.1: "(Local + Roaming)" on a chip that keeps both */
+.chip .meta{color:var(--muted);font-size:12px}
 .list.apps{max-height:340px}
 .list.health li,.list.lim li{font-family:var(--sans);font-size:14px;align-items:flex-start}
 .list.health .dot{width:10px;height:10px;margin-top:6px;box-shadow:none}

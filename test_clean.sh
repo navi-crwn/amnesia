@@ -224,4 +224,30 @@ if [ "$(uname)" != Darwin ]; then
 fi
 rm -f "$T/.amnesia/settings.conf" "$T/.amnesia/keeplock.sh"
 
+# ---------------- v5.23 ----------------
+# Claude di Keep List = chat Claude Code (~/.claude, ~/.claude.json, .backup) ikut disimpan
+cp "$T/.amnesia/keep.example.conf" "$T/keep.bak"
+printf 'Library/Application Support/Claude\n' >> "$T/.amnesia/keep.example.conf"
+mk "Library/Application Support/Claude/config.json"; mk ".claude/projects/p/chat.jsonl"; mk ".claude.json"; mk ".claude.json.backup"
+mk ".codex/x"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout --dry-run | grep -q "\.claude" \
+    && { echo "FAILED: dry-run lists Claude Code data although Claude is kept"; fail=1; }
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+here "Library/Application Support/Claude/config.json"; here ".claude/projects/p/chat.jsonl"; here ".claude.json"; here ".claude.json.backup"
+gone ".codex"
+grep -q "claude code data kept with Claude" "$T/.amnesia/trace.log" || { echo "FAILED: Claude Code keep not in trace.log"; fail=1; }
+grep -q "chat.jsonl\|\.claude\.json\|projects/p" "$T/.amnesia/trace.log" && { echo "FAILED: trace.log contains a file name"; fail=1; }
+cp "$T/keep.bak" "$T/.amnesia/keep.example.conf"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" logout >/dev/null 2>&1
+gone ".claude"; gone ".claude.json"; gone ".claude.json.backup"; gone "Library/Application Support/Claude"
+
+# salinan "sebelum restore" (Profile Vault) yang lolos dari logout dibuang saat login setelah 3 hari
+printf 'Library/Caches/Amnesia\n' >> "$T/.amnesia/keep.example.conf"
+mk "Library/Caches/Amnesia/before-restore/.claude.json"; mk "Library/Caches/Amnesia/after-restore/x"
+touch -t 202001010000 "$T/Library/Caches/Amnesia/before-restore"
+AMNESIA_HOME="$T" bash "$T/.amnesia/clean.sh" login >/dev/null 2>&1
+gone "Library/Caches/Amnesia/before-restore"; here "Library/Caches/Amnesia/after-restore/x"
+grep -q "old before-restore copy removed (3 days)" "$T/.amnesia/trace.log" || { echo "FAILED: 3-day removal not in trace.log"; fail=1; }
+cp "$T/keep.bak" "$T/.amnesia/keep.example.conf"
+
 [ $fail = 0 ] && echo "OK: all clean.sh tests passed" || exit 1

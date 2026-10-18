@@ -19,8 +19,13 @@ static class Guard
     /// <summary>True right after a panic/idle cleanup, so the sign out that follows does not clean twice.</summary>
     public static bool JustCleaned;
 
-    /// <summary>Normal sign out (the "Review and sign out" button). Windows asks every app; Amnesia cleans in WM_ENDSESSION.</summary>
-    public static void SignOut() => ExitWindowsEx(EWX_LOGOFF, 0);
+    /// <summary>Normal sign out (the "Review and sign out" button). Windows asks every app; Amnesia cleans while it asks.
+    /// v0.8.1: the list of what goes is made first (at most 15 s), so the sign out itself only has to move.</summary>
+    public static void SignOut()
+    {
+        Cleaner.PrepareLogout(wait: TimeSpan.FromSeconds(15));
+        ExitWindowsEx(EWX_LOGOFF, 0);
+    }
 
     // v0.5 (idea from Tails: pulling the USB stick shuts the computer down at once): shutting down needs this privilege
     [DllImport("advapi32.dll", SetLastError = true)] static extern bool OpenProcessToken(IntPtr process, uint access, out IntPtr token);
@@ -69,11 +74,16 @@ static class Guard
                 }
             }
             catch (Exception e) { AppInfo.Trace($"quick exit clean failed: {e.GetType().Name}"); }
-            if (shutdown) { ShutdownPrivilege(); if (ExitWindowsEx(EWX_SHUTDOWN | EWX_POWEROFF | EWX_FORCE, 0)) return; }
+            // v0.8.1: sign out right after the wipe; the Safe box is closed while Windows signs out (it took 4.6 s first,
+            // 18 s in all). Cut off? It lives in Keep (never wiped) and the next sign in closes it.
+            if (shutdown) { ShutdownPrivilege(); if (ExitWindowsEx(EWX_SHUTDOWN | EWX_POWEROFF | EWX_FORCE, 0)) { Cleaner.CloseSafe("quick exit"); return; } }
             bool ok = ExitWindowsEx(EWX_LOGOFF | EWX_FORCE, 0);
+            var asked = w.Elapsed;
             AppInfo.Trace($"sign out asked after {w.Elapsed.TotalSeconds:0.0} s ({(ok ? "ok" : "error " + Marshal.GetLastWin32Error())})");
-            // still here 8 s later: ask once more, the other way
-            Thread.Sleep(8000);
+            Cleaner.CloseSafe("quick exit");
+            // still here 8 s after asking: ask once more, the other way
+            var left = TimeSpan.FromSeconds(8) - (w.Elapsed - asked);
+            if (left > TimeSpan.Zero) Thread.Sleep(left);
             AppInfo.Trace("still signed in after 8 s: asking again");
             try { WTSLogoffSession(IntPtr.Zero, -1 /* this session */, false); } catch { }
             ExitWindowsEx(EWX_LOGOFF | EWX_FORCE, 0);

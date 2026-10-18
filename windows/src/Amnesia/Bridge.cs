@@ -15,7 +15,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
     static readonly HashSet<string> WhileLocked = new()
     {
         "info", "preview", "history", "encryption", "keepList", "vaultInfo", "backupInfo", "advInfo", "open", "openKeep",
-        "collectLog", "updateCheck", "signOut", "panicNow", "cancel", "labUnlock", "keepLockNow", "health", "safeInfo", "safeClose",
+        "collectLog", "updateCheck", "signOut", "panicNow", "cancel", "labUnlock", "keepLockNow", "health", "safeInfo", "safeClose", "startupState",
     };
 
     public async Task<string> HandleAsync(string json)
@@ -58,6 +58,9 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 "safeShow" => await Do(() => { if (Safe.IsOpen) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{Safe.OpenDir}\"") { UseShellExecute = true }); }),
                 "safeDelete" => await Task.Run(() => { KeepLock.With(() => Safe.Delete(S("password"))); return SafeInfo(); }),
                 "enableStartup" => await Do(Setup.EnableStartup, Info),
+                "keepStaleOpen" => await Do(() => KeepLock.ClearStale(S("password")), Info),
+                // v0.8.1: the open window looks again (focus, every 30 s): Task Manager may switch startup off meanwhile
+                "startupState" => await Task.Run(() => (JsonNode)new JsonObject { ["startupDisabled"] = Setup.RunningInstalled && Setup.CheckStartupOff(out _) }),
                 // Vault
                 "vaultInfo" => await Task.Run(VaultInfo),
                 "vaultCreate" => await Task.Run(() => { Vault.Create(S("password"), S("panic"), B("panicFull")); return VaultInfo(); }),
@@ -78,8 +81,9 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 "backupPick" => await BackupPick(),
                 // Advanced
                 "advInfo" => await Task.Run(AdvInfo),
-                "appsKeep" => await Do(() => Apps.Keep(S("id")), AdvInfo),
-                "appsKeepAll" => await Do(Apps.TakeBaseline, AdvInfo),
+                // v0.8.1: one line per app, so Keep gets every row of it (ids); Keep also adds its folders to the Keep List
+                "appsKeep" => await Do(() => Apps.Keep(arg?["ids"]?.AsArray().Select(x => x!.GetValue<string>()).ToList() is { Count: > 0 } ids ? ids : new List<string> { S("id") }), AdvInfo),
+                "appsKeepAll" => await Do(Apps.KeepAll, AdvInfo),
                 "appsUninstall" => await Do(() => Apps.RunUninstaller(S("id")), AdvInfo), // v0.7.1: waits, then the list is fresh
                 "usbSet" => await Do(() => { Settings.Set("USB_KEY", S("serial").Length > 0 ? S("serial") : null); Settings.Set("USB_KEY_NAME", S("name").Length > 0 ? S("name") : null); tray.Invoke(tray.Watcher.UsbChanged); }, AdvInfo),
                 "adminApply" => await AdminApply(arg),
@@ -163,14 +167,19 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
             ["usbAction"] = Settings.Get("USB_ACTION") ?? "signout",
             // v0.8
             ["openAtLogin"] = Setup.OpenAtLogin,
-            ["startupDisabled"] = Setup.RunningInstalled && Settings.Enabled && Setup.StartupDisabled,
+            ["startupDisabled"] = Setup.RunningInstalled && Setup.CheckStartupOff(out _),
             ["keepVm"] = Settings.Get("KEEP_VM") != "0",
             ["wipeStore"] = Settings.Get("WIPE_STORE") == "1",
             ["wipeCreds"] = Creds.On,
             ["keepLocked"] = KeepLock.On,
+            // v0.8.1: Keep still locked by an old version (the Keep lock itself is off)
+            ["keepStale"] = KeepStale(),
+            ["keepStalePw"] = KeepLock.StaleNeedsPassword,
             ["signedUpdates"] = Updater.Signed,
         };
     }
+
+    static bool KeepStale() { try { return KeepLock.Stale; } catch { return false; } }
 
     // ---------- settings switches (only these keys) ----------
     JsonNode Set(string key, JsonNode? value)
@@ -261,7 +270,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
             ["kept"] = new JsonArray(r.Kept.Select(k => (JsonNode)k!).ToArray()),
         };
         if (Apps.On)
-            o["apps"] = await Task.Run(() => new JsonArray(Apps.New().Where(a => a.Auto).Select(a => (JsonNode)new JsonObject { ["name"] = a.Name, ["kind"] = a.Kind }).ToArray()));
+            o["apps"] = await Task.Run(() => new JsonArray(Apps.NewGroups().Where(g => g.Items.Any(a => a.Auto)).Select(g => (JsonNode)new JsonObject { ["name"] = g.Name, ["kind"] = g.Items.First(a => a.Auto).Kind }).ToArray()));
         return o;
     }
 
@@ -272,6 +281,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
         ["dir"] = Safe.OpenDir,
         ["size"] = Safe.Exists ? new FileInfo(Safe.File_).Length : 0,
         ["min"] = Safe.MinPassword,
+        ["count"] = Safe.Count, // v0.8.1: the uninstall warning (-1 = not known yet)
     };
 
     /// <summary>v0.8: the app an item in "What gets wiped" belongs to (the review groups by it).</summary>
@@ -329,7 +339,14 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 var rel = $"{root}/{d.Name}";
                 if (skip.Contains(d.Name, StringComparer.OrdinalIgnoreCase) || paths.Any(p => Wild.Like(rel, p) || Wild.Like(rel, p + "/*"))) continue;
                 var app = Owner(rel);
-                sugg.Add(new JsonObject { ["name"] = app?.Name ?? d.Name, ["path"] = rel, ["icon"] = app?.Icon });
+                if (app == null && AppMatch.Technical(d.Name)) continue; // v0.8.1: Sentry, AMD_Common... are not apps
+                // v0.8.1: the same app in Local and Roaming is one chip that keeps both
+                if (sugg.OfType<JsonObject>().FirstOrDefault(o => string.Equals(o["name"]?.GetValue<string>(), app?.Name ?? d.Name, StringComparison.OrdinalIgnoreCase)) is { } same)
+                {
+                    same["paths"]!.AsArray().Add(rel);
+                    continue;
+                }
+                sugg.Add(new JsonObject { ["name"] = app?.Name ?? d.Name, ["path"] = rel, ["paths"] = new JsonArray(rel), ["icon"] = app?.Icon });
             }
         }
         // v0.7.1: Claude from the Microsoft Store keeps its data inside Packages (skipped above), not in Roaming\Claude
@@ -502,7 +519,14 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
         var adm = AdminTasks.Status();
         return new JsonObject
         {
-            ["apps"] = Apps.On ? new JsonArray(Apps.New().Select(a => (JsonNode)new JsonObject { ["id"] = a.Id, ["name"] = a.Name, ["kind"] = a.Kind, ["auto"] = a.Auto, ["canUninstall"] = a.Kind == "machine" && a.Uninstall != null }).ToArray()) : new JsonArray(),
+            // v0.8.1: one line per app (its uninstall entry, Start menu shortcut and registry key together)
+            ["apps"] = Apps.On ? new JsonArray(Apps.NewGroups().Select(g => (JsonNode)new JsonObject
+            {
+                ["id"] = g.Id, ["name"] = g.Name, ["kind"] = g.Items[0].Kind, ["auto"] = g.Items.Any(a => a.Auto),
+                ["ids"] = new JsonArray(g.Items.Select(a => (JsonNode)a.Id!).ToArray()),
+                ["kinds"] = new JsonArray(g.Items.Select(a => a.Kind).Distinct().Select(k => (JsonNode)k!).ToArray()),
+                ["canUninstall"] = g.Uninstaller != null, ["uninstallId"] = g.Uninstaller?.Id,
+            }).ToArray()) : new JsonArray(),
             ["usb"] = new JsonArray(Guard.UsbDrives().Select(d => (JsonNode)new JsonObject { ["root"] = d.root, ["label"] = d.label, ["serial"] = d.serial }).ToArray()),
             ["usbKey"] = Settings.Get("USB_KEY_NAME") ?? "",
             ["usbPresent"] = Guard.UsbKeyPresent(),

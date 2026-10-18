@@ -9,6 +9,8 @@
 //   --keep-check   v0.8, used by the uninstaller: when Keep is locked, asks the Keep password and opens it for good.
 //                  No password: Amnesia is still removed, Keep stays locked and you are told how to open it later.
 //                  Exit 0 = Keep is open (or was never locked), 2 = Keep stays locked.
+//   --safe-check   v0.8.1, used by the uninstaller: the closed Safe box still holds files? Asks whether to go on.
+//                  Exit 0 = go on, 1 = stop (you want to open the safe and move the files first).
 namespace Amnesia;
 
 static class Program
@@ -35,12 +37,25 @@ static class Program
         {
             ApplicationConfiguration.Initialize();
             if (!KeepLock.On) return 0;
+            int wrongTries = 0;
             string? pw = PinPrompt.Ask(null, Text2.KeepUninstallTitle, Text2.KeepUninstallAsk, digitsOnly: false,
-                check: p => Amnesia.Core.Pin.Verify(p, Settings.Get("KEEP_LOCK_PW")));
+                check: p => { bool ok = Amnesia.Core.Pin.Verify(p, Settings.Get("KEEP_LOCK_PW")); if (!ok) wrongTries++; return ok; });
+            // v0.8.1: a wrong password at uninstall is written down too (how often, never the password)
+            if (wrongTries > 0) AppInfo.Trace($"wrong keep password at uninstall ({wrongTries}x)");
             if (pw != null) { try { KeepLock.TurnOff(pw); return 0; } catch { } }
             AppInfo.Trace("uninstall without the Keep password: Keep stays locked");
             MessageBox.Show(Text2.KeepStaysLocked(Settings.KeepDir), "Amnesia", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return 2;
+        }
+        if (args.Contains("--safe-check"))
+        {
+            ApplicationConfiguration.Initialize();
+            if (!Amnesia.Core.Safe.Exists || Amnesia.Core.Safe.IsOpen) return 0; // open: the files are readable in Keep\Safe
+            int n = Amnesia.Core.Safe.Count;
+            if (n == 0) return 0;
+            bool go = MessageBox.Show(Text2.SafeUninstall(n), "Amnesia", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+            AppInfo.Trace(go ? "uninstall with files in the safe box: going on" : "uninstall stopped: the safe box still has files");
+            return go ? 0 : 1;
         }
         if (args.Contains("--off"))
         {

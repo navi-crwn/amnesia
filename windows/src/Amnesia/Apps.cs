@@ -7,12 +7,23 @@
 //   - for everyone (Program Files): need admin, so they are only listed, with an Uninstall button (Windows asks first).
 //   - v0.5: settings new programs wrote in your part of the registry (HKCU\Software\<name>) go too (idea from Pearcleaner
 //     and Bulk Crap Uninstaller). "Find leftovers" lists folders that uninstallers left behind.
+// v0.8.1: "Keep" also puts the app's program folder and data folders on the Keep List (Keep only wrote the app down,
+//   and the normal cleanup still wiped AppData\Local\Programs\<app>, leaving a broken app). Rows of one app are shown as
+//   one (Core\NewApps.cs), a registry key named by a GUID gets a real name, and an app that was only updated is not new.
+//   A new app's program folder now waits 3 days in the trash also when the normal cleanup takes it (NewFolders).
 using Amnesia.Core;
 using Microsoft.Win32;
 
 namespace Amnesia;
 
-sealed record NewApp(string Id, string Kind, string Name, bool Auto, string? Uninstall);
+sealed record NewApp(string Id, string Kind, string Name, bool Auto, string? Uninstall, string? Location = null, string? Publisher = null);
+
+/// <summary>v0.8.1: the rows of one app, shown as one line.</summary>
+sealed record NewAppGroup(string Name, List<NewApp> Items)
+{
+    public string Id => Items[0].Id;
+    public NewApp? Uninstaller => Items.FirstOrDefault(a => a.Kind == "machine" && a.Uninstall != null);
+}
 
 static class Apps
 {
@@ -39,7 +50,11 @@ static class Apps
                 using var s = k.OpenSubKey(sub);
                 var name = s?.GetValue("DisplayName") as string;
                 if (string.IsNullOrWhiteSpace(name) || s!.GetValue("SystemComponent") is int sc && sc == 1) continue;
-                all[$"{kind}:{sub}"] = new NewApp($"{kind}:{sub}", kind, name, kind == "user", s.GetValue("QuietUninstallString") as string ?? s.GetValue("UninstallString") as string);
+                var loc = s.GetValue("InstallLocation") as string;
+                if (string.IsNullOrWhiteSpace(loc) && s.GetValue("DisplayIcon") is string icon && icon.Length > 3)
+                    try { loc = Path.GetDirectoryName(Environment.ExpandEnvironmentVariables(icon.Split(',')[0].Trim().Trim('"'))); } catch { }
+                all[$"{kind}:{sub}"] = new NewApp($"{kind}:{sub}", kind, name, kind == "user", s.GetValue("QuietUninstallString") as string ?? s.GetValue("UninstallString") as string,
+                    loc, s.GetValue("Publisher") as string);
             }
         }
         FromUninstall(Registry.CurrentUser, Uninstall, "user");
@@ -55,7 +70,20 @@ static class Apps
         // v0.5: top-level keys under HKCU\Software (where programs keep their settings and recent files)
         using (var sw = Registry.CurrentUser.OpenSubKey("Software"))
             foreach (var n in sw?.GetSubKeyNames() ?? Array.Empty<string>())
-                if (!RegNew.Skip(n)) all[$"reg:{n}"] = new NewApp($"reg:{n}", "reg", n, true, null);
+            {
+                if (RegNew.Skip(n)) continue;
+                string name = n; string? loc = null;
+                // v0.8.1: a key named only by a GUID: its name and program folder come from its own values
+                if (NewApps.IsGuid(n))
+                    try
+                    {
+                        using var g = sw!.OpenSubKey(n);
+                        loc = g?.GetValue("InstallLocation") as string;
+                        name = NewApps.RegName(n, g?.GetValue("ShortcutName") as string, g?.GetValue("DisplayName") as string, loc);
+                    }
+                    catch { }
+                all[$"reg:{n}"] = new NewApp($"reg:{n}", "reg", name, true, null, loc);
+            }
         using (var run = Registry.CurrentUser.OpenSubKey(RunKey))
             foreach (var v in run?.GetValueNames() ?? Array.Empty<string>())
                 all[$"run:{v}"] = new NewApp($"run:{v}", "run", v, true, null);
@@ -95,7 +123,7 @@ static class Apps
     }
     const string RegMark = "reg:*listed"; // "registry keys are on this list" (v0.5)
 
-    /// <summary>Writes down what is installed now (Turn On, switching the feature on, "Keep all").</summary>
+    /// <summary>Writes down what is installed now (Turn On, switching the feature on).</summary>
     public static void TakeBaseline()
     {
         Directory.CreateDirectory(Core.Home.Dir);
@@ -103,25 +131,86 @@ static class Apps
         AppInfo.Trace("app list written down");
     }
 
-    /// <summary>Programs that are not on the list (the Advanced page and the preview show these).</summary>
-    public static List<NewApp> New()
+    /// <summary>Programs that are not on the list (the Advanced page and the preview show these). v0.8.1: an app that
+    /// was only updated (same name, other version) is not new.</summary>
+    public static List<NewApp> New() => NewIn(Current(withStore: true));
+
+    static List<NewApp> NewIn(Dictionary<string, NewApp> current)
     {
         if (!HasBaseline) return new List<NewApp>();
         var base_ = Baseline();
-        return Current(withStore: true).Values.Where(a => !base_.Contains(a.Id)).OrderBy(a => a.Kind).ThenBy(a => a.Name).ToList();
+        var stems = NewApps.Stems(base_);
+        return current.Values.Where(a => NewApps.IsNew(a.Id, base_, stems)).OrderBy(a => a.Kind).ThenBy(a => a.Name).ToList();
     }
 
-    /// <summary>"Keep" next to a new program: it joins the list and is never removed.</summary>
-    public static void Keep(string id)
+    /// <summary>v0.8.1: the new programs, one line per app (Start menu shortcut, uninstall entry and registry key together).</summary>
+    public static List<NewAppGroup> NewGroups()
+    {
+        var list = New();
+        var byId = list.ToDictionary(a => a.Id, StringComparer.OrdinalIgnoreCase);
+        return NewApps.Group(list.Select(a => new AppRow(a.Id, a.Kind, a.Name, a.Location)))
+            .Select(g => new NewAppGroup(NewApps.GroupName(g), g.Select(r => byId[r.Id]).OrderBy(a => KindOrder(a.Kind)).ToList()))
+            .OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    static int KindOrder(string kind) => kind switch { "user" => 0, "machine" => 1, "appx" => 2, "start" => 3, "run" => 4, _ => 5 };
+
+    /// <summary>"Keep" next to a new program: it joins the list and is never removed. v0.8.1: ids = every row of the app
+    /// (one line on the page), and its program folder and data folders go on the Keep List so the cleanup leaves them.</summary>
+    public static void Keep(IEnumerable<string> ids) => KeepMany(ids, "keep");
+
+    /// <summary>"Keep all of these": every new program, with its folders (v0.8.1: before, only the list was written again).</summary>
+    public static void KeepAll() => KeepMany(null, "keep all");
+
+    static void KeepMany(IEnumerable<string>? ids, string why)
     {
         var b = Baseline();
-        b.Add(id);
-        // keeping a program keeps its Start menu shortcut and autostart entry too
-        var app = Current(withStore: false).GetValueOrDefault(id);
-        if (app != null)
-            foreach (var other in Current(withStore: false).Values.Where(o => o.Kind is "start" or "run" or "reg" && !b.Contains(o.Id) && (Similar(o.Name, app.Name) || Similar(app.Name, o.Name))))
-                b.Add(other.Id);
+        var current = Current(withStore: true);
+        var news = NewIn(current);
+        var chosen = ids == null ? news : ids.Select(i => current.GetValueOrDefault(i)).Where(a => a != null).Select(a => a!).ToList();
+        // the rest of the app's rows (same group) and, as before, its Start menu shortcut, autostart entry and settings
+        var groups = NewApps.Group(news.Select(a => new AppRow(a.Id, a.Kind, a.Name, a.Location)));
+        var all = new List<NewApp>(chosen);
+        foreach (var app in chosen)
+        {
+            foreach (var g in groups.Where(g => g.Any(r => r.Id.Equals(app.Id, StringComparison.OrdinalIgnoreCase))))
+                foreach (var r in g) if (current.TryGetValue(r.Id, out var o) && !all.Contains(o)) all.Add(o);
+            foreach (var other in current.Values.Where(o => o.Kind is "start" or "run" or "reg" && !b.Contains(o.Id) && !all.Contains(o) && (Similar(o.Name, app.Name) || Similar(app.Name, o.Name))))
+                all.Add(other);
+        }
+        foreach (var a in all) b.Add(a.Id);
+        if (ids == null) foreach (var k in current.Keys) b.Add(k);
         System.IO.File.WriteAllLines(File, b.OrderBy(k => k));
+        // the folders, so the next cleanup does not break the app
+        int folders = 0, apps = 0;
+        try
+        {
+            var cands = AppCatalog.Candidates();
+            foreach (var g in NewApps.Group(all.Select(a => new AppRow(a.Id, a.Kind, a.Name, a.Location))))
+            {
+                var rows = g.Select(r => all.First(a => a.Id == r.Id)).ToList();
+                var name = NewApps.GroupName(g);
+                var pub = rows.Select(a => a.Publisher).FirstOrDefault(p => !string.IsNullOrEmpty(p));
+                foreach (var p in NewApps.KeepPaths(name, pub, rows.Select(a => a.Location), cands, Core.Home.User))
+                    if (KeepList.Add(p) != null) folders++;
+                apps++;
+            }
+        }
+        catch (Exception e) { AppInfo.Trace($"keep new app: folders not added ({e.GetType().Name})"); }
+        AppInfo.Trace(why == "keep all" ? $"keep all: {apps} new app(s) kept, {folders} folder(s) added to the Keep List" : $"kept new app: {folders} folder(s) added to the Keep List");
+        Core.Home.History("appkeep", $"{apps} {folders}");
+    }
+
+    /// <summary>v0.8.1: program folders of the new apps (just for you, inside the user folder). The cleanup moves them to
+    /// the trash for 3 days instead of the normal trash (it took them before "Remove new apps" could). Registry only.</summary>
+    public static List<string> NewFolders()
+    {
+        if (!On || !HasBaseline) return new List<string>();
+        var home = Core.Home.User + "\\";
+        return NewIn(Current(withStore: false)).Where(a => a.Kind is "user" or "reg" && a.Location is { Length: > 3 })
+            .Select(a => a.Location!.Trim().Trim('"').TrimEnd('\\'))
+            .Where(l => l.StartsWith(home, StringComparison.OrdinalIgnoreCase) && !l.Contains(@"\Programs\Amnesia", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     static bool Similar(string a, string b)
@@ -134,10 +223,9 @@ static class Apps
     public static void RemoveNew(string mode)
     {
         if (!On || !HasBaseline || Core.Home.Test) return;
-        var base_ = Baseline();
         var rules = Cleaner.Rules();
         int n = 0;
-        foreach (var a in Current(withStore: mode != "logout").Values.Where(a => a.Auto && !base_.Contains(a.Id)))
+        foreach (var a in NewIn(Current(withStore: mode != "logout")).Where(a => a.Auto))
         {
             try
             {
@@ -154,9 +242,10 @@ static class Apps
                             if (!string.IsNullOrEmpty(loc) && loc.StartsWith(home + "\\", StringComparison.OrdinalIgnoreCase) && Directory.Exists(loc)
                                 && !loc.Contains(@"\Programs\Amnesia", StringComparison.OrdinalIgnoreCase))
                             {
+                                // v0.8.1: no app names in trace.log
                                 if (rules.MayRemoveAppFolder(loc.TrimEnd('\\')))
-                                    AppInfo.Trace(CleanEngine.ToTrash(loc.TrimEnd('\\')) ? $"remove new app: {a.Name} folder moved to the trash (3 days)" : $"remove new app: {a.Name} folder could not be moved, left alone");
-                                else AppInfo.Trace($"remove new app: {a.Name} folder left alone (kept or shared)");
+                                    AppInfo.Trace(CleanEngine.ToTrash(loc.TrimEnd('\\')) ? "remove new app: folder moved to the trash (3 days)" : "remove new app: folder could not be moved, left alone");
+                                else AppInfo.Trace("remove new app: folder left alone (kept or shared)");
                             }
                         }
                         Registry.CurrentUser.DeleteSubKeyTree($@"{Uninstall}\{id}", false);

@@ -7,6 +7,49 @@ Sedikit cerita: tanggal 6 Oktober 2026 Amnesia masih berupa beberapa skrip. Dua 
 
 Nomor versi kamu ada di samping judul Amnesia dan di bagian bawah panel menu bar.
 
+## v5.23.0 · Claude di Keep List benar-benar tersimpan, restore lebih aman, Brankas tertutup dengan benar (17 Okt 2026)
+
+**Matikan** Amnesia dulu sebelum memasang, lalu nyalakan lagi.
+
+Semua di sini hasil tes di Mac sungguhan tanggal 17 Okt. Bug dari tes sebelumnya (folder symlink, nama beraksen, hapus gagal dihitung bersih) semuanya lulus kali ini.
+
+### Diperbaiki (penting)
+- **Claude ada di Keep List, tapi chat Claude Code tetap hilang.** Keep List cuma menyimpan app Claude Desktop. Chat dari tab Code ada di `~/.claude` dan `~/.claude.json`, jadi terhapus setiap logout dan baru kembali lewat restore vault. Sekarang menyimpan Claude ikut menyimpan keduanya. Pilih App menambahkannya saat kamu menyimpan Claude, dan pembersihan juga menjaganya sendiri selama Claude ada di daftar kamu.
+- **Restore bisa memundurkan data kamu.** Restore selalu memasang snapshot, walaupun data di Mac lebih baru. Sekarang:
+  - yang ada di Keep List tidak pernah ditimpa restore
+  - kalau data sebuah app lebih baru dari snapshot-nya, kamu ditanya dulu ("Tetap Restore" atau Batal)
+  - setelah restore ada tombol **Kembalikan data sebelum restore** di halaman Vault, sampai logout berikutnya
+- **Brankas tidak tertutup saat logout** ("box close failed"), baru tertutup saat login. Sekarang Amnesia mencoba beberapa kali, mencari app yang masih memakainya (hanya dihitung, tanpa nama), lalu menutupnya paksa. Kalau tetap gagal, kamu diberi tahu setelah login dan ada peringatan di Cek kesehatan.
+
+### Diperbaiki
+- **Snapshot otomatis saat logout tidak dilewati lagi** kalau kamu baru snapshot kurang dari 10 menit sebelumnya. Dulu, pekerjaan sesudah snapshot manual bisa hilang. App yang tidak berubah tetap dilewati, dan snapshot yang macet tidak bisa menahan pembersihan.
+- **App dibuka lagi setelah Snapshot Sekarang.** App yang tadinya terbuka dan ditutup untuk snapshot dibuka lagi sesudahnya, sama seperti setelah restore.
+- **Cek kesehatan** sekarang juga menampilkan Akses Disk Penuh, folder symlink dan mesin virtual saat semuanya aman, dan peringatan kalau Brankas gagal ditutup. "1 things" sekarang "1 thing".
+- **Salinan "sebelum restore"** (bisa beberapa GB) tidak lagi muncul sebagai file besar yang menakutkan. Cek kesehatan menjelaskan isinya dan kapan hilang, dan salinan yang lebih dari 3 hari dihapus.
+- **Kunci Keep:** teks Pengaturan dan halaman Batasan sekarang bilang terus terang: nama file dan folder langsung di dalam Keep tetap terlihat saat terkunci.
+
+## Windows v0.8.1 · Sign out langsung bersih, "Simpan" di app baru benar-benar menyimpan (17 Okt 2026)
+
+Semua di sini hasil tes di laptop Windows 11 sungguhan tanggal 17 Okt.
+
+### Diperbaiki (penting)
+- **Sign out biasa masih baru bersih saat sign in berikutnya.** Menutup brankas dan membuat daftar menghabiskan beberapa detik yang diberi Windows, jadi pembersihan hampir tidak sempat jalan. Sekarang Amnesia membersihkan duluan, tepat saat Windows bertanya "boleh sign out?", menampilkan "Amnesia is cleaning up..." selama bekerja, lalu menutup brankas sesudahnya (brankas ada di Keep, jadi tidak pernah dihapus). Satu konsekuensi: kalau kamu membatalkan sign out setelah itu, pembersihan sudah terjadi, sama seperti "Bersihkan sekarang".
+- **"Simpan" di daftar app baru tidak menyimpan app-nya.** Kamu tekan Simpan, tapi folder program app di AppData tetap terhapus saat sign out, app jadi rusak. Simpan sekarang juga memasukkan folder program dan folder data app itu ke Keep List.
+- **App baru terhapus permanen, bukan menunggu 3 hari.** Pembersihan biasa sampai ke foldernya duluan. Sekarang folder app baru selalu masuk tempat sampah Amnesia dan menunggu 3 hari.
+- **Kartu brankas bertuliskan "Windows sekali pakai".** Teksnya tertukar dengan Windows Sandbox. Kedua kartu punya teks dan tombolnya sendiri lagi.
+
+### Diperbaiki
+- **Tombol panik lebih cepat** kalau brankas besar: Amnesia minta sign out langsung setelah membersihkan, dan menutup brankas selagi Windows sign out.
+- **Uninstall memberi peringatan** kalau brankas masih berisi file. Juga tidak lagi menyimpan salinan kedua brankas yang sama besar.
+- **Daftar app baru lebih jelas:** satu app satu baris (tidak ada lagi angka registry seperti "121a0be4-…"), dan app yang cuma di-update (nomor versi baru) tidak dianggap app baru lagi. "Simpan semua" dicatat di log dan Riwayat.
+- **Peringatan startup** sekarang muncul di jendela yang sedang terbuka, dan dicatat di trace.log. Password Keep yang salah saat uninstall juga dicatat (tidak pernah password-nya).
+- **Saran Keep List:** satu app dengan folder di Local dan Roaming jadi satu pilihan yang menyimpan keduanya. Folder teknis seperti Sentry atau folder crash tidak disarankan lagi.
+- **Keep masih terkunci dari versi lama:** Amnesia melihatnya dan menawarkan untuk membukanya dari halaman utama dan Cek kesehatan.
+- Tes otomatis: 294 (dulu 273).
+
+### Masih perlu dites di PC sungguhan
+- Sign out biasa dengan banyak file bersih sebelum layar sign in.
+
 ## v5.22.0 · Update bertanda tangan, aman untuk iCloud, Kunci Keep, Cek kesehatan (17 Okt 2026)
 
 **Matikan** Amnesia dulu sebelum memasang, lalu nyalakan lagi.

@@ -34,7 +34,10 @@ static class Health
         try { clouds = Cleaner.CloudRoots().Select(p => Path.GetFileName(p.TrimEnd('\\'))).Where(n => n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList(); } catch { }
         Add("cloud", "info", string.Join(", ", clouds));
         Add("vm", Settings.Get("KEEP_VM") == "0" ? "warn" : "ok");
-        Add("keepLock", KeepLock.On ? "ok" : "info");
+        // v0.8.1: Keep still locked by an old version while the Keep lock is off
+        bool stale = false;
+        try { stale = KeepLock.Stale; } catch { }
+        Add("keepLock", stale ? "bad" : KeepLock.On ? "ok" : "info");
         // vault: when was the newest snapshot
         if (!Vault.Exists) Add("vault", "info");
         else

@@ -528,15 +528,20 @@ try
         Check(Safe.Exists && Safe.IsOpen, "a new safe starts open (Keep\\Safe)");
         Make("Keep/Safe/passport.pdf"); Make("Keep/Safe/deep/notes.txt");
         Check(Safe.Close("test") == 2 && !There("Keep/Safe") && Safe.Exists, "closing packs 2 files and deletes the open copy");
+        Check(!File.Exists(Safe.File_ + ".prev"), "v0.8.1: no second full copy (safe.ams.prev) after a good close");
+        Check(Safe.Count == 2, "v0.8.1: the closed safe knows it holds 2 files (for the uninstall warning)");
         Check(!File.ReadAllText(Safe.File_).Contains("passport"), "closed safe is locked (no readable names)");
         try { Safe.Open("wrong wrong wrong"); Check(false, "wrong safe password"); } catch (VaultError e) { Check(e.Code == "wrong", "wrong safe password: nothing opened"); }
         Check(!There("Keep/Safe"), "...and nothing unpacked");
         Check(Safe.Open("correct horse battery safe") == 2 && There("Keep/Safe/passport.pdf") && There("Keep/Safe/deep/notes.txt"), "the right password opens it again");
         Check(!Directory.EnumerateFiles(Path.Combine(fake, ".amnesia", "safe"), ".open-*").Any(), "no unpacked zip left over");
+        Make("Keep/Safe/third.txt");
+        Check(Safe.Count == 3, "v0.8.1: an open safe counts what is in Keep\\Safe now");
         Check(Del(Dry()).All(d => !d.StartsWith("Keep")), "an open safe is never wiped (it is in Keep)");
         Safe.Close("test");
         Safe.Delete("correct horse battery safe");
         Check(!Safe.Exists && !There(".amnesia/safe"), "a deleted safe is gone");
+        Check(Safe.Count == 0 && Conf.Get("SAFE_FILES") == null, "v0.8.1: and its file count too");
     }
 
     Console.WriteLine("v0.8 Store app data (opt-in):");
@@ -574,6 +579,56 @@ try
     Check(paused8.Run("logout", false).Skipped == "paused" && There("Downloads/paused.txt"), "a prepared list still obeys Pause");
     File.Delete(Path.Combine(fake, ".amnesia/pause_once"));
     File.WriteAllLines(Conf2, new[] { ".ssh" });
+
+    Console.WriteLine("v0.8.1 sign out order (your own folders first, Temp last):");
+    var ord = CleanEngine.Order(new[] { new CleanItem(@"AppData\Local\Temp\a.tmp", "file"), new CleanItem("Registry: x", "trace"), new CleanItem(@"AppData\Roaming\Chat", "folder"),
+        new CleanItem(@"Downloads\movie.mp4", "file"), new CleanItem(@"Documents\Projects", "folder"), new CleanItem(@"AppData\Local\Temp\big", "folder") }).Select(i => i.Path).ToList();
+    Check(ord.SequenceEqual(new[] { @"Documents\Projects", @"Downloads\movie.mp4", @"AppData\Roaming\Chat", @"AppData\Local\Temp\big", @"AppData\Local\Temp\a.tmp", "Registry: x" }), "own folders, then app data, then Temp; folders before files");
+    Make("Downloads/o1.txt"); Make("AppData/Local/Temp/o2.tmp");
+    var listed = new CleanEngine().Run("logout", true).Items.Select(i => i.Path).ToList();
+    Check(listed.IndexOf(@"Downloads\o1.txt") >= 0 && listed.IndexOf(@"Downloads\o1.txt") < listed.IndexOf(@"AppData\Local\Temp\o2.tmp"), "the real list is in that order");
+
+    Console.WriteLine("v0.8.1 a new app's program folder waits 3 days in the trash (ZZTesApp test):");
+    foreach (var d in Directory.Exists(Path.Combine(fake, ".amnesia-trash")) ? Directory.GetDirectories(Path.Combine(fake, ".amnesia-trash")) : Array.Empty<string>()) Directory.Delete(d, true);
+    Make("AppData/Local/ZZTesApp/app.exe"); Make("AppData/Local/Programs/antigravity/Antigravity.exe"); Make("AppData/Roaming/OldApp/x"); Make("AppData/Local/Programs/Other/x.exe");
+    var withApps = new CleanEngine { Fast = true, NewAppFolders = () => new[] { F("AppData/Local/ZZTesApp"), F("AppData/Local/Programs/antigravity") + "/", Path.GetTempPath(), F("AppData"), F("AppData/Local"), F("AppData/Local/Programs") } };
+    var r81 = withApps.Run("logout", false);
+    var appTrash = Directory.GetDirectories(Path.Combine(fake, ".amnesia-trash")).Where(d => d.EndsWith("-apps")).ToList();
+    Check(r81.Skipped == null && !There("AppData/Local/ZZTesApp") && appTrash.Any(d => File.Exists(Path.Combine(d, "AppData", "Local", "ZZTesApp", "app.exe"))), "ZZTesApp went to the 3-day trash, not the normal one");
+    Check(appTrash.Any(d => File.Exists(Path.Combine(d, "AppData", "Local", "Programs", "antigravity", "Antigravity.exe"))), "an app in AppData\\Local\\Programs too");
+    Check(!There("AppData/Roaming/OldApp") && !appTrash.Any(d => Directory.Exists(Path.Combine(d, "AppData", "Roaming", "OldApp"))), "other app data goes to the normal trash");
+    Check(!There("AppData/Local/Programs/Other") && !appTrash.Any(d => Directory.Exists(Path.Combine(d, "AppData", "Local", "Programs", "Other"))), "a shared folder (Programs) as program folder changes nothing");
+    var trace81 = File.ReadAllText(Path.Combine(fake, ".amnesia/trace.log"));
+    Check(trace81.Contains("new app folders moved to the trash for 3 days: 2") && !trace81.Contains("ZZTesApp"), "trace.log says so, without names");
+    Real("login");
+    Check(appTrash.All(Directory.Exists) && !Directory.GetDirectories(Path.Combine(fake, ".amnesia-trash")).Any(d => !d.EndsWith("-apps")), "the sign in check empties the normal trash and keeps these 3 days");
+
+    Console.WriteLine("v0.8.1 new apps list:");
+    Check(NewApps.BaseName("Surfshark 6.20.0999") == "Surfshark" && NewApps.BaseName("Antigravity 2.24.0") == "Antigravity" && NewApps.BaseName("7-Zip 24.08 (x64)") == "7-Zip" && NewApps.BaseName("Notepad++") == "Notepad++", "the version is not part of the name");
+    var bl = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "machine:Surfshark 6.13.0999", "user:Discord", "start:Discord.lnk", "reg:*listed" };
+    Check(!NewApps.IsNew("machine:Surfshark 6.20.0999", bl) && !NewApps.IsNew("user:Discord", bl), "an app that was only updated is not new (Surfshark 6.13 to 6.20)");
+    Check(NewApps.IsNew("user:Antigravity 2.24.0", bl) && NewApps.IsNew("machine:Surfshark Helper 1.0", bl) && NewApps.IsNew("user:Surfshark 6.20.0999", bl), "a really new app is new (other name or other kind)");
+    var guid = "121a0be4-63bd-531e-acf8-fc3924c7e984";
+    var loc81 = @"C:\Users\x\AppData\Local\Programs\antigravity";
+    Check(NewApps.IsGuid(guid) && NewApps.RegName(guid, "Antigravity", null, loc81) == "Antigravity" && NewApps.RegName(guid, null, null, loc81 + "\\") == "antigravity"
+          && NewApps.RegName("Discord", "Other", null, null) == "Discord" && NewApps.RegName(guid, null, null, null) == guid, "a registry key named by a GUID gets a real name");
+    var groups81 = NewApps.Group(new[]
+    {
+        new AppRow("start:Antigravity.lnk", "start", "Antigravity", null), new AppRow("user:{X}_is1", "user", "Antigravity 2.24.0", loc81),
+        new AppRow("reg:" + guid, "reg", "Antigravity", loc81 + "\\"), new AppRow("user:Discord", "user", "Discord", null),
+        new AppRow("machine:Microsoft Teams", "machine", "Microsoft Teams", null), new AppRow("machine:Microsoft Edge", "machine", "Microsoft Edge", null),
+        new AppRow("start:Microsoft Teams.lnk", "start", "Microsoft Teams", null),
+    });
+    var ag = groups81.FirstOrDefault(g => g.Any(r => r.Id == "start:Antigravity.lnk"));
+    Check(ag != null && ag.Count == 3 && NewApps.GroupName(ag) == "Antigravity 2.24.0", "Antigravity: 3 rows, one line, named after its uninstall entry");
+    Check(groups81.Count == 4 && groups81.Any(g => g.Count == 2 && g.All(r => r.Name == "Microsoft Teams")), "Teams and Edge stay two apps; Teams' shortcut joins Teams");
+    var home81 = OperatingSystem.IsWindows() ? @"C:\Users\x" : "/home/x";
+    string H81(string rel) => home81 + (OperatingSystem.IsWindows() ? "\\" + rel.Replace('/', '\\') : "/" + rel);
+    var kp = NewApps.KeepPaths("Antigravity 2.24.0", "Google", new[] { H81("AppData/Local/Programs/antigravity"), null, H81("AppData/Local/Programs"), @"D:\Apps\Antigravity", H81("AppData/Local/Programs/Amnesia") },
+        new[] { "AppData/Roaming/Antigravity", "AppData/Local/Programs", "AppData/Roaming/Code", "AppData/Local/Programs/antigravity" }, home81);
+    Check(kp.SequenceEqual(new[] { "AppData/Local/Programs/antigravity", "AppData/Roaming/Antigravity" }), "Keep on a new app keeps its program folder and its data folder");
+    Check(NewApps.KeepPaths("Tool", null, new[] { H81("AppData/Local") }, Array.Empty<string>(), home81).Count == 0, "...never a whole AppData folder");
+    Check(AppMatch.Technical("Sentry") && AppMatch.Technical("AMD_Common") && AppMatch.Technical("CrashDumps") && !AppMatch.Technical("Surfshark") && !AppMatch.Technical("discord"), "Keep List chips: technical folders are not suggested as apps");
 
     Console.WriteLine("Doomsday:");
     try { Vault.Restore("wrong password 1"); } catch (VaultError) { }

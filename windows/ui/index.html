@@ -52,6 +52,16 @@
       <p class="muted" id="suMsg" role="status"></p>
     </section>
 
+    <section class="card alert" id="keepStaleCard" hidden>
+      <h2 data-t="ksTitle"></h2>
+      <p data-t="ksText"></p>
+      <div class="row">
+        <input class="input" type="password" id="ksPw" data-ph="ksPw" autocomplete="current-password" hidden>
+        <button class="btn" id="ksOpen" data-t="ksOpen"></button>
+      </div>
+      <p class="muted" id="ksMsg" role="status"></p>
+    </section>
+
     <section class="card alert" id="blockedCard" hidden>
       <h2 data-t="blockedTitle"></h2>
       <p id="blockedText"></p>
@@ -551,18 +561,18 @@
       <p class="muted" id="loMsg" role="status"></p>
     </section>
     <section class="card">
-      <h2 data-t="sbTitle"></h2>
-      <p class="muted" data-t="sbText"></p>
-      <div id="sbReady">
-        <label class="check"><input type="checkbox" id="sbKeep"> <span data-t="sbKeep"></span></label>
-        <label class="check"><input type="checkbox" id="sbNet" checked> <span data-t="sbNet"></span></label>
-        <div class="row"><button class="btn ghost" id="sbOpen" data-t="sbOpen"></button></div>
+      <h2 data-t="sxTitle"></h2>
+      <p class="muted" data-t="sxText"></p>
+      <div id="sxReady">
+        <label class="check"><input type="checkbox" id="sxKeep"> <span data-t="sxKeep"></span></label>
+        <label class="check"><input type="checkbox" id="sxNet" checked> <span data-t="sxNet"></span></label>
+        <div class="row"><button class="btn ghost" id="sxOpen" data-t="sxOpen"></button></div>
       </div>
-      <div id="sbMissing" hidden>
-        <p class="muted small" data-t="sbMissing"></p>
-        <div class="row"><button class="btn ghost small" data-link="features" data-t="sbFeatures"></button></div>
+      <div id="sxMissing" hidden>
+        <p class="muted small" data-t="sxMissing"></p>
+        <div class="row"><button class="btn ghost small" data-link="features" data-t="sxFeatures"></button></div>
       </div>
-      <p class="muted" id="sbMsg" role="status"></p>
+      <p class="muted" id="sxMsg" role="status"></p>
     </section>
     </div>
     <div class="sgroup" id="gAdvLocks">

@@ -162,9 +162,15 @@ static class Cleaner
     /// <summary>v0.8: the rules of what is protected (Keep, Keep List, cloud, virtual machines), for "Remove new apps".</summary>
     public static CleanEngine Rules() => new() { CloudRoots = CloudRoots };
 
-    /// <summary>v0.8: an open Safe box is packed and locked again (sign out, quick exit, and at sign in after a crash).</summary>
+    static int closingSafe;
+
+    /// <summary>v0.8: an open Safe box is packed and locked again (sign out, quick exit, and at sign in after a crash).
+    /// v0.8.1: only one close at a time (a quick exit closes it while Windows signs out, and the sign out may ask too).
+    /// At sign out it comes AFTER the wipe: the open copy is in Keep, which is never wiped, and packing a big safe ate
+    /// the few seconds Windows gave (the wipe then never ran). Cut off? The next start or sign in closes it.</summary>
     public static void CloseSafe(string why)
     {
+        if (Interlocked.Exchange(ref closingSafe, 1) == 1) { AppInfo.Trace($"safe box is already being closed ({why})"); return; }
         try
         {
             if (!Safe.IsOpen) return;
@@ -173,6 +179,7 @@ static class Cleaner
             AppInfo.Trace($"safe box closed at {why}: {n} file(s) in {t.Elapsed.TotalSeconds:0.0} s");
         }
         catch (Exception e) { AppInfo.Trace($"safe box could not be closed ({why}): {e.GetType().Name}. The open copy stays in Keep\\Safe."); }
+        finally { closingSafe = 0; }
     }
 
     static CleanEngine Engine(bool explorerLiveOk = false, bool fast = false) => new()
@@ -206,6 +213,8 @@ static class Cleaner
         },
         // v0.5 Extra cleaning list (Winapp2): its files in the folders that stay
         ExtraTraces = ok => Extra.Plan(ok)?.Files ?? new List<string>(),
+        // v0.8.1: a new app's program folder goes to the trash for 3 days, as "Remove new apps" promises
+        NewAppFolders = Apps.NewFolders,
     };
 
     /// <summary>"Show preview": what WOULD be deleted. Touches nothing.</summary>
@@ -214,12 +223,13 @@ static class Cleaner
     // v0.8: the sign out list, made while Windows asks "may I end the session?"
     static Task<CleanEngine>? ready;
 
-    /// <summary>v0.8 (sign out did not always clean): makes the list in the background at WM_QUERYENDSESSION, so in
-    /// WM_ENDSESSION (the few seconds Windows really waits) only the moving is left. Touches nothing.</summary>
-    public static void PrepareLogout()
+    /// <summary>v0.8 (sign out did not always clean): makes the list in the background, so at sign out only the moving
+    /// is left. Touches nothing. v0.8.1: made by "Review and sign out" before it asks Windows (wait: at most that long).</summary>
+    public static void PrepareLogout(TimeSpan? wait = null)
     {
-        if (!Settings.Enabled || Settings.Paused || ready is { IsCompleted: false }) return;
-        ready = Task.Run(() =>
+        if (!Settings.Enabled || Settings.Paused) return;
+        if (ready is { IsCompleted: false }) { try { if (wait != null) ready.Wait(wait.Value); } catch { } return; }
+        var job = ready = Task.Run(() =>
         {
             var t = System.Diagnostics.Stopwatch.StartNew();
             var e = Engine(explorerLiveOk: true, fast: true);
@@ -227,6 +237,7 @@ static class Cleaner
             AppInfo.Trace($"sign out list ready: {e.Planned} item(s) in {t.Elapsed.TotalSeconds:0.0} s");
             return e;
         });
+        try { if (wait != null) job.Wait(wait.Value); } catch { }
     }
 
     /// <summary>The real cleanup (sign out / sign in / panic). The engine itself checks that Amnesia is on and not paused.
@@ -234,7 +245,8 @@ static class Cleaner
     /// v0.8: sign out and panic don't count sizes (fast), and sign out uses the list made a moment before.</summary>
     public static CleanResult Run(string mode, bool endSession = false)
     {
-        if (mode is "logout" or "login") CloseSafe(mode);
+        // v0.8.1: at sign out the Safe box is closed after the wipe (by the caller), never before it
+        if (mode == "login") CloseSafe(mode);
         bool liveOk = mode == "logout" && (endSession || !ExplorerRunning());
         if (mode == "logout" && !liveOk) AppInfo.Trace("Explorer still runs: its caches wait for the next sign out");
         CleanEngine? e = null;

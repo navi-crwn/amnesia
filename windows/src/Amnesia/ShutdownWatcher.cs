@@ -21,6 +21,14 @@
 // snapshot is stopped, so WM_ENDSESSION only has to move. Every step writes its time to trace.log. After a panic, the
 // sign out that follows does a quick second pass (files apps had open are free then). The USB key waits a moment and
 // looks again before it acts (a USB stick can "disappear" for a second when the laptop wakes up).
+// v0.8.1: a real Windows 11 test still cleaned only at the next sign in: WM_ENDSESSION gave about 5 seconds, the Safe box
+// (165 MB) took 4.4 of them and Windows ended Amnesia right after the wipe started. "Amnesia is cleaning up..." was never
+// shown, because Windows only shows it (and waits) for an app that is still answering "may I end the session?". So the
+// wipe now runs right there, in WM_QUERYENDSESSION, with the reason set: Windows shows it after a few seconds and waits
+// until Amnesia says yes (you can still press "Sign out anyway"). The Safe box is closed after the wipe, and the Keep
+// lock after that. WM_ENDSESSION then has nothing left to do. Trade-off: if another app (or you) cancels the sign out
+// after Amnesia said yes, the wipe already happened and you stay signed in, like after "Clean now". The window is no
+// longer owned by WinForms' hidden taskbar window (an owned window may not count as a top-level window here).
 using System.Runtime.InteropServices;
 using Amnesia.Core;
 
@@ -38,6 +46,8 @@ sealed class ShutdownWatcher : Form
     readonly System.Windows.Forms.Timer usbCheck = new();
     /// <summary>v0.8: called when Windows asks "may I end the session?" (TrayApp stops the vault snapshot).</summary>
     public Action? SessionEnding;
+    /// <summary>v0.8.1: when the wipe ran at "may I end the session?" (WM_ENDSESSION then skips it).</summary>
+    DateTime cleanedAtQuery = DateTime.MinValue;
 
     public ShutdownWatcher()
     {
@@ -86,7 +96,8 @@ sealed class ShutdownWatcher : Form
         get
         {
             var cp = base.CreateParams;
-            cp.ExStyle |= 0x08000000 /* NOACTIVATE */ | 0x20 /* TRANSPARENT: clicks go through */;
+            cp.ExStyle |= 0x08000000 /* NOACTIVATE: also keeps it off the taskbar */ | 0x20 /* TRANSPARENT: clicks go through */;
+            cp.Parent = IntPtr.Zero; // v0.8.1: a real top-level window, not owned by WinForms' hidden taskbar window
             return cp;
         }
     }
@@ -115,23 +126,33 @@ sealed class ShutdownWatcher : Form
         {
             case WM_QUERYENDSESSION:
                 AppInfo.Trace($"query end session (flags {m.LParam.ToInt64():x}, on {Settings.Enabled}, paused {Settings.Paused})");
-                if (Settings.Enabled && (m.LParam.ToInt64() & ENDSESSION_CLOSEAPP) == 0)
+                if ((m.LParam.ToInt64() & ENDSESSION_CLOSEAPP) == 0)
                 {
-                    Native.ShutdownBlockReasonCreate(Handle, Text2.Cleaning);
+                    // v0.8.1: clean right here. Windows waits (and shows the reason) while this message is not answered.
+                    if (Settings.Enabled || Safe.IsOpen)
+                    {
+                        bool held = Native.ShutdownBlockReasonCreate(Handle, Text2.Cleaning);
+                        if (!held) AppInfo.Trace($"sign out reason not set (error {Marshal.GetLastWin32Error()})");
+                    }
                     try { SessionEnding?.Invoke(); } catch { }
-                    Cleaner.PrepareLogout();
+                    if (Settings.Enabled) SignOutClean(Handle, "query");
+                    else Cleaner.CloseSafe("sign out"); // v0.8: the Safe box closes even while Amnesia is off
+                    cleanedAtQuery = DateTime.UtcNow;
                 }
                 m.Result = 1;
                 return;
             case WM_ENDSESSION when m.WParam == IntPtr.Zero:
-                AppInfo.Trace("end session cancelled (another app said no)");
+                AppInfo.Trace(DateTime.UtcNow - cleanedAtQuery < TimeSpan.FromMinutes(5)
+                    ? "end session cancelled after the cleanup: you stay signed in" : "end session cancelled (another app said no)");
+                cleanedAtQuery = DateTime.MinValue;
                 Native.ShutdownBlockReasonDestroy(Handle);
                 break;
             case WM_ENDSESSION:
                 AppInfo.Trace($"end session (flags {m.LParam.ToInt64():x})");
                 if ((m.LParam.ToInt64() & ENDSESSION_CLOSEAPP) != 0) { AppInfo.Trace("closed by an installer, not a sign out: no cleanup"); }
-                else if (Settings.Enabled) SignOutClean(Handle); // v0.8: after a panic too (a quick second pass)
-                else Cleaner.CloseSafe("sign out"); // v0.8: the Safe box closes even while Amnesia is off
+                else if (DateTime.UtcNow - cleanedAtQuery < TimeSpan.FromMinutes(5)) { } // v0.8.1: already done while Windows waited
+                else if (Settings.Enabled) SignOutClean(Handle, "end"); // no "may I?" first (forced sign out, after a panic)
+                else Cleaner.CloseSafe("sign out");
                 Native.ShutdownBlockReasonDestroy(Handle);
                 m.Result = IntPtr.Zero;
                 return;
@@ -148,16 +169,17 @@ sealed class ShutdownWatcher : Form
         base.WndProc(ref m);
     }
 
-    /// <summary>The cleanup at sign out / restart / shut down. Runs right inside WM_ENDSESSION (Windows waits while this
-    /// handler runs and shows "Amnesia is cleaning up..."). Cleaning first: moving to .amnesia-trash takes a few seconds.
-    /// The cleanup itself writes "clean logout N bytes" to the History.</summary>
-    static void SignOutClean(IntPtr hwnd)
+    /// <summary>The cleanup at sign out / restart / shut down. v0.8.1: runs inside WM_QUERYENDSESSION (Windows waits while
+    /// it is not answered and shows "Amnesia is cleaning up..."), or in WM_ENDSESSION when Windows did not ask first.
+    /// The wipe first, then the Safe box, then the Keep lock. The cleanup writes "clean logout N bytes" to the History.</summary>
+    static void SignOutClean(IntPtr hwnd, string where)
     {
         var t = System.Diagnostics.Stopwatch.StartNew();
         Native.ShutdownBlockReasonCreate(hwnd, Text2.Cleaning);
         if (Guard.JustCleaned) AppInfo.Trace("second pass after a quick exit");
-        try { var r = Cleaner.Run("logout", endSession: true); AppInfo.Trace($"logout clean finished in {t.Elapsed.TotalSeconds:0.0} s ({r.Skipped ?? r.Count.ToString()})"); }
+        try { var r = Cleaner.Run("logout", endSession: true); AppInfo.Trace($"logout clean finished in {t.Elapsed.TotalSeconds:0.0} s at {where} ({r.Skipped ?? r.Count.ToString()})"); }
         catch (Exception e) { AppInfo.Trace($"logout clean failed after {t.Elapsed.TotalSeconds:0.0} s: {e.GetType().Name}"); }
+        Cleaner.CloseSafe("logout");
         // the Keep folder is locked again after the cleanup (it is quick, but the cleanup comes first)
         KeepLock.Lock("sign out", links: false);
     }
@@ -205,6 +227,12 @@ static class Text2
     public static string KeepStaysLocked(string dir) => Id
         ? $"Folder Keep tetap terkunci. Untuk membukanya nanti: pasang Amnesia lagi dan buka dengan password Keep, atau ketik ini di Command Prompt (akun kamu sendiri):\n\nicacls \"{dir}\" /remove:d \"%USERNAME%\" /T"
         : $"Your Keep folder stays locked. To open it later: install Amnesia again and open it with the Keep password, or type this in Command Prompt (your own account):\n\nicacls \"{dir}\" /remove:d \"%USERNAME%\" /T";
+    // v0.8.1
+    public static string SafeUninstall(int n) => Id
+        ? (n > 0 ? $"Brankas kamu masih berisi {n} file." : "Brankas kamu masih berisi file.") + " Buka dan pindahkan dulu, atau biarkan: brankas bisa dibuka lagi setelah kamu memasang Amnesia lagi (asal data Amnesia tidak ikut dihapus).\n\nTetap uninstall?"
+        : (n > 0 ? $"Your safe box still has {n} file(s)." : "Your safe box still has files.") + " Open it and move them first, or keep it: it opens again after you reinstall Amnesia (as long as Amnesia's data is not deleted too).\n\nUninstall anyway?";
+    public static string KeepAclTitle => Id ? "Folder Keep masih terkunci" : "Keep is still locked";
+    public static string KeepAclText => Id ? "Kunci lama dari versi sebelumnya masih ada. Klik untuk membukanya." : "An old lock from an earlier version is still on it. Click to open it.";
     public static string Blocked(int n) => Id
         ? $"{n} item tidak bisa dibersihkan karena diblok Windows Security atau antivirus. Buka Amnesia untuk caranya."
         : $"{n} items could not be cleaned: Windows Security or an antivirus blocked Amnesia. Open Amnesia to see how to fix it.";

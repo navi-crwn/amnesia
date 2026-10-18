@@ -7,6 +7,49 @@ Quick backstory: on October 6, 2026 Amnesia was a handful of scripts. Two days a
 
 Your version number is next to the Amnesia title and at the bottom of the menu bar panel.
 
+## v5.23.0 · Claude in your Keep List really stays, safer restores, Brankas closes properly (Oct 17, 2026)
+
+**Turn Off** Amnesia before installing, then turn it on again.
+
+Everything here comes from a real test on a Mac on Oct 17. The bugs from the last test (symlinked folders, accented names, failed deletes counted as cleaned) all passed this time.
+
+### Fixed (important)
+- **Claude was on the Keep List, but your Claude Code chats still vanished.** The Keep List only kept the Claude Desktop app. Chats from the Code tab live in `~/.claude` and `~/.claude.json`, so they were wiped at every logout and only came back with a vault restore. Now keeping Claude keeps those too. Pick Apps adds them when you save Claude, and the cleanup also keeps them on its own as long as Claude is on your list.
+- **A restore could roll your data back.** Restoring always put back the snapshot, even when the data on your Mac was newer. Now:
+  - anything on your Keep List is never overwritten by a restore
+  - if an app's data is newer than its snapshot, you get asked first ("Restore anyway" or Cancel)
+  - after a restore there's an **Undo Restore** button on the Vault page that puts your data from just before the restore back, until your next logout
+- **The Brankas didn't close at logout** ("box close failed"), only at the next login. Amnesia now tries several times, looks for apps still using it (it only counts them, no names), then forces it closed. If it still fails, you get a notice after login and a warning in the Health check.
+
+### Fixed
+- **The auto snapshot at logout no longer skips** when you made a snapshot less than 10 minutes earlier. Before, work you did after a manual snapshot could be lost. Apps that didn't change are still skipped, and a stuck snapshot can never hold up the cleanup.
+- **Apps come back after Snapshot Now.** Apps that were open and got closed for the snapshot are opened again afterwards, just like after a restore.
+- **Health check** now also shows Full Disk Access, symlinked folders and virtual machines when they're fine, and a warning if the Brankas couldn't close. "1 things" now reads "1 thing".
+- **The "before restore" copy** (it can be several GB) no longer shows up as a scary big file. The Health check explains what it is and when it goes away, and copies older than 3 days are removed.
+- **Keep lock:** the Settings text and the Limitations page now say it plainly: names of files and folders right inside Keep are still visible while it's locked.
+
+## Windows v0.8.1 · Sign out cleans right away, "Keep" on a new app really keeps it (Oct 17, 2026)
+
+Everything here comes from a real test on a Windows 11 laptop on Oct 17.
+
+### Fixed (important)
+- **A normal sign out still cleaned only at the next sign in.** Closing the safe box and making the list used up the few seconds Windows gives, so the cleanup barely started. Now Amnesia cleans first, right when Windows asks "may I sign out?", shows "Amnesia is cleaning up..." while it works, and closes the safe box after that (it lives in Keep, so it's never wiped). One trade-off: if you cancel the sign out after that point, the cleanup has already happened, like "Clean now".
+- **"Keep" in the new apps list didn't keep the app.** You pressed Keep, but the app's program folder in AppData was still wiped at sign out, leaving a broken app. Keep now also puts the app's program folder and data folders on your Keep List.
+- **New apps were deleted for good instead of waiting 3 days.** The normal cleanup got to their folder first. Now a new app's folder always goes to the Amnesia trash for 3 days.
+- **The safe box card said "Throwaway Windows".** Its text was mixed up with Windows Sandbox. Both cards have their own text and buttons again.
+
+### Fixed
+- **Panic is faster** with a big safe box: Amnesia asks Windows to sign out right after cleaning and closes the safe box while Windows signs out.
+- **Uninstall warns you** when your safe box still has files in it. It also no longer keeps a second full copy of the safe box on disk.
+- **New apps list is easier to read:** one app is one row (no more registry numbers like "121a0be4-…"), and an app that only got updated (a new version number) isn't treated as new any more. "Keep all" is written to the log and History.
+- **Startup warning** now shows up in a window that's already open, and Amnesia notes it in trace.log. A wrong Keep password at uninstall is logged too (never the password itself).
+- **Keep List suggestions:** one app with folders in both Local and Roaming is one chip that keeps both. Technical folders like Sentry or crash folders are no longer suggested.
+- **Keep still locked from an older version:** Amnesia notices, and offers to open it from the home page and the Health check.
+- Automatic tests: 294 (was 273).
+
+### Still needs a test on a real PC
+- A normal sign out with lots of files cleans before the sign in screen.
+
 ## v5.22.0 · Signed updates, iCloud-safe cleaning, Keep lock, Health check (Oct 17, 2026)
 
 **Turn Off** Amnesia before installing, then turn it on again.

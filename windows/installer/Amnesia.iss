@@ -96,6 +96,7 @@ var
 
 // v0.7: a PC with the lab lock on can only be uninstalled with the lab PIN (Amnesia asks it and removes the lock).
 // v0.8: then a locked Keep folder: Amnesia asks the Keep password and opens it for good (exit 2 = it stays locked).
+// v0.8.1: and first a warning when the locked Safe box still holds files (exit 1 = you chose to stop and move them).
 function InitializeUninstall(): Boolean;
 var
   Code: Integer;
@@ -111,8 +112,15 @@ begin
       exit;
     end;
     if not UninstallSilent then
+    begin
+      if Exec(ExpandConstant('{app}\Amnesia.exe'), '--safe-check', '', SW_SHOW, ewWaitUntilTerminated, Code) and (Code = 1) then
+      begin
+        Result := False;
+        exit;
+      end;
       if Exec(ExpandConstant('{app}\Amnesia.exe'), '--keep-check', '', SW_SHOW, ewWaitUntilTerminated, Code) and (Code = 2) then
         KeepStillLocked := True;
+    end;
   end;
 end;
 

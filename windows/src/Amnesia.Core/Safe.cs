@@ -3,6 +3,9 @@
 // password). "Open" unpacks it into Keep\Safe; "Close" packs Keep\Safe again and deletes the open copy. Closing needs no
 // password (public key), so Amnesia closes it by itself at sign out and when it starts after a crash.
 // Honest limits: the open copy is deleted, not overwritten (BitLocker protects that), and the safe is as strong as the password.
+// v0.8.1: no full safe.ams.prev copy any more after a close (it doubled the space): the old file is only kept while the
+// new one is written and checked. The number of files in the closed safe is written down (SAFE_FILES, no names), so
+// uninstalling can warn that the safe still holds files.
 using System.IO.Compression;
 using System.Security.Cryptography;
 
@@ -20,6 +23,20 @@ public static class Safe
 
     public static bool Exists => File.Exists(FPub) && File.Exists(FPriv) && File.Exists(File_);
     public static bool IsOpen => Exists && Directory.Exists(OpenDir);
+    static string Prev => File_ + ".prev";
+
+    /// <summary>v0.8.1: how many files the safe holds (open: what is in Keep\Safe now). -1 = not known (closed by v0.8.0).</summary>
+    public static int Count
+    {
+        get
+        {
+            if (!Exists) return 0;
+            if (IsOpen)
+                try { return new DirectoryInfo(OpenDir).EnumerateFiles("*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint }).Count(); }
+                catch { return -1; }
+            return Conf.Int("SAFE_FILES", -1);
+        }
+    }
 
     public static void Create(string password)
     {
@@ -95,7 +112,10 @@ public static class Safe
         }
         // the new file must at least be readable as an Amnesia file before it replaces the old one
         if (Crypto.Peek(next).kind != Crypto.KindSafe) throw new InvalidDataException("safe-write");
-        if (File.Exists(File_)) File.Replace(next, File_, File_ + ".prev"); else File.Move(next, File_);
+        // v0.8.1: the old file is only kept while the new one replaces it, then it goes (no second full copy)
+        if (File.Exists(File_)) File.Replace(next, File_, Prev); else File.Move(next, File_);
+        try { if (File.Exists(Prev) && Crypto.Peek(File_).kind == Crypto.KindSafe) File.Delete(Prev); } catch { }
+        Conf.Set("SAFE_FILES", n.ToString());
         return n;
     }
 
@@ -107,6 +127,7 @@ public static class Safe
         catch (CryptographicException) { throw new VaultError("wrong", -1); }
         if (Directory.Exists(OpenDir)) CleanEngine.Delete(OpenDir);
         CleanEngine.Delete(D);
+        Conf.Set("SAFE_FILES", null);
         Home.Trace("safe", "deleted");
     }
 }

@@ -11,7 +11,7 @@ Password tidak pernah disimpan, dan dikirim ke 7zz lewat stdin (tidak terlihat d
 v5.22: kunci privat tidak pernah ditulis ke disk saat restore (tetap di memori, ke openssl lewat pipe), hanya 1
 perintah vault yang boleh jalan sekaligus (flock), dan sisa folder sementara dari proses yang terputus disapu.
 """
-import fcntl, glob, hashlib, json, os, re, secrets, shutil, signal, subprocess, sys, time
+import fcntl, fnmatch, glob, hashlib, json, os, re, secrets, shutil, signal, subprocess, sys, time, unicodedata
 
 HOME = os.environ.get("AMNESIA_HOME", os.path.expanduser("~"))
 AMNESIA = os.path.join(HOME, ".amnesia")
@@ -98,7 +98,13 @@ EXCLUDE = ["Cache", "Code Cache", "GPUCache", "CacheStorage", "ShaderCache", "Gr
 
 # Restore tidak menghapus data app yang ada sekarang: dipindah ke sini dulu (hanya restore terakhir).
 # Ada di Library/Caches, jadi ikut dibersihkan di logout berikutnya (tidak jadi jejak permanen).
+# v5.23: + catatan .undo.json (untuk "Kembalikan data sebelum restore"), dan clean.sh membuangnya setelah 3 hari
+# kalau ternyata lolos dari logout (mis. Library/Caches di Keep List).
 BEFORE_RESTORE = os.path.join(HOME, "Library", "Caches", "Amnesia", "before-restore")
+F_UNDO = os.path.join(BEFORE_RESTORE, ".undo.json")
+# v5.23: data hasil restore yang disingkirkan oleh "Kembalikan data sebelum restore" (tidak langsung dihapus)
+AFTER_RESTORE = os.path.join(HOME, "Library", "Caches", "Amnesia", "after-restore")
+CLAUDE_CODE = [".claude", ".claude.json", ".claude.json.backup"]
 
 F_PUB = os.path.join(VAULT, "public.pem")
 F_APPDIR = os.path.join(VAULT, "apps")          # v5.10: 1 arsip per app (apps/<id>.7z + .key), tidak saling menimpa
@@ -164,6 +170,65 @@ def keep_dir():
 def T(en, id_):
     """Pesan sesuai bahasa di Pengaturan (LANG=en|id)."""
     return id_ if _lang() == "id" else en
+
+
+# ---------------- v5.23: Keep List (sama seperti clean.sh), supaya restore tidak menimpa yang disimpan ----------------
+class KeepRules:
+    """Pola Keep List (keep.conf, kalau belum ada keep.example.conf) + folder Keep. Cocok seperti [[ == ]] di clean.sh:
+    * juga melewati '/'. Claude di Keep List = Claude Code ikut disimpan (sama dengan clean.sh)."""
+
+    def __init__(self):
+        conf = os.path.join(AMNESIA, "keep.conf")
+        if not os.path.exists(conf):
+            conf = os.path.join(AMNESIA, "keep.example.conf")
+        pats = []
+        try:
+            with open(conf, encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or line.startswith("keychain:") or line.startswith("app:"):
+                        continue
+                    line = line[2:] if line.startswith("~/") else line
+                    for form in ("NFC", "NFD"):          # nama dari Finder/backup lama bisa beda bentuk Unicode
+                        x = unicodedata.normalize(form, line)
+                        if x not in pats:
+                            pats.append(x)
+        except OSError:
+            pass
+        self.pats = pats
+        kd = keep_dir()
+        self.keep_rel = os.path.relpath(kd, HOME) if kd.startswith(os.path.normpath(HOME) + os.sep) else ""
+        if self.kept("Library/Application Support/Claude"):
+            self.pats += [c for c in CLAUDE_CODE if not self.kept(c)]
+
+    def kept(self, rel):
+        if self.keep_rel and (rel == self.keep_rel or rel.startswith(self.keep_rel + "/")):
+            return True
+        return any(fnmatch.fnmatchcase(rel, p) for p in self.pats)
+
+    def kept_inside(self, rel):
+        """Ada pola Keep yang lebih dalam dari path ini? (seperti has_kept_inside di clean.sh)"""
+        n = rel.count("/")
+        if self.keep_rel.startswith(rel + "/"):
+            return True
+        for p in self.pats:
+            if p.count("/") > n and fnmatch.fnmatchcase(rel, "/".join(p.split("/")[:n + 1])):
+                return True
+        return False
+
+    def held(self, rel):
+        """Item di dalam path (folder) ini yang ada di Keep List, yang memang ada di disk sekarang."""
+        out = []
+        full = os.path.join(HOME, rel)
+        if not os.path.isdir(full) or os.path.islink(full) or not self.kept_inside(rel):
+            return out
+        for x in sorted(os.listdir(full)):
+            r = rel + "/" + x
+            if self.kept(r):
+                out.append(r)
+            else:
+                out += self.held(r)
+        return out
 
 
 class VaultError(Exception):
@@ -637,10 +702,12 @@ def _newest(n):
     return t
 
 
-def snapshot(names=None, changed=False):
+def snapshot(names=None, changed=False, reopen=False):
     """Simpan app ke vault, 1 arsip per app. Tidak butuh password.
     Hanya app yang dipilih yang diperbarui; snapshot app lain tetap ada.
-    changed=True (snapshot otomatis saat logout): app yang tidak berubah sejak snapshot terakhirnya dilewati."""
+    changed=True (snapshot otomatis saat logout): app yang tidak berubah sejak snapshot terakhirnya dilewati.
+    reopen=True (v5.23, tombol Snapshot Sekarang): app yang tadi sedang jalan dibuka lagi setelah selesai, juga kalau
+    gagal atau dibatalkan. Tidak untuk Simpan & Logout dan snapshot otomatis saat logout."""
     if not exists():
         raise VaultError(T("No vault yet.", "Vault belum dibuat."))
     names = [n for n in (names or chosen_apps()) if app_paths(n)]
@@ -655,7 +722,15 @@ def snapshot(names=None, changed=False):
     weight = {n: max(_size(app_paths(n), *_light_skip(n)), 1) for n in names}
     total = sum(weight.values())
     _progress(0, f"quit 1/{len(names)} {names[0]}")
-    quit_apps(names)
+    was_running = quit_apps(names)
+    try:
+        return _snapshot_all(names, weight, total, changed)
+    finally:
+        if reopen:
+            reopen_apps(was_running)
+
+
+def _snapshot_all(names, weight, total, changed):
     os.makedirs(F_APPDIR, mode=0o700, exist_ok=True)
     per = _load_manifest()
     done, saved = 0, []
@@ -833,28 +908,156 @@ def restore(password):
         # v5.21: app yang sempat terbuka (mis. dibuka otomatis saat login, dengan profil kosong) ditutup dulu,
         # lalu dibuka lagi setelah datanya kembali
         was_running = quit_apps(names)
+        keep = KeepRules()
+        skipped = set()
+        rec = {"time": time.strftime("%Y-%m-%d %H:%M"), "ts": time.time(), "apps": names,
+               "moved": [], "placed": [], "held": []}
         with _no_cancel():                           # mulai di sini: data lama diganti, tidak boleh terpotong
             # data app yang sekarang DIPINDAH (bukan dihapus) ke BEFORE_RESTORE; isi restore sebelumnya dibuang
             shutil.rmtree(BEFORE_RESTORE, ignore_errors=True)
-            for n in names:
-                src = os.path.join(F_STAGE, "legacy" if n in legacy else _slug(n))
-                for p in app_paths(n):
-                    full = os.path.join(HOME, p)
-                    if os.path.lexists(full):
-                        old = os.path.join(BEFORE_RESTORE, p)
-                        os.makedirs(os.path.dirname(old), exist_ok=True)
-                        shutil.move(full, old)
-                for pat in items().get(n, {}).get("paths", []):
-                    for f in sorted(glob.glob(os.path.join(glob.escape(src), pat))):
-                        target = os.path.join(HOME, os.path.relpath(f, src))
+            shutil.rmtree(AFTER_RESTORE, ignore_errors=True)
+            try:
+                for n in names:
+                    src = os.path.join(F_STAGE, "legacy" if n in legacy else _slug(n))
+                    hold = []
+                    for p in app_paths(n):
+                        full = os.path.join(HOME, p)
+                        # v5.23: yang ada di Keep List tidak ditimpa (Keep menang)
+                        if keep.kept(p):
+                            skipped.add(p)
+                            continue
+                        hold += keep.held(p)
+                        if os.path.lexists(full):
+                            old = os.path.join(BEFORE_RESTORE, p)
+                            os.makedirs(os.path.dirname(old), exist_ok=True)
+                            shutil.move(full, old)
+                            rec["moved"].append(p)
+                    for pat in items().get(n, {}).get("paths", []):
+                        for f in sorted(glob.glob(os.path.join(glob.escape(src), pat))):
+                            rel = os.path.relpath(f, src)
+                            target = os.path.join(HOME, rel)
+                            if keep.kept(rel) and os.path.lexists(target):
+                                skipped.add(rel)
+                                continue
+                            os.makedirs(os.path.dirname(target), exist_ok=True)
+                            os.replace(f, target)
+                            rec["placed"].append(rel)
+                    # isi folder app yang ada di Keep List: versi di Mac ini kembali ke tempatnya, bukan versi snapshot
+                    for h in hold:
+                        target, old = os.path.join(HOME, h), os.path.join(BEFORE_RESTORE, h)
+                        if not os.path.lexists(old):
+                            continue
+                        _remove(target)
                         os.makedirs(os.path.dirname(target), exist_ok=True)
-                        os.replace(f, target)
+                        shutil.move(old, target)
+                        rec["held"].append(h)
+                        skipped.add(h)
+            finally:
+                os.makedirs(BEFORE_RESTORE, exist_ok=True)
+                _write_json(F_UNDO, rec)
     finally:
         shutil.rmtree(F_STAGE, ignore_errors=True)
     _progress(96, f"check 1/1 {names[0]}")
     history("restore", ", ".join(names))
     reopen_apps(was_running)
-    return names, check_restore(names)
+    return names, check_restore(names), len(skipped)
+
+
+def _remove(full):
+    if os.path.isdir(full) and not os.path.islink(full):
+        shutil.rmtree(full, ignore_errors=True)
+    elif os.path.lexists(full):
+        os.remove(full)
+
+
+def undo_info():
+    """v5.23: restore terakhir yang masih bisa dibatalkan (sampai logout berikutnya), atau None."""
+    rec = _read_json(F_UNDO, None)
+    if not isinstance(rec, dict) or not os.path.isdir(BEFORE_RESTORE):
+        return None
+    return {"time": rec.get("time", ""), "apps": rec.get("apps", [])}
+
+
+def undo_restore():
+    """v5.23: "Kembalikan data sebelum restore": data dari BEFORE_RESTORE kembali ke tempatnya. Data hasil restore
+    tidak dihapus, tapi dipindah ke AFTER_RESTORE (ikut terhapus saat logout, seperti BEFORE_RESTORE)."""
+    rec = _read_json(F_UNDO, None)
+    if not isinstance(rec, dict):
+        raise VaultError(T("There is no restore to undo (it's gone after a logout).",
+                           "Tidak ada restore yang bisa dibatalkan (hilang setelah logout)."))
+    names = [n for n in rec.get("apps", []) if isinstance(n, str)]
+    rels = lambda k: [r for r in rec.get(k, []) if isinstance(r, str) and _safe_undo(r)]
+    was_running = quit_apps(names)
+    with _no_cancel():
+        shutil.rmtree(AFTER_RESTORE, ignore_errors=True)
+        # item Keep List di dalam folder app: itu data Mac ini sendiri, ikut kembali bersama foldernya
+        for h in rels("held"):
+            full, old = os.path.join(HOME, h), os.path.join(BEFORE_RESTORE, h)
+            if os.path.lexists(full) and not os.path.lexists(old):
+                os.makedirs(os.path.dirname(old), exist_ok=True)
+                shutil.move(full, old)
+        for r in sorted(set(rels("placed")) | set(rels("moved"))):
+            full = os.path.join(HOME, r)
+            if os.path.lexists(full):
+                away = os.path.join(AFTER_RESTORE, r)
+                os.makedirs(os.path.dirname(away), exist_ok=True)
+                shutil.move(full, away)
+        for r in rels("moved"):
+            old = os.path.join(BEFORE_RESTORE, r)
+            if os.path.lexists(old):
+                os.makedirs(os.path.dirname(os.path.join(HOME, r)), exist_ok=True)
+                shutil.move(old, os.path.join(HOME, r))
+        shutil.rmtree(BEFORE_RESTORE, ignore_errors=True)
+    history("undo", ", ".join(names))
+    reopen_apps(was_running)
+    return names
+
+
+def _safe_undo(rel):
+    parts = rel.split("/")
+    return bool(rel) and not os.path.isabs(rel) and ".." not in parts and parts[0] not in (".amnesia", ".amnesia-trash")
+
+
+def _newest_data(n, keep, ts):
+    """v5.23: waktu perubahan terbaru di data app ini yang akan ditimpa restore. Hanya file (folder berubah waktu juga
+    saat isinya dipindah); cache, dan yang ada di Keep List, tidak dihitung. Berhenti begitu ada yang lebih baru dari ts."""
+    t = 0
+    for rel in app_paths(n):
+        full = os.path.join(HOME, rel)
+        if keep.kept(rel) or not os.path.lexists(full):
+            continue
+        if os.path.islink(full) or not os.path.isdir(full):
+            t = max(t, os.lstat(full).st_mtime)
+            continue
+        for root, dirs, files in os.walk(full):
+            dirs[:] = [d for d in dirs if d not in EXCLUDE and not keep.kept(os.path.relpath(os.path.join(root, d), HOME))]
+            for x in files:
+                f = os.path.join(root, x)
+                if x in EXCLUDE or keep.kept(os.path.relpath(f, HOME)):
+                    continue
+                try:
+                    t = max(t, os.lstat(f).st_mtime)
+                except OSError:
+                    pass
+            if t > ts:
+                return t
+    return t
+
+
+def newer_apps():
+    """v5.23: app yang datanya di Mac ini lebih baru dari snapshot-nya (restore akan memundurkannya).
+    Dipanggil app sebelum restore, supaya kamu ditanya dulu."""
+    per = _load_manifest()
+    keep = KeepRules()
+    out = []
+    for n in per:
+        ts = per[n].get("ts")
+        if not ts or n not in items() or not os.path.exists(_app_files(n)[0]):
+            continue
+        t = _newest_data(n, keep, ts + 60)          # 1 menit toleransi (file yang disentuh tepat saat snapshot)
+        if t > ts + 60:
+            out.append({"app": n, "snap": per[n].get("time", ""), "now": time.strftime("%Y-%m-%d %H:%M", time.localtime(t))})
+    return out
 
 
 def _app_installed(name):
@@ -1046,7 +1249,7 @@ def _cli(argv, stdin):
     full = "full" in argv[2:]
     line = lambda: stdin.readline().rstrip("\n")
     out = {}
-    if cmd not in ("status", "sizes", "logout", "keephash", "keepcheck"):
+    if cmd not in ("status", "sizes", "logout", "keephash", "keepcheck", "newer"):
         _lock_and_sweep()                 # v5.22: 1 perintah sekaligus + sapu sisa yang terputus
     if cmd == "status":
         out = {"exists": exists(), "manifest": manifest() or None, "attempts": attempts(),
@@ -1055,7 +1258,8 @@ def _cli(argv, stdin):
                "light": [n for n in light_apps() if n in installed_apps()], "full": full_apps(),
                "custom": sorted(custom_apps()),          # v5.22: app tambahan pilihan kamu
                # path tiap app yang ikut snapshot: dipakai halaman "Yang akan dihapus" (kelompok "dipulihkan dari vault")
-               "patterns": {n: items()[n]["paths"] for n in chosen_apps()} if exists() else {}}
+               "patterns": {n: items()[n]["paths"] for n in chosen_apps()} if exists() else {},
+               "undo": undo_info()}                       # v5.23: restore terakhir yang masih bisa dibatalkan
     elif cmd == "sizes":
         out = {"sizes": sizes()}
     elif cmd == "check":
@@ -1065,11 +1269,16 @@ def _cli(argv, stdin):
         create(pw, panic, full)
     elif cmd == "snapshot":
         args = [a for a in argv[2:] if not a.startswith("--")]
-        out = {"apps": snapshot(args or None, changed="--changed" in argv[2:])}
+        out = {"apps": snapshot(args or None, changed="--changed" in argv[2:], reopen="--reopen" in argv[2:])}
     elif cmd == "restore":
-        names, checks = restore(line())
+        names, checks, skipped = restore(line())
         per = _load_manifest()
-        out = {"apps": names, "checks": checks, "light": [n for n in names if per.get(n, {}).get("light")]}
+        out = {"apps": names, "checks": checks, "light": [n for n in names if per.get(n, {}).get("light")],
+               "skipped": skipped}               # v5.23: berapa path dilewati karena ada di Keep List
+    elif cmd == "newer":                         # v5.23: dicek app sebelum restore
+        out = {"newer": newer_apps()}
+    elif cmd == "undo":                          # v5.23: Kembalikan data sebelum restore
+        out = {"apps": undo_restore()}
     elif cmd == "delsnap":
         delete_snapshot(argv[2:] or None)
     elif cmd == "passwd":

@@ -100,7 +100,7 @@ fi
 # Brankas (disk terenkripsi di folder Keep) dilepas dulu sebelum pembersihan, dan isi Keep dikunci lagi
 # (kalau Kunci Keep menyala). Juga saat Jeda: keduanya bukan pembersihan.
 if [ "$DRY" = 0 ] && [ -f "$A/keeplock.sh" ] && { [ "$MODE" = logout ] || [ "$MODE" = login ]; }; then
-    limit 30 /bin/bash "$A/keeplock.sh" box-detach >/dev/null 2>&1
+    limit 30 /bin/bash "$A/keeplock.sh" box-detach "$MODE" >/dev/null 2>&1    # v5.23: + mode (logout = catat kalau gagal)
     limit 60 /bin/bash "$A/keeplock.sh" lock >/dev/null 2>&1
 fi
 
@@ -181,6 +181,13 @@ kept() {
     for p in "${KEEP[@]}"; do [[ "$1" == $p ]] && return 0; done
     return 1
 }
+
+# v5.23: Claude di Keep List = Claude Code ikut disimpan. Chat di tab Code (Claude Desktop) ada di ~/.claude dan
+# ~/.claude.json (+ .backup), bukan di Library/Application Support/Claude, jadi dulu tetap hilang tiap logout.
+if kept "Library/Application Support/Claude"; then
+    for c in .claude .claude.json .claude.json.backup; do kept "$c" || add_keep "$c"; done
+    trace "claude code data kept with Claude"
+fi
 
 # ada pola keep DI DALAM path ini? -> masuk ke dalam, jangan hapus foldernya utuh
 # (tanpa program luar: dipanggil ribuan kali, jadi harus cepat)
@@ -341,6 +348,17 @@ if [ "$DRY" = 0 ]; then
     rm -f "$A/clean.done"
 fi
 trace "light=$LIGHT"
+
+# ---------- v5.23: salinan "sebelum restore" dari Profile Vault paling lama 3 hari ----------
+# Biasanya sudah ikut terhapus bersama Library/Caches saat logout. Ini untuk yang lolos (mis. Library/Caches di
+# Keep List). Bisa belasan GB, jadi tidak dibiarkan menumpuk.
+if [ "$DRY" = 0 ] && [ "$MODE" = login ]; then
+    for d in before-restore after-restore; do
+        d="$H/Library/Caches/Amnesia/$d"
+        [ -d "$d" ] && [ -n "$(find "$d" -maxdepth 0 -mmin +4320 2>/dev/null)" ] || continue
+        trash_or_rm "$d" "Library/Caches" && trace "old before-restore copy removed (3 days)"
+    done
+fi
 
 # ---------- Saat login: tutup app yang sempat terbuka ----------
 if [ "$MODE" = "login" ] && [ "$DRY" = 0 ] && [ -z "${AMNESIA_HOME:-}" ]; then

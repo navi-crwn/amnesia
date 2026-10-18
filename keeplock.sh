@@ -8,7 +8,8 @@
 #   keeplock.sh box-create GB buat Brankas: disk APFS terenkripsi (AES-256) di Keep/Brankas.sparsebundle.
 #                             Password dibaca dari stdin (tanpa enter di akhir), tidak pernah lewat argumen.
 #   keeplock.sh box-attach    buka Brankas (password dari stdin). Hasil: baris "MOUNT <folder>"
-#   keeplock.sh box-detach    tutup Brankas kalau sedang terbuka (dipanggil clean.sh sebelum membersihkan)
+#   keeplock.sh box-detach    tutup Brankas kalau sedang terbuka (dipanggil clean.sh sebelum membersihkan).
+#                             v5.23: "box-detach logout" = gagal ditutup dicatat di box.close_failed (app memberi tahu)
 #   keeplock.sh box-status    none | closed | open <folder>
 #
 # Cara kerja Kunci Keep: izin "deny" (ACL macOS, chmod +a) untuk user kamu sendiri pada tiap file/folder di
@@ -24,6 +25,16 @@ shopt -s nullglob dotglob
 H="${AMNESIA_HOME:-$HOME}"; A="$H/.amnesia"; CONF="$A/settings.conf"
 cfg() { grep "^$1=" "$CONF" 2>/dev/null | tail -1 | cut -d= -f2-; }
 trace() { echo "$(date '+%F %T') keeplock: $*" >> "$A/trace.log" 2>/dev/null; }   # tanpa nama file
+# v5.23: limit <detik> <perintah...> (sama seperti clean.sh): perintah yang macet dihentikan
+limit() {
+    local s=$1 pid w rc; shift
+    "$@" & pid=$!
+    ( sleep "$s"; kill -9 "$pid" 2>/dev/null ) >/dev/null 2>&1 &
+    w=$!
+    wait "$pid" 2>/dev/null; rc=$?
+    kill "$w" 2>/dev/null; wait "$w" 2>/dev/null
+    return $rc
+}
 # folder Keep (sama seperti clean.sh)
 KD="$(cfg KEEP_DIR)"
 case "$KD" in "~/"?*) KD="$H/${KD#\~/}" ;; /?*) ;; *) KD="$H/Keep" ;; esac
@@ -126,7 +137,42 @@ case "${1:-status}" in
         echo "MOUNT $(box_mount)" ;;
     box-detach)
         d="$(box_dev)"; [ -n "$d" ] || exit 0
-        hdiutil detach "$d" >/dev/null 2>&1 || hdiutil detach -force "$d" >/dev/null 2>&1 || { trace "box close failed"; exit 1; }
+        # v5.23: dulu 1x detach + 1x detach -force (gagal dalam ±1 detik kalau ada app yang masih membuka file di
+        # Brankas, mis. saat logout app sedang ditutup). Sekarang: coba lagi beberapa kali dengan jeda singkat, hitung
+        # proses yang masih memegang file (jumlah saja, tanpa nama), lalu diskutil unmount force, baru detach -force.
+        # Semuanya dalam ±25 detik (clean.sh memberi 30 detik).
+        m="$(box_mount)"
+        # penanda gagal ditulis dulu (tetap ada kalau proses ini dihentikan paksa), dihapus lagi kalau berhasil.
+        # Penanda dari logout sebelumnya tidak dihapus: app memberi tahu setelah login (Pengaturan → Brankas,
+        # Cek kesehatan; agent.sh mengirim notifikasi), lalu kamu yang menutupnya.
+        # Hanya saat logout (clean.sh: box-detach logout); tombol Tutup Brankas di app punya pesannya sendiri.
+        mark=0; [ "${2:-}" = logout ] && mark=1
+        had=0; [ -f "$A/box.close_failed" ] && had=1
+        if [ "$mark" = 1 ]; then
+            [ "$had" = 1 ] || rm -f "$A/box.close_failed.told"
+            echo "$(date '+%F %T')" > "$A/box.close_failed" 2>/dev/null
+        fi
+        ok=0
+        for w in 0 1 2 3; do
+            [ "$SECONDS" -lt 6 ] || break
+            sleep "$w"
+            limit 3 hdiutil detach "$d" >/dev/null 2>&1 && { ok=1; break; }
+            [ -n "$(box_dev)" ] || { ok=1; break; }
+        done
+        if [ "$ok" = 0 ]; then
+            if [ -n "$m" ] && command -v lsof >/dev/null 2>&1; then
+                n="$(limit 4 lsof -t -- "$m" 2>/dev/null | sort -u | wc -l | tr -d ' ')"
+                trace "box busy: ${n:-0} processes have files open in it"
+            fi
+            [ -n "$m" ] && limit 5 diskutil unmount force "$m" >/dev/null 2>&1
+            limit 5 hdiutil detach -force "$d" >/dev/null 2>&1
+            [ -n "$(box_dev)" ] || ok=1
+        fi
+        if [ "$ok" = 0 ]; then
+            trace "box close failed"
+            exit 1
+        fi
+        [ "$mark" = 1 ] && [ "$had" = 0 ] && rm -f "$A/box.close_failed"
         trace "box closed" ;;
     *) echo "usage: keeplock.sh lock|unlock|status|box-create GB|box-attach|box-detach|box-status" >&2; exit 2 ;;
 esac

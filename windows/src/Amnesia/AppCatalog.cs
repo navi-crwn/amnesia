@@ -44,7 +44,8 @@ static class AppCatalog
         return Get().FirstOrDefault(a => a.Paths.Any(x => x.Equals(p, StringComparison.OrdinalIgnoreCase) || p.StartsWith(x + "/", StringComparison.OrdinalIgnoreCase)));
     }
 
-    static List<string> Candidates()
+    /// <summary>Every AppData/{Roaming,Local,LocalLow}/X and X/Y (v0.8.1: also used by "Keep" on a new app).</summary>
+    public static List<string> Candidates()
     {
         var list = new List<string>();
         foreach (var root in new[] { "AppData/Roaming", "AppData/Local", "AppData/LocalLow" })

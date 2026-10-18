@@ -35,6 +35,18 @@ static class Setup
         }
     }
 
+    static bool startupOffSeen;
+
+    /// <summary>v0.8.1: Amnesia is on but switched off in Task Manager → Startup apps. Checked at start, every minute and
+    /// while the window is open; trace.log gets one line each time it is found switched off (isNew: just found).</summary>
+    public static bool CheckStartupOff(out bool isNew)
+    {
+        bool off = Settings.Enabled && StartupDisabled;
+        lock (RunKey) { isNew = off && !startupOffSeen; startupOffSeen = off; }
+        if (isNew) AppInfo.Trace("startup is switched off in Task Manager");
+        return off;
+    }
+
     /// <summary>"Switch it back on" (the button next to the warning): the same as switching it on in Task Manager.</summary>
     public static void EnableStartup()
     {
@@ -125,7 +137,11 @@ static class Setup
         if (KeepLock.On)
         {
             if (keepPassword.Length == 0) throw new InvalidOperationException("keeplock-uninstall");
-            if (!Amnesia.Core.Pin.Verify(keepPassword, Settings.Get("KEEP_LOCK_PW"))) throw new InvalidOperationException("keeplock-wrong");
+            if (!Amnesia.Core.Pin.Verify(keepPassword, Settings.Get("KEEP_LOCK_PW")))
+            {
+                AppInfo.Trace("wrong keep password at uninstall"); // v0.8.1 (never the password itself)
+                throw new InvalidOperationException("keeplock-wrong");
+            }
             KeepLock.TurnOff(keepPassword);
         }
         TurnOff(leaveStartup: false);

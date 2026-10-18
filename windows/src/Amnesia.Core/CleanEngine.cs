@@ -182,6 +182,23 @@ public sealed class CleanEngine
     public Action<string>? AfterClean { get; set; }
     /// <summary>v0.8: cloud folders Windows knows about (full paths, from Amnesia.exe: sync roots, Dropbox, Google Drive).</summary>
     public Func<IEnumerable<string>>? CloudRoots { get; set; }
+    /// <summary>v0.8.1: program folders (full paths) of apps installed since the "Remove new apps" list was made. The
+    /// cleanup moves these to the Amnesia trash for 3 days ("…-apps"), like "Remove new apps" does, instead of the normal
+    /// trash that is emptied at the next sign in (it ran first and the app was gone for good, with no way back).</summary>
+    public Func<IEnumerable<string>>? NewAppFolders { get; set; }
+    List<string> appDirs = new();
+    /// <summary>v0.8.1: does this item (Windows style, home relative) belong to a new app's program folder?</summary>
+    bool IsAppDir(string item)
+    {
+        foreach (var a in appDirs)
+        {
+            if (item.Equals(a, StringComparison.OrdinalIgnoreCase) || item.StartsWith(a + "\\", StringComparison.OrdinalIgnoreCase)) return true;
+            // the app sits inside the item (AppData\Local\Vendor\App): the whole item waits with it, never a container
+            if (a.StartsWith(item + "\\", StringComparison.OrdinalIgnoreCase) && item.Split('\\').Length >= 3) return true;
+        }
+        return false;
+    }
+
     /// <summary>v0.8: sign out and panic don't count file sizes (that took seconds with many files, and Windows waits only
     /// a few seconds at sign out).</summary>
     public bool Fast { get; set; }
@@ -242,12 +259,15 @@ public sealed class CleanEngine
 
         T("1 user folder");
         var batch = Path.Combine(Home.Trash, DateTime.Now.ToString("yyyyMMdd-HHmmss"));
+        int apps = 0;
         foreach (var i in items)
         {
             if (i.Kind != "file" && i.Kind != "folder") continue;
             var full = Path.Combine(H, i.Path.Replace('\\', Sep));
             if (!Exists(full)) continue; // already gone
             if (!Fast) bytes += SizeOf(full);
+            // v0.8.1: a new app's program folder waits 3 days in the trash (see NewAppFolders)
+            if (appDirs.Count > 0 && IsAppDir(i.Path) && ToTrash(full)) { moved++; apps++; continue; }
             // move = instant (same disk). The folder structure is kept in the trash so names never collide.
             var dest = Path.Combine(batch, i.Path.Replace('\\', Sep));
             try
@@ -263,6 +283,7 @@ public sealed class CleanEngine
             }
         }
 
+        if (apps > 0) T($"new app folders moved to the trash for 3 days: {apps}");
         T($"2 windows traces (after {watch.Elapsed.TotalSeconds:0.0} s)");
         int liveFailed = 0;
         foreach (var i in items)
@@ -295,6 +316,17 @@ public sealed class CleanEngine
         return r;
     }
 
+    /// <summary>v0.8.1: the order things are moved in, so what matters most goes first if Windows cuts the sign out short:
+    /// your own folders (Desktop, Documents, Downloads...) first, then app data, then Temp (often thousands of small,
+    /// unimportant files) last. Within each, folders before files (one move takes a whole folder). No sizes are counted,
+    /// so it costs nothing. Stable: the same order every time.</summary>
+    public static List<CleanItem> Order(IEnumerable<CleanItem> list) => list
+        .OrderBy(i => i.Kind is "file" or "folder" ? 0 : 1)
+        .ThenBy(i => i.Path.StartsWith(@"AppData\Local\Temp\", StringComparison.OrdinalIgnoreCase) ? 2
+                   : i.Path.StartsWith(@"AppData\", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+        .ThenBy(i => i.Kind == "folder" ? 0 : 1)
+        .ToList();
+
     /// <summary>Makes the list: what goes, what stays. Touches nothing.</summary>
     void Scan(string mode, Action<string> T)
     {
@@ -302,6 +334,8 @@ public sealed class CleanEngine
         Patterns();
         Visit("");
         AddBrowsers();
+        var ordered = Order(items);
+        items.Clear(); items.AddRange(ordered);
         AddTraces();
         if (ExtraTraces != null)
             try
@@ -325,6 +359,20 @@ public sealed class CleanEngine
             if (left > 0) T($"explorer caches left for sign out: {left}");
         }
         foreach (var s in system) items.Add(new CleanItem(s.Label, "trace"));
+        appDirs = new List<string>();
+        try
+        {
+            foreach (var f in NewAppFolders?.Invoke() ?? Enumerable.Empty<string>())
+            {
+                var rel = InHome(f);
+                var parts = rel?.Split('/');
+                // only an app's own folder in AppData, never a shared one (AppData\Local\Programs, Temp...)
+                if (rel == null || parts!.Length < 3 || !parts[0].Equals("AppData", StringComparison.OrdinalIgnoreCase)
+                    || parts.Length == 3 && SharedAppFolders.Contains(parts[2], StringComparer.OrdinalIgnoreCase)) continue;
+                appDirs.Add(Win(rel));
+            }
+        }
+        catch (Exception e) { T($"new app list failed: {e.GetType().Name}"); }
         scanned = true; scannedMode = mode; scannedAt = DateTime.UtcNow;
     }
 

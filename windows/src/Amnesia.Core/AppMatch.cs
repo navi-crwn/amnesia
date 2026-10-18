@@ -13,6 +13,16 @@ public static class AppMatch
         "Package Cache", "PackageManagement", "Apps", "Intel", "NVIDIA", "NVIDIA Corporation", "AMD", "Realtek", "Windows",
     };
 
+    // v0.8.1: folders that are not an app you would keep (crash reporters, driver leftovers, caches): no Keep List chip
+    static readonly string[] NotApps =
+    {
+        "Sentry", "AMD_Common", "ATI", "CEF", "Crashpad", "CrashReporter", "CrashReportClient", "ElevatedDiagnostics", "Diagnostics",
+        "SquirrelTemp", "Downloaded Installations", "fontconfig", "History", "pip", "*_Common", "*Crash*", "*Cache", "*Temp", "*.tmp", "{*}",
+    };
+
+    /// <summary>v0.8.1: a technical folder (not an app) that the Keep List does not suggest, unless an app owns it.</summary>
+    public static bool Technical(string folder) => NotApps.Any(n => Wild.Like(folder, n));
+
     /// <summary>The AppData folders (home relative, "/" separated) that look like they belong to this program.
     /// candidates: every AppData/{Roaming,Local,LocalLow}/X and, for folders named after a publisher, X/Y.</summary>
     public static List<string> Folders(string name, string? publisher, string? installDir, IEnumerable<string> candidates)

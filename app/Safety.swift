@@ -258,6 +258,25 @@ enum Brankas {
 
     @discardableResult
     static func detach() -> Bool { KeepLock.run(["box-detach"], timeout: 120).code == 0 }
+
+    /// v5.23: Brankas gagal ditutup saat logout (keeplock.sh box-detach menulis ~/.amnesia/box.close_failed, isinya
+    /// jam kejadian). nil = tidak ada masalah. Dihapus setelah kamu menekan Mengerti di kartu Brankas.
+    static var closeFailed: String? {
+        guard let t = try? String(contentsOfFile: P.a + "/box.close_failed", encoding: .utf8) else { return nil }
+        return t.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func closeFailedText(_ when: String) -> String {
+        T("Brankas could not be closed at logout (\(when)), so it stayed open longer than it should. Next time, close the "
+          + "apps using files from it before you log out.",
+          "Brankas tidak bisa ditutup saat logout (\(when)), jadi terbuka lebih lama dari seharusnya. Lain kali, tutup dulu "
+          + "app yang membuka file dari Brankas sebelum logout.")
+    }
+
+    static func clearCloseFailed() {
+        try? FileManager.default.removeItem(atPath: P.a + "/box.close_failed")
+        try? FileManager.default.removeItem(atPath: P.a + "/box.close_failed.told")
+    }
 }
 
 // MARK: - Kartu di Pengaturan
@@ -285,12 +304,16 @@ struct KeepLockCard: View {
                                + "Keep password here. It locks again after a few minutes, when the screen locks, and at logout.\n"
                                + "Honest note: this is light protection with macOS permissions, not encryption. Anyone "
                                + "logged in as you can remove it in Terminal with chmod -RN \(KeepDir.shown), and it does "
-                               + "nothing against someone who takes the disk. For that, use FileVault or the Brankas below.",
+                               + "nothing against someone who takes the disk. For that, use FileVault or the Brankas below.\n"
+                               + "File and folder names right inside Keep stay visible while it's locked. Only what's in "
+                               + "them is blocked. Put secret things in the Brankas if even the names must stay hidden.",
                                "Finder dan app lain tidak bisa membuka atau mengubah isi folder Keep sampai kamu mengetik "
                                + "password Keep di sini. Terkunci lagi setelah beberapa menit, saat layar terkunci, dan saat logout.\n"
                                + "Jujur saja: ini pengaman ringan memakai izin macOS, bukan enkripsi. Siapa pun yang login "
                                + "sebagai kamu bisa melepasnya di Terminal dengan chmod -RN \(KeepDir.shown), dan tidak "
-                               + "melindungi dari orang yang mengambil disknya. Untuk itu pakai FileVault atau Brankas di bawah."))
+                               + "melindungi dari orang yang mengambil disknya. Untuk itu pakai FileVault atau Brankas di bawah.\n"
+                               + "Nama file dan folder yang langsung ada di Keep tetap terlihat saat terkunci. Yang dikunci hanya "
+                               + "isinya. Simpan yang rahasia di Brankas kalau namanya pun harus tersembunyi."))
                         .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
@@ -388,6 +411,7 @@ struct BrankasCard: View {
     @State private var gb = 10
     @State private var pw = ""
     @State private var pw2 = ""
+    @State private var failNote = Brankas.closeFailed      // v5.23: gagal ditutup saat logout
 
     var body: some View {
         Card {
@@ -449,6 +473,11 @@ struct BrankasCard: View {
                 }
             case nil:
                 Text(T("Checking…", "Mengecek…")).font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            if let when = failNote {
+                Note(text: Brankas.closeFailedText(when), icon: "exclamationmark.triangle.fill", color: Th.orange)
+                Button(T("Got It", "Mengerti")) { Brankas.clearCloseFailed(); failNote = nil }
+                    .buttonStyle(Pill(colors: Pal.gray))
             }
         }
         .task { reload() }
@@ -662,6 +691,10 @@ enum Health {
                                   detail: T("Not given yet. Some folders can't be read or wiped without it.",
                                             "Belum diberikan. Beberapa folder tidak bisa dibaca atau dibersihkan tanpa izin ini."),
                                   fix: .fullDisk))
+        } else {        // v5.23: baris OK juga ditampilkan
+            rows.append(HealthRow(level: .ok, title: T("Full Disk Access", "Akses Disk Penuh"),
+                                  detail: T("Given. Amnesia can read and wipe every folder in your account.",
+                                            "Sudah diberikan. Amnesia bisa membaca dan membersihkan semua folder di akun kamu.")))
         }
 
         // 2. folder yang dilewati
@@ -677,6 +710,10 @@ enum Health {
         if skipped.contains(where: { $0.why == "symlink" }) {
             rows.append(HealthRow(level: .info, title: T("Folders that are shortcuts", "Folder berupa jalan pintas"),
                                   detail: Skipped.lines(skipped.filter { $0.why == "symlink" }).joined()))
+        } else {        // v5.23
+            rows.append(HealthRow(level: .ok, title: T("Folders that are shortcuts", "Folder berupa jalan pintas"),
+                                  detail: T("None. Desktop, Downloads, Documents and the others are normal folders.",
+                                            "Tidak ada. Desktop, Downloads, Documents dan lainnya folder biasa.")))
         }
         let failed = trashFailedCount()
         if failed > 0 {
@@ -700,21 +737,42 @@ enum Health {
                                   detail: T("\(vmNames.joined(separator: ", ")): the VM disks are deleted at the next logout.",
                                             "\(vmNames.joined(separator: ", ")): disk VM-nya terhapus saat logout berikutnya."),
                                   fix: .keepVM(vmLost)))
+        } else {        // v5.23: data VM yang ada sudah di Keep List, atau memang tidak ada
+            let vmKept = vmApps.filter { !vmDataPaths($0).isEmpty }.map { $0.name }
+            rows.append(HealthRow(level: .ok, title: T("Virtual machines", "Mesin virtual"),
+                                  detail: vmKept.isEmpty ? T("No virtual machine data found.", "Tidak ada data mesin virtual.")
+                                                         : T("Kept: \(vmKept.joined(separator: ", ")).",
+                                                             "Disimpan: \(vmKept.joined(separator: ", ")).")))
         }
 
         // 4. file besar di daftar "yang akan dihapus"
+        // v5.23: folder sementara Amnesia sendiri (salinan sebelum restore) tidak dihitung, tapi dijelaskan di bawah.
+        // Ukuran = ruang yang benar-benar terpakai di disk (du), jadi file sparse dihitung sebesar isinya saja.
         if let groups = report {
-            let items = groups.filter { !$0.system }.flatMap(\.items).filter { !$0.keychain }
+            let items = groups.filter { !$0.system }.flatMap(\.items).filter { !$0.keychain && !isAmnesiaCache($0.rel) }
             let sizes = itemSizes(items)
             let big = items.filter { (sizes[$0.id] ?? 0) >= 1_048_576 }
                 .sorted { (sizes[$0.id] ?? 0) > (sizes[$1.id] ?? 0) }
             if !big.isEmpty {
                 let list = big.prefix(5).map { "\($0.shown) (\(bytesText((sizes[$0.id] ?? 0) * 1024)))" }
                 rows.append(HealthRow(level: .warn, title: T("Big files get deleted", "File besar ikut dihapus"),
-                                      detail: T("At least 1 GB each, deleted at the next logout: ", "Minimal 1 GB per item, dihapus saat "
-                                                + "logout berikutnya: ") + list.joined(separator: ", ")
+                                      detail: T("At least 1 GB of real disk space each, deleted at the next logout: ",
+                                                "Minimal 1 GB ruang disk sungguhan per item, dihapus saat logout berikutnya: ")
+                                          + list.joined(separator: ", ")
                                           + (big.count > 5 ? T(" and \(big.count - 5) more.", " dan \(big.count - 5) lagi.") : ".")))
             }
+        }
+        if fm.fileExists(atPath: P.home + "/" + beforeRestoreRel) {
+            rows.append(HealthRow(level: .info, title: T("Copy from before a restore", "Salinan sebelum restore"),
+                                  detail: T("\(pathsSize([beforeRestoreRel])) in ~/\(beforeRestoreRel): your app data from before "
+                                            + "the last vault restore. Removed at the next logout (after 3 days at the latest).",
+                                            "\(pathsSize([beforeRestoreRel])) di ~/\(beforeRestoreRel): data app dari sebelum restore "
+                                            + "vault terakhir. Dihapus saat logout berikutnya (paling lama 3 hari).")))
+        }
+        // v5.23: Brankas gagal ditutup saat logout (keeplock.sh menulis box.close_failed)
+        if let when = Brankas.closeFailed {
+            rows.append(HealthRow(level: .warn, title: "Brankas",
+                                  detail: Brankas.closeFailedText(when)))
         }
 
         // 5. backup
@@ -782,7 +840,8 @@ struct HealthView: View {
                     if let rows = rows {
                         let bad = rows.filter { $0.level == .bad || $0.level == .warn }.count
                         Note(text: bad == 0 ? T("Everything looks fine.", "Semuanya terlihat baik.")
-                                            : T("\(bad) things need a look.", "\(bad) hal perlu dicek."),
+                                            : (bad == 1 ? T("1 thing needs a look.", "1 hal perlu dicek.")      // v5.23: dulu "1 things"
+                                                        : T("\(bad) things need a look.", "\(bad) hal perlu dicek.")),
                              icon: bad == 0 ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
                              color: bad == 0 ? Th.green : Th.orange)
                         ForEach(rows) { r in row(r) }
@@ -905,6 +964,12 @@ struct LimitsView: View {
                + "(experimental) for files that must stay secret.",
                "File di Keep adalah file biasa. Kunci Keep hanya menghalangi Finder dan app. Pakai FileVault, atau Brankas "
                + "(eksperimen) untuk file yang harus tetap rahasia.")),
+            // v5.23: ditulis jujur
+            Item("eye.fill", T("The Keep lock doesn't hide names", "Kunci Keep tidak menyembunyikan nama"),
+             T("While Keep is locked, the names of the files and folders right inside it can still be seen. Only opening "
+               + "or changing them is blocked. Names inside the Brankas stay hidden while it's closed.",
+               "Saat Keep terkunci, nama file dan folder yang langsung ada di dalamnya tetap bisa dilihat. Yang dihalangi "
+               + "hanya membuka atau mengubahnya. Nama di dalam Brankas tetap tersembunyi selama Brankas tertutup.")),
             Item("network", T("Things outside this Mac", "Hal di luar Mac ini"),
              T("Websites, your internet provider, and the apps' own servers still have their records of you.",
                "Website, penyedia internet, dan server milik app tetap punya catatan mereka tentang kamu.")),

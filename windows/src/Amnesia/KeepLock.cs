@@ -10,6 +10,9 @@
 // INSIDE Keep: the folder itself can still be listed and its icon read (desktop.ini gets its own "allow read"), the files
 // and folders in it can't be opened, changed or deleted, and nothing new can be written into it, by any program. While it
 // is locked Keep is also taken out of Quick access (pinned again when you open it), and Explorer is told after each change.
+// v0.8.1: an old bug left Keep locked across uninstall of 0.7.2, reinstall and update (the deny entries stayed, the Keep
+// lock setting was gone). Stale finds that; the home page and the Health check then offer to open Keep (with the old Keep
+// password when it is still known, else with one click: the folder is yours).
 using System.Security.AccessControl;
 using System.Security.Principal;
 using Amnesia.Core;
@@ -52,6 +55,27 @@ static class KeepLock
             catch { }
             return false;
         }
+    }
+
+    /// <summary>v0.8.1: Keep still has Amnesia's deny entries although the Keep lock is off (or has no password).</summary>
+    public static bool Stale => !On && IsLocked;
+    /// <summary>v0.8.1: the old Keep password is still known, so it is asked before a stale lock is removed.</summary>
+    public static bool StaleNeedsPassword => Settings.Get("KEEP_LOCK_PW") != null;
+
+    /// <summary>v0.8.1: removes a lock that was left behind (Stale). With the old Keep password when it is still known.</summary>
+    public static void ClearStale(string password)
+    {
+        if (!Stale) return;
+        var hash = Settings.Get("KEEP_LOCK_PW");
+        if (hash != null && !Pin.Verify(password, hash))
+        {
+            AppInfo.Trace("wrong keep password for the old lock");
+            throw new InvalidOperationException("keeplock-wrong");
+        }
+        Unlock();
+        Settings.Set("KEEP_LOCK", null); Settings.Set("KEEP_LOCK_PW", null);
+        AppInfo.Trace(IsLocked ? "old keep lock could not be removed" : "old keep lock removed: Keep is open");
+        KeepLinks.Sync();
     }
 
     /// <summary>A lock made by v0.7.0: the deny entry is on the Keep folder itself (not "inside only").</summary>

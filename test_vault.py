@@ -50,7 +50,7 @@ try:
     shutil.rmtree(os.path.join(T, "Library")); shutil.rmtree(os.path.join(T, ".local")); os.remove(os.path.join(T, ".claude.json"))
     # salah 1x, lalu benar -> counter reset
     expect_error(lambda: v.restore("salah-salah-salah"), "Tries left: 2")
-    names, checks = v.restore(PW)
+    names, checks, _skipped = v.restore(PW)
     assert names == ["Chrome", "Claude", "OpenCode", "Claude Code", "WhatsApp"] and v.attempts() == 0
     assert all(c["ok"] for c in checks), checks
     assert not os.path.exists(v.F_STAGE)
@@ -313,6 +313,69 @@ try:
     argv_lines = [l for l in text.splitlines() if l.startswith("ARGV")]
     assert not any("rahasia" in l or b"rahasia-signal".hex() in l for l in argv_lines), argv_lines
     assert b"rahasia-signal".hex() in text, "secret goes as hex through stdin"
+
+    # --- v5.23: Keep menang saat restore, cek "lebih baru", Kembalikan data sebelum restore, buka lagi app ---
+    open(os.path.join(v.AMNESIA, "settings.conf"), "w").close()
+    shutil.rmtree(v.VAULT, ignore_errors=True)
+    mk("Library/Application Support/Claude/config.json", "claude-snap")
+    mk(".claude/projects/a/chat.jsonl", "chat-snap")
+    mk(".claude.json", "cc-snap")
+    mk(".config/gh/hosts.yml", "gh-snap"); mk(".config/gh/config.yml", "ghconf-snap")
+    v.create(PW)
+    assert v.snapshot(["Claude", "Claude Code", "GitHub CLI"]) == ["Claude", "Claude Code", "GitHub CLI"]
+    # Claude di Keep List: Library/Application Support/Claude + (otomatis) .claude, .claude.json tidak ditimpa
+    with open(os.path.join(v.AMNESIA, "keep.conf"), "w") as f:
+        f.write("# tes\nLibrary/Application Support/Claude\n~/.config/gh/hosts.yml\nkeychain:Claude*\n")
+    k = v.KeepRules()
+    assert k.kept(".claude") and k.kept(".claude.json") and k.kept(".claude.json.backup"), "Claude kept = Claude Code kept"
+    assert not k.kept(".config/gh") and k.kept_inside(".config/gh") and k.kept(".config/gh/hosts.yml")
+    mk("Library/Application Support/Claude/config.json", "claude-now")
+    mk(".claude/projects/a/chat.jsonl", "chat-now")
+    mk(".claude.json", "cc-now")
+    mk(".config/gh/hosts.yml", "gh-now"); mk(".config/gh/config.yml", "ghconf-now")
+    # data di Mac ini lebih baru dari snapshot: dilaporkan, kecuali yang ada di Keep List (tidak akan ditimpa)
+    future = _t.time() + 600
+    os.utime(os.path.join(T, ".config/gh/config.yml"), (future, future))
+    os.utime(os.path.join(T, ".claude.json"), (future, future))
+    newer = [x["app"] for x in v.newer_apps()]
+    assert newer == ["GitHub CLI"], newer
+    names, checks, skipped = v.restore(PW)
+    assert open(os.path.join(T, "Library/Application Support/Claude/config.json")).read() == "claude-now"
+    assert open(os.path.join(T, ".claude/projects/a/chat.jsonl")).read() == "chat-now"
+    assert open(os.path.join(T, ".claude.json")).read() == "cc-now"
+    assert open(os.path.join(T, ".config/gh/hosts.yml")).read() == "gh-now", "kept file inside an app folder stays"
+    assert open(os.path.join(T, ".config/gh/config.yml")).read() == "ghconf-snap"
+    assert skipped == 4, skipped                 # Claude, .claude, .claude.json, .config/gh/hosts.yml
+    assert v.newer_apps() == [], "nothing newer right after a restore"
+    # Kembalikan data sebelum restore: data lama kembali, hasil restore disingkirkan (tidak dihapus)
+    assert v.undo_info()["apps"] == names
+    assert v._cli(["vault.py", "status"], None)["undo"]["apps"] == names
+    assert v.undo_restore() == names
+    assert open(os.path.join(T, ".config/gh/config.yml")).read() == "ghconf-now"
+    assert open(os.path.join(T, ".config/gh/hosts.yml")).read() == "gh-now"
+    assert open(os.path.join(T, ".claude.json")).read() == "cc-now"
+    assert open(os.path.join(v.AFTER_RESTORE, ".config/gh/config.yml")).read() == "ghconf-snap"
+    assert not os.path.exists(v.BEFORE_RESTORE) and v.undo_info() is None
+    expect_error(v.undo_restore, "no restore to undo")
+    # restore tanpa data sebelumnya: undo menyingkirkan hasil restore saja
+    shutil.rmtree(os.path.join(T, ".config/gh"))
+    os.remove(os.path.join(v.AMNESIA, "keep.conf"))
+    v.restore(PW)
+    assert open(os.path.join(T, ".config/gh/hosts.yml")).read() == "gh-snap"
+    v.undo_restore()
+    assert not os.path.exists(os.path.join(T, ".config/gh"))
+    # Snapshot Sekarang membuka lagi app yang tadi jalan; snapshot otomatis (logout) tidak
+    opened = []
+    real_quit, real_reopen = v.quit_apps, v.reopen_apps
+    v.quit_apps = lambda names: ["Claude"]
+    v.reopen_apps = lambda apps: opened.extend(apps)
+    try:
+        v.snapshot(["Claude"], reopen=True)
+        assert opened == ["Claude"], opened
+        _t.sleep(1.1); mk("Library/Application Support/Claude/new2.txt", "x")
+        assert v.snapshot(["Claude"], changed=True) == ["Claude"] and opened == ["Claude"], "auto snapshot must not reopen apps"
+    finally:
+        v.quit_apps, v.reopen_apps = real_quit, real_reopen
     print("OK: all vault tests passed")
 finally:
     shutil.rmtree(T)

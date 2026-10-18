@@ -64,11 +64,14 @@
     hDoom: function (d) { return 'Doomsday: vault deleted' + (d === 'keep' ? ' + Keep emptied' : ''); },
     hQuick: function (d) { return 'Quick sign out (' + d + ')'; },
     hApps: function (d) { var p = d.split(' '); return 'Removed ' + p[1] + ' new app item(s)'; },
+    hAppKeep: function (d) { var p = d.split(' '); return 'Kept ' + p[0] + ' new app(s), ' + (p[1] || 0) + ' folder(s) added to the Keep List'; },
     hLeft: function (d) { return d + ' leftover(s) deleted'; }, hSys: function () { return 'Windows traces cleaned (admin)'; }, hWipe: function (d) { return 'Free space wipe started on ' + d; },
     hBlocked: function (d) { return d + ' items blocked by Windows Security / antivirus'; },
     hVault: function () { return 'Vault created'; },
     // v0.8
     hPause: function () { return 'Paused for one session'; }, hResume: function () { return 'Pause cancelled'; },
+    ksTitle: 'Keep is still locked', ksText: 'An old Amnesia version left its lock on your Keep folder, but the Keep lock is off now. Open it again here.',
+    ksOpen: 'Open Keep', ksPw: 'Old Keep password', ksDone: 'Keep is open again.',
     suTitle: 'Amnesia will not start with Windows', suText: 'Its startup entry is switched off (Task Manager > Startup apps). Then nothing is wiped at the next sign in and the tray icon is gone. Switch it back on here.', suFix: 'Switch it back on',
     healthTitle: 'Health check', healthText: 'Can Amnesia do its job right now? Yellow and red lines tell you what to look at.', hlAgain: 'Check again',
     hlAllOk: 'All good', hlIssues: function (n) { return n + ' thing' + (n === 1 ? '' : 's') + ' to look at'; },
@@ -80,7 +83,7 @@
       blocked: { ok: 'Windows Security did not block anything.', warn: 'Windows Security or an antivirus blocked items in the last cleanup. See the home page card.' },
       cloud: { info: function (d) { return d ? 'Cloud folders left as they are (so the cloud keeps your files): ' + d + '.' : 'No cloud sync folders found (OneDrive, Dropbox, Google Drive... stay untouched when they are there).'; } },
       vm: { ok: 'Virtual machines and big disc images stay.', warn: 'Virtual machines are wiped like other files (Settings > Protection).' },
-      keepLock: { ok: 'Keep is locked with a password.', info: 'Keep is not locked (optional, Settings > Locks).' },
+      keepLock: { ok: 'Keep is locked with a password.', info: 'Keep is not locked (optional, Settings > Locks).', bad: 'Keep is still locked by an old version. Open it on the home page.' },
       vault: { ok: function (d) { return 'Newest vault snapshot: ' + d + '.'; }, warn: 'The vault has no snapshot yet.', info: 'No vault (optional).' },
       backup: { ok: function (d) { return 'Last backup: ' + d + '.'; }, warn: 'No recent backup. If this PC breaks, Keep and the vault are gone too.', info: 'No backup set up (optional).' },
       hotkey: { ok: function (d) { return 'Panic hotkey: ' + d + '.'; }, info: 'No panic hotkey (optional, Settings).' },
@@ -105,6 +108,8 @@
     wcTitle: 'Also wipe saved app passwords', wcText: 'Removes passwords apps saved in Credential Manager (git, some chat apps). Never your Microsoft account, OneDrive or Office.',
     cloudNote: 'Cloud folders (OneDrive, Dropbox, Google Drive, iCloud...) are never wiped: moving them would delete your files in the cloud too.',
     unPw: 'Keep password (Keep is locked)',
+    unSafe: function (n) { return (n > 0 ? 'Your safe box still has ' + n + ' file(s).' : 'Your safe box still has files.') + ' Open it and move them first, or keep it: it opens again after you reinstall Amnesia. Uninstall anyway?'; },
+    unSafeAll: function (n) { return (n > 0 ? 'Your safe box still has ' + n + ' file(s).' : 'Your safe box still has files.') + ' Deleting everything deletes the safe box too, for good. Open it and move them first. Go on anyway?'; },
     sbTitle: 'Safe box (experimental)', sbText: 'A locked folder inside Keep for your most private files. Closed, it is one locked file; open, it is Keep\\Safe. Amnesia closes it again at every sign out. Keep it small: closing packs everything again.',
     sbPwPh: 'Safe box password (at least 12 characters)', sbCreate: 'Create safe box', sbOpen: 'Open', sbShow: 'Show in Explorer', sbClose: 'Close and lock',
     sbNone: 'No safe box yet.', sbIsOpen: function (d) { return 'Open in ' + d + '. Closes by itself at sign out.'; }, sbIsClosed: function (n) { return 'Closed and locked (' + n + ').'; },
@@ -158,6 +163,7 @@
     aApps: 'Remove new apps', aAppsSwitch: 'Remove programs installed after Turn On',
     aAppsText: 'Programs installed just for you (and Microsoft Store apps) after Amnesia was turned on are removed at sign out. Press Keep to keep one. Programs for everyone need admin, so they are only listed. Careful: Microsoft Store apps you install after turning this on (Claude, WhatsApp...) are removed too, unless you press Keep.',
     aAppsEmpty: 'No new programs since Turn On.', aKeepAll: 'Keep all of these', keep: 'Keep', uninstall: 'Uninstall', needsAdmin: 'for everyone: needs admin',
+    aKept: 'Kept. Its folders are on your Keep List now, so it keeps working after sign out.',
     aUninstalling: 'Waiting for the uninstaller to finish... The list updates by itself after.',
     kUser: 'just for you', kStart: 'Start menu', kRun: 'starts with Windows', kAppx: 'Microsoft Store', kMachine: 'for everyone', kReg: 'settings in the registry',
     aUsbAction: 'When the USB key is pulled out', aUsbSignOut: 'Clean and sign out', aUsbShutdown: 'Clean and shut down (like Tails)',
@@ -177,10 +183,10 @@
     xlText: 'Winapp2 is a free list of where ~4,000 apps leave history. Amnesia uses the parts in the folders that stay on purpose (AppData\\Microsoft, Store apps) and your registry. The list is downloaded from GitHub, never sent anywhere.',
     xlDownload: 'Download / update list', xlAbout: 'About Winapp2',
     xlState: function (l) { return l.exists ? 'List version ' + (l.version || '?') + ', ' + l.entries + ' apps, downloaded ' + l.date + '.' : 'Not downloaded yet: press the button first.'; },
-    xlDone: 'List downloaded.', sbTitle: 'Throwaway Windows', sbText: 'Opens Windows Sandbox: a fresh Windows in a window. Try a strange file or website there; everything inside is gone when you close it. Idea from Sandboxie.',
-    sbKeep: 'Show my Keep folder inside (read only)', sbNet: 'Internet inside the sandbox', sbOpen: 'Open throwaway Windows',
-    sbMissing: 'Windows Sandbox is not switched on. It needs Windows Pro or Enterprise and virtualization (inside a VM it often does not work). Switch on "Windows Sandbox" in Windows features, then restart.',
-    sbFeatures: 'Open Windows features',
+    xlDone: 'List downloaded.', sxTitle: 'Throwaway Windows', sxText: 'Opens Windows Sandbox: a fresh Windows in a window. Try a strange file or website there; everything inside is gone when you close it. Idea from Sandboxie.',
+    sxKeep: 'Show my Keep folder inside (read only)', sxNet: 'Internet inside the sandbox', sxOpen: 'Open throwaway Windows',
+    sxMissing: 'Windows Sandbox is not switched on. It needs Windows Pro or Enterprise and virtualization (inside a VM it often does not work). Switch on "Windows Sandbox" in Windows features, then restart.',
+    sxFeatures: 'Open Windows features',
     wfTitle: 'Wipe free space', wfText: 'Deleted files can sometimes be brought back with recovery tools. This runs Windows\' own "cipher /w" on your drive: it overwrites the free space. Slow (can take an hour) and uses the disk hard. On an SSD Windows already does most of this by itself.',
     wfRun: 'Wipe free space', wfConfirm: 'Start wiping the free space now? A black window shows the progress. You can keep working, but the PC is slower until it is done.', wfStarted: 'Started in a separate window.',
     adCopilot: 'Turn off Copilot for every user.', adTelemetry: 'Lower Windows diagnostic data (telemetry) to the minimum. Fully off only on Enterprise and Education.',
@@ -295,11 +301,14 @@
     hDoom: function (d) { return 'Doomsday: vault dihapus' + (d === 'keep' ? ' + Keep dikosongkan' : ''); },
     hQuick: function (d) { return 'Sign out cepat (' + d + ')'; },
     hApps: function (d) { var p = d.split(' '); return p[1] + ' app baru dihapus'; },
+    hAppKeep: function (d) { var p = d.split(' '); return p[0] + ' app baru disimpan, ' + (p[1] || 0) + ' folder masuk Keep List'; },
     hLeft: function (d) { return d + ' sisa app dihapus'; }, hSys: function () { return 'Jejak Windows dibersihkan (admin)'; }, hWipe: function (d) { return 'Hapus ruang kosong dimulai di ' + d; },
     hBlocked: function (d) { return d + ' item diblok Windows Security / antivirus'; },
     hVault: function () { return 'Vault dibuat'; },
     // v0.8
     hPause: function () { return 'Dijeda untuk satu sesi'; }, hResume: function () { return 'Jeda dibatalkan'; },
+    ksTitle: 'Folder Keep masih terkunci', ksText: 'Versi Amnesia yang lama meninggalkan kuncinya di folder Keep, padahal kunci Keep sudah mati. Buka lagi di sini.',
+    ksOpen: 'Buka Keep', ksPw: 'Password Keep yang lama', ksDone: 'Keep sudah terbuka lagi.',
     suTitle: 'Amnesia tidak ikut menyala bersama Windows', suText: 'Startup-nya dimatikan (Task Manager > Startup apps). Akibatnya tidak ada yang dihapus saat login berikutnya dan ikon tray hilang. Nyalakan lagi di sini.', suFix: 'Nyalakan lagi',
     healthTitle: 'Cek kesehatan', healthText: 'Apakah Amnesia bisa bekerja sekarang? Baris kuning dan merah menunjukkan yang perlu dicek.', hlAgain: 'Cek lagi',
     hlAllOk: 'Semua aman', hlIssues: function (n) { return n + ' hal perlu dicek'; },
@@ -311,7 +320,7 @@
       blocked: { ok: 'Windows Security tidak memblok apa pun.', warn: 'Windows Security atau antivirus memblok item di pembersihan terakhir. Lihat kartu di halaman utama.' },
       cloud: { info: function (d) { return d ? 'Folder cloud dibiarkan apa adanya (supaya file di cloud tetap aman): ' + d + '.' : 'Tidak ada folder sync cloud (OneDrive, Dropbox, Google Drive... tidak disentuh kalau ada).'; } },
       vm: { ok: 'Virtual machine dan image disk besar tetap aman.', warn: 'Virtual machine ikut dihapus seperti file lain (Pengaturan > Perlindungan).' },
-      keepLock: { ok: 'Keep dikunci dengan password.', info: 'Keep tidak dikunci (opsional, Pengaturan > Kunci).' },
+      keepLock: { ok: 'Keep dikunci dengan password.', info: 'Keep tidak dikunci (opsional, Pengaturan > Kunci).', bad: 'Keep masih dikunci versi lama. Buka di halaman utama.' },
       vault: { ok: function (d) { return 'Snapshot vault terbaru: ' + d + '.'; }, warn: 'Vault belum punya snapshot.', info: 'Tidak ada vault (opsional).' },
       backup: { ok: function (d) { return 'Backup terakhir: ' + d + '.'; }, warn: 'Belum ada backup baru. Kalau PC ini rusak, Keep dan vault ikut hilang.', info: 'Backup belum diatur (opsional).' },
       hotkey: { ok: function (d) { return 'Tombol panik: ' + d + '.'; }, info: 'Belum ada tombol panik (opsional, Pengaturan).' },
@@ -336,6 +345,8 @@
     wcTitle: 'Hapus juga password app', wcText: 'Menghapus password yang disimpan app di Credential Manager (git, beberapa app chat). Tidak pernah akun Microsoft, OneDrive atau Office.',
     cloudNote: 'Folder cloud (OneDrive, Dropbox, Google Drive, iCloud...) tidak pernah dihapus: memindahkannya akan ikut menghapus file kamu di cloud.',
     unPw: 'Password Keep (Keep sedang dikunci)',
+    unSafe: function (n) { return (n > 0 ? 'Brankas kamu masih berisi ' + n + ' file.' : 'Brankas kamu masih berisi file.') + ' Buka dan pindahkan dulu, atau biarkan: brankas bisa dibuka lagi setelah kamu memasang Amnesia lagi. Tetap uninstall?'; },
+    unSafeAll: function (n) { return (n > 0 ? 'Brankas kamu masih berisi ' + n + ' file.' : 'Brankas kamu masih berisi file.') + ' Menghapus semuanya juga menghapus brankas untuk selamanya. Buka dan pindahkan dulu. Tetap lanjut?'; },
     sbTitle: 'Brankas (eksperimen)', sbText: 'Folder terkunci di dalam Keep untuk file paling pribadi. Saat tertutup, isinya cuma satu file terkunci; saat dibuka, ada di Keep\\Safe. Amnesia menutupnya lagi setiap sign out. Isinya jangan terlalu besar: menutup berarti mengemas semuanya lagi.',
     sbPwPh: 'Password brankas (minimal 12 karakter)', sbCreate: 'Buat brankas', sbOpen: 'Buka', sbShow: 'Tampilkan di Explorer', sbClose: 'Tutup dan kunci',
     sbNone: 'Belum ada brankas.', sbIsOpen: function (d) { return 'Terbuka di ' + d + '. Tertutup sendiri saat sign out.'; }, sbIsClosed: function (n) { return 'Tertutup dan terkunci (' + n + ').'; },
@@ -389,6 +400,7 @@
     aApps: 'Hapus app baru', aAppsSwitch: 'Hapus program yang dipasang setelah Amnesia dinyalakan',
     aAppsText: 'Program yang dipasang khusus untuk kamu (dan app Microsoft Store) setelah Amnesia dinyalakan dihapus saat sign out. Tekan Simpan untuk menyimpannya. Program untuk semua user butuh admin, jadi hanya didaftar. Hati-hati: app Microsoft Store yang kamu pasang setelah ini dinyalakan (Claude, WhatsApp...) ikut dihapus, kecuali kamu tekan Simpan.',
     aAppsEmpty: 'Belum ada program baru sejak dinyalakan.', aKeepAll: 'Simpan semua ini', keep: 'Simpan', uninstall: 'Uninstall', needsAdmin: 'untuk semua user: butuh admin',
+    aKept: 'Disimpan. Folder-nya sudah masuk Keep List, jadi app-nya tetap jalan setelah sign out.',
     aUninstalling: 'Menunggu uninstaller selesai... Daftarnya diperbarui sendiri setelah itu.',
     kUser: 'khusus kamu', kStart: 'menu Start', kRun: 'jalan saat Windows mulai', kAppx: 'Microsoft Store', kMachine: 'semua user', kReg: 'pengaturan di registry',
     aUsbAction: 'Saat USB key dicabut', aUsbSignOut: 'Bersihkan lalu sign out', aUsbShutdown: 'Bersihkan lalu matikan PC (seperti Tails)',
@@ -408,10 +420,10 @@
     xlText: 'Winapp2 adalah daftar gratis tempat ~4.000 app menyimpan riwayat. Amnesia memakai bagian yang ada di folder yang sengaja disimpan (AppData\\Microsoft, app Store) dan registry kamu. Daftarnya diunduh dari GitHub, tidak ada yang dikirim.',
     xlDownload: 'Unduh / perbarui daftar', xlAbout: 'Tentang Winapp2',
     xlState: function (l) { return l.exists ? 'Daftar versi ' + (l.version || '?') + ', ' + l.entries + ' app, diunduh ' + l.date + '.' : 'Belum diunduh: tekan tombolnya dulu.'; },
-    xlDone: 'Daftar sudah diunduh.', sbTitle: 'Windows sekali pakai', sbText: 'Membuka Windows Sandbox: Windows baru di dalam jendela. Coba file atau website yang mencurigakan di sana; semuanya hilang saat ditutup. Ide dari Sandboxie.',
-    sbKeep: 'Tampilkan folder Keep di dalamnya (hanya baca)', sbNet: 'Internet di dalam sandbox', sbOpen: 'Buka Windows sekali pakai',
-    sbMissing: 'Windows Sandbox belum aktif. Butuh Windows Pro atau Enterprise dan virtualisasi (di dalam VM sering tidak bisa). Aktifkan "Windows Sandbox" di Windows features, lalu restart.',
-    sbFeatures: 'Buka Windows features',
+    xlDone: 'Daftar sudah diunduh.', sxTitle: 'Windows sekali pakai', sxText: 'Membuka Windows Sandbox: Windows baru di dalam jendela. Coba file atau website yang mencurigakan di sana; semuanya hilang saat ditutup. Ide dari Sandboxie.',
+    sxKeep: 'Tampilkan folder Keep di dalamnya (hanya baca)', sxNet: 'Internet di dalam sandbox', sxOpen: 'Buka Windows sekali pakai',
+    sxMissing: 'Windows Sandbox belum aktif. Butuh Windows Pro atau Enterprise dan virtualisasi (di dalam VM sering tidak bisa). Aktifkan "Windows Sandbox" di Windows features, lalu restart.',
+    sxFeatures: 'Buka Windows features',
     wfTitle: 'Hapus ruang kosong', wfText: 'File yang sudah dihapus kadang masih bisa dikembalikan dengan aplikasi recovery. Ini menjalankan "cipher /w" bawaan Windows di drive kamu: ruang kosongnya ditimpa. Lambat (bisa sejam) dan disk bekerja keras. Di SSD, Windows sudah melakukan sebagian besar ini sendiri.',
     wfRun: 'Hapus ruang kosong', wfConfirm: 'Mulai menimpa ruang kosong sekarang? Jendela hitam menampilkan progresnya. Kamu tetap bisa bekerja, tapi PC lebih lambat sampai selesai.', wfStarted: 'Sudah mulai di jendela terpisah.',
     adCopilot: 'Matikan Copilot untuk semua user.', adTelemetry: 'Kurangi data diagnostik Windows (telemetry) ke minimum. Mati total hanya di Enterprise dan Education.',
@@ -623,11 +635,30 @@
     if (i.lastBlocked) $('blockedText').textContent = L.blocked(i.lastBlocked);
     // v0.8
     $('startupCard').hidden = !i.startupDisabled;
+    // v0.8.1: Keep still locked by an old version
+    $('keepStaleCard').hidden = !i.keepStale; $('ksPw').hidden = !i.keepStalePw;
     $('unPwBox').hidden = !i.keepLocked;
   }
   $('suFix').addEventListener('click', function () {
     ask('enableStartup').then(function (i) { show(i); loadHealth(); }).catch(function (e) { say('suMsg', errText(e), 'bad'); });
   });
+  $('ksOpen').addEventListener('click', function () {
+    var b = this; b.disabled = true;
+    ask('keepStaleOpen', { password: $('ksPw').value }).then(function (i) { $('ksPw').value = ''; show(i); loadHealth(); say('ksMsg', L.ksDone, 'good'); })
+      .catch(function (e) { say('ksMsg', errText(e), 'bad'); }).then(function () { b.disabled = false; });
+  });
+  // v0.8.1: Task Manager can switch startup off while this window is open: look again on focus and every 30 s
+  function refreshStartup() {
+    if (document.hidden || !info) return;
+    ask('startupState').then(function (x) {
+      if (!!x.startupDisabled === !!info.startupDisabled) return;
+      info.startupDisabled = x.startupDisabled;
+      $('startupCard').hidden = !x.startupDisabled;
+      loadHealth();
+    }).catch(function () {});
+  }
+  window.addEventListener('focus', refreshStartup);
+  setInterval(refreshStartup, 30000);
 
   // ---------- Health check (v0.8) ----------
   function hlLine(x) {
@@ -657,7 +688,7 @@
       h = [].concat(h || []);
       $('histEmpty').hidden = h.length > 0;
       $('hist').hidden = h.length === 0;
-      var f = { clean: L.hClean, paused: L.hPaused, snapshot: L.hSnapshot, restore: L.hRestore, backup: L.hBackup, doomsday: L.hDoom, quick: L.hQuick, apps: L.hApps, blocked: L.hBlocked, vault: L.hVault, leftovers: L.hLeft, sysclean: L.hSys, wipe: L.hWipe, pause: L.hPause, resume: L.hResume };
+      var f = { clean: L.hClean, paused: L.hPaused, snapshot: L.hSnapshot, restore: L.hRestore, backup: L.hBackup, doomsday: L.hDoom, quick: L.hQuick, apps: L.hApps, appkeep: L.hAppKeep, blocked: L.hBlocked, vault: L.hVault, leftovers: L.hLeft, sysclean: L.hSys, wipe: L.hWipe, pause: L.hPause, resume: L.hResume };
       fill($('hist'), h.map(function (x) { return { kind: x.time.slice(5, 16), path: f[x.kind] ? f[x.kind](x.data) : x.kind + ' ' + x.data }; }), 50);
     }).catch(function () { });
   }
@@ -747,8 +778,11 @@
     k.suggestions.forEach(function (s) {
       var c = el('button', 'chip', s.name);
       if (s.icon) c.prepend(appIcon(s.icon));
-      c.title = s.path.replace(/\//g, '\\');
-      c.addEventListener('click', function () { ask('keepAdd', { path: s.path }).then(showKeep); });
+      // v0.8.1: one chip can keep the same app's folders in Local and Roaming together
+      var paths = s.paths && s.paths.length ? s.paths : [s.path];
+      c.title = paths.map(function (p) { return p.replace(/\//g, '\\'); }).join('\n');
+      if (paths.length > 1) c.append(el('span', 'meta', ' (' + paths.map(function (p) { return p.split('/')[1]; }).join(' + ') + ')'));
+      c.addEventListener('click', function () { (paths.length > 1 ? ask('keepAddApp', { paths: paths }) : ask('keepAdd', { path: s.path })).then(showKeep); });
       box.append(c);
     });
     if (!k.suggestions.length) box.append(el('span', 'muted', L.klNone));
@@ -940,18 +974,20 @@
     var ul = $('aAppsList'); ul.textContent = '';
     a.apps.forEach(function (x) {
       var li = el('li'), g = el('span', 'grow');
-      g.append(el('span', '', x.name), el('span', 'meta', x.kind === 'machine' ? L.needsAdmin : L[kinds[x.kind]]));
+      // v0.8.1: one line per app; the meta line names every part of it (uninstall entry, Start menu, registry...)
+      var parts = (x.kinds || [x.kind]).map(function (k) { return k === 'machine' ? L.needsAdmin : L[kinds[k]]; });
+      g.append(el('span', '', x.name), el('span', 'meta', parts.join(' · ')));
       li.append(g);
       if (x.canUninstall) {
         var u = el('button', 'btn ghost small', L.uninstall);
         // v0.7.1: Amnesia waits for the uninstaller, then the list is loaded again
         u.addEventListener('click', function () {
           u.disabled = true; say('aAppsMsg', L.aUninstalling);
-          ask('appsUninstall', { id: x.id }).then(function (a) { say('aAppsMsg', L.done, 'good'); showAdv(a); }).catch(function (e) { say('aAppsMsg', errText(e), 'bad'); u.disabled = false; });
+          ask('appsUninstall', { id: x.uninstallId || x.id }).then(function (a) { say('aAppsMsg', L.done, 'good'); showAdv(a); }).catch(function (e) { say('aAppsMsg', errText(e), 'bad'); u.disabled = false; });
         });
         li.append(u);
       }
-      var k = el('button', 'btn ghost small', L.keep); k.addEventListener('click', function () { ask('appsKeep', { id: x.id }).then(showAdv); }); li.append(k);
+      var k = el('button', 'btn ghost small', L.keep); k.addEventListener('click', function () { k.disabled = true; ask('appsKeep', { id: x.id, ids: x.ids || [x.id] }).then(function (a) { say('aAppsMsg', L.aKept, 'good'); showAdv(a); }).catch(function (e) { say('aAppsMsg', errText(e), 'bad'); k.disabled = false; }); }); li.append(k);
       ul.append(li);
     });
     $('aAppsEmpty').hidden = a.apps.length > 0;
@@ -967,7 +1003,7 @@
     $('adCopilot').checked = a.admin.copilot; $('adTelemetry').checked = a.admin.telemetry;
     document.querySelectorAll('[data-pv]').forEach(function (c) { c.checked = !!(a.privacy || {})[c.dataset.pv]; });
     $('xlState').textContent = L.xlState(a.list || {});
-    $('sbReady').hidden = !a.sandbox; $('sbMissing').hidden = !!a.sandbox;
+    $('sxReady').hidden = !a.sandbox; $('sxMissing').hidden = !!a.sandbox;
     $('avCfa').textContent = a.cfa === 'on' ? L.cfaOn : a.cfa === 'off' || a.cfa === 'audit' ? L.cfaOff : L.cfaUnknown;
     $('avCfa').className = a.cfa === 'on' ? 'warn' : 'muted';
   }
@@ -1012,7 +1048,7 @@
     ask('usbSet', { serial: this.value, name: this.value ? o.dataset.name : '' }).then(showAdv);
   });
   $('aPanicNow').addEventListener('click', function () { confirmBox(L.aPanicConfirm).then(function (y) { if (y) ask('panicNow'); }); });
-  $('aKeepAll').addEventListener('click', function () { ask('appsKeepAll').then(showAdv); });
+  $('aKeepAll').addEventListener('click', function () { ask('appsKeepAll').then(function (a) { say('aAppsMsg', L.aKept, 'good'); showAdv(a); }).catch(function (e) { say('aAppsMsg', errText(e), 'bad'); }); });
   $('aDynamic').addEventListener('change', function () { ask('dynamicLock', { on: this.checked }).then(showAdv); });
   $('adApply').addEventListener('click', function () {
     var b = this; b.disabled = true; say('adMsg', L.working);
@@ -1063,7 +1099,8 @@
     var b = this; b.disabled = true; say('xlMsg', L.working);
     ask('listDownload').then(function (a) { showAdv(a); say('xlMsg', L.xlDone, 'good'); }).catch(function (e) { say('xlMsg', errText(e), 'bad'); }).then(function () { b.disabled = false; });
   });
-  $('sbOpen').addEventListener('click', function () { ask('sandbox', { shareKeep: $('sbKeep').checked, network: $('sbNet').checked }).then(function () { say('sbMsg', ''); }).catch(function (e) { say('sbMsg', errText(e), 'bad'); }); });
+  // v0.8.1: the sandbox had the same ids as the Safe box (sbOpen, sbMsg), so the Safe box Open button opened the sandbox too
+  $('sxOpen').addEventListener('click', function () { ask('sandbox', { shareKeep: $('sxKeep').checked, network: $('sxNet').checked }).then(function () { say('sxMsg', ''); }).catch(function (e) { say('sxMsg', errText(e), 'bad'); }); });
   $('wfRun').addEventListener('click', function () {
     confirmBox(L.wfConfirm).then(function (y) { if (y) ask('wipeFree').then(function () { say('wfMsg', L.wfStarted, 'good'); }).catch(function (e) { say('wfMsg', errText(e), 'bad'); }); });
   });
@@ -1098,12 +1135,21 @@
       .catch(function (e) { say('logMsg', errText(e), 'bad'); }).then(function () { b.disabled = false; });
   });
   $('tourAgain').addEventListener('click', function () { tour(0); });
+  // v0.8.1: the locked Safe box can't be opened without Amnesia: warn while it still holds files
+  function safeWarn(all) {
+    return ask('safeInfo').then(function (x) {
+      if (!x.exists || x.open || x.count === 0) return true;
+      return confirmBox(all ? L.unSafeAll(x.count) : L.unSafe(x.count));
+    }, function () { return true; });
+  }
   // v0.8: with the Keep password when Keep is locked (else Keep would stay locked after uninstall)
-  $('unApp').addEventListener('click', function () { confirmBox(L.unConfirm).then(function (y) { if (y) ask('uninstall', { all: false, password: $('unPw').value }).then(function () { say('setMsg', L.unBye); }).catch(function (e) { say('setMsg', errText(e), 'bad'); }); }); });
+  $('unApp').addEventListener('click', function () {
+    safeWarn(false).then(function (go) { return go && confirmBox(L.unConfirm); }).then(function (y) { if (y) ask('uninstall', { all: false, password: $('unPw').value }).then(function () { say('setMsg', L.unBye); }).catch(function (e) { say('setMsg', errText(e), 'bad'); }); });
+  });
   $('unAll').addEventListener('click', function () {
     if ($('unWord').value.trim().toUpperCase() !== L.unWord) { $('unWord').focus(); return; }
     if (info.keepLocked && !$('unPw').value) { say('setMsg', L.err['keeplock-uninstall'], 'bad'); $('unPw').focus(); return; }
-    ask('uninstall', { all: true, password: $('unPw').value }).then(function () { say('setMsg', L.unBye); }).catch(function (e) { say('setMsg', errText(e), 'bad'); });
+    safeWarn(true).then(function (go) { if (go) ask('uninstall', { all: true, password: $('unPw').value }).then(function () { say('setMsg', L.unBye); }).catch(function (e) { say('setMsg', errText(e), 'bad'); }); });
   });
 
   // ---------- welcome tour ----------
