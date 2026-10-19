@@ -8,22 +8,19 @@
   var Scenes = window.AmnesiaScenes || {};
   var UI = window.AmnesiaUI = window.AmnesiaUI || {};
 
-  // ---------- language ----------
-  function setLang(l) {
-    root.lang = l;
-    document.getElementById('lang-en').setAttribute('aria-pressed', String(l === 'en'));
-    document.getElementById('lang-id').setAttribute('aria-pressed', String(l === 'id'));
-    try { localStorage.setItem('lang', l); } catch (e) {}
-    // screenshots follow the language
-    document.querySelectorAll('img[data-shot]').forEach(function (img) {
-      var src = 'screens/' + l + '/' + img.dataset.shot + '.png';
-      if (img.getAttribute('src') !== src) { img.style.display = ''; img.src = src; }
-    });
-    document.dispatchEvent(new CustomEvent('amnesia:lang', { detail: l }));
-  }
-  document.getElementById('lang-en').addEventListener('click', function () { setLang('en'); });
-  document.getElementById('lang-id').addEventListener('click', function () { setLang('id'); });
-  setLang(root.lang === 'id' ? 'id' : 'en');
+  // ---------- language: one page per language (built by site/i18n/build.py) ----------
+  // The page's own words are already in its language; these are the few the script writes.
+  var I18N = window.AMNESIA_I18N || {};
+  var LOCALE = I18N.locale || 'en-US';
+  function t(k, d) { return I18N[k] || d; }
+  UI.t = t;
+  // remember a language picked from the menu, so the English page doesn't send you elsewhere
+  document.querySelectorAll('.langmenu a[hreflang]').forEach(function (a) {
+    a.addEventListener('click', function () { try { localStorage.setItem('lang', a.getAttribute('hreflang')); } catch (e) {} });
+  });
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('.langmenu[open]').forEach(function (m) { if (!m.contains(e.target)) m.removeAttribute('open'); });
+  });
 
   // ---------- theme: follows the system until the visitor picks one ----------
   var sysLight = window.matchMedia('(prefers-color-scheme: light)');
@@ -80,9 +77,9 @@
     var COLORS = ['var(--orange)', 'var(--green)', 'var(--cyan)', 'var(--indigo)', 'var(--pink)', 'var(--violet)'];
     var data = null;
     function all(sel, f) { document.querySelectorAll('[data-gh=' + sel + ']').forEach(f); }
-    function num(n) { return typeof n === 'number' ? n.toLocaleString(root.lang === 'id' ? 'id-ID' : 'en-US') : null; }
+    function num(n) { return typeof n === 'number' ? n.toLocaleString(LOCALE) : null; }
     function day(iso) {
-      return new Date(iso).toLocaleDateString(root.lang === 'id' ? 'id-ID' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      return new Date(iso).toLocaleDateString(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' });
     }
     function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
     function apply(d) {
@@ -94,7 +91,7 @@
       if (d.days && d.days.length) all('since', function (e) {
         var n = d.days.reduce(function (a, x) { return a + x[1]; }, 0);
         var since = day(d.days[0][0] + 'T12:00:00Z');
-        e.textContent = root.lang === 'id' ? n + ' commit sejak ' + since : n + (n === 1 ? ' commit' : ' commits') + ' since ' + since;
+        e.textContent = t(n === 1 ? 'commitSince' : 'commitsSince', n === 1 ? '{n} commit since {since}' : '{n} commits since {since}').replace('{n}', num(n)).replace('{since}', since);
       });
       if (d.langs && d.langs.length) {
         all('langbar', function (e) {
@@ -194,7 +191,7 @@
     for (var i = 0; i < n; i++) {
       var li = document.createElement('li'), b = document.createElement('button');
       b.type = 'button';
-      b.setAttribute('aria-label', (root.lang === 'id' ? 'Langkah ' : 'Step ') + (i + 1));
+      b.setAttribute('aria-label', t('step', 'Step {n}').replace('{n}', i + 1));
       if (num) b.textContent = i + 1;
       b.addEventListener('click', go.bind(null, i));
       li.appendChild(b); dots.appendChild(li); btns.push(b);

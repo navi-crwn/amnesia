@@ -1,3 +1,5 @@
+<p align="center">🌐 <b>English</b> · <a href="https://navi-crwn.github.io/amnesia/zh-cn/win/">简体中文</a> · <a href="https://navi-crwn.github.io/amnesia/de/win/">Deutsch</a> · <a href="https://navi-crwn.github.io/amnesia/id/win/">Bahasa Indonesia</a> · <a href="https://navi-crwn.github.io/amnesia/ja/win/">日本語</a> · <a href="https://navi-crwn.github.io/amnesia/pt-br/win/">Português (Brasil)</a> · <a href="https://navi-crwn.github.io/amnesia/es/win/">Español</a></p>
+
 # Amnesia for Windows
 
 **v0.8.1**, an official release for Windows 10 and 11 (x64 and ARM). Once you press **Turn On**, Amnesia **really deletes** what's in your user folder at sign out, restart and shutdown (and checks again at sign in), except your Keep folder and Keep List. Look at **What gets wiped** before you turn it on. Website: [navi-crwn.github.io/amnesia/win](https://navi-crwn.github.io/amnesia/win/).

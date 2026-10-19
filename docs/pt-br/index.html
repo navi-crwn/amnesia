@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amnesia para Mac</title>
+<meta name="description" content="Seu Mac esquece tudo toda vez que você faz logout, menos os logins e arquivos que você escolhe guardar. Grátis e open source.">
+<meta name="theme-color" content="#07070a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f7f7fb" media="(prefers-color-scheme: light)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Amnesia para Mac">
+<meta property="og:description" content="Seu Mac esquece tudo toda vez que você faz logout, menos o que você escolhe.">
+<meta property="og:url" content="https://navi-crwn.github.io/amnesia/pt-br/">
+<meta property="og:image" content="https://navi-crwn.github.io/amnesia/social.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" hreflang="en" href="https://navi-crwn.github.io/amnesia/">
+<link rel="alternate" hreflang="zh-CN" href="https://navi-crwn.github.io/amnesia/zh-cn/">
+<link rel="alternate" hreflang="de" href="https://navi-crwn.github.io/amnesia/de/">
+<link rel="alternate" hreflang="id" href="https://navi-crwn.github.io/amnesia/id/">
+<link rel="alternate" hreflang="ja" href="https://navi-crwn.github.io/amnesia/ja/">
+<link rel="alternate" hreflang="pt-BR" href="https://navi-crwn.github.io/amnesia/pt-br/">
+<link rel="alternate" hreflang="es" href="https://navi-crwn.github.io/amnesia/es/">
+<link rel="alternate" hreflang="x-default" href="https://navi-crwn.github.io/amnesia/">
+<link rel="icon" href="../logo.png">
+<script>
+// Runs before paint: theme, and on the English page a first-visit nudge to the visitor's language.
+window.AMNESIA_I18N={"locale": "pt-BR", "step": "Passo {n}", "commitsSince": "{n} commits desde {since}", "commitSince": "{n} commit desde {since}", "commit": "{n} commit", "commits": "{n} commits"};
+(function(){var d=document.documentElement,t=null;d.classList.add('js');
+try{t=localStorage.getItem('theme')}catch(e){}
+if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+<style>/* v5.23: pieces that fly in (vault ring, app tour) no longer make the page scroll sideways on phones */section,.marquee{overflow-x:clip}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head>
+<body>
+<a class="skip" href="#main"><span>Pular para o conteúdo</span></a>
+<div class="noise" aria-hidden="true"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><path d="m4 17 5-5 4 4 3-3 4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="17" cy="16" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-cookie" viewBox="0 0 24 24"><path d="M20.5 12.5A8.5 8.5 0 1 1 11.5 3.5a3 3 0 0 0 4 3.5 3 3 0 0 0 5 5.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="9" cy="10" r="1.1" fill="currentColor"/><circle cx="14" cy="15" r="1.1" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.1" fill="currentColor"/></symbol>
+    <symbol id="i-stack" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-lines" viewBox="0 0 24 24"><path d="M5 6h14M5 10h10M5 14h14M5 18h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-term" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m7 10 3 2-3 2M12 15h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 19 6v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="m4 7 1.5 1.5L8 6M4 13l1.5 1.5L8 12M4 19l1.5 1.5L8 18M11 7h9M11 13h9M11 19h9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-apps" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 15 12 8l3 7M10 13h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4H6v16h8M10 12h10m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 5 3 3H7l3-3zM12 12v8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-drive" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="12" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path d="M10.3 2.6h3.4l.5 2.6 1.6.9 2.5-.9 1.7 2.9-2 1.7v1.9l2 1.7-1.7 2.9-2.5-.9-1.6.9-.5 2.6h-3.4l-.5-2.6-1.6-.9-2.5.9-1.7-2.9 2-1.7v-1.9l-2-1.7 1.7-2.9 2.5.9 1.6-.9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3 9a13 13 0 0 1 18 0M6 12.5a8.5 8.5 0 0 1 12 0M9 16a4 4 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-batt" viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="17" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="9.5" width="10" height="5" rx="1" fill="currentColor"/><path d="M21.5 10.5v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></symbol>
+    <symbol id="i-brew" viewBox="0 0 24 24"><path d="M5 8h10v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2zM15 10h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2M8 11v6M12 11v6M5 8c0-2 1.5-3 3-3 .5-1.2 1.6-2 3-2s2.6.8 3 2c1.4 0 1 1.5 1 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-dmg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="11" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="11" r=".8" fill="currentColor"/><path d="M7 17h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-chip" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1" fill="currentColor" opacity=".6"/><path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 19h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z" fill="currentColor"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M4 7h16M7 7l-3 7a3 3 0 0 0 6 0zM17 7l-3 7a3 3 0 0 0 6 0z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-fork" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="18" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="19" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 7.2v1.3a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7.2M12 11.5v5.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-issue" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2" fill="currentColor"/></symbol>
+    <symbol id="i-arrow-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12h8m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M4 12h9m0 0-3-3m3 3-3 3M15 6h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 2.5 20h19z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1" fill="currentColor"/></symbol>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="../logo.png" alt="" width="30" height="30">Amnesia</a>
+    <div class="plat" role="group" aria-label="Plataforma">
+      <a href="./" aria-current="page">Mac</a>
+      <a href="win/">Windows</a>
+    </div>
+    <nav class="nav-links" aria-label="Seções">
+      <a href="#features"><span>Recursos</span></a>
+      <a href="#desk"><span>Como funciona</span></a>
+      <a href="#vault">Vault</a>
+      <a href="#backup">Backup</a>
+      <a href="#tour">App</a>
+      <a href="#install"><span>Instalar</span></a>
+      <a href="#tutorial">Tutorial</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-r">
+      <button type="button" class="theme" id="theme" aria-label="Claro ou escuro"><svg class="t-sun"><use href="#i-sun"/></svg><svg class="t-moon"><use href="#i-moon"/></svg></button>
+      <details class="langmenu"><summary aria-label="Idioma"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>PT</summary><ul><li><a href="../?lang=en" hreflang="en" lang="en">English<small>EN</small></a></li><li><a href="../zh-cn/" hreflang="zh-CN" lang="zh-CN">简体中文<small>中文</small></a></li><li><a href="../de/" hreflang="de" lang="de">Deutsch<small>DE</small></a></li><li><a href="../id/" hreflang="id" lang="id">Bahasa Indonesia<small>ID</small></a></li><li><a href="../ja/" hreflang="ja" lang="ja">日本語<small>日本語</small></a></li><li><a href="./" hreflang="pt-BR" lang="pt-BR" aria-current="page">Português (Brasil)<small>PT</small></a></li><li><a href="../es/" hreflang="es" lang="es">Español<small>ES</small></a></li></ul></details>
+      <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases/latest"><span>Baixar</span></a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true"><i class="hb-dots"></i><i class="hb-beam"></i></div>
+  <div class="glow" style="width:520px;height:520px;background:var(--indigo);right:-120px;top:10%" aria-hidden="true"></div>
+  <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="hero-copy">
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia"><span class="hb-ver" data-gh="version">v5.23.1</span><svg><use href="#i-github"/></svg><span>Código aberto no GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <h1 id="hero-title">
+        <span><span class="split">Seu Mac esquece</span> <em class="word">tudo.</em><span class="after split">Menos o que você guarda.</span></span>
+      </h1>
+      <p class="lead">
+        <span>Sempre que você faz logout, o Amnesia apaga seu histórico, seus downloads e os dados dos apps. Seus logins e os arquivos que você escolher ficam seguros em um cofre criptografado.</span>
+      </p>
+      <div class="cta">
+        <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg><span>Baixar para Mac</span></a>
+        <a class="btn ghost star" href="https://github.com/navi-crwn/amnesia"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github"/></svg><span>Dar estrela no repositório</span></a>
+        <a class="plink" href="#desk"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow-c"/></svg><span>Como funciona</span></a>
+      </div>
+      <div class="term"><code>brew install navi-crwn/tap/amnesia</code><button class="copy" type="button">Copy</button></div>
+      <p class="meta"><span>Grátis e open source · macOS 15+ · Apple Silicon e Intel</span></p>
+      <p class="warnline"><span><span>O Amnesia apaga dados de verdade, e isso não tem volta. <a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md">Leia os termos</a> antes de instalar.</span></span></p>
+    </div>
+    <div class="shield shield3d" data-shield3d="hero" aria-hidden="true">
+      <svg class="rings" viewBox="0 0 400 400">
+        <defs><linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs>
+        <circle class="r1" cx="200" cy="200" r="190" fill="none" stroke="url(#g-brand)" stroke-opacity=".5" stroke-dasharray="2 10"/>
+        <circle class="r2" cx="200" cy="200" r="150" fill="none" stroke-dasharray="60 20 4 20"/>
+        <circle class="r3" cx="200" cy="200" r="112" fill="none" stroke="url(#g-brand)" stroke-opacity=".35"/>
+        <circle cx="200" cy="10" r="4" fill="#22d3ee"/>
+        <circle cx="350" cy="200" r="3" fill="#ec4899"/>
+      </svg>
+      <img src="../logo.png" alt="" width="512" height="512">
+    </div>
+    <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
+      <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
+      <span class="rc-desc"><span>Seu Mac esquece tudo no logout, menos o que você escolhe guardar.</span></span>
+      <span class="rc-meta"><span>MIT</span><span data-gh="version">v5.23.1</span><span class="rc-langs" data-gh="langs-mini"><span><i style="--c:var(--orange)"></i>Swift</span><span><i style="--c:var(--green)"></i>Shell</span></span></span>
+    </a>
+  </div>
+</section>
+
+<section class="film" id="film">
+  <div class="wrap">
+    <figure class="paper">
+      <span class="tape t1" aria-hidden="true"></span><span class="tape t2" aria-hidden="true"></span>
+      <div class="paper-sheet">
+        <video class="fv" src="../media/story.mp4" poster="../media/story.jpg" muted playsinline loop preload="none" data-auto width="1280" height="720"></video>
+        <button class="sound" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="s-wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="s-off" d="m16 9 6 6m0-6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z" fill="currentColor"/></svg><span class="s-on-t"><span>Ligar som</span></span><span class="s-off-t"><span>Silenciar</span></span></button>
+      </div>
+      <figcaption class="strip"><span>Três histórias, 54 segundos. Um Mac que esquece.</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="ref oss" id="open">
+  <div class="wrap">
+    <div class="oss-grid">
+      <div class="oss-copy">
+        <span class="oss-ico" aria-hidden="true"><svg><use href="#i-github"/></svg></span>
+        <p class="label"><span class="n">01</span> · Open source</p>
+        <h2><span>Feito <em>às claras.</em></span></h2>
+        <p class="lead"><span>O Amnesia é software livre sob a licença MIT, feito em público no GitHub. Leia cada linha do código, abra uma issue ou compile você mesmo. O app que você baixa é compilado a partir desse mesmo repositório.</span></p>
+        <div class="cta">
+          <a class="btn main" href="https://github.com/navi-crwn/amnesia"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github"/></svg><span>Dar estrela no repositório</span></a>
+          <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/fork"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-fork"/></svg>Fork</a>
+          <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/issues/new"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-issue"/></svg><span>Abrir uma issue</span></a>
+        </div>
+      </div>
+      <a class="repo-card big" href="https://github.com/navi-crwn/amnesia">
+        <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
+        <span class="rc-desc"><span>Seu Mac esquece tudo no logout, menos o que você escolhe guardar.</span></span>
+        <span class="rc-bar" data-gh="langbar" hidden></span>
+        <span class="rc-legend" data-gh="langs" hidden></span>
+        <span class="rc-stats">
+          <span><small><span>Licença</span></small><b>MIT</b></span>
+          <span><small><span>Versão mais recente</span></small><b data-gh="version">v5.23.1</b></span>
+          <span><small>Commits</small><b data-gh="commits">–</b></span>
+          <span><small>Releases</small><b data-gh="releases">–</b></span>
+          <span><small><span>Colaboradores</span></small><b data-gh="contributors">–</b></span>
+          <span><small><span>Último push</span></small><b data-gh="pushed">–</b></span>
+        </span>
+      </a>
+    </div>
+    <figure class="commits">
+      <div class="cm-stage" data-obj3d="commits">
+        <p class="cm-empty"><span>O gráfico de commits vem do GitHub. Se ele não aparecer,</span> <a href="https://github.com/navi-crwn/amnesia/commits/main"><span>veja todos os commits lá</span> →</a></p>
+        <div class="cm-tip" hidden></div>
+      </div>
+      <figcaption>
+        <span class="cm-k"><span>Todos os commits</span></span>
+        <b class="cm-sum" data-gh="since">–</b>
+        <span class="cm-hint"><span>Uma coluna por dia, da altura dos commits daquele dia. Passe o mouse sobre uma coluna para ver a data.</span></span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="desk">
+  <div class="wrap pinbox">
+    <div class="two">
+      <div class="desk-copy">
+        <div class="steps">
+          <div class="step s1">
+            <p class="label"><span class="n">02</span> · <span>Seu Mac, todo dia</span></p>
+            <h2><span>Tudo isso, <em>todo dia?</em></span></h2>
+            <p class="body"><span>Todo dia o seu Mac guarda, sem fazer barulho, um registro do que você fez. O navegador salva seu histórico e seus cookies. Downloads, Mesa e Documentos se enchem de arquivos que você só precisou uma vez. Os apps gravam caches e logs, e o Terminal lembra de cada comando que você digitou.</span></p>
+            <p class="body"><span>Tudo vai se acumulando, dia após dia, até você limpar na mão. Ou nunca.</span></p>
+          </div>
+          <div class="step s2">
+            <p class="label"><span class="n">03</span> · <span>Logout</span></p>
+            <h2><span>Logout. <em>Esquecido.</em></span></h2>
+            <p class="body"><span>Clique em Log Out, reinicie ou desligue, e o Amnesia apaga tudo isso. Só fica o que você escolheu: sua pasta Keep, os apps da sua Keep List e os logins do seu Profile Vault. Seus apps instalados também ficam.</span></p>
+            <p class="body"><span>No login seguinte ele confere mais uma vez, então nem um travamento nem uma queda de energia deixam rastros.</span></p>
+            <p class="def"><span class="tm sel"><i></i>Selective Amnesia</span> <span>é o nome disso: tudo é esquecido, menos o que você escolheu guardar.</span></p>
+          </div>
+        </div>
+        <div class="pager" data-pager="desk" hidden>
+          <button type="button" class="pg-prev" aria-label="Anterior"><svg><use href="#i-chev-l"/></svg></button>
+          <ol class="pg-dots"></ol>
+          <button type="button" class="pg-next" aria-label="Next"><svg><use href="#i-chev-r"/></svg></button>
+        </div>
+      </div>
+      <div class="screen" aria-hidden="true">
+        <div class="bar"><i></i><i></i><i></i><span>~/</span></div>
+        <div class="prog"><b></b></div>
+        <div class="icons">
+          <div class="ico" style="color:var(--cyan)"><svg><use href="#i-folder"/></svg><span>Desktop</span></div>
+          <div class="ico" style="color:var(--cyan)"><svg><use href="#i-down"/></svg><span>Downloads</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-folder"/></svg><span>Keep</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--indigo)"><svg><use href="#i-doc"/></svg><span>Documents</span></div>
+          <div class="ico" style="color:var(--pink)"><svg><use href="#i-image"/></svg><span>Pictures</span></div>
+          <div class="ico" style="color:var(--orange)"><svg><use href="#i-globe"/></svg><span>History</span></div>
+          <div class="ico" style="color:var(--orange)"><svg><use href="#i-cookie"/></svg><span>Cookies</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-shield"/></svg><span>Vault</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--pink)"><svg><use href="#i-film"/></svg><span>Movies</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-list"/></svg><span>Keep List</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--violet)"><svg><use href="#i-music"/></svg><span>Music</span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-stack"/></svg><span>Caches</span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-lines"/></svg><span>Logs</span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-term"/></svg><span>Terminal</span></div>
+          <div class="ico" style="color:var(--indigo)"><svg><use href="#i-grid"/></svg><span>App data</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-apps"/></svg><span>Apps</span><b class="halo"></b></div>
+        </div>
+        <div class="logout"><span class="k">⌘ ⇧ Q</span><button type="button" tabindex="-1"><span>Log Out</span></button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="stays">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">04</span> · <span>O que fica</span></p>
+      <h2><span>O que é apagado, <em>o que fica.</em></span></h2>
+      <p class="lead"><span>Nada é apagado até você clicar em Turn On, e você sempre pode conferir a lista antes. Pesquise nela ou coloque os maiores arquivos no topo.</span></p>
+    </div>
+    <div class="ledger">
+      <div class="col gone"><h3><span>Apagado no logout</span></h3><ul>
+        <li><span>Histórico e cookies do navegador</span><i class="strike"></i></li>
+        <li>Desktop, Downloads, Documents, Pictures, Movies, Music<i class="strike"></i></li>
+        <li><span>Caches, logs, histórico do Terminal</span><i class="strike"></i></li>
+        <li><span>Tudo o que está na Lixeira</span><i class="strike"></i></li>
+        <li><span>Dados de apps que não estão no cofre nem na Keep List</span><i class="strike"></i></li></ul></div>
+      <div class="col safe"><h3><span>Fica seguro</span></h3><ul>
+        <li><span>Tudo na sua pasta Keep (em qualquer lugar, com qualquer nome)</span></li>
+        <li><span>Logins salvos no Profile Vault (voltam com Restore)</span></li>
+        <li><span>Apps da sua Keep List (VPN, chaves SSH, conta Apple…)</span></li>
+        <li><span>Máquinas virtuais (UTM, Parallels, VirtualBox, VMware Fusion), mantidas por padrão</span></li>
+        <li><span>Os próprios apps que você instalou</span></li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="vault">
+  <div class="glow" style="width:480px;height:480px;background:var(--indigo);left:-200px;top:20%;opacity:.22" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="vaultviz" aria-hidden="true">
+      <svg viewBox="0 0 400 400">
+        <circle class="ring-a" cx="200" cy="200" r="165" fill="none" stroke-dasharray="3 9"/>
+        <circle cx="200" cy="200" r="118" fill="none" stroke="rgba(99,102,241,.25)"/>
+        <g class="v-shield">
+          <path d="M200 92 282 124v74c0 56-34 92-82 112-48-20-82-56-82-112v-74z" fill="rgba(99,102,241,.10)" stroke="url(#g-brand)" stroke-width="2"/>
+          <path class="v-shackle" d="M182 196v-16a18 18 0 0 1 36 0v16" fill="none" stroke-width="5" stroke-linecap="round"/>
+          <rect class="v-body" x="170" y="194" width="60" height="46" rx="8"/>
+          <circle class="v-hole" cx="200" cy="214" r="5"/><rect class="v-hole" x="198" y="216" width="4" height="12" rx="2"/>
+        </g>
+        <g class="v-apps" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" text-anchor="middle">
+          <g class="v-app"><circle cx="200" cy="35" r="22" stroke="#22d3ee"/><text x="200" y="40">Ch</text></g>
+          <g class="v-app"><circle cx="317" cy="83" r="22" stroke="#10b981"/><text x="317" y="88">WA</text></g>
+          <g class="v-app"><circle cx="365" cy="200" r="22" stroke="#f97316"/><text x="365" y="205">Cl</text></g>
+          <g class="v-app"><circle cx="317" cy="317" r="22" stroke="#a78bfa"/><text x="317" y="322">CC</text></g>
+          <g class="v-app"><circle cx="200" cy="365" r="22" stroke="#6366f1"/><text x="200" y="370">OC</text></g>
+          <g class="v-app"><circle cx="83" cy="317" r="22" stroke="#ec4899"/><text x="83" y="322">Ge</text></g>
+          <g class="v-app"><circle cx="35" cy="200" r="22" stroke="#e5e7eb"/><text x="35" y="205">gh</text></g>
+          <g class="v-app"><circle cx="83" cy="83" r="22" stroke="#22d3ee"/><text x="83" y="88">Ag</text></g>
+        </g>
+      </svg>
+      <div class="safe3d" data-obj3d="safe"></div>
+      <div class="pw"><span class="lbl">password </span><span class="dots">••••••••••••</span><span class="caret"></span></div>
+    </div>
+    <div class="head">
+      <p class="label"><span class="n">05</span> · Profile Vault</p>
+      <h2><span>Uma senha. <em>Todos os logins de volta.</em></span></h2>
+      <p class="lead"><span>Um cofre criptografado para os logins dos seus apps. É ele que deixa você entrar num Mac limpo e ter Chrome, WhatsApp, Claude e suas ferramentas de programação prontos em um passo.</span></p>
+      <ul class="facts">
+        <li><b>AES-256.</b> <span>Trancado com 7-Zip. Se você esquecer a senha, ninguém consegue abrir.</span></li>
+        <li><b><span>Snapshots leves.</span></b> <span>Navegadores salvos sem caches: cerca de 1 GB vira 150 MB.</span></li>
+        <li><b><span>Save & Log Out.</span></b> <span>Um clique salva seus logins e depois faz logout. Se o salvamento falhar, o logout é cancelado.</span></li>
+        <li><b><span>Undo Restore.</span></b> <span>Tem dados no seu Mac mais novos que o snapshot? Você é perguntado antes. Nada da sua Keep List é sobrescrito, e até o próximo logout um botão devolve o que estava lá antes.</span></li>
+      </ul>
+      <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Restore Profiles traz todos os logins de volta depois de um logout limpo.</span></p>
+      <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span>3 senhas erradas ou a sua palavra de pânico, e o cofre some para sempre.</span></p>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="how">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">06</span> · <span>Todo dia</span></p>
+      <h2><span>Um dia normal <em>com o Amnesia.</em></span></h2>
+      <p class="lead"><span>Depois de configurado, é só isso que você faz.</span></p>
+    </div>
+    <div class="daily-track">
+      <svg class="daily-line" viewBox="0 0 1000 2" preserveAspectRatio="none" aria-hidden="true">
+        <line x1="0" y1="1" x2="1000" y2="1" stroke="rgba(255,255,255,.1)" stroke-width="2"/>
+        <line class="draw" x1="0" y1="1" x2="1000" y2="1" stroke="url(#g-line)" stroke-width="2"/>
+        <defs><linearGradient id="g-line" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1000" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset=".6" stop-color="#6366f1"/><stop offset="1" stop-color="#ef4444"/></linearGradient></defs>
+      </svg>
+      <ol class="daily-steps" role="list">
+        <li class="dstep"><span class="node">01</span><h3><span>Login</span></h3><p><span>Seu Mac começa limpo. Abra o Profile Vault, digite sua senha e clique em Restore Profiles.</span></p></li>
+        <li class="dstep"><span class="node">02</span><h3><span>Trabalho</span></h3><p><span>Todos os seus logins estão de volta. Guarde na pasta Keep os arquivos que você vai precisar amanhã.</span></p></li>
+        <li class="dstep"><span class="node">03</span><h3><span>Save & Log Out</span></h3><p><span>Seus logins voltam para o cofre e depois você sai da sessão.</span></p></li>
+        <li class="dstep"><span class="node">04</span><h3><span>Esquecido</span></h3><p><span>Todo o resto é apagado. Nenhum rastro.</span></p></li>
+      </ol>
+    </div>
+    <p class="pausenote"><b><span>Pause 1 Session</span></b> <span><span>Pule o próximo logout e login uma vez, sem desligar o Amnesia.</span></span></p>
+  </div>
+</section>
+
+<section class="stage" id="backup">
+  <div class="wrap two">
+    <div class="head">
+      <p class="label"><span class="n">07</span> · Backup</p>
+      <h2><span>Backup <em>em qualquer lugar.</em></span></h2>
+      <p class="lead"><span>Uma cópia .7z criptografada (AES-256, nomes de arquivo inclusive) da sua pasta Keep, de pastas escolhidas e do Profile Vault.</span></p>
+      <ul class="facts">
+        <li><span>Pendrive, seu próprio servidor via SSH, Google Drive, Dropbox, OneDrive, Box ou pCloud. Diário ou semanal, e você pode conferir um arquivo de backup.</span></li>
+        <li><span>Cada backup é um novo arquivo com data. O Amnesia nunca apaga backups antigos.</span></li>
+      </ul>
+      <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Restore Files devolve os arquivos para onde eles estavam. Get Vault from Backup traz de volta um cofre perdido.</span></p>
+    </div>
+    <div class="netviz" aria-hidden="true">
+      <svg viewBox="0 0 640 440">
+        <g class="links" fill="none" stroke="url(#g-brand)" stroke-width="1.5" stroke-opacity=".7">
+          <path id="bk1" d="M262 205C190 205 190 80 128 80"/>
+          <path id="bk2" d="M262 220C200 212 190 228 128 220"/>
+          <path id="bk3" d="M262 235C190 235 190 360 128 360"/>
+          <path id="bk4" d="M378 200C450 200 450 60 512 60"/>
+          <path id="bk5" d="M378 212C450 212 450 160 512 160"/>
+          <path id="bk6" d="M378 228C450 228 450 280 512 280"/>
+          <path id="bk7" d="M378 240C450 240 450 380 512 380"/>
+        </g>
+        <g class="pkts" fill="#22d3ee">
+          <circle r="3"><animateMotion dur="2.8s" repeatCount="indefinite"><mpath href="#bk1"/></animateMotion></circle>
+          <circle r="3"><animateMotion dur="2.2s" begin=".4s" repeatCount="indefinite"><mpath href="#bk2"/></animateMotion></circle>
+          <circle r="3"><animateMotion dur="3.1s" begin=".9s" repeatCount="indefinite"><mpath href="#bk3"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="2.6s" begin=".2s" repeatCount="indefinite"><mpath href="#bk4"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="2.4s" begin="1.1s" repeatCount="indefinite"><mpath href="#bk5"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="2.9s" begin=".6s" repeatCount="indefinite"><mpath href="#bk6"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="3.3s" begin="1.4s" repeatCount="indefinite"><mpath href="#bk7"/></animateMotion></circle>
+        </g>
+        <g class="core">
+          <rect x="262" y="180" width="116" height="80" rx="16" stroke="url(#g-brand)" stroke-width="2"/>
+          <text x="320" y="216" text-anchor="middle" font-size="22" font-weight="500">.7z</text>
+          <text class="mut" x="320" y="240" text-anchor="middle" font-size="11">AES-256</text>
+        </g>
+        <g class="dests" font-size="12" text-anchor="middle">
+          <g class="dest"><rect x="20" y="62" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="84">USB</text></g>
+          <g class="dest"><rect x="20" y="202" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="224">SSH server</text></g>
+          <g class="dest"><rect x="20" y="342" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="364">Google Drive</text></g>
+          <g class="dest"><rect x="512" y="42" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="64">Dropbox</text></g>
+          <g class="dest"><rect x="512" y="142" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="164">OneDrive</text></g>
+          <g class="dest"><rect x="512" y="262" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="284">Box</text></g>
+          <g class="dest"><rect x="512" y="362" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="384">pCloud</text></g>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="private">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">08</span> · <span>Privado</span></p>
+      <h2><span>Nada sai <em>do seu Mac.</em></span></h2>
+      <p class="lead"><span>O Amnesia não tem servidores, contas, rastreamento nem analytics. Tudo roda no seu Mac.</span></p>
+    </div>
+    <div class="pills">
+      <span class="pill"><i class="dot"></i><span>Sem servidores</span></span>
+      <span class="pill"><i class="dot"></i><span>Sem contas</span></span>
+      <span class="pill"><i class="dot"></i><span>Sem rastreamento</span></span>
+      <span class="pill"><i class="dot"></i>AES-256</span>
+      <span class="pill"><i class="dot"></i><span>Nunca usa sudo</span></span>
+      <span class="pill"><i class="dot"></i><span>Histórico sem nomes de arquivo</span></span>
+      <span class="pill panic"><i class="dot"></i><span><span class="glitch" data-text="Palavra de pânico">Palavra de pânico</span></span></span>
+    </div>
+
+    <div class="iyk" id="iykyk">
+      <div class="head">
+        <p class="label"><span>Quem sabe, sabe</span> <span class="wink" aria-hidden="true">😉</span></p>
+        <h3 class="iyk-h"><span>Para quem prefere <em>não ter que explicar.</em></span></h3>
+      </div>
+      <div class="bento iyk-grid">
+        <div class="cell">
+          <button class="reel" type="button" data-film="media/lend.mp4" data-poster="../media/lend.jpg"><video src="../media/lend.mp4" poster="../media/lend.jpg" muted playsinline loop preload="none" data-auto width="540" height="960"></video><span class="reel-tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><span>Assista com som · 0:30</span></span><span class="sr"><span>Reproduzir o vídeo: Emprestando seu Mac</span></span></button>
+          <div class="i-ico" style="--c:var(--cyan)"><svg viewBox="0 0 24 24"><use href="#i-laptop"/></svg></div>
+          <h4><span>Vai emprestar seu Mac?</span></h4>
+          <p><span>Faça logout, entre de novo e entregue. Histórico do navegador, logins, arquivos recentes e conversas já sumiram. Seu cofre continua trancado.</span></p></div>
+        <div class="cell">
+          <button class="reel" type="button" data-film="media/parents.mp4" data-poster="../media/parents.jpg"><video src="../media/parents.mp4" poster="../media/parents.jpg" muted playsinline loop preload="none" data-auto width="540" height="960"></video><span class="reel-tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><span>Assista com som · 0:30</span></span><span class="sr"><span>Reproduzir o vídeo: Família curiosa</span></span></button>
+          <div class="i-ico" style="--c:var(--pink)"><svg viewBox="0 0 24 24"><use href="#i-eye"/></svg></div>
+          <h4><span>Família curiosa?</span></h4>
+          <p><span>Seu histórico do navegador não sobrevive a um logout. Ninguém precisa saber daquela compra às 3 da manhã.</span></p></div>
+        <div class="cell iyk-hot">
+          <button class="reel" type="button" data-film="media/spy.mp4" data-poster="../media/spy.jpg"><video src="../media/spy.mp4" poster="../media/spy.jpg" muted playsinline loop preload="none" data-auto width="540" height="960"></video><span class="reel-tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><span>Assista com som · 0:30</span></span><span class="sr"><span>Reproduzir o vídeo: "Abre aí rapidinho."</span></span></button>
+          <div class="i-ico" style="--c:var(--red)"><svg viewBox="0 0 24 24"><use href="#i-lock"/></svg></div>
+          <h4><span>"Abre aí rapidinho."</span></h4>
+          <p><span>Ao entrar, aparece uma mesa vazia. Pediram a senha do cofre também? Digite a sua <b>palavra de pânico</b> no lugar. O cofre some, e a pasta Keep também, se você escolheu assim. Sem drama.</span></p></div>
+        <div class="cell iyk-wide"><div class="i-ico" style="--c:var(--orange)"><svg viewBox="0 0 24 24"><use href="#i-warn"/></svg></div>
+          <h4><span>Perdeu ou foi roubado?</span></h4>
+          <p><span>Depois de um logout, seu histórico, seus logins e suas conversas já sumiram, e o cofre usa AES-256. Ative também o FileVault, para que sua pasta Keep fique criptografada no disco.</span></p></div>
+      </div>
+      <p class="iyk-term"><span class="pr">$</span> amnesia --forget-everything <span class="cm"><span># trocadilho intencional</span></span></p>
+      <p class="iyk-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span>Letras miúdas, com honestidade: o Amnesia protege você <b>depois de um logout</b>. Enquanto você está logado, seu Mac fica tão aberto quanto sempre, então bloqueie a tela. E a palavra de pânico não tem volta.</span></p>
+    </div>
+
+    <div class="head" id="features" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>Limpo todo dia. <em>Nada perdido.</em></span></h2>
+      <p class="lead"><span>Tudo o que o Amnesia faz, num relance. Role para baixo para ver o app desmontado botão por botão e depois siga o tutorial.</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>Limpeza automática</span></h3><p><span>Roda no logout, ao reiniciar e ao desligar, e confere mais uma vez no login.</span></p></div>
+      <div><h3>Profile Vault</h3><p><span>Chrome, WhatsApp, Claude e suas ferramentas de programação, trancados com AES-256. Uma senha traz tudo de volta.</span></p></div>
+      <div><h3><span>Snapshots leves do navegador</span></h3><p><span>Chrome, Brave, Edge, Arc, Vivaldi e Opera podem ser salvos sem caches: cerca de 1 GB vira 150 MB. Uma chave por navegador.</span></p></div>
+      <div><h3><span>Save & Log Out</span></h3><p><span>Um clique salva seus logins e depois faz logout. Se o salvamento falhar, o logout é cancelado.</span></p></div>
+      <div><h3><span>Snapshot automático</span></h3><p><span>Esqueceu do Save & Log Out? Um logout normal ainda salva antes os apps que mudaram.</span></p></div>
+      <div><h3><span>Escolha o que fica</span></h3><p><span>Uma pasta Keep para seus arquivos e uma Keep List para apps como VPNs e chaves SSH. As máquinas virtuais já estão nela por padrão.</span></p></div>
+      <div><h3><span>Veja antes</span></h3><p><span>"What Gets Deleted" lista tudo antes de qualquer coisa ser apagada, com busca e Biggest first. Arquivos de 1 GB ou mais ganham um aviso. O logout pode esperar o seu OK.</span></p></div>
+      <div><h3><span>Pause 1 Session</span></h3><p><span>Pule o próximo logout e login uma vez, sem desligar o Amnesia.</span></p></div>
+      <div><h3><span>Backup em qualquer lugar</span></h3><p><span>Pendrive, seu próprio servidor via SSH, Google Drive, Dropbox, OneDrive, Box ou pCloud. Diário ou semanal, e você pode conferir um arquivo de backup.</span></p></div>
+      <div><h3><span>Histórico</span></h3><p><span>Quando o Mac foi limpo, quais apps foram salvos, quando os backups rodaram. Nunca nomes de arquivo.</span></p></div>
+      <div><h3><span>Palavra de pânico</span></h3><p><span>Digite a palavra, ou erre a senha 3 vezes, e o cofre some para sempre.</span></p></div>
+      <div><h3><span>Mudar para um Mac novo</span></h3><p><span>Leve seu cofre e as chaves do Keychain com você, para que seus apps abram já logados no Mac novo.</span></p></div>
+      <div><h3><span>Ferramentas de desenvolvedor</span></h3><p><span>Mantenha suas configurações de SSH, GitHub CLI, shell, editor, Docker, nuvem e CLIs de IA. Pick Apps só mostra as que estão no seu Mac.</span></p></div>
+      <div><h3><span>Ache qualquer configuração</span></h3><p><span>Digite na caixa de busca no topo de Settings, em inglês. A janela também muda de tamanho.</span></p></div>
+      <div><h3><span>Keep lock</span></h3><p><span>O Finder e outros apps não conseguem abrir sua pasta Keep até você digitar a senha da Keep no Amnesia. Ela se tranca de novo sozinha. Isso usa permissões do macOS, não criptografia, então os nomes dos arquivos logo dentro da Keep continuam visíveis.</span></p></div>
+      <div><h3><span>Health check</span></h3><p><span>Uma página que avisa quando algo precisa de você: Full Disk Access, Mesa e Documentos do iCloud, pastas com link simbólico, máquinas virtuais, arquivos grandes, seu último backup e o FileVault. A maioria das linhas tem um botão para resolver.</span></p></div>
+      <div><h3><span>Brankas <small>(experimental)</small></span></h3><p><span>Um disco criptografado (AES-256) dentro da sua pasta Keep para arquivos que precisam continuar secretos. O Amnesia fecha esse disco antes de cada limpeza e avisa se não conseguir. Esqueceu a senha dele? Os arquivos se perdem.</span></p></div>
+      <div><h3><span>Atualizações assinadas</span></h3><p><span>As atualizações feitas de dentro do app só são instaladas quando o SHA256SUMS.txt da versão tem uma assinatura válida. Se não tiver, você é levado para a página da versão.</span></p></div>
+      <div><h3><span>Seguro com o iCloud</span></h3><p><span>Com Mesa e Documentos do iCloud ativado, essas duas pastas são ignoradas, então nada é apagado do iCloud nem dos seus outros dispositivos. Pastas que são links simbólicos nunca são esvaziadas através do link.</span></p></div>
+      <div><h3><span>Claude e Claude Code</span></h3><p><span>Coloque o Claude na sua Keep List e suas conversas do Claude Code (~/.claude) ficam também. Antes do logout, os apps marcados no cofre ganham um snapshot novo, então uma restauração nunca fica desatualizada.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="mq-row" data-dir="1"><div class="mq-track">
+    <span class="mq-i"><span>Grátis e open source</span><i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">MIT<i style="--c:var(--indigo)"></i></span>
+    <span class="mq-i"><span>Sem servidores</span><i style="--c:var(--pink)"></i></span>
+    <span class="mq-i"><span>Sem rastreamento</span><i style="--c:var(--green)"></i></span>
+    <span class="mq-i">AES-256<i style="--c:var(--orange)"></i></span>
+    <span class="mq-i"><span>Nunca usa sudo</span><i style="--c:var(--violet)"></i></span>
+    <span class="mq-i">macOS 15+<i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">Apple Silicon & Intel<i style="--c:var(--pink)"></i></span>
+  </div></div>
+  <div class="mq-row ghost" data-dir="-1"><div class="mq-track">
+    <span class="mq-i">Selective Amnesia<i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">Profile Vault<i style="--c:var(--indigo)"></i></span>
+    <span class="mq-i">Memory Recall<i style="--c:var(--green)"></i></span>
+    <span class="mq-i">Keep List<i style="--c:var(--pink)"></i></span>
+    <span class="mq-i">Global Amnesia<i style="--c:var(--red)"></i></span>
+    <span class="mq-i"><span>Save & Log Out</span><i style="--c:var(--orange)"></i></span>
+  </div></div>
+</div>
+
+<section class="ref" id="tour">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">09</span> · <span>Por dentro do app</span></p>
+      <h2><span>Cada botão, <em>um por um.</em></span></h2>
+      <p class="lead"><span>Esta é a janela principal do Amnesia. Role, ou use as setas, e ela se desmonta peça por peça até ficar inteira de novo.</span></p>
+    </div>
+  </div>
+  <div class="wrap puzzle">
+    <div class="pz-stage" aria-hidden="true">
+      <div class="menubar pc" data-p="menu">
+        <span class="mb-l"></span><span class="mb-l w2"></span><span class="mb-l"></span>
+        <span class="mb-r"><svg><use href="#i-wifi"/></svg><svg><use href="#i-batt"/></svg><img src="../logo.png" alt="" width="18" height="18"><b>15:11</b></span>
+        <div class="mb-drop">
+          <p class="mb-st"><i></i><span>Amnesia is On</span></p>
+          <p><span>Save & Log Out</span></p>
+          <p><span>Pause 1 Session</span></p>
+          <p><span>Open Amnesia</span></p>
+        </div>
+      </div>
+      <div class="appwin">
+        <div class="aw-bar"><i></i><i></i><i></i></div>
+        <div class="aw-head">
+          <img src="../logo.png" alt="" width="36" height="36">
+          <div><b>Amnesia <span class="ver" data-gh="version">v5.23.1</span></b><small><span>Seu Mac esquece tudo, menos o que você escolhe.</span></small></div>
+          <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span>Settings</span></span>
+        </div>
+        <div class="aw-hero pc" data-p="home">
+          <span class="hb"><svg><use href="#i-shield"/></svg></span>
+          <div><b><span>Amnesia is On</span></b>
+          <small><span>Tudo o que está fora da Keep List e da pasta Keep é apagado no logout, ao reiniciar e ao desligar, e conferido de novo no login.</span></small></div>
+          <span class="aw-btn"><span>Turn Off Amnesia</span></span>
+        </div>
+        <div class="aw-grid">
+          <div class="tile pc" data-p="vault" style="--c:var(--indigo)"><svg><use href="#i-lock"/></svg><b>Profile Vault</b><small><span>Snapshot hoje 15:11</span></small></div>
+          <div class="tile pc" data-p="logout" style="--c:var(--cyan)"><svg><use href="#i-logout"/></svg><b><span>Save & Log Out</span></b><small><span>Salve seus logins no cofre e depois faça logout</span></small></div>
+          <div class="tile pc" data-p="pause" style="--c:var(--orange)"><svg><use href="#i-pause"/></svg><b><span>Pause 1 Session</span></b><small><span>Pule a próxima limpeza uma vez</span></small></div>
+          <div class="tile pc" data-p="keep" style="--c:var(--green)"><svg><use href="#i-pin"/></svg><b>Keep List</b><small><span>46 itens nunca apagados</span></small></div>
+          <div class="tile pc" data-p="backup" style="--c:var(--pink)"><svg><use href="#i-drive"/></svg><b>Backup</b><small><span>Para um pendrive, servidor ou nuvem</span></small></div>
+          <div class="tile pc" data-p="history" style="--c:var(--muted)"><svg><use href="#i-clock"/></svg><b><span>Histórico</span></b><small><span>Limpezas, snapshots e backups</span></small></div>
+        </div>
+        <div class="tile wide pc" data-p="preview" style="--c:var(--violet)"><svg><use href="#i-eye"/></svg><b><span>What Gets Deleted</span></b><small><span>Veja a lista antes de ligar o Amnesia</span></small></div>
+      </div>
+      <svg class="cursor pz-cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6.2 1.6L10 19z"/></svg>
+      <i class="ripple pz-rip"></i>
+    </div>
+    <div class="pz-text">
+      <div class="pz-steps">
+        <article class="pz-step" data-p="home"><p class="label"><span class="n">01</span> / 10</p>
+          <h3><span>Home</span></h3>
+          <p><span>O cartão colorido mostra se o Amnesia está On, Off ou pausado, e quando foi a última limpeza. O botão grande dele liga ou desliga o Amnesia.</span></p>
+          <p><span>Arraste para deixar a janela maior ou menor. Feche a janela e o Amnesia continua rodando na barra de menus.</span></p>
+        </article>
+        <article class="pz-step" data-p="menu"><p class="label"><span class="n">02</span> / 10</p>
+          <h3>Menu bar</h3>
+          <p><span>Clique no ícone do Amnesia na barra de menus para abrir um painel rápido: status, Save & Log Out, Pause e Open Amnesia.</span></p>
+          <p><span>Com "Open at login" ativado, o ícone aparece sozinho depois de cada login.</span></p>
+        </article>
+        <article class="pz-step" data-p="vault"><p class="label"><span class="n">03</span> / 10</p>
+          <h3>Profile Vault</h3>
+          <p><span>Um cofre criptografado (AES-256) para os logins dos seus apps: Chrome, WhatsApp, Claude e suas ferramentas de programação.</span></p>
+          <ul>
+            <li><b><span>Snapshot Now</span></b> <span>salva sem pedir senha.</span></li>
+            <li><b><span>Light</span></b>: <span>navegadores sem caches, 1 GB vira 150 MB.</span></li>
+          </ul>
+          <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Restore Profiles traz todos os logins de volta com a sua senha.</span> <span>Mudou de ideia? Undo Restore funciona até você fazer logout.</span></p>
+          <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span>3 senhas erradas ou a palavra de pânico apagam o cofre para sempre.</span></p>
+        </article>
+        <article class="pz-step" data-p="logout"><p class="label"><span class="n">04</span> / 10</p>
+          <h3><span>Save & Log Out</span></h3>
+          <p><span>Um clique salva seus logins e depois faz logout. Se o salvamento falhar, você continua logado.</span></p>
+          <p><span>Esqueceu? Um logout normal ainda salva antes os apps que mudaram.</span></p>
+        </article>
+        <article class="pz-step" data-p="pause"><p class="label"><span class="n">05</span> / 10</p>
+          <h3><span>Pause 1 Session</span></h3>
+          <p><span>Pule o próximo logout e login uma vez, sem desligar o Amnesia. Depois ele volta a ficar ligado sozinho.</span></p>
+        </article>
+        <article class="pz-step" data-p="keep"><p class="label"><span class="n">06</span> / 10</p>
+          <h3>Keep List <span>e pasta Keep</span></h3>
+          <p><span>A pasta Keep guarda arquivos que nunca são apagados. A Keep List mantém dados de apps como VPNs, chaves SSH e sua conta Apple.</span></p>
+          <p><span>O Amnesia examina seus apps e sugere o que manter.</span></p>
+          <ul>
+            <li><b><span>Pick Apps</span></b> <span>encontra mais dados de cada app, como logins da web.</span></li>
+            <li><b><span>Ferramentas de desenvolvedor e terminal</span></b>: <span>SSH, GitHub CLI, zsh, Vim, Docker, AWS, Claude Code e mais.</span></li>
+            <li><span>Máquinas virtuais (UTM, Parallels, VirtualBox, VMware Fusion) são mantidas por padrão.</span></li>
+            <li><span>Manter o Claude mantém também suas conversas do Claude Code.</span></li>
+          </ul>
+        </article>
+        <article class="pz-step" data-p="preview"><p class="label"><span class="n">07</span> / 10</p>
+          <h3><span>What Gets Deleted</span></h3>
+          <p><span>A lista completa do que o próximo logout apaga, agrupada por tipo. Abrir a lista não apaga nada.</span></p>
+          <ul>
+            <li><span>Busque por nome ou pasta, mostre um grupo, ou marque</span> <b><span>Biggest first</span></b>.</li>
+            <li><span>Arquivos de 1 GB ou mais e dados de máquinas virtuais ganham um aviso no topo.</span></li>
+            <li><span>A Lixeira tem um grupo só dela, porque ela também é esvaziada no logout.</span></li>
+          </ul>
+          <p><span>Com "Check before logout" ativado, o logout espera aqui até você clicar em Continue ou Cancel.</span></p>
+        </article>
+        <article class="pz-step" data-p="backup"><p class="label"><span class="n">08</span> / 10</p>
+          <h3>Backup</h3>
+          <p><span>Um .7z criptografado da sua pasta Keep, de pastas escolhidas e do cofre.</span></p>
+          <ul>
+            <li><span>Pendrive, seu próprio servidor via SSH, ou a nuvem.</span></li>
+            <li><span>Diário ou semanal. Backups antigos nunca são apagados.</span></li>
+          </ul>
+          <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Restore Files devolve os arquivos para onde estavam.</span></p>
+        </article>
+        <article class="pz-step" data-p="history"><p class="label"><span class="n">09</span> / 10</p>
+          <h3><span>Histórico</span></h3>
+          <p><span>O que o Amnesia fez e quando: limpezas, snapshots, restaurações e backups.</span></p>
+          <p><span>Só ficam horários e nomes de apps, nunca nomes de arquivo.</span></p>
+        </article>
+        <article class="pz-step" data-p="settings"><p class="label"><span class="n">10</span> / 10</p>
+          <h3><span>Settings</span></h3>
+          <p><span>Snapshot automático no logout, um lembrete depois do login, conferir antes do logout, abrir no login, sua pasta Keep e o idioma.</span></p>
+          <ul>
+            <li><b><span>Busca</span></b> <span>no topo encontra qualquer configuração, em inglês.</span></li>
+            <li><span>Verificação de atualizações: desligada, toda semana, a cada 2 semanas ou todo mês.</span></li>
+            <li><b><span>Keep lock, Brankas, Health check</span></b> <span>e a página de limitações também ficam aqui.</span></li>
+          </ul>
+          <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Move to a New Mac leva seu cofre e as chaves do Keychain para o Mac novo.</span></p>
+          <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span>Desinstale com "also delete the vault" marcado.</span></p>
+        </article>
+        <article class="pz-step pz-end"><p class="label"><span>Tudo junto</span></p><h3><span>Uma janela. <em>Cada peça no seu lugar.</em></span></h3></article>
+      </div>
+      <div class="pager" data-pager="tour" hidden>
+        <button type="button" class="pg-prev" aria-label="Anterior"><svg><use href="#i-chev-l"/></svg></button>
+        <ol class="pg-dots"></ol>
+        <button type="button" class="pg-next" aria-label="Next"><svg><use href="#i-chev-r"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="head sub">
+      <h3 class="minih"><span>Os avisos são <em>fáceis de ler.</em></span></h3>
+      <p class="body"><span>Cada janela importante diz, em caixas coloridas, o que vai acontecer, o que é apagado, o que fica e o que você precisa fazer.</span></p>
+    </div>
+    <div class="bento pops">
+      <div class="cell c-turnon">
+        <p class="cap"><span>Quando você clica em Turn On</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../logo.png" alt="" width="40" height="40"><h4><span>Turn on Amnesia?</span></h4></div>
+          <div class="ps happens"><p class="ps-t"><svg><use href="#i-arrow-c"/></svg><span>O que vai acontecer</span></p><ul><li><span>A partir do próximo logout, tudo o que está fora da Keep List e da sua pasta Keep é APAGADO toda vez que você faz logout, reinicia ou desliga.</span></li></ul></div>
+          <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>Isto continua salvo (não é apagado)</span></p><ul><li><span>Sua pasta Keep (~/Keep) e tudo o que está nela.</span></li><li><span>Logins de apps no Profile Vault: eles voltam com Restore.</span></li></ul></div>
+          <div class="ps todo"><p class="ps-t"><svg><use href="#i-hand"/></svg><span>O que você precisa fazer</span></p><ul><li><span>Mova os arquivos importantes para ~/Keep antes de fazer logout.</span></li></ul></div>
+          <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1"><span>Turn On</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-save">
+        <p class="cap"><span>Save & Log Out</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../logo.png" alt="" width="40" height="40"><h4><span>Salvar perfis e fazer logout?</span></h4></div>
+          <div class="ps happens"><p class="ps-t"><svg><use href="#i-arrow-c"/></svg><span>O que vai acontecer</span></p><ul class="num"><li><span>Estes apps são fechados: Chrome, Claude, WhatsApp.</span></li><li><span>Os logins deles são salvos no cofre.</span></li><li><span>Você sai da sessão e o Amnesia apaga esta sessão.</span></li></ul></div>
+          <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1"><span>Save & Log Out</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-restore">
+        <p class="cap"><span>Depois do Restore</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../logo.png" alt="" width="40" height="40"><h4><span>Restauração concluída</span></h4></div>
+          <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>Restaurado e conferido</span></p><ul><li>Chrome</li><li>Claude</li><li>WhatsApp</li></ul></div>
+          <div class="ps todo"><p class="ps-t"><svg><use href="#i-hand"/></svg><span>Reparar extensões</span></p><ul class="num"><li><span>Abra chrome://extensions.</span></li><li><span>Clique em Repair em cada extensão.</span></li></ul></div>
+          <div class="ps note"><p class="ps-t"><svg><use href="#i-clock"/></svg><span>Seus dados antigos dos apps</span></p><ul><li><span>Mudou de ideia? Clique em Undo Restore na página do Profile Vault, a qualquer momento antes de fazer logout.</span></li></ul></div>
+          <div class="pop-btns"><span class="b1">OK</span></div>
+        </div>
+      </div>
+      <div class="cell c-last danger">
+        <p class="cap"><span class="tm glob"><i></i>Global Amnesia</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../logo.png" alt="" width="40" height="40"><div><h4><span>Última tentativa</span></h4><p><span>Você tem 1 tentativa de senha sobrando.</span></p></div></div>
+          <div class="ps deleted"><p class="ps-t"><svg><use href="#i-trash"/></svg><span>Se a senha estiver errada</span></p><ul><li><span>O cofre e todos os snapshots dele são apagados para sempre.</span></li></ul></div>
+          <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1 red"><span>I'm Sure, Try</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-uninstall">
+        <p class="cap"><span>Desinstalar pelo Settings</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../logo.png" alt="" width="40" height="40"><h4><span>Desinstalar o Amnesia deste Mac?</span></h4></div>
+          <div class="ps happens"><p class="ps-t"><svg><use href="#i-arrow-c"/></svg><span>O que vai acontecer</span></p><ul><li><span>O Amnesia é desligado de vez.</span></li><li><span>O app vai para a Lixeira.</span></li></ul></div>
+          <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>Isto continua salvo (a não ser que você marque a caixa abaixo)</span></p><ul><li><span>Sua pasta Keep e tudo o que está nela.</span></li><li><span>Profile Vault: 5 snapshots de apps, 312 MB no total.</span></li></ul></div>
+          <p class="pop-chk"><i></i><span>Apagar também o cofre, os snapshots, a Keep List e as configurações</span></p>
+          <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1"><span>Uninstall</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-legend">
+        <p class="cap"><span>As cores significam a mesma coisa em todo lugar</span></p>
+        <ul class="legend">
+          <li class="happens"><svg><use href="#i-arrow-c"/></svg><span>O que vai acontecer</span></li>
+          <li class="deleted"><svg><use href="#i-trash"/></svg><span>O que é apagado</span></li>
+          <li class="kept"><svg><use href="#i-shield"/></svg><span>O que continua salvo</span></li>
+          <li class="todo"><svg><use href="#i-hand"/></svg><span>O que você precisa fazer</span></li>
+          <li class="warn"><svg><use href="#i-warn"/></svg><span>Cuidado</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ref" id="install">
+  <div class="glow" style="width:520px;height:520px;background:var(--indigo);right:-180px;top:12%;opacity:.16" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">10</span> · <span>Instalar</span></p>
+      <h2><span>Instale com <em>uma linha.</em></span></h2>
+      <div class="badges">
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg><use href="#i-tag"/></svg><span>Release</span><b data-gh="version">v5.23.1</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
+        <span class="bdg"><svg><use href="#i-laptop"/></svg><span>macOS</span><b>15+</b></span>
+      </div>
+    </div>
+    <div class="warn" role="note">
+      <h3><svg><use href="#i-warn"/></svg><span>Leia isto antes de instalar</span></h3>
+      <p><span>O Amnesia apaga dados de verdade. Depois que você o liga, tudo o que está fora da sua pasta Keep e da Keep List é apagado a cada logout, reinício e desligamento. Nada vai para a Lixeira e não dá para desfazer. Se você esquecer a senha do cofre, ninguém consegue abri-lo. O Amnesia é software livre, fornecido no estado em que se encontra, e você o usa por sua conta e risco.</span></p>
+      <p><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md">Leia os termos completos →</a></p>
+    </div>
+    <div class="bento installs">
+      <div class="cell i-brew">
+        <div class="i-top"><span class="i-ico" style="--c:var(--orange)"><svg><use href="#i-brew"/></svg></span><div><h3>Homebrew</h3><p class="small"><span>Recomendado</span></p></div></div>
+        <div class="shell">
+          <div class="sh-bar"><i></i><i></i><i></i><span>Terminal</span></div>
+          <div class="term type"><code>brew install navi-crwn/tap/amnesia</code><button class="copy" type="button">Copy</button></div>
+          <pre class="sh-out"><span>==&gt; Tapping navi-crwn/tap</span>
+<span>==&gt; Downloading Amnesia.dmg</span>
+<span>==&gt; Installing Cask amnesia</span>
+<span>==&gt; Moving App 'Amnesia.app' to '/Applications/Amnesia.app'</span>
+<span class="ok">amnesia was successfully installed!</span></pre>
+        </div>
+        <p class="small"><span>Atualize depois com <code>brew upgrade</code>. Desligue o Amnesia antes.</span></p>
+      </div>
+      <div class="cell i-dmg">
+        <div class="i-top"><span class="i-ico" style="--c:var(--cyan)"><svg><use href="#i-dmg"/></svg></span><div><h3>Installer (.dmg)</h3><p class="small"><span>Pelo GitHub Releases</span></p></div></div>
+        <div class="dmgwin" aria-hidden="true">
+          <div class="dm-app"><img src="../logo.png" alt="" width="56" height="56"><span>Amnesia</span></div>
+          <svg class="dm-arrow" viewBox="0 0 80 20"><path d="M2 10h70m-8-7 8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 5"/></svg>
+          <div class="dm-dst"><svg><use href="#i-folder"/></svg><span>Applications</span></div>
+          <img class="dm-ghost" src="../logo.png" alt="" width="56" height="56">
+        </div>
+        <ol class="mini-steps">
+          <li><span>Baixe o .dmg em <a href="https://github.com/navi-crwn/amnesia/releases/latest">Releases</a> e abra.</span></li>
+          <li><span>Arraste o Amnesia para Aplicativos.</span></li>
+          <li><span>Ainda não é assinado pela Apple, então na primeira vez: System Settings → Privacy & Security → <b>Open Anyway</b>.</span></li>
+          <li><span>Quer conferir o download? Toda versão tem o <code>SHA256SUMS.txt</code> e a assinatura dele, <code>SHA256SUMS.txt.sig</code>. As atualizações de dentro do app conferem essa assinatura para você.</span></li>
+        </ol>
+      </div>
+      <div class="cell i-gh">
+        <div class="i-top"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><div><h3>navi-crwn/amnesia</h3><p class="small"><span>Código aberto no GitHub</span></p></div></div>
+        <dl class="ghstats">
+          <div><dt><span>Licença</span></dt><dd>MIT</dd></div>
+          <div><dt>Releases</dt><dd data-gh="releases">–</dd></div>
+          <div><dt><span>Mais recente</span></dt><dd data-gh="version">v5.23.1</dd></div>
+        </dl>
+        <div class="cta">
+          <a class="btn main" href="https://github.com/navi-crwn/amnesia"><svg><use href="#i-github"/></svg><span>Dar estrela no repositório</span></a>
+          <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/releases">Releases</a>
+        </div>
+      </div>
+      <div class="cell i-req">
+        <p class="cap"><span>O que você precisa</span></p>
+        <ul class="reqs">
+          <li><svg><use href="#i-laptop"/></svg><b>macOS 15+</b><span>Sequoia, Tahoe</span></li>
+          <li><svg><use href="#i-chip"/></svg><b>Apple Silicon & Intel</b><span>Um app para os dois</span></li>
+          <li><svg><use href="#i-lock"/></svg><b><span>Sem sudo</span></b><span>Funciona dentro da sua conta</span></li>
+        </ul>
+        <p class="cap" style="margin-top:6px"><span>Para atualizar, sempre nesta ordem</span></p>
+        <ol class="flow">
+          <li><span>Turn Off</span></li>
+          <li><span>Instalar</span></li>
+          <li><span>Turn On</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ref" id="tutorial">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">11</span> · Tutorial</p>
+      <h2><span>Tutorial <em>passo a passo.</em></span></h2>
+      <p class="lead"><span>Da instalação até o seu primeiro logout limpo. Veja cada passo rodando e depois faça o mesmo no app. Nada é apagado antes do passo 8.</span></p>
+    </div>
+  </div>
+  <div class="wrap tutbox">
+    <div class="bento tut">
+      <div class="cell t-screen">
+        <div class="tw" aria-hidden="true">
+          <div class="tw-bar"><i></i><i></i><i></i><span class="tw-title">Amnesia</span><span class="rec"><b></b>REC</span></div>
+          <div class="tw-view"><div class="tw-body">
+
+            <div class="tp" data-page="0">
+              <div class="ui-center">
+                <img src="../logo.png" alt="" width="44" height="44">
+                <p class="ui-h"><span>Leia isto primeiro</span></p>
+                <div class="ui-seg"><span class="on">English</span><span>Bahasa Indonesia</span></div>
+                <div class="ps deleted"><p class="ps-t"><svg><use href="#i-trash"/></svg><span>O Amnesia apaga dados de verdade</span></p><ul><li><span>Tudo o que está fora da Keep é apagado a cada logout.</span></li><li><span>Não vai para a Lixeira. Não dá para desfazer.</span></li></ul></div>
+                <p class="ui-chk" data-a="1" data-on="self,.go"><i></i><span>Entendo que o Amnesia apaga dados</span></p>
+                <span class="ui-btn go dim" data-a="2"><span>Next</span></span>
+              </div>
+            </div>
+
+            <div class="tp" data-page="1">
+              <p class="ui-h"><span>Verificação rápida</span></p>
+              <div class="ui-list">
+                <div class="ui-row"><span class="st on"></span><span>Motor do Amnesia</span></div>
+                <div class="ui-row"><span class="st on"></span>7-Zip</div>
+                <div class="ui-row"><span class="st on"></span>Apple Command Line Tools</div>
+                <div class="ui-row fda"><span class="st"></span><span>Full Disk Access</span><span class="ui-btn sm" data-a="1" data-on=".sys"><span>Allow</span></span></div>
+              </div>
+              <div class="sys">
+                <p class="sys-h">Privacy & Security › Full Disk Access</p>
+                <div class="ui-row"><svg><use href="#i-term"/></svg>Terminal<span class="ui-tog"></span></div>
+                <div class="ui-row"><img src="../logo.png" alt="" width="18" height="18">Amnesia<span class="ui-tog" data-a="2" data-on="self"></span></div>
+                <span class="ui-btn sm" data-a="3" data-off=".sys" data-on=".fda,.fda .st"><span>Quit & Reopen</span></span>
+              </div>
+            </div>
+
+            <div class="tp" data-page="2">
+              <p class="ui-h"><span>Escolha o que fica</span></p>
+              <div class="ui-row"><svg><use href="#i-folder"/></svg><span>Pasta Keep</span> <code>~/Keep</code><span class="ui-btn2 sm"><span>Choose…</span></span></div>
+              <div class="ui-row hl"><svg><use href="#i-shield"/></svg><span>Conta Apple e dados</span><span class="ui-tog on"></span></div>
+              <div class="ui-list">
+                <div class="ui-row"><svg><use href="#i-globe"/></svg><span>App de VPN</span><small class="sug"><span>sugerido</span></small><span class="ui-tog on"></span></div>
+                <div class="ui-row"><svg><use href="#i-lock"/></svg><span>Chaves SSH</span><span class="ui-tog" data-a="1" data-on="self"></span></div>
+                <div class="ui-row"><svg><use href="#i-term"/></svg><span>Configurações do Git</span><span class="ui-tog" data-a="2" data-on="self"></span></div>
+              </div>
+              <span class="ui-btn" data-a="3" data-on=".toast"><span>Save Keep List</span></span>
+              <p class="toast"><span>Salvo. Isto nunca é apagado.</span></p>
+            </div>
+
+            <div class="tp" data-page="3">
+              <p class="ui-h">Profile Vault</p>
+              <p class="ui-sub"><span>Crie uma senha para o cofre (mín. 12 caracteres)</span></p>
+              <label class="ui-field" data-a="1" data-type="••••••••••••••"><span>Senha</span><b class="val"></b></label>
+              <label class="ui-field" data-a="2" data-type="••••••••••••••"><span>Repita a senha</span><b class="val"></b></label>
+              <label class="ui-field" data-a="3" data-type="•••••••"><span>Palavra de pânico (opcional)</span><b class="val"></b></label>
+              <p class="ui-warn"><svg><use href="#i-warn"/></svg><span>Esqueceu a senha, perdeu o cofre</span></p>
+              <span class="ui-btn" data-a="4" data-on=".toast"><span>Create Vault</span></span>
+              <p class="toast"><span>Cofre criado</span></p>
+            </div>
+
+            <div class="tp" data-page="4">
+              <p class="ui-h">Profile Vault</p>
+              <p class="ui-sub snapst"><span class="before"><span>Nenhum snapshot ainda</span></span><span class="after"><span>Snapshot hoje 15:11</span></span></p>
+              <div class="chips">
+                <span class="chip" data-a="1" data-on="self">Chrome</span>
+                <span class="chip" data-a="2" data-on="self">WhatsApp</span>
+                <span class="chip" data-a="3" data-on="self">Claude</span>
+                <span class="chip">Claude Code</span>
+                <span class="chip">OpenCode</span>
+                <span class="chip">gh</span>
+              </div>
+              <div class="ui-row">Chrome<div class="ui-seg sm"><span data-a="4" data-on="self" data-off=".full">Light</span><span class="full on">Full</span></div></div>
+              <span class="ui-btn" data-a="5" data-fill=".bar" data-on=".snapst"><span>Snapshot Now</span></span>
+              <div class="bar"><b></b></div>
+            </div>
+
+            <div class="tp" data-page="5">
+              <p class="ui-h">Backup</p>
+              <div class="ui-seg"><span class="usb on">USB</span><span>Server (SSH)</span><span data-a="1" data-on="self" data-off=".usb">Cloud</span></div>
+              <div class="ui-row"><svg><use href="#i-drive"/></svg>Google Drive<small class="sug">Drive for Desktop</small></div>
+              <p class="ui-chk on"><i></i><span>Include Profile Vault</span></p>
+              <span class="ui-btn" data-a="2" data-fill=".bar" data-on=".f1"><span>Back Up Now</span></span>
+              <div class="bar"><b></b></div>
+              <p class="ui-file f1"><svg><use href="#i-stack"/></svg>amnesia_backup_2026-10-07.7z<b>✓</b></p>
+              <span class="ui-btn2" data-a="3" data-on=".toast"><span>Check a Backup File…</span></span>
+              <p class="toast"><span>O cofre dentro dele abre: 6 apps</span></p>
+            </div>
+
+            <div class="tp" data-page="6">
+              <p class="ui-h"><span>What Gets Deleted</span></p>
+              <p class="ui-sub"><span>no próximo logout · nada é apagado agora</span></p>
+              <div class="grp" data-a="1" data-on="self"><p class="grp-h"><svg><use href="#i-folder"/></svg><span>Seus arquivos</span><b>67</b></p>
+                <div class="grp-b"><p class="dl">Desktop<b>12</b></p><p class="dl dl-dl" data-a="2" data-on=".hint">Downloads<b>48</b></p><p class="dl">Documents<b>7</b></p></div></div>
+              <div class="grp"><p class="grp-h"><svg><use href="#i-globe"/></svg><span>Dados do navegador</span><b>4</b></p></div>
+              <div class="grp"><p class="grp-h"><svg><use href="#i-grid"/></svg><span>Dados de apps</span><b>23</b></p></div>
+              <div class="grp"><p class="grp-h"><svg><use href="#i-trash"/></svg><span>Trash (emptied at logout)</span><b>9</b></p></div>
+              <div class="grp back"><p class="grp-h"><svg><use href="#i-lock"/></svg><span>Volta do cofre</span><b>6</b></p></div>
+              <p class="toast hint"><span>Precisa disso? Mova para ~/Keep antes.</span></p>
+            </div>
+
+            <div class="tp" data-page="7">
+              <div class="aw-hero sw h7">
+                <span class="hb"><svg><use href="#i-shield"/></svg></span>
+                <div><b><span class="s-off"><span>Amnesia is Off</span></span><span class="s-on"><span>Amnesia is On</span></span></b>
+                <small><span>Nada é apagado enquanto ele está desligado.</span></small></div>
+                <span class="aw-btn" data-a="1" data-on=".pop7"><span class="s-off"><span>Turn On Amnesia</span></span><span class="s-on"><span>Turn Off Amnesia</span></span></span>
+              </div>
+              <div class="tile-row"><span class="tile mini" style="--c:var(--indigo)"><svg><use href="#i-lock"/></svg>Profile Vault</span><span class="tile mini" style="--c:var(--green)"><svg><use href="#i-pin"/></svg>Keep List</span><span class="tile mini" style="--c:var(--pink)"><svg><use href="#i-drive"/></svg>Backup</span></div>
+              <div class="pop tw-pop pop7">
+                <div class="pop-top"><img src="../logo.png" alt="" width="30" height="30"><h4><span>Turn on Amnesia?</span></h4></div>
+                <div class="ps happens"><p class="ps-t"><svg><use href="#i-arrow-c"/></svg><span>O que vai acontecer</span></p><ul><li><span>A partir do próximo logout, tudo o que está fora da Keep é apagado.</span></li></ul></div>
+                <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>Isto continua salvo</span></p><ul><li><span>~/Keep e o Profile Vault.</span></li></ul></div>
+                <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1" data-a="2" data-off=".pop7" data-on=".h7"><span>Turn On</span></span></div>
+              </div>
+            </div>
+
+            <div class="tp" data-page="8">
+              <div class="menubar mini"><span class="mb-l"></span><span class="mb-l w2"></span><span class="mb-r"><b>17:30</b><img src="../logo.png" alt="" width="16" height="16" data-a="1" data-on=".mb-drop"></span>
+                <div class="mb-drop">
+                  <p class="mb-st"><i></i><span>Amnesia is On</span></p>
+                  <p data-a="2" data-off=".mb-drop" data-on=".pop8"><span>Save & Log Out</span></p>
+                  <p><span>Pause 1 Session</span></p>
+                </div>
+              </div>
+              <div class="vaultmini">
+                <p class="ui-h">Profile Vault</p>
+                <label class="ui-field" data-a="5" data-type="••••••••••••••"><span>Senha</span><b class="val"></b></label>
+                <span class="ui-btn" data-a="6" data-fill=".bar" data-on=".pop8b"><span>Restore Profiles</span></span>
+                <div class="bar"><b></b></div>
+              </div>
+              <div class="pop tw-pop pop8">
+                <div class="pop-top"><img src="../logo.png" alt="" width="30" height="30"><h4><span>Salvar perfis e fazer logout?</span></h4></div>
+                <div class="ps happens"><p class="ps-t"><svg><use href="#i-arrow-c"/></svg><span>O que vai acontecer</span></p><ul class="num"><li><span>Chrome, Claude e WhatsApp fecham.</span></li><li><span>Os logins vão para o cofre.</span></li><li><span>Você sai da sessão e tudo é apagado.</span></li></ul></div>
+                <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1" data-a="3" data-off=".pop8" data-on=".blk"><span>Save & Log Out</span></span></div>
+              </div>
+              <div class="blk"><img src="../logo.png" alt="" width="40" height="40"><p><span>Logout feito · 309 itens esquecidos</span></p><small><span>Entrando de novo…</span></small></div>
+              <i class="auto" data-a="4" data-do="auto" data-wait="1.6" data-off=".blk"></i>
+              <div class="pop tw-pop pop8b">
+                <div class="pop-top"><img src="../logo.png" alt="" width="30" height="30"><h4><span>Restauração concluída</span></h4></div>
+                <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>Restaurado e conferido</span></p><ul><li>Chrome · Claude · WhatsApp</li></ul></div>
+                <div class="pop-btns"><span class="b1">OK</span></div>
+              </div>
+            </div>
+
+            <div class="tp" data-page="9">
+              <div class="aw-hero sw on h9">
+                <span class="hb"><svg><use href="#i-shield"/></svg></span>
+                <div><b><span class="s-off"><span>Amnesia is Off</span></span><span class="s-on"><span>Amnesia is On</span></span></b>
+                <small><span>Desligue antes de cada atualização.</span></small></div>
+                <span class="aw-btn" data-a="1" data-off=".h9" data-on=".u1"><span class="s-off"><span>Turn On Amnesia</span></span><span class="s-on"><span>Turn Off Amnesia</span></span></span>
+              </div>
+              <ol class="flow big"><li class="u1"><span>Turn Off</span></li><li class="u2"><span>Instalar</span></li><li class="u3"><span>Turn On</span></li></ol>
+              <div class="dmgwin sm"><div class="dm-app"><img src="../logo.png" alt="" width="40" height="40"><span>Amnesia</span></div><svg class="dm-arrow" viewBox="0 0 80 20"><path d="M2 10h70m-8-7 8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 5"/></svg><div class="dm-dst"><svg><use href="#i-folder"/></svg><span>Applications</span></div></div>
+              <i class="auto" data-a="2" data-do="auto" data-fill=".bar" data-on=".u2"></i>
+              <div class="bar"><b></b></div>
+              <i class="auto" data-a="3" data-do="auto" data-wait=".4"></i>
+              <span class="ui-btn ghostbtn" data-a="4" data-on=".h9,.u3"><span>Turn On Amnesia</span></span>
+            </div>
+
+            <svg class="cursor tw-cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6.2 1.6L10 19z"/></svg>
+            <i class="ripple tw-rip"></i>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="cell t-text">
+        <div class="t-steps">
+          <article class="t-step"><p class="label"><span class="n">01</span> / 10</p>
+            <h3><span>Abra o Amnesia e leia o aviso</span></h3>
+            <p><span>Na primeira vez que o Amnesia abre, começa um tour rápido. Escolha seu idioma, leia o que o Amnesia apaga e marque que você entendeu. Nada é apagado ainda.</span></p>
+            <ul class="tips"><li><span>Você pode abrir o tour de novo depois, em Settings.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">02</span> / 10</p>
+            <h3><span>Verificação rápida</span></h3>
+            <p><span>O Amnesia confere o que ele precisa: o motor dele, o 7-Zip, as Apple Command Line Tools e o Full Disk Access. O que não estiver verde tem um botão do lado.</span></p>
+            <ul class="tips"><li><span>Full Disk Access: System Settings → Privacy & Security → Full Disk Access → ative o Amnesia e depois clique em Quit & Reopen.</span></li><li><span>Depois, Settings → Health check mostra o mesmo e mais, como Mesa e Documentos do iCloud e seu último backup.</span></li><li><span>Isso deixa a limpeza chegar à Mesa, a Documentos e a Downloads.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">03</span> / 10</p>
+            <h3><span>Escolha o que fica</span></h3>
+            <p><span>Escolha sua pasta Keep (~/Keep por padrão) e ative os apps cujos dados nunca devem ser apagados. Os apps de VPN são sugeridos, e sua conta Apple já vem marcada.</span></p>
+            <ul class="tips"><li><span>Você pode mudar isso depois na página Keep List.</span></li><li><span>Programa neste Mac? Keep List → Pick Apps → Developer tools & terminal mantém suas configurações de SSH, Git e CLIs.</span></li><li><span>Usa o Claude? Pick Apps → Claude → Save mantém também as conversas do Claude Code.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">04</span> / 10</p>
+            <h3><span>Crie o Profile Vault</span></h3>
+            <p><span>Abra o Profile Vault e digite uma senha de pelo menos 12 caracteres, duas vezes. A palavra de pânico é opcional.</span></p>
+            <ul class="tips"><li><span>Anote a senha em um lugar seguro. Ninguém consegue recuperá-la.</span></li><li><span class="tm glob"><i></i>Global Amnesia</span> <span>digitar a palavra de pânico apaga o cofre para sempre.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">05</span> / 10</p>
+            <h3><span>Escolha os apps e faça o primeiro snapshot</span></h3>
+            <p><span>Clique nos apps que quer salvar, escolha Light ou Full para cada navegador, entre nesses apps como sempre e depois clique em Snapshot Now.</span></p>
+            <ul class="tips"><li><span>Snapshot Now não pede senha.</span></li><li><span>Light ignora os caches: cerca de 1 GB vira 150 MB.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">06</span> / 10</p>
+            <h3><span>Faça backup, com o cofre</span></h3>
+            <p><span>Escolha para onde vão os backups, deixe Include Profile Vault marcado e clique em Back Up Now. Depois use Check a Backup File para ter certeza de que o cofre lá dentro abre.</span></p>
+            <ul class="tips"><li><span class="tm recall"><i></i>Memory Recall</span> <span>se um dia o cofre se perder, Get Vault from Backup traz ele de volta.</span></li><li><span>Cada backup é um novo arquivo com data. Os antigos nunca são apagados.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">07</span> / 10</p>
+            <h3><span>Olhe a lista</span></h3>
+            <p><span>What Gets Deleted mostra tudo o que o próximo logout apagaria, agrupado por tipo. Ainda precisa de alguma coisa? Mova para sua pasta Keep ou coloque o app na Keep List.</span></p>
+            <ul class="tips"><li><span>Abrir a lista não apaga nada.</span></li><li><span>Marque Biggest first e fique de olho no aviso laranja sobre arquivos de 1 GB ou mais.</span></li><li><span>Com "Remove apps installed later" ativado, esses apps também aparecem aqui, em "Apps installed later".</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">08</span> / 10</p>
+            <h3><span>Turn On</span></h3>
+            <p><span>Clique em Turn On Amnesia no cartão inicial e leia a janela. Esta sessão continua segura até você fazer logout.</span></p>
+            <ul class="tips"><li><span class="tm sel"><i></i>Selective Amnesia</span> <span>de agora em diante, cada logout, reinício e desligamento esquece tudo, menos o que você escolheu.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">09</span> / 10</p>
+            <h3><span>Todo dia: Save & Log Out, depois Restore</span></h3>
+            <p><span>Terminou o dia? Clique em Save & Log Out na barra de menus. Depois de entrar de novo, abra o Profile Vault, digite a senha e clique em Restore Profiles.</span></p>
+            <ul class="tips"><li><span class="tm recall"><i></i>Memory Recall</span> <span>Chrome, Claude, WhatsApp e o resto voltam já logados.</span></li><li><span>Salvou no modo Light? Clique em Repair na página de extensões do navegador.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">10</span> / 10</p>
+            <h3><span>Atualizando o Amnesia</span></h3>
+            <p><span>Sempre nesta ordem: Turn Off, instale a atualização (.dmg ou brew upgrade), abra o Amnesia, Turn On.</span></p>
+            <ul class="tips"><li><span>Instalar com o Amnesia ligado pode ser tratado como um logout e apagar a sessão.</span></li><li><span>Vai atualizar de dentro do app? Ele só instala uma versão com assinatura válida.</span></li></ul>
+          </article>
+        </div>
+      </div>
+
+      <div class="cell t-nav">
+        <div class="pager" data-pager="tut" hidden>
+          <button type="button" class="pg-prev" aria-label="Anterior"><svg><use href="#i-chev-l"/></svg></button>
+          <ol class="pg-dots num"></ol>
+          <button type="button" class="pg-next" aria-label="Next"><svg><use href="#i-chev-r"/></svg></button>
+        </div>
+        <p class="safe-note"><svg><use href="#i-shield"/></svg><span>Nada é apagado antes do passo 8.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ref" id="faq">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">12</span> · FAQ</p>
+      <h2><span>Perguntas <em>respondidas.</em></span></h2>
+    </div>
+    <div class="bento faq">
+      <div class="fcol">
+      <div class="cell fq f-safe">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><span>Segurança</span></h3>
+        <details><summary><span>Meus dados são enviados para algum lugar?</span></summary><p><span>Não. O Amnesia não tem servidores, contas, rastreamento nem analytics. Tudo roda no seu Mac. Só se você configurar um backup em servidor ou na nuvem é que um arquivo .7z trancado sai do seu Mac, direto para o lugar que você escolheu, e ninguém consegue ler sem a sua senha. A verificação de atualizações só pergunta ao GitHub qual é o número da versão mais nova, uma vez por semana por padrão. Em Settings você pode mudar para a cada 2 semanas, todo mês ou Off.</span></p></details>
+    <details><summary><span>Existe uma versão para Windows?</span></summary><p><span>Sim, o Amnesia para Windows v0.8.1, uma versão oficial. Ele apaga ao sair da conta, reiniciar e desligar, e tem o cofre, backups, Keep lock, uma caixa-forte, um Health check e um Setup.exe com atualizações assinadas de dentro do app. Veja a <a href="win/">página do Windows</a>.</span></p></details>
+    <details><summary><span>Dá para testar sem apagar nada?</span></summary><p><span>Sim. O Amnesia fica desligado até você clicar em Turn On. What Gets Deleted (ou Settings → "See what would be deleted now") mostra a lista completa antes.</span></p></details>
+    <details><summary><span>Para onde vão os arquivos apagados? Dá para recuperar?</span></summary><p><span>No logout eles são movidos para uma pasta do próprio Amnesia (~/.amnesia-trash), que é esvaziada em segundo plano depois do seu próximo login. Eles não vão para a Lixeira do macOS e não dá para recuperar. Tudo de que você precisa vai na pasta Keep, na Keep List ou no cofre.</span></p></details>
+    <details><summary><span>Minha pasta Keep é criptografada?</span></summary><p><span>Não pelo Amnesia. O Keep lock impede que o Finder e outros apps abram a pasta até você digitar a senha da Keep, mas isso são permissões do macOS, não criptografia. Ative o FileVault para que o disco inteiro seja criptografado, e coloque no Brankas os arquivos que precisam continuar secretos.</span></p></details>
+    <details><summary><span>E se o Mac travar ou ficar sem energia?</span></summary><p><span>A verificação no login pega isso: se o último logout não terminou, a verificação do login faz a limpeza completa.</span></p></details>
+    <details><summary><span>Por que ele pede Full Disk Access?</span></summary><p><span>Para o macOS não ficar perguntando sobre cada pasta (Mesa, Documentos, Downloads…), e para a limpeza no logout conseguir chegar a elas de verdade. Você autoriza uma vez só.</span></p></details>
+    <details><summary><span>Uso Mesa e Documentos do iCloud. Isso é um problema?</span></summary><p><span>Nesse caso o Amnesia pula a Mesa e Documentos, porque apagar essas pastas apagaria os arquivos do iCloud e dos seus outros dispositivos também. O Health check e o What Gets Deleted avisam você. Se quiser que elas sejam apagadas, desative antes essa opção do iCloud.</span></p></details>
+    <details><summary><span>Ele precisa da senha do meu Mac ou de sudo?</span></summary><p><span>Não. O Amnesia só trabalha dentro da sua própria conta de usuário e nunca usa sudo. O macOS pede sua senha de login só quando você salva as chaves do Keychain para mudar para um Mac novo.</span></p></details>
+      </div>
+      <div class="cell fq f-backup">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--pink)"><svg><use href="#i-drive"/></svg></span>Backup</h3>
+        <details><summary><span>Preciso do Terminal ou do Chrome para configurar os backups?</span></summary><p><span>Não. Para um servidor, digite a senha dele uma vez e o Amnesia instala uma chave SSH. Para Google Drive, Dropbox, OneDrive, Box ou pCloud, você faz login pelo navegador.</span></p></details>
+    <details><summary><span>Como sei que um backup funciona mesmo?</span></summary><p><span>Na página Backup, clique em Check a Backup File e escolha o .7z. O Amnesia abre o cofre que está dentro dele numa pasta temporária, mostra quais apps estão nele e depois apaga a pasta temporária. Seu próprio cofre não é tocado.</span></p></details>
+    <details><summary><span>O backup agendado funciona quando não estou olhando?</span></summary><p><span>Sim, enquanto o ícone do Amnesia estiver na barra de menus, com a senha salva no Keychain. Para um pendrive, ele espera até o pendrive ser conectado. Você recebe uma notificação a cada vez. "Run the scheduled backup now" testa na hora.</span></p></details>
+    <details><summary><span>Como recupero arquivos de um backup?</span></summary><p><span>Backup → Restore Files: escolha o .7z, marque as pastas ou arquivos e clique em Restore to Original Place. O Amnesia lembra de onde veio cada pasta (inclusive de um disco externo). O que já estiver lá é movido antes para ~/.amnesia/before-restore, nada é sobrescrito. O disco não está conectado? Use To Another Folder.</span></p></details>
+    <details><summary><span>Por que não consigo abrir um backup com dois cliques?</span></summary><p><span>O backup é trancado com AES-256, e até a lista de nomes de arquivo é criptografada. O Utilitário de Compactação que vem no Mac não abre isso. Use Restore Files no Amnesia, o app gratuito Keka, ou o Terminal: ~/.amnesia/bin/7zz x file.7z (digite a senha quando ele pedir, não coloque no comando).</span></p></details>
+    <details><summary><span>Check a Backup File diz que o backup não tem cofre. Ele está corrompido?</span></summary><p><span>Não. Ele foi feito com Include Profile Vault desligado (ou antes da v5.13). Seus arquivos nele estão bem. Se a senha estiver errada, a mensagem diz isso separadamente.</span></p></details>
+    <details><summary><span>O backup agendado pediu a senha do meu Mac. Por quê?</span></summary><p><span>O macOS pergunta uma vez quando uma versão mais antiga do Amnesia salvou a senha do backup no Keychain. Clique em Always Allow. A partir da v5.17 o Amnesia salva a senha de novo como dele, então não pergunta mais.</span></p></details>
+    <details><summary><span>Backups antigos são apagados?</span></summary><p><span>Nunca. Cada backup é um novo arquivo com data. Apague os antigos você mesmo quando não precisar mais deles.</span></p></details>
+      </div>
+      </div>
+      <div class="fcol">
+      <div class="cell fq f-vault">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--indigo)"><svg><use href="#i-lock"/></svg></span>Profile Vault</h3>
+        <details><summary><span>E se eu esquecer a senha do cofre?</span></summary><p><span>Aí ninguém consegue abrir, nem você. Crie um cofre novo e entre nos seus apps de novo. Ainda lembra a senha e quer trocar? Use o botão Password na página do Profile Vault.</span></p></details>
+    <details><summary><span>O que acontece depois de 3 senhas erradas?</span></summary><p><span>O cofre é apagado para sempre. Antes da última tentativa o Amnesia avisa você. Se o cofre estava em um backup, recupere em Move to a New Mac → Get Vault from Backup.</span></p></details>
+    <details><summary><span>Qual a diferença entre Light e Full?</span></summary><p><span>Light (só navegadores) deixa de fora os caches e os arquivos de programa das extensões da Web Store, então o Chrome vai de cerca de 1 GB para 150 MB. Logins, favoritos, configurações das extensões e extensões instaladas de outro jeito são sempre salvos. Depois de um Restore no modo Light, clique em Repair na página de extensões do navegador. Full salva tudo, menos os caches.</span></p></details>
+    <details><summary><span>O Save & Log Out sobrescreve meus snapshots antigos?</span></summary><p><span>Só dos apps que ele salva, e só depois que o novo snapshot é salvo com sucesso. Os apps que não estão na lista mantêm o snapshot deles. Se o salvamento falhar, você não sai da sessão.</span></p></details>
+    <details><summary><span>O que o snapshot automático faz?</span></summary><p><span>Quando você faz logout, reinicia ou desliga do jeito normal, o Amnesia primeiro salva os apps cujos dados mudaram (no máximo 150 segundos) e depois limpa. Isso é pulado se você acabou de usar Save & Log Out ou se Pause 1 Session estiver ativado. Desligue essa opção e um logout normal limpa sem salvar.</span></p></details>
+    <details><summary><span>Restaurei e meus dados mais novos voltaram atrás. Dá para desfazer?</span></summary><p><span>Sim, até o seu próximo logout. Clique em Undo Restore na página do Profile Vault e os dados de logo antes da restauração voltam. Desde a v5.23 o Amnesia também pergunta antes quando os dados de um app são mais novos que o snapshot dele, e nunca sobrescreve o que está na sua Keep List.</span></p></details>
+    <details><summary><span>O que é a palavra de pânico?</span></summary><p><span>Uma palavra opcional que você escolhe. Digitada na caixa de senha, ela apaga o cofre na hora (e, se você escolheu assim, esvazia também a pasta Keep).</span></p></details>
+      </div>
+      <div class="cell fq f-every">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--cyan)"><svg><use href="#i-clock"/></svg></span><span>Uso no dia a dia</span></h3>
+        <details><summary><span>Vou precisar dos meus arquivos amanhã. O que eu faço?</span></summary><p><span>Mova os arquivos para sua pasta Keep antes de fazer logout. Ou, para um dia só, clique em Pause 1 Session: o próximo logout e login não são apagados.</span></p></details>
+    <details><summary><span>Dá para cancelar um logout?</span></summary><p><span>Sim, com "Check before logout" ativado (Settings): logout, reinício e desligamento esperam na página What Gets Deleted até você clicar em Continue ou Cancel.</span></p></details>
+    <details><summary><span>A janela principal abre no login. Por quê?</span></summary><p><span>Versões mais antigas eram reabertas pelo "Reabrir janelas ao iniciar sessão novamente" do macOS. Desde a v5.15 o Amnesia só mostra o ícone na barra de menus no login.</span></p></details>
+    <details><summary><span>Uso máquinas virtuais. Elas são apagadas?</span></summary><p><span>Por padrão, não. Quando o Amnesia encontra dados do UTM, Parallels, VirtualBox ou VMware Fusion, ele coloca esses dados na Keep List uma vez. Se você desativar, fica desativado, e a linha avisa que eles são apagados no logout. O What Gets Deleted também avisa sobre arquivos de 1 GB ou mais.</span></p></details>
+    <details><summary><span>A Lixeira também é esvaziada?</span></summary><p><span>Sim, a cada logout. O What Gets Deleted mostra a Lixeira como um grupo próprio, "Trash (emptied at logout)", com o tamanho. Tire de lá antes o que você ainda precisa.</span></p></details>
+    <details><summary><span>Como eu atualizo?</span></summary><p><span>Clique em Turn Off, instale a versão nova (.dmg ou brew upgrade), abra o Amnesia e clique em Turn On.</span></p></details>
+    <details><summary><span>Atualizar de dentro do app é seguro?</span></summary><p><span>Ele só instala quando o SHA256SUMS.txt da versão tem uma assinatura válida da chave do desenvolvedor que vem embutida no Amnesia. Se a assinatura estiver faltando ou errada, ele abre a página da versão e não instala nada.</span></p></details>
+    <details><summary><span>Dá para mudar para um Mac novo?</span></summary><p><span>Sim, a página Move to a New Mac guia você. Prepare Move salva suas chaves do Keychain no cofre, um backup leva tudo para o outro Mac, e Restore Keys coloca as chaves de volta no Mac novo.</span></p></details>
+      </div>
+      <div class="cell fq f-uninst">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--orange)"><svg><use href="#i-trash"/></svg></span><span>Uninstall</span></h3>
+        <details><summary><span>Como eu desinstalo?</span></summary><p><span>Abra Settings e clique em Uninstall Amnesia. Isso desliga o Amnesia de vez e move o app para a Lixeira. Uma caixa de seleção permite apagar também o cofre, os snapshots, a Keep List e as configurações (que também vão para a Lixeira). Sua pasta Keep nunca é tocada. Prefere o Terminal? <code>bash ~/.amnesia/uninstall.sh</code> (acrescente <code>--all</code> para apagar o cofre também). Com Homebrew: <code>brew uninstall amnesia</code>.</span></p></details>
+    <details><summary><span>O Keep lock está ativado. O que acontece quando eu desinstalo?</span></summary><p><span>O Amnesia pede a senha da Keep e destranca a Keep antes. Sem a senha, a Keep continua trancada, e você recebe o comando que abre a pasta: <code>chmod -RN ~/Keep</code>.</span></p></details>
+    <details><summary><span>E se eu só arrastar o app para a Lixeira?</span></summary><p><span>Também é seguro. Se o Amnesia estiver aberto, ele percebe, se desliga e avisa você. Se não estiver, o agente de login confere no próximo logout, não apaga nada e se remove.</span></p></details>
+      </div>
+      </div>
+      <div class="cell fq f-ask">
+        <div class="fa-t"><h3 class="fq-h"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><span>Ainda com problemas?</span></h3>
+        <p><span>Abra uma issue no GitHub. Por favor, não cole senhas, listas de arquivos nem nada privado.</span></p></div>
+        <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/issues"><span>Abrir uma issue</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="glow" style="width:600px;height:600px;background:var(--indigo);left:50%;top:50%;transform:translate(-50%,-50%);opacity:.25" aria-hidden="true"></div>
+  <div class="wrap" style="position:relative">
+    <div class="shield3d small" data-shield3d="final" aria-hidden="true"><img src="../logo.png" alt="" width="160" height="160" loading="lazy"></div>
+    <h2><span>Comece todo dia <em>limpo.</em></span></h2>
+    <p class="pun"><span>Baixe e depois esqueça tudo. Trocadilho intencional.</span></p>
+    <div class="cta">
+      <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg><span>Baixar para Mac</span></a>
+      <a class="btn ghost" href="https://github.com/navi-crwn/amnesia"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github"/></svg>GitHub</a>
+    </div>
+  </div>
+</section>
+
+<dialog class="film-box" id="film-box">
+  <button class="fb-close" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="sr"><span>Fechar</span></span></button>
+  <video controls playsinline width="540" height="960"></video>
+</dialog>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="ft-top">
+      <div class="ft-brand">
+        <a class="brand" href="#top"><img src="../logo.png" alt="" width="30" height="30">Amnesia</a>
+        <p class="ft-tag"><span>Seu Mac esquece tudo no logout, menos o que você escolhe guardar. Grátis, open source, e nada nunca sai do seu Mac.</span></p>
+        <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
+          <svg><use href="#i-github"/></svg>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · <span data-gh="version">v5.23.1</span></small></span>
+        </a>
+      </div>
+      <nav class="ft-cols" aria-label="Rodapé">
+        <div><p class="ft-h"><span>Produto</span></p><ul>
+          <li><a href="#features"><span>Recursos</span></a></li>
+          <li><a href="#desk"><span>Como funciona</span></a></li>
+          <li><a href="#vault">Profile Vault</a></li>
+          <li><a href="#backup">Backup</a></li>
+          <li><a href="#tutorial">Tutorial</a></li>
+          <li><a href="#faq">FAQ</a></li></ul></div>
+        <div><p class="ft-h"><span>Código</span></p><ul>
+          <li><a href="https://github.com/navi-crwn/amnesia"><span>Repositório</span></a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/releases">Releases</a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/issues">Issues</a></li>
+          <li><a href="https://github.com/navi-crwn/homebrew-tap">Homebrew tap</a></li>
+          <li><a href="win/">Windows</a></li></ul></div>
+        <div><p class="ft-h">Legal</p><ul>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><span>Licença (MIT)</span></a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md">Termos</a></li>
+          <li><a href="#private"><span>Privacidade</span></a></li></ul></div>
+      </nav>
+    </div>
+    <div class="ft-bot">
+      <p><span>© 2026 navi-crwn. Feito para uso pessoal. Use com cuidado: o Amnesia apaga seus dados de verdade.</span></p>
+      <p class="ft-tm"><span>Apple, Mac, macOS, Keychain, Google Drive, Dropbox, OneDrive, Box, pCloud, Chrome, WhatsApp, Claude, GitHub, Homebrew e outros nomes são marcas registradas de seus respectivos donos. O Amnesia é um projeto independente e não tem vínculo com nenhum deles nem é endossado por eles.</span></p>
+    </div>
+  </div>
+</footer>
+
+
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js"></script>
+<script defer src="../assets/js/scenes/hero.js"></script>
+<script defer src="../assets/js/scenes/desk.js"></script>
+<script defer src="../assets/js/scenes/puzzle.js"></script>
+<script defer src="../assets/js/scenes/story.js"></script>
+<script defer src="../assets/js/scenes/tutorial.js"></script>
+<script defer src="../assets/js/site.js"></script>
+<script defer src="../assets/js/film.js"></script>
+<script type="module" src="../assets/js/scenes/shield3d.js"></script>
+<script type="module" src="../assets/js/scenes/objects3d.js"></script>
+</body>
+</html>

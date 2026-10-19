@@ -1,0 +1,1406 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amnesia para Windows</title>
+<meta name="description" content="Tu PC lo olvida todo cuando cierras sesión, reinicias o apagas, menos los archivos y los inicios de sesión que eliges guardar. Gratis y de código abierto, para Windows 10 y 11.">
+<meta name="theme-color" content="#07070a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f7f7fb" media="(prefers-color-scheme: light)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Amnesia para Windows">
+<meta property="og:description" content="Tu PC lo olvida todo al cerrar sesión, menos lo que eliges guardar. Gratis y de código abierto.">
+<meta property="og:url" content="https://navi-crwn.github.io/amnesia/es/win/">
+<meta property="og:image" content="https://navi-crwn.github.io/amnesia/social.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" hreflang="en" href="https://navi-crwn.github.io/amnesia/win/">
+<link rel="alternate" hreflang="zh-CN" href="https://navi-crwn.github.io/amnesia/zh-cn/win/">
+<link rel="alternate" hreflang="de" href="https://navi-crwn.github.io/amnesia/de/win/">
+<link rel="alternate" hreflang="id" href="https://navi-crwn.github.io/amnesia/id/win/">
+<link rel="alternate" hreflang="ja" href="https://navi-crwn.github.io/amnesia/ja/win/">
+<link rel="alternate" hreflang="pt-BR" href="https://navi-crwn.github.io/amnesia/pt-br/win/">
+<link rel="alternate" hreflang="es" href="https://navi-crwn.github.io/amnesia/es/win/">
+<link rel="alternate" hreflang="x-default" href="https://navi-crwn.github.io/amnesia/win/">
+<link rel="icon" href="../../logo.png">
+<script>
+// Runs before paint: theme, and on the English page a first-visit nudge to the visitor's language.
+window.AMNESIA_I18N={"locale": "es-ES", "step": "Paso {n}", "commitsSince": "{n} commits desde {since}", "commitSince": "{n} commit desde {since}", "commit": "{n} commit", "commits": "{n} commits"};
+(function(){var d=document.documentElement,t=null;d.classList.add('js');
+try{t=localStorage.getItem('theme')}catch(e){}
+if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap">
+<link rel="stylesheet" href="../../assets/css/site.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head>
+<body class="winpage">
+<a class="skip" href="#main"><span>Saltar al contenido</span></a>
+<div class="noise" aria-hidden="true"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><path d="m4 17 5-5 4 4 3-3 4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="17" cy="16" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-cookie" viewBox="0 0 24 24"><path d="M20.5 12.5A8.5 8.5 0 1 1 11.5 3.5a3 3 0 0 0 4 3.5 3 3 0 0 0 5 5.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="9" cy="10" r="1.1" fill="currentColor"/><circle cx="14" cy="15" r="1.1" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.1" fill="currentColor"/></symbol>
+    <symbol id="i-stack" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-lines" viewBox="0 0 24 24"><path d="M5 6h14M5 10h10M5 14h14M5 18h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-term" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m7 10 3 2-3 2M12 15h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 19 6v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="m4 7 1.5 1.5L8 6M4 13l1.5 1.5L8 12M4 19l1.5 1.5L8 18M11 7h9M11 13h9M11 19h9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-apps" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 15 12 8l3 7M10 13h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4H6v16h8M10 12h10m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 5 3 3H7l3-3zM12 12v8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-drive" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="12" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path d="M10.3 2.6h3.4l.5 2.6 1.6.9 2.5-.9 1.7 2.9-2 1.7v1.9l2 1.7-1.7 2.9-2.5-.9-1.6.9-.5 2.6h-3.4l-.5-2.6-1.6-.9-2.5.9-1.7-2.9 2-1.7v-1.9l-2-1.7 1.7-2.9 2.5.9 1.6-.9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3 9a13 13 0 0 1 18 0M6 12.5a8.5 8.5 0 0 1 12 0M9 16a4 4 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-batt" viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="17" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="9.5" width="10" height="5" rx="1" fill="currentColor"/><path d="M21.5 10.5v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></symbol>
+    <symbol id="i-brew" viewBox="0 0 24 24"><path d="M5 8h10v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2zM15 10h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2M8 11v6M12 11v6M5 8c0-2 1.5-3 3-3 .5-1.2 1.6-2 3-2s2.6.8 3 2c1.4 0 1 1.5 1 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-dmg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="11" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="11" r=".8" fill="currentColor"/><path d="M7 17h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-chip" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1" fill="currentColor" opacity=".6"/><path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 19h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z" fill="currentColor"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M4 7h16M7 7l-3 7a3 3 0 0 0 6 0zM17 7l-3 7a3 3 0 0 0 6 0z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-fork" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="18" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="19" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 7.2v1.3a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7.2M12 11.5v5.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-issue" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2" fill="currentColor"/></symbol>
+    <symbol id="i-arrow-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12h8m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M4 12h9m0 0-3-3m3 3-3 3M15 6h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 2.5 20h19z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1" fill="currentColor"/></symbol>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8M7.5 6.3a7 7 0 1 0 9 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-usb" viewBox="0 0 24 24"><rect x="8" y="2.5" width="8" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 5v2M13.5 5v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6.5 9.5h11v9a3 3 0 0 1-3 3h-5a3 3 0 0 1-3-3z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2.5 5 13.5h6l-1 8 8-11h-6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 19.5c.6-3.3 3-5.2 6-5.2s5.4 1.9 6 5.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="16.5" cy="9" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16.8 14.3c2.3.2 3.8 1.8 4.2 4.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.3-8.7-8.8C2.1 7.9 4.1 4.8 7.3 4.8c1.9 0 3.5 1 4.7 2.6 1.2-1.6 2.8-2.6 4.7-2.6 3.2 0 5.2 3.1 4 6.4C19 15.7 12 20 12 20z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M3.5 12h4l1.5-3 3 6 2-3h6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.5 9.2 4.4 4.4 0 0 0 7 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5z M3.5 7.5 12 12l8.5-4.5M12 12v9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 12h9m-3 0v3m-3-3v2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="../../logo.png" alt="" width="30" height="30">Amnesia</a>
+    <div class="plat" role="group" aria-label="Plataforma">
+      <a href="../">Mac</a>
+      <a href="./" aria-current="page">Windows</a>
+    </div>
+    <nav class="nav-links" aria-label="Secciones">
+      <a href="#desk"><span>Cómo funciona</span></a>
+      <a href="#safeout"><span>Seguridad</span></a>
+      <a href="#vault">Vault</a>
+      <a href="#locks"><span>Bloqueos</span></a>
+      <a href="#tour">App</a>
+      <a href="#install"><span>Instalar</span></a>
+      <a href="#tutorial">Tutorial</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-r">
+      <button type="button" class="theme" id="theme" aria-label="Claro u oscuro"><svg class="t-sun"><use href="#i-sun"/></svg><svg class="t-moon"><use href="#i-moon"/></svg></button>
+      <details class="langmenu"><summary aria-label="Idioma"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>ES</summary><ul><li><a href="../../win/?lang=en" hreflang="en" lang="en">English<small>EN</small></a></li><li><a href="../../zh-cn/win/" hreflang="zh-CN" lang="zh-CN">简体中文<small>中文</small></a></li><li><a href="../../de/win/" hreflang="de" lang="de">Deutsch<small>DE</small></a></li><li><a href="../../id/win/" hreflang="id" lang="id">Bahasa Indonesia<small>ID</small></a></li><li><a href="../../ja/win/" hreflang="ja" lang="ja">日本語<small>日本語</small></a></li><li><a href="../../pt-br/win/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)<small>PT</small></a></li><li><a href="./" hreflang="es" lang="es" aria-current="page">Español<small>ES</small></a></li></ul></details>
+      <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true">Download</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true"><i class="hb-dots"></i><i class="hb-beam"></i></div>
+  <div class="glow" style="width:520px;height:520px;background:var(--indigo);right:-120px;top:10%" aria-hidden="true"></div>
+  <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="hero-copy">
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.8.1</span><svg><use href="#i-github"/></svg><span>Código abierto en GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <h1 id="hero-title">
+        <span><span class="split">Tu PC lo olvida</span> <em class="word">todo.</em><span class="after split">Menos lo que guardas.</span></span>
+      </h1>
+      <p class="lead">
+        <span>Cada vez que cierras sesión, reinicias o apagas, Amnesia borra tu carpeta de usuario: historial, descargas, datos de apps y los rastros que guarda Windows. Tu carpeta Keep se queda, y tus inicios de sesión esperan en una bóveda cifrada.</span>
+      </p>
+      <div class="cta">
+        <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg><span>Descargar para Windows</span></a>
+        <a class="btn ghost" href="../"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-laptop"/></svg><span>¿Tienes un Mac?</span></a>
+        <a class="plink" href="#desk"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow-c"/></svg><span>Cómo funciona</span></a>
+      </div>
+      <p class="meta"><span>Gratis y de código abierto · Windows 10 y 11 · x64 y arm64 · no necesitas permisos de administrador</span></p>
+      <p class="warnline"><span><span>Amnesia borra datos de verdad, y no se puede deshacer. <a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md">Lee los términos</a> antes de instalarla.</span></span></p>
+    </div>
+    <div class="shield shield3d" data-shield3d="hero" aria-hidden="true">
+      <svg class="rings" viewBox="0 0 400 400">
+        <defs><linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs>
+        <circle class="r1" cx="200" cy="200" r="190" fill="none" stroke="url(#g-brand)" stroke-opacity=".5" stroke-dasharray="2 10"/>
+        <circle class="r2" cx="200" cy="200" r="150" fill="none" stroke-dasharray="60 20 4 20"/>
+        <circle class="r3" cx="200" cy="200" r="112" fill="none" stroke="url(#g-brand)" stroke-opacity=".35"/>
+        <circle cx="200" cy="10" r="4" fill="#22d3ee"/>
+        <circle cx="350" cy="200" r="3" fill="#ec4899"/>
+      </svg>
+      <img src="../../logo.png" alt="" width="512" height="512">
+    </div>
+    <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
+      <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
+      <span class="rc-desc"><span>Tu PC lo olvida todo al cerrar sesión, menos lo que eliges guardar.</span></span>
+      <span class="rc-meta"><span>MIT</span><span>Windows v0.8.1</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
+    </a>
+  </div>
+</section>
+
+<section class="ref oss" id="open">
+  <div class="wrap">
+    <div class="oss-grid">
+      <div class="oss-copy">
+        <span class="oss-ico" aria-hidden="true"><svg><use href="#i-github"/></svg></span>
+        <p class="label"><span class="n">01</span> · Open source</p>
+        <h2><span>Hecho a la <em>vista de todos.</em></span></h2>
+        <p class="lead"><span>Amnesia para Windows es software libre con licencia MIT, hecho en público en GitHub, justo al lado de la versión para Mac. Cada Setup.exe lo compila GitHub a partir de ese mismo código, e incluye sumas SHA256 y una atestación de compilación que puedes comprobar.</span></p>
+        <div class="cta">
+          <a class="btn main" href="https://github.com/navi-crwn/amnesia"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github"/></svg><span>Dale una estrella al repo</span></a>
+          <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/tree/main/windows"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-term"/></svg><span>Código de Windows</span></a>
+          <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/issues/new"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-issue"/></svg><span>Abrir un issue</span></a>
+        </div>
+      </div>
+      <a class="repo-card big" href="https://github.com/navi-crwn/amnesia">
+        <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
+        <span class="rc-desc"><span>Tu PC lo olvida todo al cerrar sesión, menos lo que eliges guardar.</span></span>
+        <span class="rc-bar" data-gh="langbar" hidden></span>
+        <span class="rc-legend" data-gh="langs" hidden></span>
+        <span class="rc-stats">
+          <span><small><span>Licencia</span></small><b>MIT</b></span>
+          <span><small>Windows</small><b>v0.8.1</b></span>
+          <span><small><span>Pruebas</span></small><b>294</b></span>
+          <span><small>Commits</small><b data-gh="commits">–</b></span>
+          <span><small><span>Colaboradores</span></small><b data-gh="contributors">–</b></span>
+          <span><small><span>Último push</span></small><b data-gh="pushed">–</b></span>
+        </span>
+      </a>
+    </div>
+    <figure class="commits">
+      <div class="cm-stage" data-obj3d="commits">
+        <p class="cm-empty"><span>El gráfico de commits se lee de GitHub. Si no aparece,</span> <a href="https://github.com/navi-crwn/amnesia/commits/main"><span>mira todos los commits allí</span> →</a></p>
+        <div class="cm-tip" hidden></div>
+      </div>
+      <figcaption>
+        <span class="cm-k"><span>Todos los commits</span></span>
+        <b class="cm-sum" data-gh="since">–</b>
+        <span class="cm-hint"><span>Mac y Windows juntos. Una columna por día, tan alta como los commits de ese día. Pasa el cursor por una columna para ver la fecha.</span></span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="desk">
+  <div class="wrap pinbox">
+    <div class="two">
+      <div class="desk-copy">
+        <div class="steps">
+          <div class="step s1">
+            <p class="label"><span class="n">02</span> · <span>Tu PC, cada día</span></p>
+            <h2><span>¿Todo esto, <em>cada día?</em></span></h2>
+            <p class="body"><span>Tu navegador guarda el historial y las cookies. Descargas y Escritorio se llenan de archivos que necesitaste una vez. Y Windows toma sus propias notas: archivos recientes, lo que escribiste en Ejecutar y en el Explorador, el historial de búsqueda, miniaturas, pestañas del Bloc de notas, el historial del portapapeles.</span></p>
+            <p class="body"><span>Se va acumulando hasta que lo limpias a mano. O nunca.</span></p>
+          </div>
+          <div class="step s2">
+            <p class="label"><span class="n">03</span> · Sign out</p>
+            <h2><span>Cierras sesión. <em>Olvidado.</em></span></h2>
+            <p class="body"><span>Cierra sesión, reinicia o apaga, y Amnesia lo borra todo. Amnesia empieza a limpiar en cuanto Windows pregunta "¿puedo cerrar sesión?", y Windows muestra "Amnesia is cleaning up..." hasta que termina. Solo se queda lo que elegiste: tu carpeta Keep, tu Keep List y los inicios de sesión de tu bóveda. Tus programas instalados también se quedan.</span></p>
+            <p class="body"><span>En el siguiente inicio de sesión vuelve a comprobar, así que un cuelgue o un corte de luz no dejan rastros.</span></p>
+            <p class="def"><span class="tm sel"><i></i>Selective Amnesia</span> <span>es el nombre de esto: todo se olvida, menos lo que elegiste guardar.</span></p>
+          </div>
+        </div>
+        <div class="pager" data-pager="desk" hidden>
+          <button type="button" class="pg-prev" aria-label="Anterior"><svg><use href="#i-chev-l"/></svg></button>
+          <ol class="pg-dots"></ol>
+          <button type="button" class="pg-next" aria-label="Siguiente"><svg><use href="#i-chev-r"/></svg></button>
+        </div>
+      </div>
+      <div class="screen" aria-hidden="true">
+        <div class="bar"><i></i><i></i><i></i><span>C:\Users\you</span></div>
+        <div class="prog"><b></b></div>
+        <div class="icons">
+          <div class="ico" style="color:var(--cyan)"><svg><use href="#i-folder"/></svg><span>Desktop</span></div>
+          <div class="ico" style="color:var(--cyan)"><svg><use href="#i-down"/></svg><span>Downloads</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-folder"/></svg><span>Keep</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--indigo)"><svg><use href="#i-doc"/></svg><span>Documents</span></div>
+          <div class="ico" style="color:var(--pink)"><svg><use href="#i-image"/></svg><span>Pictures</span></div>
+          <div class="ico" style="color:var(--orange)"><svg><use href="#i-globe"/></svg><span><span>Historial</span></span></div>
+          <div class="ico" style="color:var(--orange)"><svg><use href="#i-cookie"/></svg><span>Cookies</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-shield"/></svg><span>Vault</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--pink)"><svg><use href="#i-film"/></svg><span>Videos</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-list"/></svg><span>Keep List</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--violet)"><svg><use href="#i-clock"/></svg><span><span>Recientes</span></span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-stack"/></svg><span>Temp</span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-grid"/></svg><span>Thumbnails</span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-term"/></svg><span>PowerShell</span></div>
+          <div class="ico" style="color:var(--indigo)"><svg><use href="#i-lines"/></svg><span>Clipboard</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-apps"/></svg><span><span>Programas</span></span><b class="halo"></b></div>
+        </div>
+        <div class="logout"><span class="k">Win+X → U → I</span><button type="button" tabindex="-1">Sign out</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="stays">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">04</span> · <span>Lo que se queda</span></p>
+      <h2><span>Lo que se borra, <em>lo que se queda.</em></span></h2>
+      <p class="lead"><span>Después de instalarla, Amnesia está en Off. No se borra nada hasta que marcas "I understand" y pulsas Turn On, y puedes revisar la lista antes.</span></p>
+    </div>
+    <div class="ledger">
+      <div class="col gone"><h3><span>Se borra al cerrar sesión</span></h3><ul>
+        <li><span>Historial, cookies e inicios de sesión del navegador (Chrome, Edge y otros)</span><i class="strike"></i></li>
+        <li>Desktop, Downloads, Documents, Pictures, Videos, Music<i class="strike"></i></li>
+        <li><span>Rastros de Windows: archivos recientes, historial de Ejecutar y del Explorador, búsquedas, miniaturas, pestañas del Bloc de notas, historial del portapapeles, Papelera de reciclaje</span><i class="strike"></i></li>
+        <li><span>Datos de apps que no están en la bóveda ni en la Keep List</span><i class="strike"></i></li></ul></div>
+      <div class="col safe"><h3><span>Queda a salvo</span></h3><ul>
+        <li><span>Todo lo que hay en tu carpeta Keep (tiene un icono morado, un acceso directo en el Escritorio y un sitio en la barra lateral del Explorador)</span></li>
+        <li><span>Carpetas de tu Keep List, como .ssh o los ajustes de tu editor de código</span></li>
+        <li><span>Inicios de sesión guardados en la bóveda (vuelven con Restore y tu contraseña)</span></li>
+        <li><span>Carpetas en la nube: OneDrive, Dropbox, Google Drive, iCloud Drive, Nextcloud, MEGA, Box, pCloud, Proton Drive y cualquier otra carpeta que Windows reconozca como carpeta de sincronización</span></li>
+        <li><span>Máquinas virtuales (VirtualBox, Hyper-V, VMware, WSL, Docker, emulador de Android) e imágenes de disco de 1 GB o más</span></li>
+        <li><span>Datos de apps de Microsoft Store y contraseñas guardadas por apps, a menos que actives su borrado en Settings</span></li>
+        <li><span>Tus programas instalados, otras unidades y lo que Windows necesita para que inicies sesión</span></li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="safeout">
+  <div class="glow" style="width:480px;height:480px;background:var(--cyan);right:-180px;top:12%;opacity:.14" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="head">
+      <p class="label"><span class="n">05</span> · <span>Hecho para un PC real</span></p>
+      <h2><span>Borra lo que debe. <em>Deja lo que no.</em></span></h2>
+      <p class="lead"><span>La versión 0.8 salió de una auditoría completa y de una prueba en un portátil real con Windows 11. Estas son las reglas que sigue en cada cierre de sesión.</span></p>
+      <ul class="facts">
+        <li><b><span>Limpia en cuanto Windows pregunta.</span></b> <span>Así un cierre de sesión normal queda limpio antes de que aparezca la pantalla de inicio de sesión. Los archivos que Windows todavía tiene abiertos se borran en el siguiente inicio de sesión, y la caja segura se cierra después de la limpieza.</span></li>
+        <li><b><span>Las carpetas en la nube se quedan.</span></b> <span>Moverlas parecería un "borrado" para la app de sincronización, y podría borrar también tus archivos en la nube. Los archivos que solo están en la nube tampoco se tocan.</span></li>
+        <li><b><span>Las máquinas virtuales se quedan.</span></b> <span>Los discos de máquinas virtuales y las imágenes de disco de 1 GB o más se conservan. Puedes desactivarlo en Settings, Protection.</span></li>
+        <li><b><span>Las apps nuevas esperan 3 días.</span></b> <span>Con "Remove new apps" activado, la carpeta de una app nueva va primero a la papelera de Amnesia, nunca desaparece directamente. Pulsa Keep y sus carpetas de programa y de datos pasan a tu Keep List.</span></li>
+      </ul>
+      <p class="iyk-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span>Una contrapartida, con sinceridad: como la limpieza empieza cuando Windows pregunta, cancelar el cierre de sesión después de ese momento no recupera nada. Es como pulsar "Clean now".</span></p>
+    </div>
+    <div class="sweepviz" aria-hidden="true">
+      <div class="sw-flat">
+        <span class="swf" style="--k:var(--orange)"></span><span class="swf keep" style="--k:var(--cyan)"><svg><use href="#i-cloud"/></svg></span><span class="swf" style="--k:var(--orange)"></span><span class="swf" style="--k:var(--orange)"></span><span class="swf keep" style="--k:var(--green)"><svg><use href="#i-folder"/></svg></span>
+        <span class="swf" style="--k:var(--orange)"></span><span class="swf" style="--k:var(--orange)"></span><span class="swf keep" style="--k:var(--violet)"><svg><use href="#i-box"/></svg></span><span class="swf" style="--k:var(--orange)"></span><span class="swf" style="--k:var(--orange)"></span>
+        <span class="swf keep" style="--k:var(--green)"><svg><use href="#i-folder"/></svg></span><span class="swf" style="--k:var(--orange)"></span><span class="swf" style="--k:var(--orange)"></span><span class="swf keep" style="--k:var(--cyan)"><svg><use href="#i-cloud"/></svg></span><span class="swf" style="--k:var(--orange)"></span>
+      </div>
+      <div class="sw3d" data-win3d="sweep"></div>
+      <ul class="sw-legend">
+        <li style="--k:var(--green)">Keep</li>
+        <li style="--k:var(--cyan)"><span>Carpetas en la nube</span></li>
+        <li style="--k:var(--violet)"><span>Máquinas virtuales</span></li>
+        <li style="--k:var(--orange)" class="gone"><span>Se borra al cerrar sesión</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="vault">
+  <div class="glow" style="width:480px;height:480px;background:var(--indigo);left:-200px;top:20%;opacity:.22" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="vaultviz" aria-hidden="true">
+      <svg viewBox="0 0 400 400">
+        <circle class="ring-a" cx="200" cy="200" r="165" fill="none" stroke-dasharray="3 9"/>
+        <circle cx="200" cy="200" r="118" fill="none" stroke="rgba(99,102,241,.25)"/>
+        <g class="v-shield">
+          <path d="M200 92 282 124v74c0 56-34 92-82 112-48-20-82-56-82-112v-74z" fill="rgba(99,102,241,.10)" stroke="url(#g-brand)" stroke-width="2"/>
+          <path class="v-shackle" d="M182 196v-16a18 18 0 0 1 36 0v16" fill="none" stroke-width="5" stroke-linecap="round"/>
+          <rect class="v-body" x="170" y="194" width="60" height="46" rx="8"/>
+          <circle class="v-hole" cx="200" cy="214" r="5"/><rect class="v-hole" x="198" y="216" width="4" height="12" rx="2"/>
+        </g>
+        <g class="v-apps" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" text-anchor="middle">
+          <g class="v-app"><circle cx="200" cy="35" r="22" stroke="#22d3ee"/><text x="200" y="40">Ch</text></g>
+          <g class="v-app"><circle cx="317" cy="83" r="22" stroke="#10b981"/><text x="317" y="88">Ed</text></g>
+          <g class="v-app"><circle cx="365" cy="200" r="22" stroke="#f97316"/><text x="365" y="205">Cl</text></g>
+          <g class="v-app"><circle cx="317" cy="317" r="22" stroke="#a78bfa"/><text x="317" y="322">Dc</text></g>
+          <g class="v-app"><circle cx="200" cy="365" r="22" stroke="#6366f1"/><text x="200" y="370">VS</text></g>
+          <g class="v-app"><circle cx="83" cy="317" r="22" stroke="#ec4899"/><text x="83" y="322">Tg</text></g>
+          <g class="v-app"><circle cx="35" cy="200" r="22" stroke="#e5e7eb"/><text x="35" y="205">gh</text></g>
+          <g class="v-app"><circle cx="83" cy="83" r="22" stroke="#22d3ee"/><text x="83" y="88">Sl</text></g>
+        </g>
+      </svg>
+      <div class="safe3d" data-obj3d="safe"></div>
+      <div class="pw"><span class="lbl">password </span><span class="dots">••••••••••••</span><span class="caret"></span></div>
+    </div>
+    <div class="head">
+      <p class="label"><span class="n">06</span> · Profile Vault</p>
+      <h2><span>Una contraseña. <em>Tus sesiones de vuelta.</em></span></h2>
+      <p class="lead"><span>Una caja fuerte cifrada para los inicios de sesión de tus apps: Chrome, Edge, Brave, Firefox, Discord, Telegram, WhatsApp, Slack, Session, Element, Obsidian, Thunderbird, Bitwarden, VS Code, Claude, Antigravity, Windsurf, Gemini CLI, OpenCode, Git y cualquier carpeta que añadas. Inicia sesión en un PC limpio, escribe una contraseña y vuelven todos.</span></p>
+      <ul class="facts">
+        <li><b>AES-256.</b> <span>Cada snapshot tiene su propia clave aleatoria, protegida con la clave de la bóveda. Si olvidas la contraseña, nadie puede abrirla.</span></li>
+        <li><b><span>Se guarda después de cerrar cada app.</span></b> <span>En segundo plano, y solo cuando algo cambió. Al cerrar sesión solo se limpia, así que es rápido.</span></li>
+        <li><b><span>Un snapshot de reserva.</span></b> <span>Cada app conserva el anterior al más reciente, por si el más reciente no se ve bien.</span></li>
+        <li><b><span>Encuentra tus apps.</span></b> <span>Te sugiere apps instaladas que todavía no conoce, y un medidor te muestra lo difícil que es adivinar tu contraseña.</span></li>
+      </ul>
+      <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Restore recupera tus inicios de sesión con tu contraseña. Una notificación después de iniciar sesión te lo recuerda.</span></p>
+      <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span>3 contraseñas incorrectas o tu palabra de pánico, y la bóveda desaparece para siempre.</span></p>
+      <p class="iyk-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span>Una nota sincera: Windows vincula los inicios de sesión guardados a tu usuario de Windows. Los snapshots vuelven en este PC y con este usuario, no en otro PC.</span></p>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="how">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">07</span> · <span>Cada día</span></p>
+      <h2><span>Un día normal <em>con Amnesia.</em></span></h2>
+      <p class="lead"><span>Una vez configurada, esto es todo lo que haces.</span></p>
+    </div>
+    <div class="daily-track">
+      <svg class="daily-line" viewBox="0 0 1000 2" preserveAspectRatio="none" aria-hidden="true">
+        <line x1="0" y1="1" x2="1000" y2="1" stroke="rgba(255,255,255,.1)" stroke-width="2"/>
+        <line class="draw" x1="0" y1="1" x2="1000" y2="1" stroke="url(#g-line)" stroke-width="2"/>
+        <defs><linearGradient id="g-line" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1000" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset=".6" stop-color="#6366f1"/><stop offset="1" stop-color="#ef4444"/></linearGradient></defs>
+      </svg>
+      <ol class="daily-steps" role="list">
+        <li class="dstep"><span class="node">01</span><h3>Sign in</h3><p><span>Tu PC arranca limpio. Haz clic en el recordatorio, escribe la contraseña de tu bóveda y pulsa Restore.</span></p></li>
+        <li class="dstep"><span class="node">02</span><h3><span>Trabajar</span></h3><p><span>Tus inicios de sesión están de vuelta. Los archivos que necesites mañana van a tu carpeta Keep.</span></p></li>
+        <li class="dstep"><span class="node">03</span><h3><span>Cierra tus apps</span></h3><p><span>Cada app de la bóveda se guarda sola después de cerrarla.</span></p></li>
+        <li class="dstep"><span class="node">04</span><h3><span>Cerrar sesión</span></h3><p><span>Todo lo demás se borra. Sin dejar rastro.</span></p></li>
+      </ol>
+    </div>
+    <p class="pausenote"><b><span>Pausar una sesión</span></b> <span><span>Sáltate una vez el próximo cierre e inicio de sesión, sin desactivar Amnesia.</span></span></p>
+  </div>
+</section>
+
+<section class="stage" id="backup">
+  <div class="wrap two">
+    <div class="head">
+      <p class="label"><span class="n">08</span> · Backup</p>
+      <h2><span>Copia de seguridad <em>y PC nuevo.</em></span></h2>
+      <p class="lead"><span>Tu carpeta Keep, tu Keep List y tu bóveda en un solo archivo cifrado. Se cifra con tu bóveda, así que no necesitas otra contraseña.</span></p>
+      <ul class="facts">
+        <li><span>A una memoria USB, otra unidad, una carpeta en la nube (OneDrive, Google Drive para escritorio) o tu propio servidor por SSH. Cada día o cada semana.</span></li>
+        <li><span>Cada copia es un archivo nuevo con fecha. Amnesia nunca borra las antiguas.</span></li>
+        <li><span>Los archivos que estaban en uso aparecen nombrados en el resultado, así sabes qué volver a copiar. Una restauración interrumpida por un corte de luz limpia lo que dejó a medias y vuelve a poner tu bóveda anterior.</span></li>
+      </ul>
+      <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Pasar a un PC nuevo: instala Amnesia, elige una copia de seguridad y escribe la contraseña de tu bóveda. Tu carpeta Keep, tu Keep List y tu bóveda vuelven.</span></p>
+    </div>
+    <div class="netviz" aria-hidden="true">
+      <svg viewBox="0 0 640 440">
+        <g class="links" fill="none" stroke="url(#g-brand)" stroke-width="1.5" stroke-opacity=".7">
+          <path id="bk1" d="M262 205C190 205 190 80 128 80"/>
+          <path id="bk2" d="M262 220C200 212 190 228 128 220"/>
+          <path id="bk3" d="M262 235C190 235 190 360 128 360"/>
+          <path id="bk4" d="M378 205C450 205 450 80 512 80"/>
+          <path id="bk5" d="M378 220C440 212 450 228 512 220"/>
+          <path id="bk6" d="M378 235C450 235 450 360 512 360"/>
+        </g>
+        <g class="pkts" fill="#22d3ee">
+          <circle r="3"><animateMotion dur="2.8s" repeatCount="indefinite"><mpath href="#bk1"/></animateMotion></circle>
+          <circle r="3"><animateMotion dur="2.2s" begin=".4s" repeatCount="indefinite"><mpath href="#bk2"/></animateMotion></circle>
+          <circle r="3"><animateMotion dur="3.1s" begin=".9s" repeatCount="indefinite"><mpath href="#bk3"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="2.6s" begin=".2s" repeatCount="indefinite"><mpath href="#bk4"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="2.4s" begin="1.1s" repeatCount="indefinite"><mpath href="#bk5"/></animateMotion></circle>
+          <circle r="3" fill="#10b981"><animateMotion dur="2.9s" begin=".6s" repeatCount="indefinite"><mpath href="#bk6"/></animateMotion></circle>
+        </g>
+        <g class="core">
+          <rect x="262" y="180" width="116" height="80" rx="16" stroke="url(#g-brand)" stroke-width="2"/>
+          <text x="320" y="216" text-anchor="middle" font-size="22" font-weight="500">.amb</text>
+          <text class="mut" x="320" y="240" text-anchor="middle" font-size="11">AES-256</text>
+        </g>
+        <g class="dests" font-size="12" text-anchor="middle">
+          <g class="dest"><rect x="20" y="62" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="84">USB</text></g>
+          <g class="dest"><rect x="20" y="202" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="224">D:\ drive</text></g>
+          <g class="dest"><rect x="20" y="342" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="364">SSH server</text></g>
+          <g class="dest"><rect x="512" y="62" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="84">OneDrive</text></g>
+          <g class="dest"><rect x="512" y="202" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="224">Google Drive</text></g>
+          <g class="dest"><rect x="512" y="342" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="364">New PC</text></g>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="exits">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">09</span> · <span>Salidas rápidas</span></p>
+      <h2><span>¿Tienes que irte? <em>Ella limpia.</em></span></h2>
+      <p class="lead"><span>Para curiosos, un PC prestado o alguien que te presiona para que "solo lo abras". Todo esto está desactivado hasta que lo actives en Settings.</span></p>
+    </div>
+    <div class="bento wx-grid">
+      <div class="cell wx-hot">
+        <div class="i-ico" style="--c:var(--red)"><svg viewBox="0 0 24 24"><use href="#i-bolt"/></svg></div>
+        <h3><span>Atajo de pánico</span></h3>
+        <p><span>Pulsa Ctrl + Alt + Shift + X (o Q, o F12). La pantalla se bloquea al instante, Amnesia limpia y cierra tu sesión sin esperar a las demás apps. También funciona en pausa, y lo vuelve a intentar si Windows va lento.</span></p>
+        <p class="wx-keys" aria-hidden="true"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>X</kbd></p>
+      </div>
+      <div class="cell">
+        <div class="i-ico" style="--c:var(--cyan)"><svg viewBox="0 0 24 24"><use href="#i-usb"/></svg></div>
+        <h3><span>Llave USB</span></h3>
+        <p><span>Elige una memoria USB. Si la desconectas, Amnesia limpia y cierra sesión, o limpia y apaga. Tú eliges.</span></p>
+      </div>
+      <div class="cell">
+        <div class="i-ico" style="--c:var(--violet)"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg></div>
+        <h3><span>Cerrar sesión por inactividad</span></h3>
+        <p><span>¿Te fuiste? Después de 5 a 60 minutos aparece una cuenta atrás de 60 segundos, y luego se bloquea, limpia y cierra sesión. Mueve el ratón para detenerla.</span></p>
+      </div>
+      <div class="cell">
+        <div class="i-ico" style="--c:var(--pink)"><svg viewBox="0 0 24 24"><use href="#i-lock"/></svg></div>
+        <h3><span>Palabra de pánico</span></h3>
+        <p><span>¿Te piden la contraseña de la bóveda? Escribe tu palabra de pánico en su lugar. La bóveda se borra en el acto, y también tu carpeta Keep si así lo elegiste.</span></p>
+      </div>
+      <div class="cell">
+        <div class="i-ico" style="--c:var(--orange)"><svg viewBox="0 0 24 24"><use href="#i-warn"/></svg></div>
+        <h3>Doomsday</h3>
+        <p><span>3 contraseñas incorrectas seguidas de la bóveda la borran para siempre. Amnesia te avisa antes del último intento. Puedes desactivarlo.</span></p>
+      </div>
+    </div>
+    <p class="iyk-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span>La letra pequeña, sin rodeos: Amnesia te protege <b>después de cerrar sesión</b>. Mientras tienes la sesión iniciada, tu PC está tan abierto como siempre, así que bloquéalo (Win+L). Las salidas rápidas no esperan al trabajo sin guardar, y la palabra de pánico no se puede deshacer.</span></p>
+  </div>
+</section>
+
+<section class="stage" id="locks">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">10</span> · <span>Bloqueos</span></p>
+      <h2><span>Bloquéalo, <em>con honestidad.</em></span></h2>
+      <p class="lead"><span>Dos bloqueos en Settings, Advanced, y una caja segura en tu página Keep List. Esto es lo que hacen, y lo que no.</span></p>
+    </div>
+    <div class="bento wl-grid">
+      <div class="cell">
+        <div class="wl-top"><span class="i-ico" style="--c:var(--violet)"><svg><use href="#i-folder"/></svg></span><h3><span>Keep lock</span></h3></div>
+        <p><span>Tu carpeta Keep solo se abre a través de Amnesia, con su propia contraseña: Open Keep, el menú de la bandeja o el acceso directo del Escritorio. Se vuelve a bloquear cuando bloqueas la pantalla (Win+L), pasados los minutos que elijas, y al cerrar e iniciar sesión. Mientras está bloqueada, ningún programa puede abrir ni escribir archivos en ella.</span></p>
+        <ul class="wl-no">
+          <li><span>Los archivos no se cifran. Para eso, usa BitLocker.</span></li>
+          <li><span>Los nombres de archivo siguen visibles mientras está bloqueada.</span></li>
+          <li><span>Alguien que haya iniciado sesión como tú y conozca Windows puede quitar el bloqueo en las Propiedades de la carpeta.</span></li>
+        </ul>
+      </div>
+      <div class="cell">
+        <div class="wl-top"><span class="i-ico" style="--c:var(--orange)"><svg><use href="#i-users"/></svg></span><h3><span>Lab lock</span></h3></div>
+        <p><span>Para un PC que usa mucha gente, como un aula de informática o una biblioteca. Un administrador pone un PIN de 6 o más dígitos. A partir de ahí, este usuario de Windows no puede desactivar Amnesia, pausarla, cerrarla, desinstalarla ni cambiar sus ajustes o su Keep List. Amnesia arranca en cada inicio de sesión, y el PIN abre los ajustes durante 10 minutos.</span></p>
+        <ul class="wl-no">
+          <li><span>Aun así, alguien puede finalizar Amnesia en el Administrador de tareas. La revisión del siguiente inicio de sesión limpia igualmente.</span></li>
+          <li><span>Configura antes tus ajustes y tu Keep List. Se bloquean tal como están.</span></li>
+        </ul>
+      </div>
+      <div class="cell wl-safe">
+        <div class="wl-safe-t">
+          <div class="wl-top"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-box"/></svg></span><h3><span>Caja segura</span> <small class="wl-exp"><span>experimental</span></small></h3></div>
+          <p><span>Una carpeta bloqueada dentro de Keep para tus archivos más privados, con su propia contraseña. Cerrada, es un único archivo cifrado (AES-256-GCM, el mismo formato que la bóveda). Abierta, es Keep\Safe. Amnesia la vuelve a cerrar en cada cierre de sesión, después de la limpieza.</span></p>
+          <ul class="wl-no">
+            <li><span>Que sea pequeña: al cerrarla se vuelve a empaquetar todo, y eso lleva tiempo.</span></li>
+            <li><span>Si olvidas su contraseña, nadie puede abrirla, ni siquiera tú.</span></li>
+            <li><span>Al desinstalar te avisa si todavía tiene archivos dentro.</span></li>
+          </ul>
+        </div>
+        <div class="sbviz" aria-hidden="true">
+          <svg class="sb-flat" viewBox="0 0 200 160"><rect x="30" y="58" width="140" height="80" rx="12" fill="rgba(99,102,241,.14)" stroke="url(#g-brand)" stroke-width="2"/><rect x="24" y="44" width="152" height="18" rx="7" fill="rgba(99,102,241,.22)" stroke="url(#g-brand)" stroke-width="2"/><rect x="88" y="86" width="24" height="20" rx="4" fill="#10b981"/><path d="M93 86v-6a7 7 0 0 1 14 0v6" fill="none" stroke="#10b981" stroke-width="3"/></svg>
+          <div class="sb3d" data-win3d="safebox"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="health">
+  <div class="glow" style="width:460px;height:460px;background:var(--green);left:-200px;top:20%;opacity:.12" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="head">
+      <p class="label"><span class="n">11</span> · <span>Health check</span></p>
+      <h2><span>¿Funciona? <em>Solo tienes que mirar.</em></span></h2>
+      <p class="lead"><span>Una página responde a "¿puede Amnesia hacer su trabajo ahora mismo?". Verde está bien, amarillo y rojo te dicen qué revisar, y cada línea indica dónde arreglarlo.</span></p>
+      <ul class="facts">
+        <li><b><span>Qué comprueba.</span></b> <span>Si está activada o no, si arranca con Windows, la última limpieza, los archivos pendientes para el próximo inicio de sesión, los bloqueos de Seguridad de Windows, las carpetas en la nube, las máquinas virtuales, el Keep lock, la bóveda, tu última copia de seguridad, el atajo de pánico y las actualizaciones.</span></li>
+        <li><b><span>¿Se desactivó el inicio automático?</span></b> <span>Si alguien desactiva Amnesia en el Administrador de tareas, Home muestra un aviso con un botón "Switch it back on".</span></li>
+        <li><b><span>Actualizaciones firmadas.</span></b> <span>Las actualizaciones solo se instalan si la firma del desarrollador en SHA256SUMS.txt es válida. Si no la hay, Amnesia abre la página de la versión en lugar de instalar nada.</span></li>
+      </ul>
+      <div class="hl-lim">
+        <p class="cap"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span>Lo que Amnesia no puede hacer, en la propia app</span></p>
+        <ul>
+          <li><span>Un borrado elimina archivos, no sobrescribe el disco. Activa el cifrado del dispositivo.</span></li>
+          <li><span>Windows guarda algunos rastros fuera de tu carpeta de usuario.</span></li>
+          <li><span>La bóveda y las copias de seguridad son tan fuertes como tu contraseña.</span></li>
+          <li><span>Todavía no hay certificado de firma de código de pago, así que SmartScreen puede mostrar un aviso.</span></li>
+        </ul>
+      </div>
+    </div>
+    <figure class="wwin wwin-solo">
+      <div class="wwin-bar" aria-hidden="true"><img src="../../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+      <picture data-wshot="health" data-alt-en="Health check en Amnesia para Windows: líneas verdes para activado, inicio automático, última limpieza, carpetas en la nube, bóveda y copia de seguridad" data-alt-id="Cek kesehatan di Amnesia untuk Windows: baris hijau untuk menyala, startup, pembersihan terakhir, folder cloud, vault, dan backup">
+        <source media="(prefers-color-scheme: light)" srcset="../../win/shots/health-en-light.webp">
+        <img src="../../win/shots/health-en-dark.webp" alt="Health check en Amnesia para Windows: líneas verdes para activado, inicio automático, última limpieza, carpetas en la nube, bóveda y copia de seguridad" width="1040" height="1280" loading="lazy" decoding="async">
+      </picture>
+    </figure>
+  </div>
+</section>
+
+<section class="stage" id="wiped">
+  <div class="glow" style="width:460px;height:460px;background:var(--cyan);right:-200px;top:18%;opacity:.16" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="head">
+      <p class="label"><span class="n">12</span> · <span>Lo que se borra</span></p>
+      <h2><span>Primero mira. <em>Luego decide.</em></span></h2>
+      <p class="lead"><span>"What gets wiped" es un simulacro de tu próximo cierre de sesión. Muestra cada archivo, carpeta y rastro que se borraría. Abrirlo no borra nada.</span></p>
+      <ul class="facts">
+        <li><b><span>Buscar.</span></b> <span>Escribe un nombre o una ruta, como "Downloads" o ".pdf".</span></li>
+        <li><b><span>Una carpeta.</span></b> <span>Elige una carpeta, con cuántos elementos tiene y cuánto ocupa.</span></li>
+        <li><b><span>Lo más grande primero.</span></b> <span>Mira qué ocupa más espacio.</span></li>
+      </ul>
+      <p class="def"><span class="tm sel"><i></i><span>Review & sign out</span></span> <span>muestra la misma lista justo antes de cerrar sesión, más los programas que se quitarían, con un botón para conservar algo antes.</span></p>
+    </div>
+    <figure class="wwin wwin-solo">
+      <div class="wwin-bar" aria-hidden="true"><img src="../../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+      <picture data-wshot="wiped" data-alt-en="What gets wiped en Amnesia para Windows: una búsqueda de Downloads, ordenada de mayor a menor" data-alt-id="Halaman Yang dihapus di Amnesia untuk Windows: pencarian Downloads, diurutkan dari yang terbesar">
+        <source media="(prefers-color-scheme: light)" srcset="../../win/shots/wiped-en-light.webp">
+        <img src="../../win/shots/wiped-en-dark.webp" alt="What gets wiped en Amnesia para Windows: una búsqueda de Downloads, ordenada de mayor a menor" width="1040" height="1400" loading="lazy" decoding="async">
+      </picture>
+    </figure>
+  </div>
+</section>
+
+<section class="stage" id="private">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">13</span> · <span>Privado</span></p>
+      <h2><span>Nada sale de <em>tu PC.</em></span></h2>
+      <p class="lead"><span>Amnesia no tiene servidores, ni cuentas, ni rastreo, ni analíticas. La búsqueda de actualizaciones solo pide a GitHub el número de la versión más nueva.</span></p>
+    </div>
+    <div class="pills">
+      <span class="pill"><i class="dot"></i><span>Sin servidores</span></span>
+      <span class="pill"><i class="dot"></i><span>Sin cuentas</span></span>
+      <span class="pill"><i class="dot"></i><span>Sin rastreo</span></span>
+      <span class="pill"><i class="dot"></i>AES-256</span>
+      <span class="pill"><i class="dot"></i><span>Sin permisos de administrador para instalar</span></span>
+      <span class="pill"><i class="dot"></i><span>Sin PowerShell oculto</span></span>
+      <span class="pill panic"><i class="dot"></i><span><span class="glitch" data-text="Palabra de pánico">Palabra de pánico</span></span></span>
+    </div>
+
+    <div class="head" id="features" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>Más, <em>cuando lo quieras.</em></span></h2>
+      <p class="lead"><span>Todo lo de abajo está en Settings. Los extras están desactivados hasta que los actives.</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>Que Windows deje de recordar</span></h3><p><span>Los propios interruptores de privacidad de Windows, solo para ti: sin listas de recientes, sin historial del portapapeles, sin resultados web en Inicio, sin ID de publicidad, con Recall y Copilot desactivados. Undo all vuelve a poner exactamente lo que había.</span></p></div>
+      <div><h3><span>Quitar apps nuevas</span></h3><p><span>Los programas instalados solo para ti después de Turn On se quitan al cerrar sesión, también las apps de Microsoft Store. Sus carpetas esperan antes 3 días en la papelera de Amnesia. Pulsa Keep y las carpetas de programa y de datos de la app pasan a tu Keep List.</span></p></div>
+      <div><h3><span>Conservar una app</span></h3><p><span>Elige una app instalada de una lista y Amnesia conserva todas las carpetas donde guarda sus datos, inicios de sesión y ajustes incluidos.</span></p></div>
+      <div><h3><span>Datos de Store y contraseñas guardadas</span></h3><p><span>Dos interruptores extra: borrar también los datos de las apps de Microsoft Store, y borrar también las contraseñas que las apps guardaron en el Administrador de credenciales. Nunca tu cuenta de Microsoft, OneDrive ni Office.</span></p></div>
+      <div><h3><span>Buscar restos</span></h3><p><span>Carpetas y ajustes del registro que dejaron los programas desinstalados. No se quita nada hasta que lo marques.</span></p></div>
+      <div><h3><span>Windows desechable</span></h3><p><span>Abre Windows Sandbox para un archivo o un sitio web sospechoso. Desaparece cuando lo cierras. Necesita Windows Pro o Enterprise.</span></p></div>
+      <div><h3><span>Protecciones de Windows</span></h3><p><span>Para todo el PC (administrador, se pide una vez): vaciar el archivo de paginación al apagar, desactivar la hibernación, y desactivar Recall y el historial de actividad.</span></p></div>
+      <div><h3><span>Actualizaciones firmadas</span></h3><p><span>La búsqueda de actualizaciones lee la firma del desarrollador en la versión. Sin firma válida, no se instala: abre la página de la versión en su lugar.</span></p></div>
+      <div><h3><span>Lista de limpieza extra</span></h3><p><span>La lista de la comunidad Winapp2 (unas 4.000 apps), descargada de GitHub cuando pulsas el botón. Las contraseñas guardadas nunca se tocan.</span></p></div>
+      <div><h3><span>Compatible con el antivirus</span></h3><p><span>La limpieza se ejecuta dentro de Amnesia.exe. Si Seguridad de Windows bloquea algo, Home te explica cómo permitir Amnesia. Nunca "desactiva tu antivirus".</span></p></div>
+      <div><h3><span>Historial</span></h3><p><span>Cuándo se limpió el PC, qué apps se guardaron, cuándo se hicieron copias. Nunca nombres de archivo.</span></p></div>
+      <div><h3><span>Recopilar registro</span></h3><p><span>¿Algo no funciona? Un archivo de texto en tu carpeta Keep, sin nombres de archivo. No se envía nada. Tú decides qué compartir.</span></p></div>
+      <div><h3><span>Comprobación del cifrado del disco</span></h3><p><span>Settings muestra si BitLocker o el cifrado del dispositivo están activados, y cómo activarlos.</span></p></div>
+      <div><h3><span>Borrar el espacio libre</span></h3><p><span>Ejecuta el propio cipher /w de Windows, para que los archivos borrados sean más difíciles de recuperar. Es lento, y pregunta antes.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="mq-row" data-dir="1"><div class="mq-track">
+    <span class="mq-i"><span>Gratis y de código abierto</span><i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">MIT<i style="--c:var(--indigo)"></i></span>
+    <span class="mq-i"><span>Sin servidores</span><i style="--c:var(--pink)"></i></span>
+    <span class="mq-i"><span>Sin rastreo</span><i style="--c:var(--green)"></i></span>
+    <span class="mq-i">AES-256<i style="--c:var(--orange)"></i></span>
+    <span class="mq-i"><span>Sin administrador</span><i style="--c:var(--violet)"></i></span>
+    <span class="mq-i">Windows 10 & 11<i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">x64 & arm64<i style="--c:var(--pink)"></i></span>
+  </div></div>
+  <div class="mq-row ghost" data-dir="-1"><div class="mq-track">
+    <span class="mq-i">Selective Amnesia<i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">Profile Vault<i style="--c:var(--indigo)"></i></span>
+    <span class="mq-i">Memory Recall<i style="--c:var(--green)"></i></span>
+    <span class="mq-i">Keep List<i style="--c:var(--pink)"></i></span>
+    <span class="mq-i">Global Amnesia<i style="--c:var(--red)"></i></span>
+    <span class="mq-i"><span>Review & sign out</span><i style="--c:var(--orange)"></i></span>
+  </div></div>
+</div>
+
+<section class="ref" id="tour">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">14</span> · <span>Dentro de la app</span></p>
+      <h2><span>Cada botón, <em>uno a uno.</em></span></h2>
+      <p class="lead"><span>Esta es la ventana de inicio de Amnesia en Windows. Baja con el scroll, o usa las flechas, y se desmonta pieza a pieza hasta quedar entera otra vez.</span></p>
+    </div>
+  </div>
+  <div class="wrap puzzle">
+    <div class="pz-stage" aria-hidden="true">
+      <div class="appwin wapp">
+        <div class="aw-bar"><img src="../../logo.png" alt="" width="14" height="14"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+        <div class="aw-head">
+          <img src="../../logo.png" alt="" width="36" height="36">
+          <div><b>Amnesia <span class="ver">v0.8.1</span></b><small><span>Tu PC lo olvida todo, menos lo que eliges.</span></small></div>
+          <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span>Settings</span></span>
+        </div>
+        <div class="aw-hero pc" data-p="home">
+          <span class="hb"><svg><use href="#i-power"/></svg></span>
+          <div><b><span>On</span></b>
+          <small><span>En cada cierre de sesión, reinicio y apagado se borra tu carpeta de usuario. En el siguiente inicio de sesión, Amnesia vuelve a comprobar.</span></small></div>
+          <span class="aw-btn"><span>Turn Off</span></span>
+        </div>
+        <div class="aw-grid">
+          <div class="tile big pc" data-p="vault" style="--c:var(--indigo)"><svg><use href="#i-lock"/></svg><b>Profile Vault</b><small><span>Los inicios de sesión de tus apps, bajo llave</span></small></div>
+          <div class="tile pc" data-p="logout" style="--c:var(--red)"><svg><use href="#i-logout"/></svg><b><span>Review & sign out</span></b><small><span>Mira qué se borra y luego cierra sesión</span></small></div>
+          <div class="tile pc" data-p="pause" style="--c:var(--orange)"><svg><use href="#i-pause"/></svg><b><span>Pausar una sesión</span></b><small><span>Sáltate la próxima limpieza una vez</span></small></div>
+          <div class="tile pc" data-p="keep" style="--c:var(--green)"><svg><use href="#i-pin"/></svg><b>Keep List</b><small><span>Nunca se borra</span></small></div>
+          <div class="tile pc" data-p="backup" style="--c:var(--cyan)"><svg><use href="#i-drive"/></svg><b>Backup</b><small><span>A una memoria USB o un servidor</span></small></div>
+          <div class="tile wide pc" data-p="history" style="--c:var(--muted)"><svg><use href="#i-clock"/></svg><b><span>Historial</span></b><small><span>Limpiezas, snapshots, copias de seguridad</span></small></div>
+        </div>
+        <div class="tile wide pc" data-p="health" style="--c:var(--green)"><svg><use href="#i-heart"/></svg><b><span>Health check</span></b><small><span>Todo bien</span></small></div>
+        <div class="tile wide pc" data-p="preview" style="--c:var(--violet)"><svg><use href="#i-eye"/></svg><b><span>Lo que se borra</span></b><small><span>Un simulacro del próximo cierre de sesión</span></small></div>
+      </div>
+      <div class="menubar taskbar pc" data-p="menu">
+        <span class="mb-l"></span><span class="mb-l w2"></span><span class="mb-l"></span>
+        <span class="mb-r"><svg><use href="#i-wifi"/></svg><img src="../../logo.png" alt="" width="18" height="18"><b>17:30</b></span>
+        <div class="mb-drop">
+          <p class="mb-b"><span>Open Amnesia</span></p>
+          <p><span>Open Keep folder</span></p>
+          <p class="sep"><span>Review and sign out...</span></p>
+          <p class="mb-red"><span>Panic sign out now</span></p>
+          <p class="sep"><span>Turn Off</span></p>
+          <p class="sep"><span>Quit</span></p>
+        </div>
+      </div>
+      <svg class="cursor pz-cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6.2 1.6L10 19z"/></svg>
+      <i class="ripple pz-rip"></i>
+    </div>
+    <div class="pz-text">
+      <div class="pz-steps">
+        <article class="pz-step" data-p="home"><p class="label"><span class="n">01</span> / 11</p>
+          <h3><span>Inicio</span></h3>
+          <p><span>La tarjeta de color muestra si Amnesia está On, Off o en pausa. Para activarla, primero marca "I understand". Desactivarla requiere dos clics, para que no pase por accidente.</span></p>
+          <p><span>Cierra la ventana y Amnesia sigue funcionando en la bandeja del sistema.</span></p>
+        </article>
+        <article class="pz-step" data-p="menu"><p class="label"><span class="n">02</span> / 11</p>
+          <h3><span>Icono de la bandeja</span></h3>
+          <p><span>Haz clic derecho en el icono de Amnesia junto al reloj: Open Amnesia, Open Keep folder, Review and sign out, Panic sign out now (también funciona en pausa), Turn On u Off.</span></p>
+          <p><span>Se inicia solo después de cada inicio de sesión.</span></p>
+        </article>
+        <article class="pz-step" data-p="vault"><p class="label"><span class="n">03</span> / 11</p>
+          <h3>Profile Vault</h3>
+          <p><span>Marca las apps que quieres conservar, o haz clic en una que Amnesia encontró en este PC. Snapshot now las guarda, sin necesidad de contraseña. Restore necesita tu contraseña.</span></p>
+          <ul>
+            <li><b><span>Snapshot automático</span></b> <span>después de cerrar una app que cambió.</span></li>
+            <li><b><span>Snapshot anterior</span></b> <span>por si el más reciente no se ve bien.</span></li>
+          </ul>
+          <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span>3 contraseñas incorrectas o la palabra de pánico borran la bóveda para siempre.</span></p>
+        </article>
+        <article class="pz-step" data-p="logout"><p class="label"><span class="n">04</span> / 11</p>
+          <h3><span>Review & sign out</span></h3>
+          <p><span>Mira qué se borra si cierras sesión ahora. ¿Quieres conservar algo? Pulsa "Keep something first". ¿Te parece bien? Pulsa Sign out now.</span></p>
+        </article>
+        <article class="pz-step" data-p="pause"><p class="label"><span class="n">05</span> / 11</p>
+          <h3><span>Pausar una sesión</span></h3>
+          <p><span>Sáltate una vez el próximo cierre e inicio de sesión, sin desactivar Amnesia. Después se vuelve a activar sola.</span></p>
+        </article>
+        <article class="pz-step" data-p="keep"><p class="label"><span class="n">06</span> / 11</p>
+          <h3>Keep List <span>y carpeta Keep</span></h3>
+          <p><span>La carpeta Keep guarda archivos que nunca se borran. La Keep List conserva carpetas como .ssh o los ajustes de una app.</span></p>
+          <p><span>"Keep an app" muestra las apps instaladas. Haz clic en Keep y se quedan todas las carpetas donde la app guarda sus datos.</span></p>
+          <p class="def"><span class="tm sel"><i></i><span>Caja segura</span></span> <span>una carpeta bloqueada dentro de Keep, que se vuelve a cerrar en cada cierre de sesión. Experimental.</span></p>
+        </article>
+        <article class="pz-step" data-p="preview"><p class="label"><span class="n">07</span> / 11</p>
+          <h3><span>Lo que se borra</span></h3>
+          <p><span>Un simulacro del próximo cierre de sesión, con búsqueda, filtro por carpeta y Biggest first. Abrirlo no borra nada.</span></p>
+        </article>
+        <article class="pz-step" data-p="backup"><p class="label"><span class="n">08</span> / 11</p>
+          <h3>Backup</h3>
+          <p><span>Carpeta Keep, Keep List y bóveda en un solo archivo cifrado.</span></p>
+          <ul>
+            <li><span>Una carpeta, una memoria USB, una carpeta en la nube o tu servidor por SSH.</span></li>
+            <li><span>Cada día o cada semana. Las copias antiguas nunca se borran.</span></li>
+          </ul>
+          <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Move to a new PC vuelve a poner una copia de seguridad.</span></p>
+        </article>
+        <article class="pz-step" data-p="history"><p class="label"><span class="n">09</span> / 11</p>
+          <h3><span>Historial</span></h3>
+          <p><span>Qué hizo Amnesia y cuándo: limpiezas, snapshots, restauraciones y copias de seguridad.</span></p>
+          <p><span>Solo horas, cantidades y nombres de apps. Nunca nombres de archivo.</span></p>
+        </article>
+        <article class="pz-step" data-p="health"><p class="label"><span class="n">10</span> / 11</p>
+          <h3><span>Health check</span></h3>
+          <p><span>¿Puede Amnesia hacer su trabajo ahora mismo? Las líneas verdes están bien. Las amarillas y rojas dicen qué revisar y dónde.</span></p>
+          <p><span>Debajo, una lista sencilla de lo que Amnesia no puede hacer.</span></p>
+        </article>
+        <article class="pz-step" data-p="settings"><p class="label"><span class="n">11</span> / 11</p>
+          <h3><span>Settings</span></h3>
+          <p><span>General, Protection, Updates and help, y luego Advanced: Leaving the PC, Privacy and Windows, Programs, Locks. El buscador de arriba funciona en inglés.</span></p>
+          <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span>Uninstall, con "also delete settings, Keep List and vault". Pide la contraseña de Keep y te avisa si la caja segura todavía tiene archivos.</span></p>
+        </article>
+        <article class="pz-step pz-end"><p class="label"><span>Todo junto</span></p><h3><span>Una ventana. <em>Cada pieza en su sitio.</em></span></h3></article>
+      </div>
+      <div class="pager" data-pager="tour" hidden>
+        <button type="button" class="pg-prev" aria-label="Anterior"><svg><use href="#i-chev-l"/></svg></button>
+        <ol class="pg-dots"></ol>
+        <button type="button" class="pg-next" aria-label="Siguiente"><svg><use href="#i-chev-r"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" id="real">
+    <div class="head sub">
+      <h3 class="minih"><span>Y aquí está <em>la de verdad.</em></span></h3>
+      <p class="body"><span>Capturas de pantalla de Amnesia para Windows v0.8.1, con archivos de ejemplo. Siguen el idioma y el modo claro u oscuro de esta página.</span></p>
+    </div>
+    <div class="wgal">
+      <div class="wgal-tabs" role="tablist" aria-label="Pantallas">
+        <button type="button" role="tab" id="wt-home" aria-controls="wp-home" aria-selected="true"><span>Inicio</span></button>
+        <button type="button" role="tab" id="wt-health" aria-controls="wp-health" aria-selected="false" tabindex="-1"><span>Health check</span></button>
+        <button type="button" role="tab" id="wt-keep" aria-controls="wp-keep" aria-selected="false" tabindex="-1">Keep List</button>
+        <button type="button" role="tab" id="wt-vault" aria-controls="wp-vault" aria-selected="false" tabindex="-1">Vault</button>
+        <button type="button" role="tab" id="wt-wiped" aria-controls="wp-wiped" aria-selected="false" tabindex="-1"><span>Lo que se borra</span></button>
+        <button type="button" role="tab" id="wt-settings" aria-controls="wp-settings" aria-selected="false" tabindex="-1"><span>Settings</span></button>
+        <button type="button" role="tab" id="wt-apps" aria-controls="wp-apps" aria-selected="false" tabindex="-1"><span>Apps nuevas</span></button>
+        <button type="button" role="tab" id="wt-protect" aria-controls="wp-protect" aria-selected="false" tabindex="-1"><span>Protección</span></button>
+        <button type="button" role="tab" id="wt-keeplock" aria-controls="wp-keeplock" aria-selected="false" tabindex="-1"><span>Keep lock</span></button>
+      </div>
+      <div class="wgal-panels">
+        <div class="wgal-p" role="tabpanel" id="wp-home" aria-labelledby="wt-home">
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="home" data-alt-en="Página de inicio de Amnesia para Windows: Amnesia está On, con mosaicos para Vault, Review and sign out, Pause, Keep List, Backup, History y What gets wiped" data-alt-id="Beranda Amnesia untuk Windows: Amnesia Menyala, dengan kotak Vault, Cek dan sign out, Jeda, Keep List, Backup, Riwayat, dan Yang dihapus">
+              <source media="(prefers-color-scheme: light)" srcset="../../win/shots/home-en-light.webp">
+              <img src="../../win/shots/home-en-dark.webp" alt="Página de inicio de Amnesia para Windows: Amnesia está On, con mosaicos para Vault, Review and sign out, Pause, Keep List, Backup, History y What gets wiped" width="1040" height="1280" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span>Inicio</span></h4>
+            <p><span>La tarjeta de estado arriba, cada página a un clic.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-health" aria-labelledby="wt-health" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="health" data-alt-en="Health check: líneas verdes para activado, inicio automático, última limpieza, carpetas en la nube, bóveda y copia de seguridad, y luego lo que Amnesia no puede hacer" data-alt-id="Cek kesehatan: baris hijau untuk menyala, startup, pembersihan terakhir, folder cloud, vault, dan backup, lalu yang tidak bisa dilakukan Amnesia">
+              <source media="(prefers-color-scheme: light)" srcset="../../win/shots/health-en-light.webp">
+              <img src="../../win/shots/health-en-dark.webp" alt="Health check: líneas verdes para activado, inicio automático, última limpieza, carpetas en la nube, bóveda y copia de seguridad, y luego lo que Amnesia no puede hacer" width="1040" height="1280" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span>Health check</span></h4>
+            <p><span>Cada línea en verde, amarillo o rojo, con dónde arreglarlo. Luego, una lista sincera de límites.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-keep" aria-labelledby="wt-keep" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="keep" data-alt-en="Keep List: la carpeta Keep, carpetas conservadas como Discord, WhatsApp y .ssh, y la caja segura, cerrada y bloqueada" data-alt-id="Keep List: folder Keep, folder yang disimpan seperti Discord, WhatsApp, dan .ssh, serta brankas yang tertutup dan terkunci">
+              <source media="(prefers-color-scheme: light)" srcset="../../win/shots/keep-en-light.webp">
+              <img src="../../win/shots/keep-en-dark.webp" alt="Keep List: la carpeta Keep, carpetas conservadas como Discord, WhatsApp y .ssh, y la caja segura, cerrada y bloqueada" width="1040" height="1856" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span>Keep List</span></h4>
+            <p><span>La carpeta Keep, las carpetas que conservas y la caja segura experimental: un único archivo cifrado hasta que lo abres.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-vault" aria-labelledby="wt-vault" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="vault" data-alt-en="La página de la bóveda: Chrome, Edge, Discord, VS Code y Claude marcados, cada uno con la hora de su último snapshot" data-alt-id="Halaman vault: Chrome, Edge, Discord, VS Code, dan Claude dicentang, masing-masing dengan waktu snapshot terakhir">
+              <source media="(prefers-color-scheme: light)" srcset="../../win/shots/vault-en-light.webp">
+              <img src="../../win/shots/vault-en-dark.webp" alt="La página de la bóveda: Chrome, Edge, Discord, VS Code y Claude marcados, cada uno con la hora de su último snapshot" width="1040" height="1520" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4>Vault</h4>
+            <p><span>Marca las apps y pulsa Snapshot now. Cada una muestra cuándo se guardó, su tamaño y el snapshot anterior.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-wiped" aria-labelledby="wt-wiped" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="wiped" data-alt-en="What gets wiped: una búsqueda de Downloads muestra 8 de 32 elementos, de mayor a menor" data-alt-id="Yang dihapus: pencarian Downloads menampilkan 8 dari 32 item, terbesar dulu">
+              <source media="(prefers-color-scheme: light)" srcset="../../win/shots/wiped-en-light.webp">
+              <img src="../../win/shots/wiped-en-dark.webp" alt="What gets wiped: una búsqueda de Downloads muestra 8 de 32 elementos, de mayor a menor" width="1040" height="1400" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span>Lo que se borra</span></h4>
+            <p><span>Búsqueda, una carpeta, Biggest first. Solo una vista previa: no se tocó nada.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-settings" aria-labelledby="wt-settings" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="settings" data-alt-en="Settings: un buscador, el estado del cifrado del disco, el idioma y accesos rápidos a Keep" data-alt-id="Pengaturan: kotak pencarian, status enkripsi disk, bahasa, dan jalan pintas ke Keep">
+              <source media="(prefers-color-scheme: light)" srcset="../../win/shots/settings-en-light.webp">
+              <img src="../../win/shots/settings-en-dark.webp" alt="Settings: un buscador, el estado del cifrado del disco, el idioma y accesos rápidos a Keep" width="1040" height="1520" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span>Settings</span></h4>
+            <p><span>Búsqueda arriba. Estado del cifrado del disco, idioma, el acceso directo a Keep y la barra lateral del Explorador, y luego actualizaciones, ayuda y Advanced.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-apps" aria-labelledby="wt-apps" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="apps" data-alt-en="Ajustes de Programs: Remove new apps está activado, con Photo Editor, Spotify y Zoom Workplace en la lista, cada uno con Uninstall y Keep" data-alt-id="Pengaturan Program: Hapus app baru menyala, dengan Photo Editor, Spotify, dan Zoom Workplace, masing-masing dengan Uninstall dan Simpan">
+              <source media="(prefers-color-scheme: light)" srcset="../../win/shots/apps-en-light.webp">
+              <img src="../../win/shots/apps-en-dark.webp" alt="Ajustes de Programs: Remove new apps está activado, con Photo Editor, Spotify y Zoom Workplace en la lista, cada uno con Uninstall y Keep" width="1040" height="1026" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span>Apps nuevas</span></h4>
+            <p><span>Las apps nuevas aparecen con un botón Keep. Las quitadas esperan 3 días en la papelera de Amnesia.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-protect" aria-labelledby="wt-protect" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="protect" data-alt-en="Ajustes de Protection: abrir al iniciar sesión y conservar máquinas virtuales activados; borrar también los datos de apps de Store y las contraseñas guardadas por apps, desactivados" data-alt-id="Pengaturan Perlindungan: buka saat login dan simpan virtual machine menyala, hapus juga data app Store dan password app mati">
+              <source media="(prefers-color-scheme: light)" srcset="../../win/shots/protect-en-light.webp">
+              <img src="../../win/shots/protect-en-dark.webp" alt="Ajustes de Protection: abrir al iniciar sesión y conservar máquinas virtuales activados; borrar también los datos de apps de Store y las contraseñas guardadas por apps, desactivados" width="1040" height="1172" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span>Protección</span></h4>
+            <p><span>Las máquinas virtuales se quedan por defecto. Borrar los datos de apps de Store y las contraseñas guardadas por apps lo activas tú si quieres.</span></p>
+          </div>
+        </div>
+        <div class="wgal-p" role="tabpanel" id="wp-keeplock" aria-labelledby="wt-keeplock" hidden>
+          <figure class="wwin">
+            <div class="wwin-bar" aria-hidden="true"><img src="../../logo.png" alt="" width="16" height="16"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+            <picture data-wshot="keeplock" data-alt-en="Keep lock en Settings: Keep está bloqueada, con su nota sincera y el botón Lock now" data-alt-id="Kunci Keep di Pengaturan: Keep terkunci, dengan catatan jujurnya dan tombol Kunci sekarang">
+              <source media="(prefers-color-scheme: light)" srcset="../../win/shots/keeplock-en-light.webp">
+              <img src="../../win/shots/keeplock-en-dark.webp" alt="Keep lock en Settings: Keep está bloqueada, con su nota sincera y el botón Lock now" width="1040" height="1004" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="wgal-t">
+            <h4><span>Keep lock</span></h4>
+            <p><span>Keep solo se abre a través de Amnesia. La app dice claramente lo que el bloqueo no puede hacer.</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="head sub">
+      <h3 class="minih"><span>Los avisos son <em>fáciles de leer.</em></span></h3>
+      <p class="body"><span>Los textos reales de la app. Todo lo que borra, cierra tu sesión o no se puede deshacer lo dice claramente, antes de que pase.</span></p>
+    </div>
+    <div class="bento pops wpops">
+      <div class="cell c-turnon">
+        <p class="cap"><span>Antes de activarla</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../../logo.png" alt="" width="40" height="40"><div><h4><span>Off</span></h4><p><span>No se borra nada. Prueba primero "Show preview" y luego activa Amnesia.</span></p></div></div>
+          <div class="ps deleted"><p class="ps-t"><svg><use href="#i-trash"/></svg><span>Lo que se borra</span></p><ul><li><span>En cada cierre de sesión, reinicio y apagado se borra tu carpeta de usuario. En el siguiente inicio de sesión, Amnesia vuelve a comprobar.</span></li></ul></div>
+          <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>Lo que se queda</span></p><ul><li><span>Tu carpeta Keep, la Keep List, OneDrive y lo que Windows necesita para que inicies sesión siempre se quedan.</span></li></ul></div>
+          <p class="pop-chk on"><i></i><span>I understand: en cada cierre de sesión, reinicio y apagado se borra todo lo que está fuera de mi carpeta Keep y mi Keep List. Probé "Show preview" primero.</span></p>
+          <div class="pop-btns"><span class="b1"><span>Turn On</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-save">
+        <p class="cap"><span>Review & sign out</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../../logo.png" alt="" width="40" height="40"><div><h4><span>Revisa antes de cerrar sesión</span></h4><p><span>Esto es lo que se borra si cierras sesión ahora. ¿Quieres conservar algo? Añádelo antes a la Keep List.</span></p></div></div>
+          <div class="ps deleted"><p class="ps-t"><svg><use href="#i-apps"/></svg><span>Programas que se quitarán</span></p><ul><li>Photo Editor</li></ul></div>
+          <div class="pop-btns"><span class="b2"><span>Keep something first</span></span><span class="b1"><span>Sign out now</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-restore">
+        <p class="cap"><span>Cierre de sesión de pánico</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../../logo.png" alt="" width="40" height="40"><h4><span>Panic sign out now</span></h4></div>
+          <div class="ps warn"><p class="ps-t"><svg><use href="#i-warn"/></svg><span>Ten cuidado</span></p><ul><li><span>¿Bloquear, limpiar y cerrar sesión ahora mismo? El trabajo sin guardar se pierde.</span></li></ul></div>
+          <div class="pop-btns"><span class="b2"><span>No</span></span><span class="b1 red"><span>Yes</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-last danger">
+        <p class="cap"><span class="tm glob"><i></i>Global Amnesia</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../../logo.png" alt="" width="40" height="40"><h4><span>Contraseña incorrecta.</span></h4></div>
+          <div class="ps deleted"><p class="ps-t"><svg><use href="#i-trash"/></svg><span>Último intento</span></p><ul><li><span>ÚLTIMO INTENTO: una contraseña incorrecta más BORRA la bóveda para siempre. Para y revisa primero dónde apuntaste tu contraseña.</span></li></ul></div>
+        </div>
+      </div>
+      <div class="cell c-uninstall">
+        <p class="cap"><span>Desinstalar desde Settings</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../../logo.png" alt="" width="40" height="40"><h4><span>¿Desinstalar Amnesia?</span></h4></div>
+          <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>Lo que se queda</span></p><ul><li><span>Primero se desactiva; tu carpeta Keep se queda.</span></li></ul></div>
+          <div class="ps todo"><p class="ps-t"><svg><use href="#i-hand"/></svg><span>Qué tienes que hacer</span></p><ul><li><span>Tu caja segura todavía tiene 3 archivo(s). Ábrela y muévelos antes, o consérvala: se vuelve a abrir después de reinstalar Amnesia. ¿Desinstalar de todos modos?</span></li></ul></div>
+          <p class="pop-field"><span>Contraseña de Keep (Keep está bloqueada)</span><b>••••••••••••</b></p>
+          <div class="pop-btns"><span class="b2"><span>No</span></span><span class="b1"><span>Yes</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-legend">
+        <p class="cap"><span>En la página de inicio, si se desactivó el inicio automático</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../../logo.png" alt="" width="40" height="40"><h4><span>Amnesia no se iniciará con Windows</span></h4></div>
+          <div class="ps warn"><p class="ps-t"><svg><use href="#i-warn"/></svg><span>Ten cuidado</span></p><ul><li><span>Su entrada de inicio está desactivada (Administrador de tareas > Aplicaciones de arranque). Así, no se borra nada en el próximo inicio de sesión y el icono de la bandeja desaparece. Vuelve a activarla aquí.</span></li></ul></div>
+          <div class="pop-btns"><span class="b1"><span>Switch it back on</span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ref" id="install">
+  <div class="glow" style="width:520px;height:520px;background:var(--indigo);right:-180px;top:12%;opacity:.16" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">15</span> · <span>Instalar</span></p>
+      <h2><span>Un solo Setup, <em>sin administrador.</em></span></h2>
+      <div class="badges">
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.8.1</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
+        <span class="bdg"><svg><use href="#i-laptop"/></svg><span>Windows</span><b>10 · 11</b></span>
+      </div>
+    </div>
+    <div class="warn" role="note">
+      <h3><svg><use href="#i-warn"/></svg><span>Lee esto antes de instalar</span></h3>
+      <p><span>Amnesia borra datos de verdad. Una vez activada, todo lo que hay en tu carpeta de usuario fuera de tu carpeta Keep y tu Keep List se borra en cada cierre de sesión, reinicio y apagado. No va a la Papelera de reciclaje y no se puede deshacer. Pon antes en Keep lo que necesites, y mira What gets wiped antes de tu primer cierre de sesión. Amnesia es software libre, se ofrece tal cual y la usas bajo tu propia responsabilidad.</span></p>
+      <p><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md">Lee los términos completos →</a></p>
+    </div>
+    <div class="bento installs">
+      <div class="cell i-brew">
+        <div class="i-top"><span class="i-ico" style="--c:var(--cyan)"><svg><use href="#i-down"/></svg></span><div><h3>Setup.exe</h3><p class="small"><span>Desde GitHub Releases</span></p></div></div>
+        <ol class="mini-steps">
+          <li><span>Abre la <a href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true">versión "win-v" más reciente</a> en GitHub.</span></li>
+          <li><span>Descarga <code>Amnesia-Setup-…-x64.exe</code> (la mayoría de los PC) o <code>-arm64.exe</code> (Windows en ARM).</span></li>
+          <li><span>Ábrelo. La app todavía no está firmada, así que Windows te avisa: pulsa <b>More info</b> y luego <b>Run anyway</b>.</span></li>
+          <li><span>Setup muestra una página de bienvenida, los términos y el aviso. Se instala solo para ti, sin necesidad de administrador. Amnesia sigue en <b>Off</b> hasta que la actives.</span></li>
+        </ol>
+        <div class="smart" aria-hidden="true">
+          <div class="sm-box">
+            <svg class="sm-ico"><use href="#i-shield"/></svg>
+            <div class="sm-lines"><i></i><i class="w2"></i><i class="w3"></i></div>
+            <span class="sm-link">More info</span>
+          </div>
+          <svg class="sm-arrow" viewBox="0 0 80 20"><path d="M2 10h70m-8-7 8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 5"/></svg>
+          <div class="sm-box">
+            <div class="sm-lines"><i></i><i class="w2"></i></div>
+            <span class="sm-btn">Run anyway</span>
+          </div>
+        </div>
+        <p class="small"><span>Los nombres de los botones pueden variar un poco según el idioma de tu Windows.</span></p>
+      </div>
+      <div class="cell i-dmg">
+        <div class="i-top"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><div><h3><span>Comprueba el archivo</span></h3><p class="small"><span>Opcional</span></p></div></div>
+        <div class="shell">
+          <div class="sh-bar"><i></i><i></i><i></i><span>PowerShell</span></div>
+          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.8.1-x64.exe</code><button class="copy" type="button">Copy</button></div>
+          <pre class="sh-out"><span>Algorithm  Hash</span>
+<span>---------  ----</span>
+<span>SHA256     3F9A…C21E</span>
+<span class="ok">Same as SHA256SUMS.txt</span></pre>
+        </div>
+        <p class="small"><span>Cada versión tiene un <code>SHA256SUMS.txt</code> firmado por el desarrollador, y los archivos Setup los compila GitHub con una atestación de compilación: <code>gh attestation verify</code> muestra de dónde viene un archivo. El hash de arriba es solo un ejemplo.</span></p>
+      </div>
+      <div class="cell i-gh">
+        <div class="i-top"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><div><h3>navi-crwn/amnesia</h3><p class="small"><span>Código abierto en GitHub</span></p></div></div>
+        <dl class="ghstats">
+          <div><dt><span>Licencia</span></dt><dd>MIT</dd></div>
+          <div><dt>Windows</dt><dd>v0.8.1</dd></div>
+          <div><dt><span>Pruebas</span></dt><dd>294</dd></div>
+          <div><dt><span>Chips</span></dt><dd>x64 · arm64</dd></div>
+        </dl>
+        <div class="cta">
+          <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-down"/></svg><span>Versiones para Windows</span></a>
+          <a class="btn ghost" href="https://github.com/navi-crwn/amnesia"><svg><use href="#i-github"/></svg>GitHub</a>
+        </div>
+      </div>
+      <div class="cell i-req">
+        <p class="cap"><span>Lo que necesitas</span></p>
+        <ul class="reqs">
+          <li><svg><use href="#i-laptop"/></svg><b>Windows 10 · 11</b><span>Home o Pro</span></li>
+          <li><svg><use href="#i-chip"/></svg><b>x64 & arm64</b><span>Un Setup para cada uno</span></li>
+          <li><svg><use href="#i-lock"/></svg><b><span>Sin administrador</span></b><span>Se instala solo para ti</span></li>
+        </ul>
+        <p class="cap" style="margin-top:6px"><span>Para actualizar: Settings → Update → Check now, en este orden. Solo se instala una versión con firma válida.</span></p>
+        <ol class="flow">
+          <li><span>Turn Off</span></li>
+          <li><span>Instalar</span></li>
+          <li><span>Turn On</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ref" id="tutorial">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">16</span> · Tutorial</p>
+      <h2><span>Tutorial <em>paso a paso.</em></span></h2>
+      <p class="lead"><span>Desde el archivo Setup hasta tu primer cierre de sesión limpio. Mira cómo se reproduce cada paso y luego haz lo mismo en tu PC. No se borra nada antes del paso 7.</span></p>
+    </div>
+  </div>
+  <div class="wrap tutbox">
+    <div class="bento tut">
+      <div class="cell t-screen">
+        <div class="tw" aria-hidden="true">
+          <div class="tw-bar"><img src="../../logo.png" alt="" width="14" height="14"><span class="tw-title">Amnesia</span><span class="rec"><b></b>REC</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
+          <div class="tw-view"><div class="tw-body">
+
+            <div class="tp" data-page="0">
+              <div class="wsm">
+                <p class="wsm-h">Windows protected your PC</p>
+                <p class="wsm-t">Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p>
+                <p class="wsm-more" data-a="1" data-on=".wsm-app,.wsm-run">More info</p>
+                <p class="wsm-app">App: Amnesia-Setup-0.8.1-x64.exe</p>
+                <div class="wsm-btns"><span class="wsm-run" data-a="2" data-on=".pop0">Run anyway</span><span>Don't run</span></div>
+              </div>
+              <div class="pop tw-pop pop0">
+                <div class="pop-top"><img src="../../logo.png" alt="" width="30" height="30"><h4><span>Instalación de Amnesia</span></h4></div>
+                <div class="ps deleted"><p class="ps-t"><svg><use href="#i-trash"/></svg><span>Amnesia borra datos de verdad</span></p><ul><li><span>Una vez activada, todo lo que está fuera de Keep se borra en cada cierre de sesión.</span></li></ul></div>
+                <p class="pop-chk" data-a="3" data-on="self,.b0"><i></i><span>Acepto los términos</span></p>
+                <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1 b0 dimb" data-a="4" data-off=".pop0" data-on=".toast"><span>Instalar</span></span></div>
+              </div>
+              <p class="toast t-low"><span>Instalada solo para ti. Amnesia está en Off.</span></p>
+            </div>
+
+            <div class="tp" data-page="1">
+              <div class="ui-center">
+                <img src="../../logo.png" alt="" width="44" height="44">
+                <p class="ui-h"><span>Te damos la bienvenida a Amnesia</span></p>
+                <div class="ui-seg"><span class="on">English</span><span>Bahasa Indonesia</span></div>
+                <div class="ps deleted"><p class="ps-t"><svg><use href="#i-trash"/></svg><span>Lee esto primero</span></p><ul><li><span>Todo lo que está fuera de tu carpeta Keep y tu Keep List se borra en cada cierre de sesión.</span></li><li><span>No va a la Papelera de reciclaje. No se puede deshacer.</span></li></ul></div>
+                <div class="tdots"><i class="on"></i><i class="d2"></i><i class="d3"></i></div>
+                <span class="ui-btn" data-a="1" data-on=".d2"><span>Siguiente</span></span>
+                <i class="auto" data-a="2" data-do="auto" data-wait=".6" data-on=".d3"></i>
+              </div>
+            </div>
+
+            <div class="tp" data-page="2">
+              <p class="ui-h">Keep List</p>
+              <div class="ui-row"><svg><use href="#i-folder"/></svg><span>Carpeta Keep</span> <code>C:\Users\you\Keep</code><span class="ui-btn2 sm"><span>Open Keep</span></span></div>
+              <p class="ui-sub"><span>Conservar una app</span></p>
+              <div class="ui-list">
+                <div class="ui-row"><svg><use href="#i-apps"/></svg>Spotify<small class="sug">Microsoft Store</small><span class="ui-btn2 sm kb" data-a="1" data-on="self"><span>Keep</span></span></div>
+                <div class="ui-row"><svg><use href="#i-apps"/></svg>Zoom Workplace<span class="ui-btn2 sm kb" data-a="2" data-on="self"><span>Keep</span></span></div>
+                <div class="ui-row"><svg><use href="#i-term"/></svg>.ssh<span class="ui-btn2 sm kb on"><span>Conservado</span></span></div>
+              </div>
+              <p class="toast" data-a="3" data-do="auto" data-on="self"><span>Sus carpetas de datos ya están en la Keep List.</span></p>
+            </div>
+
+            <div class="tp" data-page="3">
+              <p class="ui-h">Vault</p>
+              <label class="ui-field" data-a="1" data-type="••••••••••••••"><span>Contraseña de la bóveda</span><b class="val"></b></label>
+              <div class="bar m"><b></b></div>
+              <p class="ui-sub meter"><span>Fuerte</span></p>
+              <i class="auto" data-a="2" data-do="auto" data-fill=".bar.m" data-on=".meter"></i>
+              <div class="chips">
+                <span class="chip" data-a="3" data-on="self">Chrome</span>
+                <span class="chip" data-a="4" data-on="self">Discord</span>
+                <span class="chip">Edge</span>
+                <span class="chip">VS Code</span>
+              </div>
+              <span class="ui-btn" data-a="5" data-fill=".bar.s" data-on=".toast"><span>Snapshot now</span></span>
+              <div class="bar s"><b></b></div>
+              <p class="toast"><span>Guardado. Para eso no hace falta contraseña.</span></p>
+            </div>
+
+            <div class="tp" data-page="4">
+              <p class="ui-h"><span>Lo que se borra</span></p>
+              <p class="ui-sub"><span>Un simulacro de tu carpeta de usuario. Ahora no se borra nada.</span></p>
+              <span class="ui-btn" data-a="1" data-on=".g1,.g2,.g3"><span>Show preview</span></span>
+              <div class="grp g1"><p class="grp-h"><svg><use href="#i-folder"/></svg><span>Tus archivos</span><b>64</b></p>
+                <div class="grp-b"><p class="dl">Desktop<b>11</b></p><p class="dl" data-a="2" data-on="self,.hint">Downloads<b>46</b></p><p class="dl">Documents<b>7</b></p></div></div>
+              <div class="grp g2"><p class="grp-h"><svg><use href="#i-globe"/></svg><span>Datos del navegador</span><b>5</b></p></div>
+              <div class="grp g3 back"><p class="grp-h"><svg><use href="#i-cloud"/></svg><span>Se queda: Keep, OneDrive, carpetas en la nube</span><b>✓</b></p></div>
+              <p class="toast hint"><span>¿Lo necesitas? Ponlo antes en Keep.</span></p>
+            </div>
+
+            <div class="tp" data-page="5">
+              <div class="aw-hero sw h5">
+                <span class="hb"><svg><use href="#i-power"/></svg></span>
+                <div><b><span class="s-off"><span>Off</span></span><span class="s-on"><span>On</span></span></b>
+                <small><span>No se borra nada mientras está desactivada.</span></small></div>
+                <span class="aw-btn" data-a="2" data-on=".h5,.toast"><span class="s-off"><span>Turn On</span></span><span class="s-on"><span>Turn Off</span></span></span>
+              </div>
+              <p class="ui-chk" data-a="1" data-on="self"><span>I understand: en cada cierre de sesión, reinicio y apagado se borra todo lo que está fuera de mi carpeta Keep y mi Keep List. Probé "Show preview" primero.</span></p>
+              <div class="tile-row"><span class="tile mini" style="--c:var(--indigo)"><svg><use href="#i-lock"/></svg>Vault</span><span class="tile mini" style="--c:var(--green)"><svg><use href="#i-pin"/></svg>Keep List</span><span class="tile mini" style="--c:var(--green)"><svg><use href="#i-heart"/></svg><span>Health check</span></span></div>
+              <p class="toast"><span>On. Esta sesión se queda como está hasta que cierres sesión.</span></p>
+            </div>
+
+            <div class="tp" data-page="6">
+              <div class="tile-row one"><span class="tile mini" style="--c:var(--red)" data-a="1" data-on=".pop6"><svg><use href="#i-logout"/></svg><span>Review & sign out</span></span></div>
+              <div class="vaultmini">
+                <p class="ui-h">Vault</p>
+                <label class="ui-field" data-a="4" data-type="••••••••••••••"><span>Contraseña de la bóveda</span><b class="val"></b></label>
+                <span class="ui-btn" data-a="5" data-fill=".bar" data-on=".toast"><span>Restore</span></span>
+                <div class="bar"><b></b></div>
+                <p class="toast"><span>De vuelta: Chrome, Discord. Abre las apps, ya tienes la sesión iniciada otra vez.</span></p>
+              </div>
+              <div class="pop tw-pop pop6">
+                <div class="pop-top"><img src="../../logo.png" alt="" width="30" height="30"><h4><span>Revisa antes de cerrar sesión</span></h4></div>
+                <div class="ps deleted"><p class="ps-t"><svg><use href="#i-trash"/></svg><span>Se borra ahora</span></p><ul><li><span>69 elementos de tu carpeta de usuario</span></li></ul></div>
+                <div class="pop-btns"><span class="b2"><span>Keep something first</span></span><span class="b1" data-a="2" data-off=".pop6" data-on=".blk"><span>Sign out now</span></span></div>
+              </div>
+              <div class="blk"><img src="../../logo.png" alt="" width="40" height="40"><p><span>Cerrando sesión · limpio</span></p><small><span>Iniciando sesión de nuevo…</span></small></div>
+              <i class="auto" data-a="3" data-do="auto" data-wait="1.6" data-off=".blk"></i>
+            </div>
+
+            <div class="tp" data-page="7">
+              <div class="aw-hero sw on h7">
+                <span class="hb"><svg><use href="#i-power"/></svg></span>
+                <div><b><span class="s-off"><span>Off</span></span><span class="s-on"><span>On</span></span></b>
+                <small><span>Desactívala antes de cada actualización.</span></small></div>
+                <span class="aw-btn" data-a="1" data-off=".h7" data-on=".u1"><span class="s-off"><span>Turn On</span></span><span class="s-on"><span>Turn Off</span></span></span>
+              </div>
+              <ol class="flow big"><li class="u1"><span>Turn Off</span></li><li class="u2"><span>Instalar</span></li><li class="u3"><span>Turn On</span></li></ol>
+              <p class="ui-file f7"><svg><use href="#i-key"/></svg><span>Firma comprobada</span> · SHA256SUMS.txt<b>✓</b></p>
+              <i class="auto" data-a="2" data-do="auto" data-fill=".bar" data-on=".u2,.f7"></i>
+              <div class="bar"><b></b></div>
+              <i class="auto" data-a="3" data-do="auto" data-wait=".4"></i>
+              <span class="ui-btn ghostbtn" data-a="4" data-on=".h7,.u3"><span>Turn On</span></span>
+            </div>
+
+            <svg class="cursor tw-cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6.2 1.6L10 19z"/></svg>
+            <i class="ripple tw-rip"></i>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="cell t-text">
+        <div class="t-steps">
+          <article class="t-step"><p class="label"><span class="n">01</span> / 08</p>
+            <h3><span>Instala, sorteando SmartScreen</span></h3>
+            <p><span>Abre el archivo Setup. Amnesia todavía no tiene un certificado de pago, así que Windows te avisa: pulsa More info y luego Run anyway. Setup muestra los términos y el aviso, y se instala solo para ti.</span></p>
+            <ul class="tips"><li><span>¿Quieres asegurarte antes? Compara el archivo con el SHA256SUMS.txt de la misma versión.</span></li><li><span>Después de instalarla, Amnesia está en Off y no borra nada.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">02</span> / 08</p>
+            <h3><span>Lee el recorrido de bienvenida</span></h3>
+            <p><span>La primera vez que abres Amnesia, un recorrido corto explica qué borra y qué se queda. Elige ahí tu idioma.</span></p>
+            <ul class="tips"><li><span>Settings → Welcome tour → Show again lo abre más tarde.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">03</span> / 08</p>
+            <h3><span>Elige qué se queda</span></h3>
+            <p><span>Tu carpeta Keep nunca se borra. En la página Keep List, añade carpetas como .ssh, o usa Keep an app: Amnesia conserva todas las carpetas donde esa app guarda sus datos.</span></p>
+            <ul class="tips"><li><span>Las carpetas en la nube como OneDrive y Dropbox siempre se quedan.</span></li><li><span>¿Archivos muy privados? Prueba la caja segura (experimental).</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">04</span> / 08</p>
+            <h3><span>Crea la bóveda y haz un snapshot</span></h3>
+            <p><span>Escribe una contraseña para la bóveda de al menos 12 caracteres y fíjate en el medidor. Marca las apps cuyos inicios de sesión quieres recuperar y luego pulsa Snapshot now.</span></p>
+            <ul class="tips"><li><span>Apunta la contraseña en un lugar seguro. Nadie puede recuperarla.</span></li><li><span class="tm glob"><i></i>Global Amnesia</span> <span>3 contraseñas incorrectas seguidas borran la bóveda para siempre. Puedes desactivarlo.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">05</span> / 08</p>
+            <h3><span>Revisa la lista</span></h3>
+            <p><span>What gets wiped → Show preview muestra todo lo que borraría tu próximo cierre de sesión, y lo que se queda. ¿Todavía necesitas algo? Ponlo en Keep o en la Keep List.</span></p>
+            <ul class="tips"><li><span>Abrir la lista no borra nada.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">06</span> / 08</p>
+            <h3><span>Turn On</span></h3>
+            <p><span>Marca "I understand" en la tarjeta de inicio y luego pulsa Turn On. Esta sesión se queda como está hasta que cierres sesión.</span></p>
+            <ul class="tips"><li><span class="tm sel"><i></i>Selective Amnesia</span> <span>a partir de ahora, cada cierre de sesión, reinicio y apagado lo olvida todo menos lo que elegiste.</span></li><li><span>Health check se pone en verde cuando todo está listo.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">07</span> / 08</p>
+            <h3><span>Cierra sesión y luego restaura</span></h3>
+            <p><span>Review & sign out muestra qué se borra y luego cierra tu sesión. Cuando vuelvas a iniciar sesión, abre Vault, escribe la contraseña y pulsa Restore.</span></p>
+            <ul class="tips"><li><span class="tm recall"><i></i>Memory Recall</span> <span>tus apps vuelven con la sesión iniciada.</span></li><li><span>Cancelar un cierre de sesión después de que Windows preguntó no deshace la limpieza.</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">08</span> / 08</p>
+            <h3><span>Actualizar Amnesia</span></h3>
+            <p><span>Siempre en este orden: Turn Off, instala la actualización, Turn On. Settings → Update → Check now lo hace por ti.</span></p>
+            <ul class="tips"><li><span>Solo instala una versión con firma válida del desarrollador. Si no, abre la página de la versión.</span></li></ul>
+          </article>
+        </div>
+      </div>
+
+      <div class="cell t-nav">
+        <div class="pager" data-pager="tut" hidden>
+          <button type="button" class="pg-prev" aria-label="Anterior"><svg><use href="#i-chev-l"/></svg></button>
+          <ol class="pg-dots num"></ol>
+          <button type="button" class="pg-next" aria-label="Siguiente"><svg><use href="#i-chev-r"/></svg></button>
+        </div>
+        <p class="safe-note"><svg><use href="#i-shield"/></svg><span>No se borra nada antes del paso 7.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ref" id="faq">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">17</span> · FAQ</p>
+      <h2><span>Preguntas, <em>respondidas.</em></span></h2>
+    </div>
+    <div class="bento faq">
+      <div class="fcol">
+      <div class="cell fq f-safe">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><span>Seguridad</span></h3>
+        <details><summary><span>¿Puedo probarla sin borrar nada?</span></summary><p><span>Sí. Después de instalarla, Amnesia está en Off y no borra nada. Abre What gets wiped y pulsa Show preview: solo muestra lo que se borraría. Actívala cuando la lista te parezca bien.</span></p></details>
+        <details><summary><span>¿Adónde van los archivos borrados? ¿Puedo recuperarlos?</span></summary><p><span>A ningún sitio al que puedas llegar. No van a la Papelera de reciclaje y no se pueden recuperar. Una vez activada, Amnesia borra de verdad, así que revisa antes What gets wiped y pon lo que necesites en Keep o en la Keep List.</span></p></details>
+        <details><summary><span>¿Mi carpeta Keep está cifrada?</span></summary><p><span>No. Amnesia la conserva, no la cifra. Activa BitLocker o el cifrado del dispositivo: Configuración → Privacidad y seguridad → Cifrado de dispositivo. Los ajustes de Amnesia te muestran si está activado.</span></p></details>
+        <details><summary><span>¿Y si el PC se cuelga o se queda sin corriente?</span></summary><p><span>La revisión del siguiente inicio de sesión lo detecta y hace la limpieza.</span></p></details>
+        <details><summary><span>¿Y si cancelo un cierre de sesión?</span></summary><p><span>Amnesia limpia en cuanto Windows pregunta "¿puedo cerrar sesión?". Si cancelas después de eso, por ejemplo porque una app pidió guardar, la limpieza ya se hizo. Es como pulsar "Clean now". Usa Review & sign out cuando no estés seguro.</span></p></details>
+        <details><summary><span>¿Se borran OneDrive, Dropbox o mis máquinas virtuales?</span></summary><p><span>No. Las carpetas en la nube (OneDrive, Dropbox, Google Drive, iCloud Drive, Nextcloud, MEGA, Box, pCloud, Proton Drive y cualquier carpeta de sincronización de Windows) no se tocan, porque moverlas podría borrar también tus archivos en la nube. Los discos de máquinas virtuales y las imágenes de disco de 1 GB o más también se quedan, a menos que lo desactives en Settings, Protection.</span></p></details>
+        <details><summary><span>¿Cómo sé que funciona?</span></summary><p><span>Abre Health check en la página de inicio. Cada línea está en verde, amarillo o rojo y dice dónde arreglarlo. History muestra cada limpieza y cuántos elementos se borraron.</span></p></details>
+        <details><summary><span>¿Se envían mis datos a algún sitio?</span></summary><p><span>No. Sin servidores, sin cuentas, sin rastreo. Las copias de seguridad solo van adonde tú eliges. La búsqueda de actualizaciones pide a GitHub el número de la versión más nueva (cada semana por defecto), y puedes desactivarla.</span></p></details>
+        <details><summary><span>Seguridad de Windows o mi antivirus la bloquea. ¿Y ahora qué?</span></summary><p><span>Home te avisa cuando algo se rechazó. Normalmente es el Acceso controlado a carpetas: Seguridad de Windows → Protección antivirus y contra amenazas → Protección contra ransomware → Permitir una aplicación, y añade Amnesia. Por favor, no desactives tu antivirus.</span></p></details>
+      </div>
+      <div class="cell fq f-backup">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--orange)"><svg><use href="#i-lock"/></svg></span><span>Bloqueos y salidas rápidas</span></h3>
+        <details><summary><span>¿Alguien puede saltarse el Keep lock?</span></summary><p><span>Sí, alguien que haya iniciado sesión como tú y conozca Windows puede quitarlo en las Propiedades de la carpeta. Además, los archivos no están cifrados. Frena a los curiosos de paso y a otros programas, no a alguien decidido. Para una protección real, usa BitLocker.</span></p></details>
+        <details><summary><span>Olvidé la contraseña de mi Keep lock.</span></summary><p><span>Abre las Propiedades de la carpeta Keep → Seguridad y quita las líneas "Denegar". Tus archivos siguen ahí.</span></p></details>
+        <details><summary><span>¿Qué pasa con el atajo de pánico?</span></summary><p><span>La pantalla se bloquea al instante, Amnesia limpia y cierra tu sesión sin esperar a las demás apps. El trabajo sin guardar se pierde. El menú de la bandeja tiene lo mismo: Panic sign out now.</span></p></details>
+        <details><summary><span>¿Qué es la caja segura?</span></summary><p><span>Una carpeta bloqueada experimental dentro de Keep, para tus archivos más privados. Cerrada, es un único archivo cifrado (AES-256-GCM, como la bóveda). Abierta, es Keep\Safe. Amnesia la vuelve a cerrar en cada cierre de sesión, después de la limpieza. Que sea pequeña: al cerrarla se vuelve a empaquetar todo.</span></p></details>
+        <details><summary><span>¿Se puede detener el Lab lock?</span></summary><p><span>Alguien puede finalizar Amnesia en el Administrador de tareas. Aun así, la revisión del siguiente inicio de sesión limpia. Para cambiar los ajustes o desactivarla hace falta el PIN del administrador.</span></p></details>
+      </div>
+      </div>
+      <div class="fcol">
+      <div class="cell fq f-vault">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--indigo)"><svg><use href="#i-lock"/></svg></span>Profile Vault</h3>
+        <details><summary><span>¿Y si olvido la contraseña de la bóveda?</span></summary><p><span>Entonces nadie puede abrirla, ni siquiera tú. Crea una bóveda nueva y vuelve a iniciar sesión en tus apps. Apunta la contraseña en un lugar seguro.</span></p></details>
+        <details><summary><span>¿Cuándo se guarda la bóveda?</span></summary><p><span>Después de cerrar una app que cambió, en segundo plano (se comprueba cada minuto). Las herramientas sin ventana, como Claude Code o Git, tras 3 minutos sin cambios. Si Edge sigue funcionando en segundo plano ("startup boost"), se guarda cuando se cierra de verdad.</span></p></details>
+        <details><summary><span>¿Mis inicios de sesión funcionan en otro PC?</span></summary><p><span>Normalmente no. Windows vincula los inicios de sesión guardados a tu usuario de Windows, así que los snapshots vuelven en este PC y con este usuario. Move to a new PC trae tu carpeta Keep, tu Keep List y tu bóveda, pero puede que tengas que volver a iniciar sesión en algunas apps.</span></p></details>
+        <details><summary><span>El snapshot más reciente no se ve bien.</span></summary><p><span>Si un snapshot nuevo es mucho más pequeño que el anterior, la bóveda te lo dice. Marca "Use the snapshot before the newest one" al restaurar.</span></p></details>
+        <details><summary><span>¿Qué son la palabra de pánico y Doomsday?</span></summary><p><span>La palabra de pánico es una palabra opcional que eliges tú. Si la escribes en el campo de la contraseña, borra la bóveda (y también tu carpeta Keep, si así lo elegiste). Doomsday borra la bóveda después de 3 contraseñas incorrectas seguidas. Puedes desactivar Doomsday.</span></p></details>
+      </div>
+      <div class="cell fq f-every">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--cyan)"><svg><use href="#i-down"/></svg></span><span>Instalación y actualizaciones</span></h3>
+        <details><summary><span>¿Por qué Windows me avisa al instalarla?</span></summary><p><span>La app todavía no está firmada, así que Windows no la conoce. Pulsa More info y luego Run anyway. ¿Quieres asegurarte? Compara el archivo con el SHA256SUMS.txt de la misma versión.</span></p></details>
+        <details><summary><span>¿x64 o arm64?</span></summary><p><span>La mayoría de los PC necesitan x64. Elige arm64 para Windows en ARM, como un portátil con Snapdragon o una máquina virtual de Windows en un Mac.</span></p></details>
+        <details><summary><span>¿Necesita permisos de administrador?</span></summary><p><span>No. Se instala solo para ti. Solo unas pocas opciones opcionales piden una vez permisos de administrador a Windows: las protecciones de Windows, borrar carpetas sobrantes y el Lab lock.</span></p></details>
+        <details><summary><span>¿Cómo actualizo?</span></summary><p><span>Settings → Update → Check now. Desactiva Amnesia antes de instalar la actualización y luego vuelve a activarla. Amnesia solo instala una actualización cuando la firma del desarrollador es válida; si no, abre la página de la versión.</span></p></details>
+        <details><summary><span>¿Cómo la desinstalo?</span></summary><p><span>Settings → Uninstall Amnesia, o Aplicaciones y características como cualquier app. Primero se desactiva, así que no se borra nada más. Tu carpeta Keep siempre se queda. Si Keep está bloqueada, te pide la contraseña de Keep, y te avisa si la caja segura todavía tiene archivos. Para borrar también los ajustes, la Keep List y la bóveda, escribe DELETE en el campo.</span></p></details>
+        <details><summary><span>¿Se quitan las apps de Microsoft Store y los programas nuevos?</span></summary><p><span>Solo con "Remove new apps" activado. En ese caso, un programa instalado solo para ti después de Turn On se quita al cerrar sesión, y su carpeta espera antes 3 días en la papelera de Amnesia. Pulsa Keep para conservarlo. Las apps de Store conservan sus propios datos a menos que actives "Also wipe Store app data".</span></p></details>
+        <details><summary><span>¿Hay versión para Mac?</span></summary><p><span>Sí, y lleva más tiempo. Mira la <a href="../">página de Mac</a>.</span></p></details>
+      </div>
+      </div>
+      <div class="cell fq f-ask">
+        <div class="fa-t"><h3 class="fq-h"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><span>¿Encontraste un error? ¿Quieres que cambie algo?</span></h3>
+        <p><span>Abre un issue en GitHub. Por favor, no pegues contraseñas, listas de archivos privados ni nada personal. Por eso Collect log deja fuera los nombres de archivo.</span></p></div>
+        <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/issues"><span>Abrir un issue</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="glow" style="width:600px;height:600px;background:var(--indigo);left:50%;top:50%;transform:translate(-50%,-50%);opacity:.25" aria-hidden="true"></div>
+  <div class="wrap" style="position:relative">
+    <div class="shield3d small" data-shield3d="final" aria-hidden="true"><img src="../../logo.png" alt="" width="160" height="160" loading="lazy"></div>
+    <h2><span>Empieza cada día <em>limpio.</em></span></h2>
+    <p class="pun"><span>Descárgala y olvídate de todo. Con juego de palabras incluido.</span></p>
+    <div class="cta">
+      <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg><span>Descargar para Windows</span></a>
+      <a class="btn ghost" href="../"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-laptop"/></svg><span>¿Tienes un Mac?</span></a>
+    </div>
+    <p class="w-issue"><span>¿Encontraste un error o tienes una idea? <a href="https://github.com/navi-crwn/amnesia/issues">Abre un issue</a>. Sin contraseñas ni listas de archivos privados, por favor.</span></p>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="ft-top">
+      <div class="ft-brand">
+        <a class="brand" href="#top"><img src="../../logo.png" alt="" width="30" height="30">Amnesia</a>
+        <p class="ft-tag"><span>Tu PC lo olvida todo al cerrar sesión, menos lo que eliges guardar. Gratis, de código abierto, y nada sale nunca de tu PC.</span></p>
+        <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
+          <svg><use href="#i-github"/></svg>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.8.1</small></span>
+        </a>
+      </div>
+      <nav class="ft-cols" aria-label="Pie de página">
+        <div><p class="ft-h"><span>Producto</span></p><ul>
+          <li><a href="#desk"><span>Cómo funciona</span></a></li>
+          <li><a href="#vault">Profile Vault</a></li>
+          <li><a href="#backup">Backup</a></li>
+          <li><a href="#exits"><span>Salidas rápidas</span></a></li>
+          <li><a href="#install"><span>Instalar</span></a></li>
+          <li><a href="#faq">FAQ</a></li></ul></div>
+        <div><p class="ft-h"><span>Código fuente</span></p><ul>
+          <li><a href="https://github.com/navi-crwn/amnesia"><span>Repositorio</span></a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span>Versiones para Windows</span></a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/issues">Issues</a></li>
+          <li><a href="../">Mac</a></li></ul></div>
+        <div><p class="ft-h">Legal</p><ul>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><span>Licencia (MIT)</span></a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md">Términos</a></li>
+          <li><a href="#private"><span>Privacidad</span></a></li></ul></div>
+      </nav>
+    </div>
+    <div class="ft-bot">
+      <p><span>© 2026 navi-crwn. Hecho para uso personal. Úsala con cabeza: Amnesia borra tus datos de verdad.</span></p>
+      <p class="ft-tm"><span>Microsoft, Windows, BitLocker, OneDrive, Edge, Google Drive, Chrome, Discord, Telegram, Slack, Claude, GitHub y otros nombres son marcas comerciales de sus respectivos propietarios. Amnesia es un proyecto independiente y no está afiliado a ninguno de ellos ni cuenta con su respaldo.</span></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Windows page only: the app screenshots follow the page language and the light/dark switch
+// (the <source> media query covers visitors without JavaScript), and the screenshot tabs.
+(function () {
+  'use strict';
+  var root = document.documentElement;
+  function theme() {
+    var UI = window.AmnesiaUI;
+    if (UI && UI.theme) return UI.theme();
+    var t = root.getAttribute('data-theme');
+    return t === 'light' || t === 'dark' ? t : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  }
+  function shots() {
+    var l = root.lang === 'id' ? 'id' : 'en', t = theme();
+    document.querySelectorAll('picture[data-wshot]').forEach(function (p) {
+      var f = '../../win/shots/' + p.dataset.wshot + '-' + l + '-' + t + '.webp';
+      var s = p.querySelector('source'), img = p.querySelector('img');
+      if (s && s.getAttribute('srcset') !== f) s.setAttribute('srcset', f);
+      if (img.getAttribute('src') !== f) img.setAttribute('src', f);
+      var alt = p.getAttribute('data-alt-' + l);
+      if (alt) img.alt = alt;
+    });
+  }
+  document.addEventListener('amnesia:lang', shots);
+  document.addEventListener('amnesia:theme', shots);
+  shots();
+
+  // tabs: click, or ← → Home End while a tab has focus
+  var tabs = [].slice.call(document.querySelectorAll('.wgal-tabs [role=tab]'));
+  function pick(tab, focus) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (focus) tab.focus();
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { pick(t); });
+    t.addEventListener('keydown', function (e) {
+      var j = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
+      if (j === null) return;
+      e.preventDefault(); e.stopPropagation();
+      pick(tabs[(j + tabs.length) % tabs.length], true);
+    });
+  });
+})();
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js"></script>
+<script defer src="../../assets/js/scenes/hero.js"></script>
+<script defer src="../../assets/js/scenes/desk.js"></script>
+<script defer src="../../assets/js/scenes/puzzle.js"></script>
+<script defer src="../../assets/js/scenes/story.js"></script>
+<script defer src="../../assets/js/scenes/tutorial.js"></script>
+<script defer src="../../assets/js/site.js"></script>
+<script type="module" src="../../assets/js/scenes/shield3d.js"></script>
+<script type="module" src="../../assets/js/scenes/objects3d.js"></script>
+<script type="module" src="../../win/win3d.js"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-<p align="center"><a href="README.md">English</a> · <b>Bahasa Indonesia</b></p>
+<p align="center">🌐 <a href="README.md">English</a> · <a href="https://navi-crwn.github.io/amnesia/zh-cn/">简体中文</a> · <a href="https://navi-crwn.github.io/amnesia/de/">Deutsch</a> · <a href="https://navi-crwn.github.io/amnesia/id/">Bahasa Indonesia</a> · <a href="https://navi-crwn.github.io/amnesia/ja/">日本語</a> · <a href="https://navi-crwn.github.io/amnesia/pt-br/">Português (Brasil)</a> · <a href="https://navi-crwn.github.io/amnesia/es/">Español</a></p>
 
 <p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/hero-id-light.webp"><img src="docs/readme/hero-id-dark.webp" alt="Amnesia: Mac kamu lupa segalanya, kecuali yang kamu simpan" width="100%"></picture></p>
 

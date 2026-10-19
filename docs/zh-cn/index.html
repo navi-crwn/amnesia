@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amnesia for Mac</title>
+<meta name="description" content="每次退出登录，你的 Mac 都会忘记一切，只留下你选择保留的登录状态和文件。免费开源。">
+<meta name="theme-color" content="#07070a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f7f7fb" media="(prefers-color-scheme: light)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Amnesia for Mac">
+<meta property="og:description" content="每次退出登录，你的 Mac 都会忘记一切，除了你选择保留的。">
+<meta property="og:url" content="https://navi-crwn.github.io/amnesia/zh-cn/">
+<meta property="og:image" content="https://navi-crwn.github.io/amnesia/social.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" hreflang="en" href="https://navi-crwn.github.io/amnesia/">
+<link rel="alternate" hreflang="zh-CN" href="https://navi-crwn.github.io/amnesia/zh-cn/">
+<link rel="alternate" hreflang="de" href="https://navi-crwn.github.io/amnesia/de/">
+<link rel="alternate" hreflang="id" href="https://navi-crwn.github.io/amnesia/id/">
+<link rel="alternate" hreflang="ja" href="https://navi-crwn.github.io/amnesia/ja/">
+<link rel="alternate" hreflang="pt-BR" href="https://navi-crwn.github.io/amnesia/pt-br/">
+<link rel="alternate" hreflang="es" href="https://navi-crwn.github.io/amnesia/es/">
+<link rel="alternate" hreflang="x-default" href="https://navi-crwn.github.io/amnesia/">
+<link rel="icon" href="../logo.png">
+<script>
+// Runs before paint: theme, and on the English page a first-visit nudge to the visitor's language.
+window.AMNESIA_I18N={"locale": "zh-CN", "step": "第 {n} 步", "commitsSince": "自 {since} 以来 {n} 次提交", "commitSince": "自 {since} 以来 {n} 次提交", "commit": "{n} 次提交", "commits": "{n} 次提交"};
+(function(){var d=document.documentElement,t=null;d.classList.add('js');
+try{t=localStorage.getItem('theme')}catch(e){}
+if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+<style>/* v5.23: pieces that fly in (vault ring, app tour) no longer make the page scroll sideways on phones */section,.marquee{overflow-x:clip}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head>
+<body>
+<a class="skip" href="#main"><span>跳到正文</span></a>
+<div class="noise" aria-hidden="true"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><path d="m4 17 5-5 4 4 3-3 4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="17" cy="16" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-cookie" viewBox="0 0 24 24"><path d="M20.5 12.5A8.5 8.5 0 1 1 11.5 3.5a3 3 0 0 0 4 3.5 3 3 0 0 0 5 5.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="9" cy="10" r="1.1" fill="currentColor"/><circle cx="14" cy="15" r="1.1" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.1" fill="currentColor"/></symbol>
+    <symbol id="i-stack" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-lines" viewBox="0 0 24 24"><path d="M5 6h14M5 10h10M5 14h14M5 18h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-term" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m7 10 3 2-3 2M12 15h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 19 6v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="m4 7 1.5 1.5L8 6M4 13l1.5 1.5L8 12M4 19l1.5 1.5L8 18M11 7h9M11 13h9M11 19h9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-apps" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 15 12 8l3 7M10 13h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4H6v16h8M10 12h10m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 5 3 3H7l3-3zM12 12v8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-drive" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="12" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path d="M10.3 2.6h3.4l.5 2.6 1.6.9 2.5-.9 1.7 2.9-2 1.7v1.9l2 1.7-1.7 2.9-2.5-.9-1.6.9-.5 2.6h-3.4l-.5-2.6-1.6-.9-2.5.9-1.7-2.9 2-1.7v-1.9l-2-1.7 1.7-2.9 2.5.9 1.6-.9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3 9a13 13 0 0 1 18 0M6 12.5a8.5 8.5 0 0 1 12 0M9 16a4 4 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-batt" viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="17" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="9.5" width="10" height="5" rx="1" fill="currentColor"/><path d="M21.5 10.5v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></symbol>
+    <symbol id="i-brew" viewBox="0 0 24 24"><path d="M5 8h10v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2zM15 10h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2M8 11v6M12 11v6M5 8c0-2 1.5-3 3-3 .5-1.2 1.6-2 3-2s2.6.8 3 2c1.4 0 1 1.5 1 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-dmg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="11" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="11" r=".8" fill="currentColor"/><path d="M7 17h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-chip" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1" fill="currentColor" opacity=".6"/><path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 19h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z" fill="currentColor"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M4 7h16M7 7l-3 7a3 3 0 0 0 6 0zM17 7l-3 7a3 3 0 0 0 6 0z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-fork" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="18" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="19" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 7.2v1.3a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7.2M12 11.5v5.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-issue" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2" fill="currentColor"/></symbol>
+    <symbol id="i-arrow-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12h8m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M4 12h9m0 0-3-3m3 3-3 3M15 6h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 2.5 20h19z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1" fill="currentColor"/></symbol>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="../logo.png" alt="" width="30" height="30">Amnesia</a>
+    <div class="plat" role="group" aria-label="平台">
+      <a href="./" aria-current="page">Mac</a>
+      <a href="win/">Windows</a>
+    </div>
+    <nav class="nav-links" aria-label="章节">
+      <a href="#features"><span>功能</span></a>
+      <a href="#desk"><span>工作原理</span></a>
+      <a href="#vault">Vault</a>
+      <a href="#backup">Backup</a>
+      <a href="#tour">App</a>
+      <a href="#install"><span>安装</span></a>
+      <a href="#tutorial">Tutorial</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-r">
+      <button type="button" class="theme" id="theme" aria-label="浅色或深色"><svg class="t-sun"><use href="#i-sun"/></svg><svg class="t-moon"><use href="#i-moon"/></svg></button>
+      <details class="langmenu"><summary aria-label="语言"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>中文</summary><ul><li><a href="../?lang=en" hreflang="en" lang="en">English<small>EN</small></a></li><li><a href="./" hreflang="zh-CN" lang="zh-CN" aria-current="page">简体中文<small>中文</small></a></li><li><a href="../de/" hreflang="de" lang="de">Deutsch<small>DE</small></a></li><li><a href="../id/" hreflang="id" lang="id">Bahasa Indonesia<small>ID</small></a></li><li><a href="../ja/" hreflang="ja" lang="ja">日本語<small>日本語</small></a></li><li><a href="../pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)<small>PT</small></a></li><li><a href="../es/" hreflang="es" lang="es">Español<small>ES</small></a></li></ul></details>
+      <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases/latest"><span>下载</span></a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true"><i class="hb-dots"></i><i class="hb-beam"></i></div>
+  <div class="glow" style="width:520px;height:520px;background:var(--indigo);right:-120px;top:10%" aria-hidden="true"></div>
+  <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="hero-copy">
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia"><span class="hb-ver" data-gh="version">v5.23.1</span><svg><use href="#i-github"/></svg><span>在 GitHub 上开源</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <h1 id="hero-title">
+        <span><span class="split">你的 Mac 会忘记</span> <em class="word">一切。</em><span class="after split">除了你要保留的。</span></span>
+      </h1>
+      <p class="lead">
+        <span>每次退出登录，Amnesia 都会清除你的浏览记录、下载文件和 App 数据。你的登录状态和你选中的文件，都安全地保存在加密保险库里。</span>
+      </p>
+      <div class="cta">
+        <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg><span>下载 Mac 版</span></a>
+        <a class="btn ghost star" href="https://github.com/navi-crwn/amnesia"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github"/></svg><span>给仓库点个 Star</span></a>
+        <a class="plink" href="#desk"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow-c"/></svg><span>工作原理</span></a>
+      </div>
+      <div class="term"><code>brew install navi-crwn/tap/amnesia</code><button class="copy" type="button">Copy</button></div>
+      <p class="meta"><span>免费开源 · macOS 15+ · Apple 芯片和 Intel</span></p>
+      <p class="warnline"><span><span>Amnesia 会真的删除数据，而且无法撤销。安装前请先<a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md">阅读条款</a>。</span></span></p>
+    </div>
+    <div class="shield shield3d" data-shield3d="hero" aria-hidden="true">
+      <svg class="rings" viewBox="0 0 400 400">
+        <defs><linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs>
+        <circle class="r1" cx="200" cy="200" r="190" fill="none" stroke="url(#g-brand)" stroke-opacity=".5" stroke-dasharray="2 10"/>
+        <circle class="r2" cx="200" cy="200" r="150" fill="none" stroke-dasharray="60 20 4 20"/>
+        <circle class="r3" cx="200" cy="200" r="112" fill="none" stroke="url(#g-brand)" stroke-opacity=".35"/>
+        <circle cx="200" cy="10" r="4" fill="#22d3ee"/>
+        <circle cx="350" cy="200" r="3" fill="#ec4899"/>
+      </svg>
+      <img src="../logo.png" alt="" width="512" height="512">
+    </div>
+    <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
+      <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
+      <span class="rc-desc"><span>退出登录时，你的 Mac 会忘记一切，只留下你选择保留的。</span></span>
+      <span class="rc-meta"><span>MIT</span><span data-gh="version">v5.23.1</span><span class="rc-langs" data-gh="langs-mini"><span><i style="--c:var(--orange)"></i>Swift</span><span><i style="--c:var(--green)"></i>Shell</span></span></span>
+    </a>
+  </div>
+</section>
+
+<section class="film" id="film">
+  <div class="wrap">
+    <figure class="paper">
+      <span class="tape t1" aria-hidden="true"></span><span class="tape t2" aria-hidden="true"></span>
+      <div class="paper-sheet">
+        <video class="fv" src="../media/story.mp4" poster="../media/story.jpg" muted playsinline loop preload="none" data-auto width="1280" height="720"></video>
+        <button class="sound" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="s-wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="s-off" d="m16 9 6 6m0-6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z" fill="currentColor"/></svg><span class="s-on-t"><span>打开声音</span></span><span class="s-off-t"><span>静音</span></span></button>
+      </div>
+      <figcaption class="strip"><span>三个故事，54 秒。一台会遗忘的 Mac。</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="ref oss" id="open">
+  <div class="wrap">
+    <div class="oss-grid">
+      <div class="oss-copy">
+        <span class="oss-ico" aria-hidden="true"><svg><use href="#i-github"/></svg></span>
+        <p class="label"><span class="n">01</span> · Open source</p>
+        <h2><span><em>公开</em>开发。</span></h2>
+        <p class="lead"><span>Amnesia 是 MIT 许可证下的自由软件，在 GitHub 上公开开发。你可以阅读每一行代码、提交 issue，或者自己编译。你下载的 App 就是从这个仓库构建的。</span></p>
+        <div class="cta">
+          <a class="btn main" href="https://github.com/navi-crwn/amnesia"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github"/></svg><span>给仓库点个 Star</span></a>
+          <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/fork"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-fork"/></svg>Fork</a>
+          <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/issues/new"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-issue"/></svg><span>提交 issue</span></a>
+        </div>
+      </div>
+      <a class="repo-card big" href="https://github.com/navi-crwn/amnesia">
+        <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
+        <span class="rc-desc"><span>退出登录时，你的 Mac 会忘记一切，只留下你选择保留的。</span></span>
+        <span class="rc-bar" data-gh="langbar" hidden></span>
+        <span class="rc-legend" data-gh="langs" hidden></span>
+        <span class="rc-stats">
+          <span><small><span>许可证</span></small><b>MIT</b></span>
+          <span><small><span>最新版本</span></small><b data-gh="version">v5.23.1</b></span>
+          <span><small>Commits</small><b data-gh="commits">–</b></span>
+          <span><small>Releases</small><b data-gh="releases">–</b></span>
+          <span><small><span>贡献者</span></small><b data-gh="contributors">–</b></span>
+          <span><small><span>最近推送</span></small><b data-gh="pushed">–</b></span>
+        </span>
+      </a>
+    </div>
+    <figure class="commits">
+      <div class="cm-stage" data-obj3d="commits">
+        <p class="cm-empty"><span>提交图表数据来自 GitHub。如果没有显示，</span> <a href="https://github.com/navi-crwn/amnesia/commits/main"><span>可以去那里查看所有提交</span> →</a></p>
+        <div class="cm-tip" hidden></div>
+      </div>
+      <figcaption>
+        <span class="cm-k"><span>每一次提交</span></span>
+        <b class="cm-sum" data-gh="since">–</b>
+        <span class="cm-hint"><span>每天一列，高度就是当天的提交数。鼠标悬停在某一列上可以看到日期。</span></span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="desk">
+  <div class="wrap pinbox">
+    <div class="two">
+      <div class="desk-copy">
+        <div class="steps">
+          <div class="step s1">
+            <p class="label"><span class="n">02</span> · <span>你的 Mac，每一天</span></p>
+            <h2><span>这些东西，<em>每天都有？</em></span></h2>
+            <p class="body"><span>你的 Mac 每天都在悄悄记录你做过的事。浏览器保存着你的浏览记录和 Cookie。下载、桌面和文稿里堆满了只用过一次的文件。App 会写入缓存和日志，终端会记住你输入过的每一条命令。</span></p>
+            <p class="body"><span>日积月累，直到你手动清理，或者永远不清理。</span></p>
+          </div>
+          <div class="step s2">
+            <p class="label"><span class="n">03</span> · <span>退出登录</span></p>
+            <h2><span>退出登录，<em>全部忘掉。</em></span></h2>
+            <p class="body"><span>按下“Log Out”、重启或关机，Amnesia 就会把这些全部清除。只有你选中的会留下：你的 Keep 文件夹、Keep List 里的 App，以及 Profile Vault 里的登录状态。已安装的 App 也会保留。</span></p>
+            <p class="body"><span>下次登录时它会再检查一遍，所以即使死机或断电，也不会留下痕迹。</span></p>
+            <p class="def"><span class="tm sel"><i></i>Selective Amnesia</span> <span>就是这个意思：除了你选择保留的，一切都会被忘掉。</span></p>
+          </div>
+        </div>
+        <div class="pager" data-pager="desk" hidden>
+          <button type="button" class="pg-prev" aria-label="上一个"><svg><use href="#i-chev-l"/></svg></button>
+          <ol class="pg-dots"></ol>
+          <button type="button" class="pg-next" aria-label="Next"><svg><use href="#i-chev-r"/></svg></button>
+        </div>
+      </div>
+      <div class="screen" aria-hidden="true">
+        <div class="bar"><i></i><i></i><i></i><span>~/</span></div>
+        <div class="prog"><b></b></div>
+        <div class="icons">
+          <div class="ico" style="color:var(--cyan)"><svg><use href="#i-folder"/></svg><span>Desktop</span></div>
+          <div class="ico" style="color:var(--cyan)"><svg><use href="#i-down"/></svg><span>Downloads</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-folder"/></svg><span>Keep</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--indigo)"><svg><use href="#i-doc"/></svg><span>Documents</span></div>
+          <div class="ico" style="color:var(--pink)"><svg><use href="#i-image"/></svg><span>Pictures</span></div>
+          <div class="ico" style="color:var(--orange)"><svg><use href="#i-globe"/></svg><span>History</span></div>
+          <div class="ico" style="color:var(--orange)"><svg><use href="#i-cookie"/></svg><span>Cookies</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-shield"/></svg><span>Vault</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--pink)"><svg><use href="#i-film"/></svg><span>Movies</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-list"/></svg><span>Keep List</span><b class="halo"></b></div>
+          <div class="ico" style="color:var(--violet)"><svg><use href="#i-music"/></svg><span>Music</span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-stack"/></svg><span>Caches</span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-lines"/></svg><span>Logs</span></div>
+          <div class="ico" style="color:var(--muted)"><svg><use href="#i-term"/></svg><span>Terminal</span></div>
+          <div class="ico" style="color:var(--indigo)"><svg><use href="#i-grid"/></svg><span>App data</span></div>
+          <div class="ico keep" style="color:var(--green)"><svg><use href="#i-apps"/></svg><span>Apps</span><b class="halo"></b></div>
+        </div>
+        <div class="logout"><span class="k">⌘ ⇧ Q</span><button type="button" tabindex="-1"><span>Log Out</span></button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="stays">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">04</span> · <span>保留什么</span></p>
+      <h2><span>清除什么，<em>保留什么。</em></span></h2>
+      <p class="lead"><span>在你按下“Turn On”之前，什么都不会删除，而且你随时可以先查看列表。可以搜索，也可以把最大的文件排在最前面。</span></p>
+    </div>
+    <div class="ledger">
+      <div class="col gone"><h3><span>退出登录时清除</span></h3><ul>
+        <li><span>浏览记录和 Cookie</span><i class="strike"></i></li>
+        <li>Desktop, Downloads, Documents, Pictures, Movies, Music<i class="strike"></i></li>
+        <li><span>缓存、日志、终端历史记录</span><i class="strike"></i></li>
+        <li><span>废纸篓里的所有内容</span><i class="strike"></i></li>
+        <li><span>不在保险库里、也不在 Keep List 上的 App 数据</span><i class="strike"></i></li></ul></div>
+      <div class="col safe"><h3><span>安全保留</span></h3><ul>
+        <li><span>Keep 文件夹里的所有内容（位置、名称随你定）</span></li>
+        <li><span>保存在 Profile Vault 里的登录状态（用 Restore 恢复）</span></li>
+        <li><span>Keep List 上的 App（VPN、SSH 密钥、Apple 账户…）</span></li>
+        <li><span>虚拟机（UTM、Parallels、VirtualBox、VMware Fusion），默认保留</span></li>
+        <li><span>已安装的 App 本身</span></li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="vault">
+  <div class="glow" style="width:480px;height:480px;background:var(--indigo);left:-200px;top:20%;opacity:.22" aria-hidden="true"></div>
+  <div class="wrap two">
+    <div class="vaultviz" aria-hidden="true">
+      <svg viewBox="0 0 400 400">
+        <circle class="ring-a" cx="200" cy="200" r="165" fill="none" stroke-dasharray="3 9"/>
+        <circle cx="200" cy="200" r="118" fill="none" stroke="rgba(99,102,241,.25)"/>
+        <g class="v-shield">
+          <path d="M200 92 282 124v74c0 56-34 92-82 112-48-20-82-56-82-112v-74z" fill="rgba(99,102,241,.10)" stroke="url(#g-brand)" stroke-width="2"/>
+          <path class="v-shackle" d="M182 196v-16a18 18 0 0 1 36 0v16" fill="none" stroke-width="5" stroke-linecap="round"/>
+          <rect class="v-body" x="170" y="194" width="60" height="46" rx="8"/>
+          <circle class="v-hole" cx="200" cy="214" r="5"/><rect class="v-hole" x="198" y="216" width="4" height="12" rx="2"/>
+        </g>
+        <g class="v-apps" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" text-anchor="middle">
+          <g class="v-app"><circle cx="200" cy="35" r="22" stroke="#22d3ee"/><text x="200" y="40">Ch</text></g>
+          <g class="v-app"><circle cx="317" cy="83" r="22" stroke="#10b981"/><text x="317" y="88">WA</text></g>
+          <g class="v-app"><circle cx="365" cy="200" r="22" stroke="#f97316"/><text x="365" y="205">Cl</text></g>
+          <g class="v-app"><circle cx="317" cy="317" r="22" stroke="#a78bfa"/><text x="317" y="322">CC</text></g>
+          <g class="v-app"><circle cx="200" cy="365" r="22" stroke="#6366f1"/><text x="200" y="370">OC</text></g>
+          <g class="v-app"><circle cx="83" cy="317" r="22" stroke="#ec4899"/><text x="83" y="322">Ge</text></g>
+          <g class="v-app"><circle cx="35" cy="200" r="22" stroke="#e5e7eb"/><text x="35" y="205">gh</text></g>
+          <g class="v-app"><circle cx="83" cy="83" r="22" stroke="#22d3ee"/><text x="83" y="88">Ag</text></g>
+        </g>
+      </svg>
+      <div class="safe3d" data-obj3d="safe"></div>
+      <div class="pw"><span class="lbl">password </span><span class="dots">••••••••••••</span><span class="caret"></span></div>
+    </div>
+    <div class="head">
+      <p class="label"><span class="n">05</span> · Profile Vault</p>
+      <h2><span>一个密码，<em>找回所有登录。</em></span></h2>
+      <p class="lead"><span>一个存放 App 登录状态的加密保险箱。有了它，你登录一台干净的 Mac 后，一步就能让 Chrome、WhatsApp、Claude 和你的编程工具恢复就绪。</span></p>
+      <ul class="facts">
+        <li><b>AES-256.</b> <span>用 7-Zip 加密。忘了密码，谁都打不开。</span></li>
+        <li><b><span>轻量快照。</span></b> <span>浏览器保存时不含缓存：大约 1 GB 变成 150 MB。</span></li>
+        <li><b><span>Save & Log Out。</span></b> <span>一键保存你的登录状态，然后退出登录。如果保存失败，就会取消退出登录。</span></li>
+        <li><b><span>Undo Restore。</span></b> <span>Mac 上的数据比快照更新？会先问你。Keep List 上的内容永远不会被覆盖，而且在你下次退出登录之前，只要一个按钮就能把原来的数据放回去。</span></li>
+      </ul>
+      <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>干净地退出登录后，Restore Profiles 会找回所有登录状态。</span></p>
+      <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span>输错 3 次密码或输入紧急口令，保险库就会被永久删除。</span></p>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="how">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">06</span> · <span>每一天</span></p>
+      <h2><span>用 <em>Amnesia</em> 的普通一天。</span></h2>
+      <p class="lead"><span>设置好之后，你只需要做这些。</span></p>
+    </div>
+    <div class="daily-track">
+      <svg class="daily-line" viewBox="0 0 1000 2" preserveAspectRatio="none" aria-hidden="true">
+        <line x1="0" y1="1" x2="1000" y2="1" stroke="rgba(255,255,255,.1)" stroke-width="2"/>
+        <line class="draw" x1="0" y1="1" x2="1000" y2="1" stroke="url(#g-line)" stroke-width="2"/>
+        <defs><linearGradient id="g-line" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1000" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset=".6" stop-color="#6366f1"/><stop offset="1" stop-color="#ef4444"/></linearGradient></defs>
+      </svg>
+      <ol class="daily-steps" role="list">
+        <li class="dstep"><span class="node">01</span><h3><span>登录</span></h3><p><span>你的 Mac 从干净状态开始。打开 Profile Vault，输入密码，按“Restore Profiles”。</span></p></li>
+        <li class="dstep"><span class="node">02</span><h3><span>工作</span></h3><p><span>所有登录状态都回来了。明天还要用的文件，放进 Keep 文件夹。</span></p></li>
+        <li class="dstep"><span class="node">03</span><h3><span>Save & Log Out</span></h3><p><span>你的登录状态存回保险库，然后退出登录。</span></p></li>
+        <li class="dstep"><span class="node">04</span><h3><span>已忘记</span></h3><p><span>其他一切都被清除，不留痕迹。</span></p></li>
+      </ol>
+    </div>
+    <p class="pausenote"><b><span>Pause 1 Session</span></b> <span><span>跳过下一次退出登录和登录的清理，不用关闭 Amnesia。</span></span></p>
+  </div>
+</section>
+
+<section class="stage" id="backup">
+  <div class="wrap two">
+    <div class="head">
+      <p class="label"><span class="n">07</span> · Backup</p>
+      <h2><span><em>随处</em>备份。</span></h2>
+      <p class="lead"><span>Keep 文件夹、选定文件夹和 Profile Vault 的加密 .7z 副本（AES-256，文件名也加密）。</span></p>
+      <ul class="facts">
+        <li><span>U 盘、通过 SSH 连接的自己的服务器、Google Drive、Dropbox、OneDrive、Box 或 pCloud。每天或每周一次，你还可以检查备份文件。</span></li>
+        <li><span>每次备份都是一个带日期的新文件。Amnesia 从不删除旧备份。</span></li>
+      </ul>
+      <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Restore Files 会把文件放回原来的位置。Get Vault from Backup 能找回丢失的保险库。</span></p>
+    </div>
+    <div class="netviz" aria-hidden="true">
+      <svg viewBox="0 0 640 440">
+        <g class="links" fill="none" stroke="url(#g-brand)" stroke-width="1.5" stroke-opacity=".7">
+          <path id="bk1" d="M262 205C190 205 190 80 128 80"/>
+          <path id="bk2" d="M262 220C200 212 190 228 128 220"/>
+          <path id="bk3" d="M262 235C190 235 190 360 128 360"/>
+          <path id="bk4" d="M378 200C450 200 450 60 512 60"/>
+          <path id="bk5" d="M378 212C450 212 450 160 512 160"/>
+          <path id="bk6" d="M378 228C450 228 450 280 512 280"/>
+          <path id="bk7" d="M378 240C450 240 450 380 512 380"/>
+        </g>
+        <g class="pkts" fill="#22d3ee">
+          <circle r="3"><animateMotion dur="2.8s" repeatCount="indefinite"><mpath href="#bk1"/></animateMotion></circle>
+          <circle r="3"><animateMotion dur="2.2s" begin=".4s" repeatCount="indefinite"><mpath href="#bk2"/></animateMotion></circle>
+          <circle r="3"><animateMotion dur="3.1s" begin=".9s" repeatCount="indefinite"><mpath href="#bk3"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="2.6s" begin=".2s" repeatCount="indefinite"><mpath href="#bk4"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="2.4s" begin="1.1s" repeatCount="indefinite"><mpath href="#bk5"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="2.9s" begin=".6s" repeatCount="indefinite"><mpath href="#bk6"/></animateMotion></circle>
+          <circle r="3" fill="#ec4899"><animateMotion dur="3.3s" begin="1.4s" repeatCount="indefinite"><mpath href="#bk7"/></animateMotion></circle>
+        </g>
+        <g class="core">
+          <rect x="262" y="180" width="116" height="80" rx="16" stroke="url(#g-brand)" stroke-width="2"/>
+          <text x="320" y="216" text-anchor="middle" font-size="22" font-weight="500">.7z</text>
+          <text class="mut" x="320" y="240" text-anchor="middle" font-size="11">AES-256</text>
+        </g>
+        <g class="dests" font-size="12" text-anchor="middle">
+          <g class="dest"><rect x="20" y="62" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="84">USB</text></g>
+          <g class="dest"><rect x="20" y="202" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="224">SSH server</text></g>
+          <g class="dest"><rect x="20" y="342" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="74" y="364">Google Drive</text></g>
+          <g class="dest"><rect x="512" y="42" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="64">Dropbox</text></g>
+          <g class="dest"><rect x="512" y="142" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="164">OneDrive</text></g>
+          <g class="dest"><rect x="512" y="262" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="284">Box</text></g>
+          <g class="dest"><rect x="512" y="362" width="108" height="36" rx="10" stroke="rgba(255,255,255,.14)"/><text x="566" y="384">pCloud</text></g>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="stage" id="private">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">08</span> · <span>隐私</span></p>
+      <h2><span>什么都不会离开<em>你的 Mac。</em></span></h2>
+      <p class="lead"><span>Amnesia 没有服务器、没有账户、没有跟踪、也没有统计分析。一切都在你的 Mac 上运行。</span></p>
+    </div>
+    <div class="pills">
+      <span class="pill"><i class="dot"></i><span>没有服务器</span></span>
+      <span class="pill"><i class="dot"></i><span>没有账户</span></span>
+      <span class="pill"><i class="dot"></i><span>没有跟踪</span></span>
+      <span class="pill"><i class="dot"></i>AES-256</span>
+      <span class="pill"><i class="dot"></i><span>从不使用 sudo</span></span>
+      <span class="pill"><i class="dot"></i><span>历史记录不含文件名</span></span>
+      <span class="pill panic"><i class="dot"></i><span><span class="glitch" data-text="紧急口令">紧急口令</span></span></span>
+    </div>
+
+    <div class="iyk" id="iykyk">
+      <div class="head">
+        <p class="label"><span>懂的都懂</span> <span class="wink" aria-hidden="true">😉</span></p>
+        <h3 class="iyk-h"><span>给那些<em>不想解释</em>的人。</span></h3>
+      </div>
+      <div class="bento iyk-grid">
+        <div class="cell">
+          <button class="reel" type="button" data-film="media/lend.mp4" data-poster="../media/lend.jpg"><video src="../media/lend.mp4" poster="../media/lend.jpg" muted playsinline loop preload="none" data-auto width="540" height="960"></video><span class="reel-tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><span>打开声音观看 · 0:30</span></span><span class="sr"><span>播放视频：把 Mac 借给别人</span></span></button>
+          <div class="i-ico" style="--c:var(--cyan)"><svg viewBox="0 0 24 24"><use href="#i-laptop"/></svg></div>
+          <h4><span>要把 Mac 借给别人？</span></h4>
+          <p><span>退出登录，再登录，然后交给对方。浏览记录、登录状态、最近的文件和聊天记录都已经没了。你的保险库保持锁定。</span></p></div>
+        <div class="cell">
+          <button class="reel" type="button" data-film="media/parents.mp4" data-poster="../media/parents.jpg"><video src="../media/parents.mp4" poster="../media/parents.jpg" muted playsinline loop preload="none" data-auto width="540" height="960"></video><span class="reel-tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><span>打开声音观看 · 0:30</span></span><span class="sr"><span>播放视频：好奇的家人</span></span></button>
+          <div class="i-ico" style="--c:var(--pink)"><svg viewBox="0 0 24 24"><use href="#i-eye"/></svg></div>
+          <h4><span>家人太好奇？</span></h4>
+          <p><span>你的浏览记录撑不过一次退出登录。没人需要知道你凌晨三点的那次疯狂购物。</span></p></div>
+        <div class="cell iyk-hot">
+          <button class="reel" type="button" data-film="media/spy.mp4" data-poster="../media/spy.jpg"><video src="../media/spy.mp4" poster="../media/spy.jpg" muted playsinline loop preload="none" data-auto width="540" height="960"></video><span class="reel-tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><span>打开声音观看 · 0:30</span></span><span class="sr"><span>播放视频：“就打开看一下嘛。”</span></span></button>
+          <div class="i-ico" style="--c:var(--red)"><svg viewBox="0 0 24 24"><use href="#i-lock"/></svg></div>
+          <h4><span>“就打开看一下嘛。”</span></h4>
+          <p><span>登录后只看到一个空空的桌面。还被要求输入保险库密码？改输你的<b>紧急口令</b>。保险库就没了，如果你设置过，Keep 文件夹也会一起没了。没有任何戏剧性。</span></p></div>
+        <div class="cell iyk-wide"><div class="i-ico" style="--c:var(--orange)"><svg viewBox="0 0 24 24"><use href="#i-warn"/></svg></div>
+          <h4><span>丢了或被偷了？</span></h4>
+          <p><span>退出登录后，你的浏览记录、登录状态和聊天记录都已经没了，保险库也是 AES-256 加密的。再打开 FileVault，让 Keep 文件夹在磁盘上也是加密的。</span></p></div>
+      </div>
+      <p class="iyk-term"><span class="pr">$</span> amnesia --forget-everything <span class="cm"><span># 一语双关</span></span></p>
+      <p class="iyk-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span>老实说明：Amnesia 是在<b>退出登录之后</b>保护你。登录期间，你的 Mac 和平时一样是敞开的，所以记得锁屏。另外，紧急口令一旦使用就无法撤销。</span></p>
+    </div>
+
+    <div class="head" id="features" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>每天都干净，<em>什么都不丢。</em></span></h2>
+      <p class="lead"><span>Amnesia 能做的一切，一目了然。往下滚动，一个按钮一个按钮地拆解这个 App，然后跟着教程走。</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>自动清除</span></h3><p><span>在退出登录、重启和关机时运行，登录时再检查一遍。</span></p></div>
+      <div><h3>Profile Vault</h3><p><span>Chrome、WhatsApp、Claude 和你的编程工具，用 AES-256 锁起来。一个密码就能全部找回。</span></p></div>
+      <div><h3><span>轻量浏览器快照</span></h3><p><span>Chrome、Brave、Edge、Arc、Vivaldi 和 Opera 可以不含缓存保存：大约 1 GB 变成 150 MB。每个浏览器一个开关。</span></p></div>
+      <div><h3><span>Save & Log Out</span></h3><p><span>一键保存你的登录状态，然后退出登录。如果保存失败，就会取消退出登录。</span></p></div>
+      <div><h3><span>自动快照</span></h3><p><span>忘了按 Save & Log Out？普通退出登录也会先保存有变化的 App。</span></p></div>
+      <div><h3><span>选择保留什么</span></h3><p><span>Keep 文件夹放你的文件，Keep List 放 VPN、SSH 密钥这类 App 数据。虚拟机默认就在列表上。</span></p></div>
+      <div><h3><span>先看清楚</span></h3><p><span>在删除任何东西之前，“What Gets Deleted”会列出所有内容，可以搜索，也可以按“Biggest first”排序。1 GB 及以上的文件会有警告。退出登录时还可以等你确认。</span></p></div>
+      <div><h3><span>Pause 1 Session</span></h3><p><span>跳过下一次退出登录和登录的清理，不用关闭 Amnesia。</span></p></div>
+      <div><h3><span>随处备份</span></h3><p><span>U 盘、通过 SSH 连接的自己的服务器、Google Drive、Dropbox、OneDrive、Box 或 pCloud。每天或每周一次，你还可以检查备份文件。</span></p></div>
+      <div><h3><span>历史记录</span></h3><p><span>Mac 什么时候被清理、保存了哪些 App、备份什么时候运行。从不记录文件名。</span></p></div>
+      <div><h3><span>紧急口令</span></h3><p><span>输入它，或者密码输错 3 次，保险库就会被永久删除。</span></p></div>
+      <div><h3><span>迁移到新 Mac</span></h3><p><span>把保险库和钥匙串密钥一起带走，这样你的 App 在新 Mac 上打开时就是已登录状态。</span></p></div>
+      <div><h3><span>开发者工具</span></h3><p><span>保留你的 SSH、GitHub CLI、shell、编辑器、Docker、云服务和 AI CLI 设置。Pick Apps 只显示你 Mac 上有的那些。</span></p></div>
+      <div><h3><span>快速找到任何设置</span></h3><p><span>在“设置”顶部的搜索框里输入，支持英文或印尼语。窗口大小也可以调整。</span></p></div>
+      <div><h3><span>Keep 锁</span></h3><p><span>在你于 Amnesia 中输入 Keep 密码之前，访达和其他 App 都打不开你的 Keep 文件夹。它会自动重新上锁。它用的是 macOS 权限，而不是加密，所以 Keep 里第一层的文件名仍然可见。</span></p></div>
+      <div><h3><span>健康检查</span></h3><p><span>一个页面告诉你哪里需要你处理：完全磁盘访问权限、iCloud 桌面与文稿、符号链接文件夹、虚拟机、大文件、上次备份和 FileVault。大多数条目都有修复按钮。</span></p></div>
+      <div><h3><span>Brankas <small>（实验性）</small></span></h3><p><span>放在 Keep 文件夹里的加密磁盘（AES-256），用来存放必须保密的文件。Amnesia 每次清理前都会关闭它，关不上时会告诉你。忘了它的密码，文件就没了。</span></p></div>
+      <div><h3><span>签名更新</span></h3><p><span>只有当版本的 SHA256SUMS.txt 带有有效签名时，App 内更新才会安装。如果没有，就会把你带到发布页面。</span></p></div>
+      <div><h3><span>和 iCloud 安全共存</span></h3><p><span>开启 iCloud 桌面与文稿时，这两个文件夹会被跳过，所以不会从 iCloud 或你的其他设备上删除任何东西。符号链接文件夹永远不会通过链接被清空。</span></p></div>
+      <div><h3><span>Claude 和 Claude Code</span></h3><p><span>把 Claude 加到 Keep List，你的 Claude Code 聊天记录（~/.claude）也会保留。退出登录前，保险库里勾选的 App 会生成新快照，所以恢复时永远不会是旧数据。</span></p></div>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="mq-row" data-dir="1"><div class="mq-track">
+    <span class="mq-i"><span>免费开源</span><i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">MIT<i style="--c:var(--indigo)"></i></span>
+    <span class="mq-i"><span>没有服务器</span><i style="--c:var(--pink)"></i></span>
+    <span class="mq-i"><span>没有跟踪</span><i style="--c:var(--green)"></i></span>
+    <span class="mq-i">AES-256<i style="--c:var(--orange)"></i></span>
+    <span class="mq-i"><span>从不使用 sudo</span><i style="--c:var(--violet)"></i></span>
+    <span class="mq-i">macOS 15+<i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">Apple Silicon & Intel<i style="--c:var(--pink)"></i></span>
+  </div></div>
+  <div class="mq-row ghost" data-dir="-1"><div class="mq-track">
+    <span class="mq-i">Selective Amnesia<i style="--c:var(--cyan)"></i></span>
+    <span class="mq-i">Profile Vault<i style="--c:var(--indigo)"></i></span>
+    <span class="mq-i">Memory Recall<i style="--c:var(--green)"></i></span>
+    <span class="mq-i">Keep List<i style="--c:var(--pink)"></i></span>
+    <span class="mq-i">Global Amnesia<i style="--c:var(--red)"></i></span>
+    <span class="mq-i"><span>Save & Log Out</span><i style="--c:var(--orange)"></i></span>
+  </div></div>
+</div>
+
+<section class="ref" id="tour">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">09</span> · <span>App 内部</span></p>
+      <h2><span>每个按钮，<em>逐一讲解。</em></span></h2>
+      <p class="lead"><span>这是 Amnesia 的主窗口。滚动页面或使用箭头，它会一块一块拆开，最后再重新拼好。</span></p>
+    </div>
+  </div>
+  <div class="wrap puzzle">
+    <div class="pz-stage" aria-hidden="true">
+      <div class="menubar pc" data-p="menu">
+        <span class="mb-l"></span><span class="mb-l w2"></span><span class="mb-l"></span>
+        <span class="mb-r"><svg><use href="#i-wifi"/></svg><svg><use href="#i-batt"/></svg><img src="../logo.png" alt="" width="18" height="18"><b>15:11</b></span>
+        <div class="mb-drop">
+          <p class="mb-st"><i></i><span>Amnesia 已开启</span></p>
+          <p><span>Save & Log Out</span></p>
+          <p><span>Pause 1 Session</span></p>
+          <p><span>打开 Amnesia</span></p>
+        </div>
+      </div>
+      <div class="appwin">
+        <div class="aw-bar"><i></i><i></i><i></i></div>
+        <div class="aw-head">
+          <img src="../logo.png" alt="" width="36" height="36">
+          <div><b>Amnesia <span class="ver" data-gh="version">v5.23.1</span></b><small><span>你的 Mac 会忘记一切，除了你选择保留的。</span></small></div>
+          <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span>设置</span></span>
+        </div>
+        <div class="aw-hero pc" data-p="home">
+          <span class="hb"><svg><use href="#i-shield"/></svg></span>
+          <div><b><span>Amnesia 已开启</span></b>
+          <small><span>Keep List 和 Keep 文件夹之外的一切，都会在退出登录、重启和关机时清除，登录时再检查一遍。</span></small></div>
+          <span class="aw-btn"><span>关闭 Amnesia</span></span>
+        </div>
+        <div class="aw-grid">
+          <div class="tile pc" data-p="vault" style="--c:var(--indigo)"><svg><use href="#i-lock"/></svg><b>Profile Vault</b><small><span>快照：今天 15:11</span></small></div>
+          <div class="tile pc" data-p="logout" style="--c:var(--cyan)"><svg><use href="#i-logout"/></svg><b><span>Save & Log Out</span></b><small><span>把登录状态存进保险库，然后退出登录</span></small></div>
+          <div class="tile pc" data-p="pause" style="--c:var(--orange)"><svg><use href="#i-pause"/></svg><b><span>Pause 1 Session</span></b><small><span>跳过一次下次清理</span></small></div>
+          <div class="tile pc" data-p="keep" style="--c:var(--green)"><svg><use href="#i-pin"/></svg><b>Keep List</b><small><span>46 项永不清除</span></small></div>
+          <div class="tile pc" data-p="backup" style="--c:var(--pink)"><svg><use href="#i-drive"/></svg><b>Backup</b><small><span>到 U 盘、服务器或云端</span></small></div>
+          <div class="tile pc" data-p="history" style="--c:var(--muted)"><svg><use href="#i-clock"/></svg><b><span>历史记录</span></b><small><span>清理、快照和备份</span></small></div>
+        </div>
+        <div class="tile wide pc" data-p="preview" style="--c:var(--violet)"><svg><use href="#i-eye"/></svg><b><span>What Gets Deleted</span></b><small><span>开启 Amnesia 之前先看列表</span></small></div>
+      </div>
+      <svg class="cursor pz-cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6.2 1.6L10 19z"/></svg>
+      <i class="ripple pz-rip"></i>
+    </div>
+    <div class="pz-text">
+      <div class="pz-steps">
+        <article class="pz-step" data-p="home"><p class="label"><span class="n">01</span> / 10</p>
+          <h3><span>主页</span></h3>
+          <p><span>彩色卡片显示 Amnesia 是开启、关闭还是暂停，以及上次清理的时间。卡片上的大按钮用来开启或关闭 Amnesia。</span></p>
+          <p><span>可以把窗口拖大或拖小。关掉窗口后，Amnesia 会继续在菜单栏里运行。</span></p>
+        </article>
+        <article class="pz-step" data-p="menu"><p class="label"><span class="n">02</span> / 10</p>
+          <h3>Menu bar</h3>
+          <p><span>点击菜单栏里的 Amnesia 图标会打开快捷面板：状态、Save & Log Out、Pause 和 Open Amnesia。</span></p>
+          <p><span>开启“Open at login”后，每次登录图标都会自动出现。</span></p>
+        </article>
+        <article class="pz-step" data-p="vault"><p class="label"><span class="n">03</span> / 10</p>
+          <h3>Profile Vault</h3>
+          <p><span>一个存放 App 登录状态的加密保险箱（AES-256）：Chrome、WhatsApp、Claude 和你的编程工具。</span></p>
+          <ul>
+            <li><b><span>Snapshot Now</span></b> <span>无需密码即可保存。</span></li>
+            <li><b><span>Light</span></b>: <span>模式下浏览器不含缓存，1 GB 变成 150 MB。</span></li>
+          </ul>
+          <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Restore Profiles 用你的密码找回所有登录状态。</span> <span>改主意了？在退出登录之前，Undo Restore 都有效。</span></p>
+          <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span>输错 3 次密码或输入紧急口令，会永久删除保险库。</span></p>
+        </article>
+        <article class="pz-step" data-p="logout"><p class="label"><span class="n">04</span> / 10</p>
+          <h3><span>Save & Log Out</span></h3>
+          <p><span>一键保存你的登录状态，然后退出登录。如果保存失败，你会保持登录。</span></p>
+          <p><span>忘了？普通退出登录也会先保存有变化的 App。</span></p>
+        </article>
+        <article class="pz-step" data-p="pause"><p class="label"><span class="n">05</span> / 10</p>
+          <h3><span>Pause 1 Session</span></h3>
+          <p><span>跳过下一次退出登录和登录的清理，不用关闭 Amnesia。之后它会自动重新开启。</span></p>
+        </article>
+        <article class="pz-step" data-p="keep"><p class="label"><span class="n">06</span> / 10</p>
+          <h3>Keep List <span>和 Keep 文件夹</span></h3>
+          <p><span>Keep 文件夹里的文件永远不会被清除。Keep List 用来保留 VPN、SSH 密钥和你的 Apple 账户这类 App 数据。</span></p>
+          <p><span>Amnesia 会扫描你的 App，并建议保留哪些。</span></p>
+          <ul>
+            <li><b><span>Pick Apps</span></b> <span>能找到每个 App 更多的数据，比如网页登录。</span></li>
+            <li><b><span>开发者工具和终端</span></b>: <span>SSH、GitHub CLI、zsh、Vim、Docker、AWS、Claude Code 等等。</span></li>
+            <li><span>虚拟机（UTM、Parallels、VirtualBox、VMware Fusion）默认保留。</span></li>
+            <li><span>保留 Claude，也会保留你的 Claude Code 聊天记录。</span></li>
+          </ul>
+        </article>
+        <article class="pz-step" data-p="preview"><p class="label"><span class="n">07</span> / 10</p>
+          <h3><span>What Gets Deleted</span></h3>
+          <p><span>下次退出登录会删除的完整列表，按类别分组。打开它不会删除任何东西。</span></p>
+          <ul>
+            <li><span>可以按名称或文件夹搜索、只显示一组，或者勾选</span> <b><span>Biggest first</span></b>.</li>
+            <li><span>1 GB 及以上的文件和虚拟机数据会在顶部显示警告。</span></li>
+            <li><span>废纸篓单独成一组，因为它在退出登录时也会被清空。</span></li>
+          </ul>
+          <p><span>开启“Check before logout”后，退出登录会在这里等你点“Continue”或“Cancel”。</span></p>
+        </article>
+        <article class="pz-step" data-p="backup"><p class="label"><span class="n">08</span> / 10</p>
+          <h3>Backup</h3>
+          <p><span>Keep 文件夹、选定文件夹和保险库的加密 .7z 文件。</span></p>
+          <ul>
+            <li><span>U 盘、通过 SSH 连接的自己的服务器，或者云端。</span></li>
+            <li><span>每天或每周一次。旧备份永远不会被删除。</span></li>
+          </ul>
+          <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Restore Files 会把文件放回原来的位置。</span></p>
+        </article>
+        <article class="pz-step" data-p="history"><p class="label"><span class="n">09</span> / 10</p>
+          <h3><span>历史记录</span></h3>
+          <p><span>Amnesia 做了什么、什么时候做的：清理、快照、恢复和备份。</span></p>
+          <p><span>只保留时间和 App 名称，从不记录文件名。</span></p>
+        </article>
+        <article class="pz-step" data-p="settings"><p class="label"><span class="n">10</span> / 10</p>
+          <h3><span>设置</span></h3>
+          <p><span>退出登录时自动快照、登录后提醒、退出登录前检查、登录时打开、你的 Keep 文件夹和语言。</span></p>
+          <ul>
+            <li><b><span>Search</span></b> <span>框在顶部，可以用英文或印尼语查找任何设置。</span></li>
+            <li><span>检查更新：关闭、每周、每 2 周或每月。</span></li>
+            <li><b><span>Keep 锁、Brankas、健康检查</span></b> <span>以及“限制说明”页面也都在这里。</span></li>
+          </ul>
+          <p class="def"><span class="tm recall"><i></i>Memory Recall</span> <span>Move to a New Mac 会把你的保险库和钥匙串密钥带过去。</span></p>
+          <p class="def"><span class="tm glob"><i></i>Global Amnesia</span> <span>卸载时可以勾选“also delete the vault”。</span></p>
+        </article>
+        <article class="pz-step pz-end"><p class="label"><span>全部合起来</span></p><h3><span>一个窗口，<em>每个部分各就各位。</em></span></h3></article>
+      </div>
+      <div class="pager" data-pager="tour" hidden>
+        <button type="button" class="pg-prev" aria-label="上一个"><svg><use href="#i-chev-l"/></svg></button>
+        <ol class="pg-dots"></ol>
+        <button type="button" class="pg-next" aria-label="Next"><svg><use href="#i-chev-r"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="head sub">
+      <h3 class="minih"><span>警告<em>一看就懂。</em></span></h3>
+      <p class="body"><span>每个重要的弹窗都会用彩色框告诉你：会发生什么、会删除什么、会保留什么，以及你需要做什么。</span></p>
+    </div>
+    <div class="bento pops">
+      <div class="cell c-turnon">
+        <p class="cap"><span>当你按下“Turn On”时</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../logo.png" alt="" width="40" height="40"><h4><span>要开启 Amnesia 吗？</span></h4></div>
+          <div class="ps happens"><p class="ps-t"><svg><use href="#i-arrow-c"/></svg><span>会发生什么</span></p><ul><li><span>从下次退出登录开始，每次退出登录、重启或关机时，Keep List 和 Keep 文件夹之外的一切都会被删除。</span></li></ul></div>
+          <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>这些会保留（不会删除）</span></p><ul><li><span>你的 Keep 文件夹（~/Keep）及其中的所有内容。</span></li><li><span>Profile Vault 里的 App 登录状态：用 Restore 恢复。</span></li></ul></div>
+          <div class="ps todo"><p class="ps-t"><svg><use href="#i-hand"/></svg><span>你需要做什么</span></p><ul><li><span>退出登录前，把重要文件移到 ~/Keep。</span></li></ul></div>
+          <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1"><span>Turn On</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-save">
+        <p class="cap"><span>Save & Log Out</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../logo.png" alt="" width="40" height="40"><h4><span>保存配置并退出登录？</span></h4></div>
+          <div class="ps happens"><p class="ps-t"><svg><use href="#i-arrow-c"/></svg><span>会发生什么</span></p><ul class="num"><li><span>这些 App 会被关闭：Chrome、Claude、WhatsApp。</span></li><li><span>它们的登录状态会存进保险库。</span></li><li><span>你会退出登录，Amnesia 会清除这次会话。</span></li></ul></div>
+          <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1"><span>Save & Log Out</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-restore">
+        <p class="cap"><span>恢复之后</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../logo.png" alt="" width="40" height="40"><h4><span>恢复完成</span></h4></div>
+          <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>已恢复并检查</span></p><ul><li>Chrome</li><li>Claude</li><li>WhatsApp</li></ul></div>
+          <div class="ps todo"><p class="ps-t"><svg><use href="#i-hand"/></svg><span>修复扩展</span></p><ul class="num"><li><span>打开 chrome://extensions。</span></li><li><span>在每个扩展上按“Repair”。</span></li></ul></div>
+          <div class="ps note"><p class="ps-t"><svg><use href="#i-clock"/></svg><span>你原来的 App 数据</span></p><ul><li><span>改主意了？在退出登录之前，随时可以在 Profile Vault 页面按“Undo Restore”。</span></li></ul></div>
+          <div class="pop-btns"><span class="b1">OK</span></div>
+        </div>
+      </div>
+      <div class="cell c-last danger">
+        <p class="cap"><span class="tm glob"><i></i>Global Amnesia</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../logo.png" alt="" width="40" height="40"><div><h4><span>最后一次机会</span></h4><p><span>你还剩 1 次密码尝试机会。</span></p></div></div>
+          <div class="ps deleted"><p class="ps-t"><svg><use href="#i-trash"/></svg><span>如果密码错误</span></p><ul><li><span>保险库及其中的所有快照都会被永久删除。</span></li></ul></div>
+          <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1 red"><span>I'm Sure, Try</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-uninstall">
+        <p class="cap"><span>从“设置”卸载</span></p>
+        <div class="pop">
+          <div class="pop-top"><img src="../logo.png" alt="" width="40" height="40"><h4><span>要从这台 Mac 上卸载 Amnesia 吗？</span></h4></div>
+          <div class="ps happens"><p class="ps-t"><svg><use href="#i-arrow-c"/></svg><span>会发生什么</span></p><ul><li><span>Amnesia 会被永久关闭。</span></li><li><span>App 会被移到废纸篓。</span></li></ul></div>
+          <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>这些会保留（除非你勾选下面的选项）</span></p><ul><li><span>你的 Keep 文件夹及其中的所有内容。</span></li><li><span>Profile Vault：5 个 App 快照，共 312 MB。</span></li></ul></div>
+          <p class="pop-chk"><i></i><span>同时删除保险库、快照、Keep List 和设置</span></p>
+          <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1"><span>Uninstall</span></span></div>
+        </div>
+      </div>
+      <div class="cell c-legend">
+        <p class="cap"><span>颜色在哪里都是同一个意思</span></p>
+        <ul class="legend">
+          <li class="happens"><svg><use href="#i-arrow-c"/></svg><span>会发生什么</span></li>
+          <li class="deleted"><svg><use href="#i-trash"/></svg><span>会删除什么</span></li>
+          <li class="kept"><svg><use href="#i-shield"/></svg><span>会保留什么</span></li>
+          <li class="todo"><svg><use href="#i-hand"/></svg><span>你需要做什么</span></li>
+          <li class="warn"><svg><use href="#i-warn"/></svg><span>请注意</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ref" id="install">
+  <div class="glow" style="width:520px;height:520px;background:var(--indigo);right:-180px;top:12%;opacity:.16" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">10</span> · <span>安装</span></p>
+      <h2><span><em>一行命令</em>安装。</span></h2>
+      <div class="badges">
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg><use href="#i-tag"/></svg><span>Release</span><b data-gh="version">v5.23.1</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
+        <span class="bdg"><svg><use href="#i-laptop"/></svg><span>macOS</span><b>15+</b></span>
+      </div>
+    </div>
+    <div class="warn" role="note">
+      <h3><svg><use href="#i-warn"/></svg><span>安装前请先阅读</span></h3>
+      <p><span>Amnesia 会真的删除数据。一旦开启，每次退出登录、重启和关机时，Keep 文件夹和 Keep List 之外的一切都会被删除。这些数据不会进废纸篓，也无法撤销。忘了保险库密码，谁都打不开它。Amnesia 是自由软件，按“原样”提供，使用风险由你自己承担。</span></p>
+      <p><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md">阅读完整条款 →</a></p>
+    </div>
+    <div class="bento installs">
+      <div class="cell i-brew">
+        <div class="i-top"><span class="i-ico" style="--c:var(--orange)"><svg><use href="#i-brew"/></svg></span><div><h3>Homebrew</h3><p class="small"><span>推荐</span></p></div></div>
+        <div class="shell">
+          <div class="sh-bar"><i></i><i></i><i></i><span>Terminal</span></div>
+          <div class="term type"><code>brew install navi-crwn/tap/amnesia</code><button class="copy" type="button">Copy</button></div>
+          <pre class="sh-out"><span>==&gt; Tapping navi-crwn/tap</span>
+<span>==&gt; Downloading Amnesia.dmg</span>
+<span>==&gt; Installing Cask amnesia</span>
+<span>==&gt; Moving App 'Amnesia.app' to '/Applications/Amnesia.app'</span>
+<span class="ok">amnesia was successfully installed!</span></pre>
+        </div>
+        <p class="small"><span>以后用 <code>brew upgrade</code> 更新。更新前请先关闭 Amnesia。</span></p>
+      </div>
+      <div class="cell i-dmg">
+        <div class="i-top"><span class="i-ico" style="--c:var(--cyan)"><svg><use href="#i-dmg"/></svg></span><div><h3>Installer (.dmg)</h3><p class="small"><span>从 GitHub Releases 下载</span></p></div></div>
+        <div class="dmgwin" aria-hidden="true">
+          <div class="dm-app"><img src="../logo.png" alt="" width="56" height="56"><span>Amnesia</span></div>
+          <svg class="dm-arrow" viewBox="0 0 80 20"><path d="M2 10h70m-8-7 8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 5"/></svg>
+          <div class="dm-dst"><svg><use href="#i-folder"/></svg><span>Applications</span></div>
+          <img class="dm-ghost" src="../logo.png" alt="" width="56" height="56">
+        </div>
+        <ol class="mini-steps">
+          <li><span>从 <a href="https://github.com/navi-crwn/amnesia/releases/latest">Releases</a> 下载 .dmg 并打开。</span></li>
+          <li><span>把 Amnesia 拖到“应用程序”文件夹。</span></li>
+          <li><span>目前还没有 Apple 签名，所以第一次打开时：系统设置 → 隐私与安全性 → <b>Open Anyway</b>（仍要打开）。</span></li>
+          <li><span>想校验下载的文件？每个版本都附有 <code>SHA256SUMS.txt</code> 及其签名 <code>SHA256SUMS.txt.sig</code>。App 内更新会自动帮你检查这个签名。</span></li>
+        </ol>
+      </div>
+      <div class="cell i-gh">
+        <div class="i-top"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><div><h3>navi-crwn/amnesia</h3><p class="small"><span>在 GitHub 上开源</span></p></div></div>
+        <dl class="ghstats">
+          <div><dt><span>许可证</span></dt><dd>MIT</dd></div>
+          <div><dt>Releases</dt><dd data-gh="releases">–</dd></div>
+          <div><dt><span>最新</span></dt><dd data-gh="version">v5.23.1</dd></div>
+        </dl>
+        <div class="cta">
+          <a class="btn main" href="https://github.com/navi-crwn/amnesia"><svg><use href="#i-github"/></svg><span>给仓库点个 Star</span></a>
+          <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/releases">Releases</a>
+        </div>
+      </div>
+      <div class="cell i-req">
+        <p class="cap"><span>你需要什么</span></p>
+        <ul class="reqs">
+          <li><svg><use href="#i-laptop"/></svg><b>macOS 15+</b><span>Sequoia, Tahoe</span></li>
+          <li><svg><use href="#i-chip"/></svg><b>Apple Silicon & Intel</b><span>一个 App 通吃</span></li>
+          <li><svg><use href="#i-lock"/></svg><b><span>不需要 sudo</span></b><span>只在你的账户内运行</span></li>
+        </ul>
+        <p class="cap" style="margin-top:6px"><span>更新时，务必按这个顺序</span></p>
+        <ol class="flow">
+          <li><span>Turn Off</span></li>
+          <li><span>安装</span></li>
+          <li><span>Turn On</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ref" id="tutorial">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">11</span> · Tutorial</p>
+      <h2><span>分步<em>教程。</em></span></h2>
+      <p class="lead"><span>从全新安装到第一次干净地退出登录。先看每一步的演示，再在 App 里照做。第 8 步之前不会删除任何东西。</span></p>
+    </div>
+  </div>
+  <div class="wrap tutbox">
+    <div class="bento tut">
+      <div class="cell t-screen">
+        <div class="tw" aria-hidden="true">
+          <div class="tw-bar"><i></i><i></i><i></i><span class="tw-title">Amnesia</span><span class="rec"><b></b>REC</span></div>
+          <div class="tw-view"><div class="tw-body">
+
+            <div class="tp" data-page="0">
+              <div class="ui-center">
+                <img src="../logo.png" alt="" width="44" height="44">
+                <p class="ui-h"><span>先读这个</span></p>
+                <div class="ui-seg"><span class="on">English</span><span>Bahasa Indonesia</span></div>
+                <div class="ps deleted"><p class="ps-t"><svg><use href="#i-trash"/></svg><span>Amnesia 会真的删除数据</span></p><ul><li><span>每次退出登录，Keep 之外的一切都会被删除。</span></li><li><span>不会进废纸篓，无法撤销。</span></li></ul></div>
+                <p class="ui-chk" data-a="1" data-on="self,.go"><i></i><span>我明白 Amnesia 会删除数据</span></p>
+                <span class="ui-btn go dim" data-a="2"><span>Next</span></span>
+              </div>
+            </div>
+
+            <div class="tp" data-page="1">
+              <p class="ui-h"><span>快速检查</span></p>
+              <div class="ui-list">
+                <div class="ui-row"><span class="st on"></span><span>Amnesia 引擎</span></div>
+                <div class="ui-row"><span class="st on"></span>7-Zip</div>
+                <div class="ui-row"><span class="st on"></span>Apple Command Line Tools</div>
+                <div class="ui-row fda"><span class="st"></span><span>完全磁盘访问权限</span><span class="ui-btn sm" data-a="1" data-on=".sys"><span>Allow</span></span></div>
+              </div>
+              <div class="sys">
+                <p class="sys-h">Privacy & Security › Full Disk Access</p>
+                <div class="ui-row"><svg><use href="#i-term"/></svg>Terminal<span class="ui-tog"></span></div>
+                <div class="ui-row"><img src="../logo.png" alt="" width="18" height="18">Amnesia<span class="ui-tog" data-a="2" data-on="self"></span></div>
+                <span class="ui-btn sm" data-a="3" data-off=".sys" data-on=".fda,.fda .st"><span>Quit & Reopen</span></span>
+              </div>
+            </div>
+
+            <div class="tp" data-page="2">
+              <p class="ui-h"><span>选择保留什么</span></p>
+              <div class="ui-row"><svg><use href="#i-folder"/></svg><span>Keep 文件夹</span> <code>~/Keep</code><span class="ui-btn2 sm"><span>Choose…</span></span></div>
+              <div class="ui-row hl"><svg><use href="#i-shield"/></svg><span>Apple 账户和数据</span><span class="ui-tog on"></span></div>
+              <div class="ui-list">
+                <div class="ui-row"><svg><use href="#i-globe"/></svg><span>VPN App</span><small class="sug"><span>推荐</span></small><span class="ui-tog on"></span></div>
+                <div class="ui-row"><svg><use href="#i-lock"/></svg><span>SSH 密钥</span><span class="ui-tog" data-a="1" data-on="self"></span></div>
+                <div class="ui-row"><svg><use href="#i-term"/></svg><span>Git 设置</span><span class="ui-tog" data-a="2" data-on="self"></span></div>
+              </div>
+              <span class="ui-btn" data-a="3" data-on=".toast"><span>Save Keep List</span></span>
+              <p class="toast"><span>已保存。这些永远不会被清除。</span></p>
+            </div>
+
+            <div class="tp" data-page="3">
+              <p class="ui-h">Profile Vault</p>
+              <p class="ui-sub"><span>创建保险库密码（至少 12 个字符）</span></p>
+              <label class="ui-field" data-a="1" data-type="••••••••••••••"><span>密码</span><b class="val"></b></label>
+              <label class="ui-field" data-a="2" data-type="••••••••••••••"><span>再次输入密码</span><b class="val"></b></label>
+              <label class="ui-field" data-a="3" data-type="•••••••"><span>紧急口令（可选）</span><b class="val"></b></label>
+              <p class="ui-warn"><svg><use href="#i-warn"/></svg><span>忘了密码，就丢了保险库</span></p>
+              <span class="ui-btn" data-a="4" data-on=".toast"><span>Create Vault</span></span>
+              <p class="toast"><span>保险库已创建</span></p>
+            </div>
+
+            <div class="tp" data-page="4">
+              <p class="ui-h">Profile Vault</p>
+              <p class="ui-sub snapst"><span class="before"><span>还没有快照</span></span><span class="after"><span>快照：今天 15:11</span></span></p>
+              <div class="chips">
+                <span class="chip" data-a="1" data-on="self">Chrome</span>
+                <span class="chip" data-a="2" data-on="self">WhatsApp</span>
+                <span class="chip" data-a="3" data-on="self">Claude</span>
+                <span class="chip">Claude Code</span>
+                <span class="chip">OpenCode</span>
+                <span class="chip">gh</span>
+              </div>
+              <div class="ui-row">Chrome<div class="ui-seg sm"><span data-a="4" data-on="self" data-off=".full">Light</span><span class="full on">Full</span></div></div>
+              <span class="ui-btn" data-a="5" data-fill=".bar" data-on=".snapst"><span>Snapshot Now</span></span>
+              <div class="bar"><b></b></div>
+            </div>
+
+            <div class="tp" data-page="5">
+              <p class="ui-h">Backup</p>
+              <div class="ui-seg"><span class="usb on">USB</span><span>Server (SSH)</span><span data-a="1" data-on="self" data-off=".usb">Cloud</span></div>
+              <div class="ui-row"><svg><use href="#i-drive"/></svg>Google Drive<small class="sug">Drive for Desktop</small></div>
+              <p class="ui-chk on"><i></i><span>Include Profile Vault</span></p>
+              <span class="ui-btn" data-a="2" data-fill=".bar" data-on=".f1"><span>Back Up Now</span></span>
+              <div class="bar"><b></b></div>
+              <p class="ui-file f1"><svg><use href="#i-stack"/></svg>amnesia_backup_2026-10-07.7z<b>✓</b></p>
+              <span class="ui-btn2" data-a="3" data-on=".toast"><span>Check a Backup File…</span></span>
+              <p class="toast"><span>里面的保险库可以打开：6 个 App</span></p>
+            </div>
+
+            <div class="tp" data-page="6">
+              <p class="ui-h"><span>What Gets Deleted</span></p>
+              <p class="ui-sub"><span>在下次退出登录时 · 现在不会删除任何东西</span></p>
+              <div class="grp" data-a="1" data-on="self"><p class="grp-h"><svg><use href="#i-folder"/></svg><span>你的文件</span><b>67</b></p>
+                <div class="grp-b"><p class="dl">Desktop<b>12</b></p><p class="dl dl-dl" data-a="2" data-on=".hint">Downloads<b>48</b></p><p class="dl">Documents<b>7</b></p></div></div>
+              <div class="grp"><p class="grp-h"><svg><use href="#i-globe"/></svg><span>浏览器数据</span><b>4</b></p></div>
+              <div class="grp"><p class="grp-h"><svg><use href="#i-grid"/></svg><span>App 数据</span><b>23</b></p></div>
+              <div class="grp"><p class="grp-h"><svg><use href="#i-trash"/></svg><span>废纸篓（退出登录时清空）</span><b>9</b></p></div>
+              <div class="grp back"><p class="grp-h"><svg><use href="#i-lock"/></svg><span>会从保险库恢复</span><b>6</b></p></div>
+              <p class="toast hint"><span>还需要？先把它移到 ~/Keep。</span></p>
+            </div>
+
+            <div class="tp" data-page="7">
+              <div class="aw-hero sw h7">
+                <span class="hb"><svg><use href="#i-shield"/></svg></span>
+                <div><b><span class="s-off"><span>Amnesia 已关闭</span></span><span class="s-on"><span>Amnesia 已开启</span></span></b>
+                <small><span>关闭期间不会清除任何东西。</span></small></div>
+                <span class="aw-btn" data-a="1" data-on=".pop7"><span class="s-off"><span>Turn On Amnesia</span></span><span class="s-on"><span>关闭 Amnesia</span></span></span>
+              </div>
+              <div class="tile-row"><span class="tile mini" style="--c:var(--indigo)"><svg><use href="#i-lock"/></svg>Profile Vault</span><span class="tile mini" style="--c:var(--green)"><svg><use href="#i-pin"/></svg>Keep List</span><span class="tile mini" style="--c:var(--pink)"><svg><use href="#i-drive"/></svg>Backup</span></div>
+              <div class="pop tw-pop pop7">
+                <div class="pop-top"><img src="../logo.png" alt="" width="30" height="30"><h4><span>要开启 Amnesia 吗？</span></h4></div>
+                <div class="ps happens"><p class="ps-t"><svg><use href="#i-arrow-c"/></svg><span>会发生什么</span></p><ul><li><span>从下次退出登录开始，Keep 之外的一切都会被删除。</span></li></ul></div>
+                <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>这些会保留</span></p><ul><li><span>~/Keep 和 Profile Vault。</span></li></ul></div>
+                <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1" data-a="2" data-off=".pop7" data-on=".h7"><span>Turn On</span></span></div>
+              </div>
+            </div>
+
+            <div class="tp" data-page="8">
+              <div class="menubar mini"><span class="mb-l"></span><span class="mb-l w2"></span><span class="mb-r"><b>17:30</b><img src="../logo.png" alt="" width="16" height="16" data-a="1" data-on=".mb-drop"></span>
+                <div class="mb-drop">
+                  <p class="mb-st"><i></i><span>Amnesia 已开启</span></p>
+                  <p data-a="2" data-off=".mb-drop" data-on=".pop8"><span>Save & Log Out</span></p>
+                  <p><span>Pause 1 Session</span></p>
+                </div>
+              </div>
+              <div class="vaultmini">
+                <p class="ui-h">Profile Vault</p>
+                <label class="ui-field" data-a="5" data-type="••••••••••••••"><span>密码</span><b class="val"></b></label>
+                <span class="ui-btn" data-a="6" data-fill=".bar" data-on=".pop8b"><span>Restore Profiles</span></span>
+                <div class="bar"><b></b></div>
+              </div>
+              <div class="pop tw-pop pop8">
+                <div class="pop-top"><img src="../logo.png" alt="" width="30" height="30"><h4><span>保存配置并退出登录？</span></h4></div>
+                <div class="ps happens"><p class="ps-t"><svg><use href="#i-arrow-c"/></svg><span>会发生什么</span></p><ul class="num"><li><span>Chrome、Claude、WhatsApp 会被关闭。</span></li><li><span>登录状态存进保险库。</span></li><li><span>你已退出登录，数据已清除。</span></li></ul></div>
+                <div class="pop-btns"><span class="b2"><span>Cancel</span></span><span class="b1" data-a="3" data-off=".pop8" data-on=".blk"><span>Save & Log Out</span></span></div>
+              </div>
+              <div class="blk"><img src="../logo.png" alt="" width="40" height="40"><p><span>已退出登录 · 已忘记 309 项</span></p><small><span>正在重新登录…</span></small></div>
+              <i class="auto" data-a="4" data-do="auto" data-wait="1.6" data-off=".blk"></i>
+              <div class="pop tw-pop pop8b">
+                <div class="pop-top"><img src="../logo.png" alt="" width="30" height="30"><h4><span>恢复完成</span></h4></div>
+                <div class="ps kept"><p class="ps-t"><svg><use href="#i-shield"/></svg><span>已恢复并检查</span></p><ul><li>Chrome · Claude · WhatsApp</li></ul></div>
+                <div class="pop-btns"><span class="b1">OK</span></div>
+              </div>
+            </div>
+
+            <div class="tp" data-page="9">
+              <div class="aw-hero sw on h9">
+                <span class="hb"><svg><use href="#i-shield"/></svg></span>
+                <div><b><span class="s-off"><span>Amnesia 已关闭</span></span><span class="s-on"><span>Amnesia 已开启</span></span></b>
+                <small><span>每次更新前先关闭它。</span></small></div>
+                <span class="aw-btn" data-a="1" data-off=".h9" data-on=".u1"><span class="s-off"><span>Turn On Amnesia</span></span><span class="s-on"><span>关闭 Amnesia</span></span></span>
+              </div>
+              <ol class="flow big"><li class="u1"><span>Turn Off</span></li><li class="u2"><span>安装</span></li><li class="u3"><span>Turn On</span></li></ol>
+              <div class="dmgwin sm"><div class="dm-app"><img src="../logo.png" alt="" width="40" height="40"><span>Amnesia</span></div><svg class="dm-arrow" viewBox="0 0 80 20"><path d="M2 10h70m-8-7 8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 5"/></svg><div class="dm-dst"><svg><use href="#i-folder"/></svg><span>Applications</span></div></div>
+              <i class="auto" data-a="2" data-do="auto" data-fill=".bar" data-on=".u2"></i>
+              <div class="bar"><b></b></div>
+              <i class="auto" data-a="3" data-do="auto" data-wait=".4"></i>
+              <span class="ui-btn ghostbtn" data-a="4" data-on=".h9,.u3"><span>Turn On Amnesia</span></span>
+            </div>
+
+            <svg class="cursor tw-cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6.2 1.6L10 19z"/></svg>
+            <i class="ripple tw-rip"></i>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="cell t-text">
+        <div class="t-steps">
+          <article class="t-step"><p class="label"><span class="n">01</span> / 10</p>
+            <h3><span>打开 Amnesia，阅读警告</span></h3>
+            <p><span>Amnesia 第一次打开时会开始一个简短的引导。选择你的语言，阅读 Amnesia 会删除什么，然后勾选表示你已了解。此时还不会删除任何东西。</span></p>
+            <ul class="tips"><li><span>之后可以在“设置”里重新打开这个引导。</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">02</span> / 10</p>
+            <h3><span>快速检查</span></h3>
+            <p><span>Amnesia 会检查它需要的东西：它的引擎、7-Zip、Apple 命令行工具和完全磁盘访问权限。没有变绿的项目旁边都有一个按钮。</span></p>
+            <ul class="tips"><li><span>完全磁盘访问权限：系统设置 → 隐私与安全性 → 完全磁盘访问权限 → 打开 Amnesia 的开关，然后点“Quit & Reopen”。</span></li><li><span>之后，设置 → 健康检查会显示同样的内容，还有更多，比如 iCloud 桌面与文稿和你的上次备份。</span></li><li><span>有了它，清理才能处理桌面、文稿和下载文件夹。</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">03</span> / 10</p>
+            <h3><span>选择保留什么</span></h3>
+            <p><span>选择你的 Keep 文件夹（默认是 ~/Keep），并打开那些数据永远不该被清除的 App。VPN App 会被推荐，你的 Apple 账户已经帮你勾上了。</span></p>
+            <ul class="tips"><li><span>之后可以在 Keep List 页面修改。</span></li><li><span>在这台 Mac 上写代码？Keep List → Pick Apps → Developer tools & terminal 会保留你的 SSH、Git 和 CLI 设置。</span></li><li><span>用 Claude？Pick Apps → Claude → Save 也会保留 Claude Code 聊天记录。</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">04</span> / 10</p>
+            <h3><span>创建 Profile Vault</span></h3>
+            <p><span>打开 Profile Vault，输入一个至少 12 个字符的密码，输两次。紧急口令是可选的。</span></p>
+            <ul class="tips"><li><span>把密码记在一个安全的地方。没有人能帮你找回它。</span></li><li><span class="tm glob"><i></i>Global Amnesia</span> <span>输入紧急口令会永久删除保险库。</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">05</span> / 10</p>
+            <h3><span>选择 App，做第一个快照</span></h3>
+            <p><span>点选要保存的 App，为每个浏览器选择 Light 或 Full，像平时一样登录这些 App，然后按“Snapshot Now”。</span></p>
+            <ul class="tips"><li><span>Snapshot Now 不需要密码。</span></li><li><span>Light 会跳过缓存：大约 1 GB 变成 150 MB。</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">06</span> / 10</p>
+            <h3><span>备份，连同保险库</span></h3>
+            <p><span>选择备份位置，保持勾选“Include Profile Vault”，然后按“Back Up Now”。再用“Check a Backup File”确认里面的保险库能打开。</span></p>
+            <ul class="tips"><li><span class="tm recall"><i></i>Memory Recall</span> <span>万一保险库丢了，Get Vault from Backup 可以把它找回来。</span></li><li><span>每次备份都是一个带日期的新文件。旧备份永远不会被删除。</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">07</span> / 10</p>
+            <h3><span>看一眼列表</span></h3>
+            <p><span>What Gets Deleted 会显示下次退出登录会删除的所有内容，按类别分组。还有需要的东西？把它移到 Keep 文件夹，或者把 App 加到 Keep List。</span></p>
+            <ul class="tips"><li><span>打开这个列表不会删除任何东西。</span></li><li><span>勾选“Biggest first”，并留意关于 1 GB 及以上文件的橙色警告。</span></li><li><span>开启“Remove apps installed later”后，这些 App 也会出现在这里的“Apps installed later”分组中。</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">08</span> / 10</p>
+            <h3><span>Turn On</span></h3>
+            <p><span>在主页卡片上按“Turn On Amnesia”，阅读弹窗。在你退出登录之前，这次会话都是安全的。</span></p>
+            <ul class="tips"><li><span class="tm sel"><i></i>Selective Amnesia</span> <span>从现在起，每次退出登录、重启和关机，除了你选择保留的，其他一切都会被忘掉。</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">09</span> / 10</p>
+            <h3><span>每一天：Save & Log Out，然后 Restore</span></h3>
+            <p><span>今天的工作做完了？在菜单栏按“Save & Log Out”。重新登录后，打开 Profile Vault，输入密码，按“Restore Profiles”。</span></p>
+            <ul class="tips"><li><span class="tm recall"><i></i>Memory Recall</span> <span>Chrome、Claude、WhatsApp 等 App 都会恢复成已登录状态。</span></li><li><span>用 Light 保存的？在浏览器的扩展页面上按“Repair”。</span></li></ul>
+          </article>
+          <article class="t-step"><p class="label"><span class="n">10</span> / 10</p>
+            <h3><span>更新 Amnesia</span></h3>
+            <p><span>务必按这个顺序：Turn Off，安装更新（.dmg 或 brew upgrade），打开 Amnesia，Turn On。</span></p>
+            <ul class="tips"><li><span>在 Amnesia 开启时安装，可能会被当成一次退出登录，从而清除当前会话。</span></li><li><span>在 App 内更新？它只会安装带有效签名的版本。</span></li></ul>
+          </article>
+        </div>
+      </div>
+
+      <div class="cell t-nav">
+        <div class="pager" data-pager="tut" hidden>
+          <button type="button" class="pg-prev" aria-label="上一个"><svg><use href="#i-chev-l"/></svg></button>
+          <ol class="pg-dots num"></ol>
+          <button type="button" class="pg-next" aria-label="Next"><svg><use href="#i-chev-r"/></svg></button>
+        </div>
+        <p class="safe-note"><svg><use href="#i-shield"/></svg><span>第 8 步之前不会删除任何东西。</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ref" id="faq">
+  <div class="wrap">
+    <div class="head">
+      <p class="label"><span class="n">12</span> · FAQ</p>
+      <h2><span>常见问题，<em>一次解答。</em></span></h2>
+    </div>
+    <div class="bento faq">
+      <div class="fcol">
+      <div class="cell fq f-safe">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><span>安全</span></h3>
+        <details><summary><span>我的数据会被发送到别处吗？</span></summary><p><span>不会。Amnesia 没有服务器、没有账户、没有跟踪、也没有统计分析。一切都在你的 Mac 上运行。只有当你设置了服务器或云端备份时，才会有一个加密的 .7z 文件离开你的 Mac，直接发到你选定的位置，没有你的密码谁也读不了。检查更新只会向 GitHub 查询最新版本号，默认每周一次。你可以在“设置”里改成每 2 周、每月，或者关闭。</span></p></details>
+    <details><summary><span>有 Windows 版吗？</span></summary><p><span>有，Amnesia for Windows v0.8.1，正式版。它会在注销、重启和关机时清除数据，并且有保险库、备份、Keep 锁、保险箱、健康检查，以及支持 App 内签名更新的 Setup.exe。请看 <a href="win/">Windows 页面</a>。</span></p></details>
+    <details><summary><span>能在不删除任何东西的情况下试用吗？</span></summary><p><span>可以。在你按下“Turn On”之前，Amnesia 一直是关闭的。What Gets Deleted（或 设置 →“See what would be deleted now”）会先显示完整列表。</span></p></details>
+    <details><summary><span>被清除的文件去哪了？还能找回来吗？</span></summary><p><span>退出登录时，它们会被移到 Amnesia 自己的文件夹（~/.amnesia-trash），下次登录后在后台清空。它们不会进 macOS 废纸篓，也无法找回。需要的东西请放进 Keep 文件夹、Keep List 或保险库。</span></p></details>
+    <details><summary><span>我的 Keep 文件夹是加密的吗？</span></summary><p><span>Amnesia 不会加密它。在你输入 Keep 密码之前，Keep 锁会阻止访达和其他 App 打开它，但它用的是 macOS 权限，不是加密。打开 FileVault 让整个磁盘加密，必须保密的文件请放进 Brankas。</span></p></details>
+    <details><summary><span>如果 Mac 死机或断电怎么办？</span></summary><p><span>登录时的检查会兜底：如果上次退出登录没有完成，登录检查会执行完整的清理。</span></p></details>
+    <details><summary><span>为什么要完全磁盘访问权限？</span></summary><p><span>这样 macOS 就不会对每个文件夹（桌面、文稿、下载…）都询问一遍，退出登录时的清除也才能真正处理到它们。你只需要允许一次。</span></p></details>
+    <details><summary><span>我在用 iCloud 桌面与文稿，会有问题吗？</span></summary><p><span>这种情况下 Amnesia 会跳过桌面和文稿，因为清除它们也会从 iCloud 和你的其他设备上删除这些文件。健康检查和 What Gets Deleted 都会提示你。如果你希望清除它们，请先关闭这个 iCloud 选项。</span></p></details>
+    <details><summary><span>需要我的 Mac 密码或 sudo 吗？</span></summary><p><span>不需要。Amnesia 只在你自己的用户账户内运行，从不使用 sudo。只有在你为迁移到新 Mac 而保存钥匙串密钥时，macOS 才会要求输入你的登录密码。</span></p></details>
+      </div>
+      <div class="cell fq f-backup">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--pink)"><svg><use href="#i-drive"/></svg></span>Backup</h3>
+        <details><summary><span>设置备份需要用到终端或 Chrome 吗？</span></summary><p><span>不需要。对于服务器，输入一次密码，Amnesia 会安装一个 SSH 密钥。对于 Google Drive、Dropbox、OneDrive、Box 或 pCloud，通过浏览器登录即可。</span></p></details>
+    <details><summary><span>怎么知道备份真的能用？</span></summary><p><span>在“备份”页面按“Check a Backup File”，选择那个 .7z。Amnesia 会在一个临时文件夹里打开其中的保险库，显示里面有哪些 App，然后删除临时文件夹。你自己的保险库不会被动到。</span></p></details>
+    <details><summary><span>我不在电脑前时，定时备份也会运行吗？</span></summary><p><span>会，只要 Amnesia 图标在菜单栏里，并且密码保存在钥匙串中。如果是 U 盘，它会等到插上后再备份。每次都会有通知。“Run the scheduled backup now”可以马上测试。</span></p></details>
+    <details><summary><span>怎么从备份中找回文件？</span></summary><p><span>备份 → Restore Files：选择 .7z，勾选文件夹或文件，然后按“Restore to Original Place”。Amnesia 记得每个文件夹原来在哪里（外置硬盘上的也记得）。原位置已有的内容会先移到 ~/.amnesia/before-restore，不会覆盖任何东西。硬盘没插上？用“To Another Folder”。</span></p></details>
+    <details><summary><span>为什么双击打不开备份？</span></summary><p><span>备份用 AES-256 加密，连文件名列表都是加密的。Mac 自带的归档实用工具打不开这种文件。请用 Amnesia 里的 Restore Files、免费 App Keka，或者终端：~/.amnesia/bin/7zz x file.7z（在提示时输入密码，不要把密码写进命令里）。</span></p></details>
+    <details><summary><span>Check a Backup File 说备份里没有保险库，是坏了吗？</span></summary><p><span>没坏。这个备份是在“Include Profile Vault”关闭时（或 v5.13 之前）做的。里面的文件没问题。如果是密码错误，提示信息会单独说明。</span></p></details>
+    <details><summary><span>定时备份要我输入 Mac 密码，为什么？</span></summary><p><span>如果是旧版 Amnesia 把备份密码存进钥匙串的，macOS 会询问一次。按“Always Allow”。从 v5.17 起，Amnesia 会以自己的名义重新保存它，之后就不会再问了。</span></p></details>
+    <details><summary><span>旧备份会被删除吗？</span></summary><p><span>永远不会。每次备份都是一个带日期的新文件。不再需要时，请自己删除旧的。</span></p></details>
+      </div>
+      </div>
+      <div class="fcol">
+      <div class="cell fq f-vault">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--indigo)"><svg><use href="#i-lock"/></svg></span>Profile Vault</h3>
+        <details><summary><span>忘了保险库密码怎么办？</span></summary><p><span>那就谁都打不开它了，包括你自己。新建一个保险库，然后重新登录你的 App。还记得密码，只是想换一个？用 Profile Vault 页面上的“Password”按钮。</span></p></details>
+    <details><summary><span>密码输错 3 次会怎样？</span></summary><p><span>保险库会被永久删除。最后一次尝试前，Amnesia 会提醒你。如果保险库在某个备份里，可以在 Move to a New Mac → Get Vault from Backup 把它找回来。</span></p></details>
+    <details><summary><span>Light 和 Full 有什么区别？</span></summary><p><span>Light（仅限浏览器）不保存缓存和网上应用店扩展的程序文件，所以 Chrome 会从大约 1 GB 变成 150 MB。登录状态、书签、扩展设置以及通过其他方式安装的扩展始终会保存。用 Light 恢复后，在浏览器的扩展页面上按“Repair”。Full 保存除缓存以外的所有内容。</span></p></details>
+    <details><summary><span>Save & Log Out 会覆盖我的旧快照吗？</span></summary><p><span>只覆盖它保存的那些 App，而且要等新快照成功保存之后。不在列表里的 App 保留原来的快照。如果保存失败，你不会被退出登录。</span></p></details>
+    <details><summary><span>自动快照是做什么的？</span></summary><p><span>当你以正常方式退出登录、重启或关机时，Amnesia 会先保存数据有变化的 App（最多 150 秒），然后再清理。如果你刚用过 Save & Log Out，或者开启了 Pause 1 Session，就会跳过。关闭它后，普通退出登录只清理、不保存。</span></p></details>
+    <details><summary><span>我恢复之后，较新的数据被覆盖回旧的了。能撤销吗？</span></summary><p><span>可以，在你下次退出登录之前都行。在 Profile Vault 页面按“Undo Restore”，恢复前的数据就会回来。从 v5.23 起，当 App 的数据比快照更新时，Amnesia 也会先问你，而且永远不会覆盖 Keep List 上的内容。</span></p></details>
+    <details><summary><span>紧急口令是什么？</span></summary><p><span>一个你自己选的可选词。在密码框里输入它，会立刻删除保险库（如果你设置过，还会清空 Keep 文件夹）。</span></p></details>
+      </div>
+      <div class="cell fq f-every">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--cyan)"><svg><use href="#i-clock"/></svg></span><span>日常使用</span></h3>
+        <details><summary><span>明天还需要这些文件，怎么办？</span></summary><p><span>退出登录前把它们移到 Keep 文件夹。或者，如果只是一天，就按“Pause 1 Session”：下一次退出登录和登录都不会清除。</span></p></details>
+    <details><summary><span>能取消退出登录吗？</span></summary><p><span>可以，只要在“设置”里开启“Check before logout”：退出登录、重启和关机都会停在 What Gets Deleted 页面，直到你按“Continue”或“Cancel”。</span></p></details>
+    <details><summary><span>登录时主窗口会打开，为什么？</span></summary><p><span>旧版本会被 macOS 的“再次登录时重新打开窗口”重新打开。从 v5.15 起，Amnesia 登录时只显示菜单栏图标。</span></p></details>
+    <details><summary><span>我在用虚拟机，会被清除吗？</span></summary><p><span>默认不会。Amnesia 发现 UTM、Parallels、VirtualBox 或 VMware Fusion 的数据时，会把它加到 Keep List 一次。你关掉后它就保持关闭，那一行会注明它会在退出登录时被清除。What Gets Deleted 也会对 1 GB 及以上的文件发出警告。</span></p></details>
+    <details><summary><span>废纸篓也会被清空吗？</span></summary><p><span>会，每次退出登录都会。What Gets Deleted 会把它单独显示成一组“Trash (emptied at logout)”，并标出大小。还需要的东西请先拿出来。</span></p></details>
+    <details><summary><span>怎么更新？</span></summary><p><span>按“Turn Off”，安装新版本（.dmg 或 brew upgrade），打开 Amnesia，按“Turn On”。</span></p></details>
+    <details><summary><span>App 内更新安全吗？</span></summary><p><span>只有当版本的 SHA256SUMS.txt 带有 Amnesia 内置开发者密钥的有效签名时，才会安装。如果签名缺失或不对，它会打开发布页面，什么也不安装。</span></p></details>
+    <details><summary><span>能迁移到新 Mac 吗？</span></summary><p><span>可以，Move to a New Mac 页面会一步步带你完成。Prepare Move 把你的钥匙串密钥存进保险库，用一个备份把它带过去，然后 Restore Keys 在新 Mac 上把它们放回去。</span></p></details>
+      </div>
+      <div class="cell fq f-uninst">
+        <h3 class="fq-h"><span class="i-ico" style="--c:var(--orange)"><svg><use href="#i-trash"/></svg></span><span>Uninstall</span></h3>
+        <details><summary><span>怎么卸载？</span></summary><p><span>打开“设置”，按“Uninstall Amnesia”。它会永久关闭 Amnesia，并把 App 移到废纸篓。勾选一个复选框还可以同时删除保险库、快照、Keep List 和设置（同样移到废纸篓）。你的 Keep 文件夹永远不会被动到。更喜欢用终端？<code>bash ~/.amnesia/uninstall.sh</code>（加上 <code>--all</code> 会把保险库也删掉）。用 Homebrew：<code>brew uninstall amnesia</code>。</span></p></details>
+    <details><summary><span>Keep 锁开着，卸载时会怎样？</span></summary><p><span>Amnesia 会要求输入 Keep 密码，并先解锁 Keep。没有密码的话 Keep 会保持锁定，你会得到一条打开它的命令：<code>chmod -RN ~/Keep</code>。</span></p></details>
+    <details><summary><span>如果我直接把它拖进废纸篓呢？</span></summary><p><span>这样也是安全的。如果 Amnesia 正开着，它会察觉到，自行关闭并告诉你。如果没开着，登录代理会在下次退出登录时检查，不清除任何东西，并把自己删掉。</span></p></details>
+      </div>
+      </div>
+      <div class="cell fq f-ask">
+        <div class="fa-t"><h3 class="fq-h"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><span>还是没解决？</span></h3>
+        <p><span>在 GitHub 上提交 issue。请不要贴出密码、文件列表或任何隐私内容。</span></p></div>
+        <a class="btn ghost" href="https://github.com/navi-crwn/amnesia/issues"><span>提交 issue</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="glow" style="width:600px;height:600px;background:var(--indigo);left:50%;top:50%;transform:translate(-50%,-50%);opacity:.25" aria-hidden="true"></div>
+  <div class="wrap" style="position:relative">
+    <div class="shield3d small" data-shield3d="final" aria-hidden="true"><img src="../logo.png" alt="" width="160" height="160" loading="lazy"></div>
+    <h2><span>每天都<em>干净</em>开始。</span></h2>
+    <p class="pun"><span>下载它，然后忘掉一切。一语双关。</span></p>
+    <div class="cta">
+      <a class="btn main" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg><span>下载 Mac 版</span></a>
+      <a class="btn ghost" href="https://github.com/navi-crwn/amnesia"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github"/></svg>GitHub</a>
+    </div>
+  </div>
+</section>
+
+<dialog class="film-box" id="film-box">
+  <button class="fb-close" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="sr"><span>关闭</span></span></button>
+  <video controls playsinline width="540" height="960"></video>
+</dialog>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="ft-top">
+      <div class="ft-brand">
+        <a class="brand" href="#top"><img src="../logo.png" alt="" width="30" height="30">Amnesia</a>
+        <p class="ft-tag"><span>退出登录时，你的 Mac 会忘记一切，只留下你选择保留的。免费、开源，而且什么都不会离开你的 Mac。</span></p>
+        <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
+          <svg><use href="#i-github"/></svg>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · <span data-gh="version">v5.23.1</span></small></span>
+        </a>
+      </div>
+      <nav class="ft-cols" aria-label="页脚">
+        <div><p class="ft-h"><span>产品</span></p><ul>
+          <li><a href="#features"><span>功能</span></a></li>
+          <li><a href="#desk"><span>工作原理</span></a></li>
+          <li><a href="#vault">Profile Vault</a></li>
+          <li><a href="#backup">Backup</a></li>
+          <li><a href="#tutorial">Tutorial</a></li>
+          <li><a href="#faq">FAQ</a></li></ul></div>
+        <div><p class="ft-h"><span>源代码</span></p><ul>
+          <li><a href="https://github.com/navi-crwn/amnesia"><span>仓库</span></a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/releases">Releases</a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/issues">Issues</a></li>
+          <li><a href="https://github.com/navi-crwn/homebrew-tap">Homebrew tap</a></li>
+          <li><a href="win/">Windows</a></li></ul></div>
+        <div><p class="ft-h">Legal</p><ul>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><span>许可证（MIT）</span></a></li>
+          <li><a href="https://github.com/navi-crwn/amnesia/blob/main/TERMS.md">条款</a></li>
+          <li><a href="#private"><span>隐私</span></a></li></ul></div>
+      </nav>
+    </div>
+    <div class="ft-bot">
+      <p><span>© 2026 navi-crwn。为个人使用而做。请谨慎使用：Amnesia 真的会删除你的数据。</span></p>
+      <p class="ft-tm"><span>Apple、Mac、macOS、钥匙串（Keychain）、Google Drive、Dropbox、OneDrive、Box、pCloud、Chrome、WhatsApp、Claude、GitHub、Homebrew 及其他名称均为其各自所有者的商标。Amnesia 是一个独立项目，与上述任何一方均无关联，也未获得其认可。</span></p>
+    </div>
+  </div>
+</footer>
+
+
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js"></script>
+<script defer src="../assets/js/scenes/hero.js"></script>
+<script defer src="../assets/js/scenes/desk.js"></script>
+<script defer src="../assets/js/scenes/puzzle.js"></script>
+<script defer src="../assets/js/scenes/story.js"></script>
+<script defer src="../assets/js/scenes/tutorial.js"></script>
+<script defer src="../assets/js/site.js"></script>
+<script defer src="../assets/js/film.js"></script>
+<script type="module" src="../assets/js/scenes/shield3d.js"></script>
+<script type="module" src="../assets/js/scenes/objects3d.js"></script>
+</body>
+</html>

@@ -153,10 +153,11 @@ function mountCommits(host, days) {
     if (!b) { tip.hidden = true; if (!st.on) st.draw(); return; }
     b.material.emissiveIntensity = 0.45;
     const d = new Date(b.userData.date + 'T12:00:00Z');
-    const id = root.lang === 'id';
-    const when = d.toLocaleDateString(id ? 'id-ID' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const L = window.AMNESIA_I18N || {};
+    const when = d.toLocaleDateString(L.locale || 'en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
     tip.textContent = '';
-    const bold = document.createElement('b'); bold.textContent = b.userData.n + (id ? ' commit' : b.userData.n === 1 ? ' commit' : ' commits');
+    const one = b.userData.n === 1;
+    const bold = document.createElement('b'); bold.textContent = ((one ? L.commit : L.commits) || (one ? '{n} commit' : '{n} commits')).replace('{n}', b.userData.n);
     tip.appendChild(bold); tip.appendChild(document.createTextNode(' · ' + when));
     tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px';
     tip.hidden = false;

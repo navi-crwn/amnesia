@@ -1,0 +1,46 @@
+{
+  "id": {
+    "Amnesia for Mac": "Amnesia untuk Mac",
+    "Amnesia for Windows": "Amnesia untuk Windows",
+    "Your Mac forgets everything every time you log out, except the logins and files you choose to keep. Free and open source.": "Mac kamu melupakan semuanya setiap kali kamu log out, kecuali login dan file yang kamu pilih untuk disimpan. Gratis dan open source.",
+    "Your Mac forgets everything every time you log out, except what you choose.": "Mac kamu melupakan semuanya setiap kali kamu log out, kecuali yang kamu pilih.",
+    "Your PC forgets everything when you sign out, restart or shut down, except the files and logins you choose to keep. Free and open source, for Windows 10 and 11.": "PC kamu melupakan semuanya saat sign out, restart, atau shut down, kecuali file dan login yang kamu pilih untuk disimpan. Gratis dan open source, untuk Windows 10 dan 11.",
+    "Your PC forgets everything at sign out, except what you choose to keep. Free and open source.": "PC kamu melupakan semuanya saat sign out, kecuali yang kamu pilih untuk disimpan. Gratis dan open source.",
+    "Footer": "Kaki halaman", "Light or dark": "Terang atau gelap", "Next": "Berikutnya", "Previous": "Sebelumnya",
+    "Platform": "Platform", "Sections": "Bagian", "Screens": "Tampilan", "Language": "Bahasa"
+  },
+  "zh-CN": {
+    "Read the full terms →": "阅读完整条款 →", "Terms": "条款",
+    "Footer": "页脚", "Light or dark": "浅色或深色", "Next": "下一个", "Previous": "上一个",
+    "Platform": "平台", "Sections": "章节", "Screens": "界面", "Language": "语言"
+  },
+  "de": {
+    "Read the full terms →": "Vollständige Bedingungen lesen →", "Terms": "Bedingungen",
+    "Footer": "Fußzeile", "Light or dark": "Hell oder dunkel", "Next": "Weiter", "Previous": "Zurück",
+    "Platform": "Plattform", "Sections": "Abschnitte", "Screens": "Ansichten", "Language": "Sprache"
+  },
+  "ja": {
+    "Read the full terms →": "利用規約をすべて読む →", "Terms": "利用規約",
+    "Footer": "フッター", "Light or dark": "ライトまたはダーク", "Next": "次へ", "Previous": "前へ",
+    "Platform": "プラットフォーム", "Sections": "セクション", "Screens": "画面", "Language": "言語"
+  },
+  "pt-BR": {
+    "Read the full terms →": "Leia os termos completos →", "Terms": "Termos",
+    "Footer": "Rodapé", "Light or dark": "Claro ou escuro", "Next": "Próximo", "Previous": "Anterior",
+    "Platform": "Plataforma", "Sections": "Seções", "Screens": "Telas", "Language": "Idioma"
+  },
+  "es": {
+    "Read the full terms →": "Lee los términos completos →", "Terms": "Términos",
+    "Footer": "Pie de página", "Light or dark": "Claro u oscuro", "Next": "Siguiente", "Previous": "Anterior",
+    "Platform": "Plataforma", "Sections": "Secciones", "Screens": "Pantallas", "Language": "Idioma"
+  },
+  "_js": {
+    "en":    {"step": "Step {n}", "commitsSince": "{n} commits since {since}", "commitSince": "{n} commit since {since}", "commit": "{n} commit", "commits": "{n} commits"},
+    "id":    {"step": "Langkah {n}", "commitsSince": "{n} commit sejak {since}", "commitSince": "{n} commit sejak {since}", "commit": "{n} commit", "commits": "{n} commit"},
+    "zh-CN": {"step": "第 {n} 步", "commitsSince": "自 {since} 以来 {n} 次提交", "commitSince": "自 {since} 以来 {n} 次提交", "commit": "{n} 次提交", "commits": "{n} 次提交"},
+    "de":    {"step": "Schritt {n}", "commitsSince": "{n} Commits seit {since}", "commitSince": "{n} Commit seit {since}", "commit": "{n} Commit", "commits": "{n} Commits"},
+    "ja":    {"step": "ステップ {n}", "commitsSince": "{since} 以降 {n} 件のコミット", "commitSince": "{since} 以降 {n} 件のコミット", "commit": "{n} 件のコミット", "commits": "{n} 件のコミット"},
+    "pt-BR": {"step": "Passo {n}", "commitsSince": "{n} commits desde {since}", "commitSince": "{n} commit desde {since}", "commit": "{n} commit", "commits": "{n} commits"},
+    "es":    {"step": "Paso {n}", "commitsSince": "{n} commits desde {since}", "commitSince": "{n} commit desde {since}", "commit": "{n} commit", "commits": "{n} commits"}
+  }
+}
