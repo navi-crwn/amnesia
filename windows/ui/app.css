@@ -225,6 +225,11 @@ select.input{flex:0 0 auto;padding-right:28px}
 .ask{width:100%;max-width:460px;max-height:calc(100vh - 40px);overflow:auto}
 .ask p{white-space:pre-wrap;overflow-wrap:anywhere}
 .ask .row{justify-content:flex-end}
+/* v0.8.1: a long question scrolls inside, the buttons always stay visible at the bottom */
+.ask{display:flex;flex-direction:column;overflow:hidden}
+.ask p{flex:1 1 auto;min-height:0;overflow:auto;margin:0;padding-right:4px}
+.ask .row{flex:0 0 auto}
+.tour{max-height:calc(100vh - 40px);overflow:auto}
 .sgroup{scroll-margin-top:52px}
 
 /* v0.8: a bit wider column (the window now grows with Windows scaling), app icons, health check, password meter */

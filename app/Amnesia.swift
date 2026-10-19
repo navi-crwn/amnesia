@@ -1742,11 +1742,61 @@ private func pump() {
     }
 }
 
+/// v5.23: isi popup yang lebih tinggi dari layar (misalnya restore banyak app sekaligus) digulir di dalam kotak,
+/// supaya tombol OK/Batal selalu kelihatan. Isi pendek dikembalikan apa adanya.
+@MainActor
+func scrolling(_ content: NSView) -> NSView {
+    let size = content.frame.size
+    let screenH = (alertWindow()?.screen ?? NSScreen.main)?.visibleFrame.height ?? 800
+    let maxH = max(220, min(440, screenH * 0.5))
+    if size.height <= maxH { return content }
+    let doc = FlippedView(frame: NSRect(origin: .zero, size: size))
+    content.frame.origin = .zero
+    doc.addSubview(content)
+    let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: size.width + 16, height: maxH))
+    scroll.hasVerticalScroller = true
+    scroll.autohidesScrollers = false
+    scroll.drawsBackground = false
+    scroll.borderType = .noBorder
+    scroll.documentView = doc
+    return scroll
+}
+
+/// Tampilan dengan titik (0,0) di kiri atas, supaya isi yang digulir mulai dari atas.
+final class FlippedView: NSView {
+    override var isFlipped: Bool { true }
+}
+
+/// v5.23: teks popup yang panjang (banyak baris) dipindah ke kotak yang bisa digulir. Teks pendek tetap biasa.
+@MainActor
+func setText(_ a: NSAlert, _ text: String) {
+    let lines = text.components(separatedBy: "\n").count
+    guard text.count > 700 || lines > 16 else { a.informativeText = text; return }
+    a.informativeText = ""
+    let width: CGFloat = 340
+    let tv = NSTextView(frame: NSRect(x: 0, y: 0, width: width, height: 10))
+    tv.string = text
+    tv.isEditable = false
+    tv.isSelectable = true
+    tv.drawsBackground = false
+    tv.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+    tv.textContainerInset = NSSize(width: 0, height: 2)
+    tv.isVerticallyResizable = true
+    tv.isHorizontallyResizable = false
+    if let tc = tv.textContainer, let lm = tv.layoutManager {
+        tc.containerSize = NSSize(width: width, height: CGFloat.greatestFiniteMagnitude)
+        tc.widthTracksTextView = true
+        lm.ensureLayout(for: tc)
+        tv.frame.size.height = ceil(lm.usedRect(for: tc).height) + 8
+    }
+    a.accessoryView = scrolling(tv)
+}
+
 @MainActor
 func confirm(_ title: String, _ text: String, ok: String = T("Continue", "Lanjut"), danger: Bool = false) -> Bool {
     let a = NSAlert()
     a.messageText = title
-    a.informativeText = text
+    setText(a, text)
     a.alertStyle = danger ? .critical : .informational
     a.addButton(withTitle: ok)
     a.addButton(withTitle: T("Cancel", "Batal"))
@@ -1758,7 +1808,7 @@ func confirm(_ title: String, _ text: String, ok: String = T("Continue", "Lanjut
 func info(_ title: String, _ text: String, error: Bool = false) {
     let a = NSAlert()
     a.messageText = title
-    a.informativeText = text
+    setText(a, text)
     a.alertStyle = error ? .warning : .informational
     a.addButton(withTitle: "OK")
     _ = runAlert(a)
@@ -1867,7 +1917,10 @@ func popup(_ title: String, _ intro: String = "", _ sections: [PopSection], ok: 
     if !shown.isEmpty {
         let host = NSHostingView(rootView: PopupBody(sections: shown))
         host.frame = NSRect(origin: .zero, size: host.fittingSize)
-        a.accessoryView = host
+        // v5.23: banyak bagian (misalnya restore 10 app) → digulir, tombolnya tetap kelihatan
+        a.accessoryView = scrolling(host)
+    } else {
+        setText(a, intro)
     }
     if let c = check {
         a.showsSuppressionButton = true

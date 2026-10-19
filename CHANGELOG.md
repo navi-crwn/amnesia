@@ -7,6 +7,25 @@ Quick backstory: on October 6, 2026 Amnesia was a handful of scripts. Two days a
 
 Your version number is next to the Amnesia title and at the bottom of the menu bar panel.
 
+## v5.23.1 · Long popups scroll, websites and README catch up (Oct 18, 2026)
+
+**Turn Off** Amnesia before installing, then turn it on again.
+
+### Fixed
+- **Long popups scroll now.** Restoring many apps made the result popup taller than the screen, so you couldn't reach its buttons. Popups now stop at about half the screen height and scroll inside; the OK and Cancel buttons always stay visible.
+
+### Website and README
+- **Mac page** shows v5.23: six new feature cards (Keep lock, Health check, Brankas, signed updates, safe with iCloud, Claude and Claude Code), Undo Restore, how to check a download, and five new FAQ answers. It no longer scrolls sideways on a phone.
+- **Windows page** rebuilt for v0.8: the open source section with the 3D commit chart, a 3D folder board for what's safe at sign out, a 3D safe box, the Health check, real Windows warnings, an 8-step tutorial and 36 new screenshots of the app. A wrong FAQ answer is fixed: cancelling a sign out doesn't undo the cleanup any more.
+- **README** (English and Indonesian) lists the latest versions and features and has a section for Amnesia for Windows. The update check is weekly to monthly, not daily. `windows/README.md` no longer says "preview, test in a VM".
+
+## Windows v0.8.2 · Long questions scroll (Oct 18, 2026)
+
+Not released yet. It comes with the next Windows release.
+
+### Fixed
+- **Long questions scroll inside the popup**, so the buttons always stay on screen. The welcome tour also scrolls on a small window.
+
 ## v5.23.0 · Claude in your Keep List really stays, safer restores, Brankas closes properly (Oct 17, 2026)
 
 **Turn Off** Amnesia before installing, then turn it on again.

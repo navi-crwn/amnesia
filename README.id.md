@@ -19,6 +19,8 @@
   <a href="TERMS.id.md">Ketentuan</a>
 </p>
 
+<p align="center"><sub>Terbaru: <b>Mac v5.23.1</b> · <b>Windows v0.8.1</b> · gratis dan open source (MIT)</sub></p>
+
 > [!WARNING]
 > **Amnesia benar-benar menghapus data.** Setelah aktif, semua yang ada di luar folder Keep dan Keep List dihapus setiap logout, restart dan shutdown. Tidak masuk Trash dan tidak bisa dibatalkan. Baca dulu [ketentuan & peringatan](TERMS.id.md) yang singkat ini sebelum memasang.
 
@@ -31,7 +33,7 @@ Bayangkan Mac kamu seperti meja kerja. Setiap selesai kerja, Amnesia **memberesk
 Masalahnya, kalau semua hilang, kamu harus login ulang Gmail, WhatsApp, Telegram, dan lain-lain setiap hari. Itu bisa makan 15–20 menit. Karena itu Amnesia punya **Profile Vault**: brankas terkunci yang menyimpan login-login kamu. Habis login ke Mac, cukup ketik **1 password**, dan semua login kembali seperti semula.
 
 **Cocok untuk kamu yang:**
-- memakai Mac bersama orang lain, atau di tempat umum,
+- memakai Mac (atau PC Windows) bersama orang lain, atau di tempat umum,
 - tidak mau ada jejak kerja yang tertinggal,
 - ingin Mac tetap ringan dan bersih setiap hari.
 
@@ -59,7 +61,9 @@ Masalahnya, kalau semua hilang, kamu harus login ulang Gmail, WhatsApp, Telegram
 | Isi Desktop, Downloads, Documents, Pictures | Login yang disimpan di **Profile Vault** |
 | Cache, log, riwayat Terminal | Semua yang ada di **Keep List** (VPN, kunci SSH, setting Terminal, dll.) |
 | Data app yang tidak kamu pilih | App yang terpasang di `/Applications` dan Homebrew (kecuali kamu menyalakan *Hapus app yang dipasang belakangan* di Lanjutan) |
-| | Akun Apple, Foto, Notes, Mail, Messages dan lainnya (kartu **Akun & data Apple**, menyala secara default) |
+| Isi Trash | Akun Apple, Foto, Notes, Mail, Messages dan lainnya (kartu **Akun & data Apple**, menyala secara default) |
+| | Mesin virtual (UTM, Parallels, VirtualBox, VMware Fusion), otomatis disimpan |
+| | Desktop dan Documents kalau **iCloud Desktop & Documents** nyala (menghapusnya berarti ikut menghapus dari iCloud) |
 
 Mau tahu persis apa yang akan dihapus **tanpa menghapus apa pun**? Di app, tekan **Yang Akan Dihapus** di halaman utama. Atau jalankan:
 
@@ -70,11 +74,15 @@ bash ~/.amnesia/clean.sh logout --dry-run
 ## Fitur
 
 - **🛡️ Bersih otomatis.** Pembersihan berjalan **sebelum** Mac logout, restart, atau shutdown. Saat login berikutnya Amnesia mengecek ulang, jadi kalau ada yang terlewat, ikut dibersihkan.
-- **🔐 Profile Vault.** Login Chrome (Gmail, WhatsApp Web, Telegram Web), Claude, WhatsApp, dan alat coding seperti Claude Code, OpenCode, Gemini CLI, GitHub CLI disimpan dalam brankas terenkripsi (AES-256). Untuk memulihkan, cukup 1 password. Browser Chromium lain (Brave, Edge, Vivaldi, Arc, Opera) bisa ditambahkan dengan 1 klik.
+- **🔐 Profile Vault.** Login Chrome (Gmail, WhatsApp Web, Telegram Web), Claude, WhatsApp, dan alat coding seperti Claude Code, OpenCode, Gemini CLI, GitHub CLI disimpan dalam brankas terenkripsi (AES-256). Untuk memulihkan, cukup 1 password. Browser Chromium lain (Brave, Edge, Vivaldi, Arc, Opera) bisa ditambahkan dengan 1 klik, begitu juga Signal, Session, Element, Telegram, Obsidian, Notion, Zoom dan Bitwarden. Amnesia juga menyarankan app lain yang kelihatannya menyimpan login.
+- **↩️ Restore yang tidak memundurkan data.** Kalau data sebuah app di Mac lebih baru dari snapshot-nya, kamu ditanya dulu. Yang ada di Keep List tidak pernah ditimpa restore. Dan sampai logout berikutnya, tombol **Kembalikan data sebelum restore** di halaman vault mengembalikan data sebelumnya.
 - **🪶 Snapshot ringan, per browser.** Kartu **Snapshot ringan** di Profile Vault punya tombol untuk tiap browser. Nyala (bawaan): cache browser dan file program extension dari Web Store tidak ikut disimpan, jadi snapshot jauh lebih kecil dan cepat; login, bookmark dan pengaturan tetap tersimpan, dan setelah Restore kamu tinggal tekan *Repair* di tiap extension. Mati: semuanya disimpan. Simpan & Logout dan snapshot otomatis mengikuti tombol yang sama.
 - **⏏️ Simpan & Logout.** 1 klik: login kamu disimpan dulu ke vault, baru Mac logout. Kalau penyimpanannya gagal, logout dibatalkan, jadi tidak ada yang hilang.
 - **⏸️ Jeda 1 Sesi.** Butuh Mac tidak dibersihkan sekali saja? Tekan Jeda. Setelah 1x logout dan login, Amnesia aktif lagi sendiri.
-- **📌 Keep List.** Pilih folder atau app yang tidak boleh ikut dihapus, langsung dari app. Nyalakan sebuah app dan kamu lihat persis apa yang disimpan (data app, setting, ukurannya).
+- **📌 Keep List.** Pilih folder atau app yang tidak boleh ikut dihapus, langsung dari app. Nyalakan sebuah app dan kamu lihat persis apa yang disimpan (data app, setting, ukurannya). Menyimpan **Claude** ikut menyimpan chat Claude Code (`~/.claude`, `~/.claude.json`).
+- **🔏 Kunci Keep.** Finder dan app lain tidak bisa membuka atau mengubah folder Keep sampai kamu mengetik password Keep di Amnesia. Terkunci lagi setelah 5–60 menit, saat layar terkunci, dan setiap logout. Catatan jujur: ini memakai izin macOS, bukan enkripsi, dan nama file langsung di dalam Keep tetap terlihat. Mati secara default.
+- **🗄️ Brankas (eksperimen).** Disk terenkripsi (APFS, AES-256) di dalam folder Keep untuk file yang benar-benar rahasia. Amnesia menutupnya sebelum setiap pembersihan, dan memberi tahu kalau gagal. Lupa password-nya, file di dalamnya hilang.
+- **🩺 Cek kesehatan.** Satu halaman di Pengaturan: Amnesia nyala atau tidak, Akses Disk Penuh, iCloud Desktop & Documents, folder symlink, mesin virtual, file besar yang akan dihapus, backup terakhir, Kunci Keep, Brankas, dan FileVault. Kebanyakan baris punya tombol perbaikan. Di sebelahnya, **Batasan** menjelaskan apa yang tidak bisa dihapus Amnesia (Time Machine, Spotlight, iCloud, swap, log sistem, akun lain).
 - **🗂️ Folder Keep milikmu.** File di dalamnya tidak pernah dihapus. Taruh di mana saja (bahkan di drive eksternal) dan beri nama apa saja.
 - **💾 Backup ke mana saja.** Folder pilihan dikunci jadi 1 file `.7z` (AES-256), lalu dikirim ke:
   - **Flashdisk / SSD** yang tercolok,
@@ -88,16 +96,31 @@ bash ~/.amnesia/clean.sh logout --dry-run
 - **👋 Tur perkenalan.** Saat pertama dibuka, Amnesia mengajak kamu keliling, cek semua sudah siap, mendeteksi app kamu, lalu tanya mana yang datanya mau disimpan.
 - **🔥 Tombol darurat.** Kalau password vault salah 3x, atau kamu mengetik *kata panik* yang sudah kamu atur, vault langsung dimusnahkan.
 - **👀 Cek dulu sebelum logout.** Logout atau restart lewat menu Apple ditahan sebentar, lalu kamu lihat dulu apa saja yang akan dihapus. Lanjut atau batal, kamu yang pilih. Daftarnya disiapkan di background, jadi langsung tampil.
-- **🏠 Offline & privat.** Tanpa server, tanpa akun, tanpa pelacakan, tanpa pengumpulan data. Tidak ada yang keluar dari Mac kamu kecuali kamu sendiri yang mengatur backup. Satu-satunya yang ditanyakan Amnesia ke internet adalah nomor versi terbaru di GitHub, sehari sekali, dan itu bisa dimatikan.
-- **📸 Snapshot otomatis.** Lupa menekan Simpan & Logout? Saat logout, restart atau shutdown biasa, Amnesia tetap menyimpan app yang datanya **berubah** sejak snapshot terakhirnya (maksimal 150 detik, supaya Mac tidak tertahan lama). App yang kamu matikan di vault dilewati. Kalau waktunya habis, snapshot lama app itu tetap aman.
+- **🏠 Offline & privat.** Tanpa server, tanpa akun, tanpa pelacakan, tanpa pengumpulan data. Tidak ada yang keluar dari Mac kamu kecuali kamu sendiri yang mengatur backup. Satu-satunya yang ditanyakan Amnesia ke internet adalah nomor versi terbaru di GitHub (seminggu, 2 minggu atau sebulan sekali, kamu yang pilih), dan itu bisa dimatikan.
+- **🔗 Aman untuk iCloud dan symlink.** Kalau iCloud Desktop & Documents nyala, kedua folder itu dilewati, jadi tidak ada yang terhapus dari iCloud atau perangkat Apple lain. Folder yang berupa symlink tidak pernah dikosongkan lewat link-nya. File yang gagal dihapus dihitung "tidak bisa dihapus", bukan "bersih".
+- **📸 Snapshot otomatis.** Lupa menekan Simpan & Logout? Saat logout, restart atau shutdown biasa, Amnesia tetap menyimpan app yang datanya **berubah** sejak snapshot terakhirnya (maksimal 150 detik, supaya Mac tidak tertahan lama). App yang kamu matikan di vault dilewati. Kalau waktunya habis, snapshot lama app itu tetap aman. Snapshot ini tetap jalan walaupun kamu baru snapshot beberapa menit sebelumnya, jadi pekerjaan sesudah snapshot manual tidak hilang.
 - **🎨 Peringatan yang jelas.** Setiap popup dibagi jadi kotak berwarna: *Yang akan terjadi* (biru), *Yang akan dihapus* (merah), *Berikut ini tetap tersimpan (tidak dihapus)* (hijau) dan *Yang perlu kamu lakukan* (ungu).
 - **🔔 Notifikasi.** Setelah login, Amnesia memberi tahu bahwa Mac sudah bersih dan mengingatkan untuk restore profil.
 - **⚙️ Pengaturan.** Semua fitur di atas bisa dinyalakan atau dimatikan sesukamu. **Jalan di background** membuat Amnesia hanya muncul sebagai ikon menu bar saat login, tanpa jendela. Alias Keep di Desktop dan Keep di sidebar Finder dipasang lagi setiap selesai membersihkan (keduanya bisa dimatikan), dan panel menu bar punya **Buka Keep**.
 - **🧰 Lanjutan.** Pengaturan yang perlu dipikir dulu dikumpulkan di satu halaman: **logout otomatis kalau Mac ditinggal** (5 sampai 60 menit, dengan hitung mundur 60 detik yang batal kalau kamu menyentuh apa saja), **hapus app yang dipasang belakangan** (app yang kamu pasang setelah fitur ini nyala dihapus saat logout, kecuali kamu tekan Simpan; app yang dipasang dengan password admin tidak disentuh), kata panik, dan Pindah Mac.
-- **⬇️ Update dari app.** Amnesia cek GitHub sehari sekali, mengunduh versi baru sendiri, mencocokkannya dengan `SHA256SUMS.txt`, lalu memasangnya saat kamu tekan **Pasang & Buka Lagi**. Pakai Homebrew? Update tetap lewat `brew upgrade`.
-- **🔒 Cek FileVault.** Pengaturan menunjukkan apakah enkripsi disk sudah nyala. Amnesia hanya membersihkan saat logout dan folder Keep tidak dienkripsi, jadi FileVault sangat disarankan.
+- **⬇️ Update bertanda tangan dari app.** Amnesia cek GitHub sesuai jadwal pilihanmu, mengunduh versi baru, mencocokkannya dengan `SHA256SUMS.txt` **dan** tanda tangan developer atas file itu (`SHA256SUMS.txt.sig`, ECDSA P-256), lalu memasangnya saat kamu tekan **Pasang & Buka Lagi**. Tanda tangan tidak sah, tidak dipasang: yang dibuka halaman rilis. Pakai Homebrew? Update tetap lewat `brew upgrade`.
+- **🔒 Cek FileVault.** Cek kesehatan menunjukkan apakah enkripsi disk sudah nyala. Amnesia hanya membersihkan saat logout dan folder Keep tidak dienkripsi, jadi FileVault sangat disarankan.
 - **🌐 2 bahasa.** English atau Bahasa Indonesia, tinggal pilih di Pengaturan.
 - **🟢 Ikon di menu bar.** Status Amnesia selalu terlihat di pojok kanan atas: hijau aktif, oranye jeda, merah mati. Tombol besar **Aktifkan / Matikan** ada langsung di kartu status halaman utama.
+
+## Amnesia untuk Windows
+
+Amnesia juga jalan di **Windows 10 dan 11** (x64 dan ARM). Sekarang sudah rilis resmi, **v0.8.1**, dari folder `windows/`. Idenya sama, dibuat khusus untuk Windows:
+
+- membersihkan folder user dan jejak Windows (file terakhir, jump list, riwayat Explorer dan pencarian, riwayat clipboard, dan lainnya) saat **sign out, restart dan shutdown**, lalu dicek lagi saat sign in
+- folder Keep dan Keep List dengan ikon app, **Simpan app** sekali klik, dan tempat sampah 3 hari untuk app yang dihapus
+- Profile Vault, backup, Cek kesehatan, Kunci Keep, brankas (eksperimen), hotkey panik, kunci USB, sign out saat ditinggal
+- folder cloud (OneDrive, Dropbox, Google Drive, iCloud Drive, dan lainnya) dan mesin virtual tidak pernah dihapus
+- dipasang khusus untuk akunmu (tanpa admin), update bertanda tangan dari dalam app
+
+Ambil `Amnesia-Setup-<versi>-x64.exe` (atau `-arm64.exe`) dari rilis **Windows** (tag-nya diawali `win-v`) di halaman [Releases](../../releases), lalu cocokkan dengan `SHA256SUMS.txt`. Belum ada sertifikat code signing berbayar, jadi SmartScreen memberi peringatan pertama kali: **More info → Run anyway**.
+
+Selengkapnya: [website Windows](https://navi-crwn.github.io/amnesia/win/) dan [windows/README.md](windows/README.md).
 
 ## Cara pasang
 
@@ -116,6 +139,7 @@ brew install navi-crwn/tap/amnesia
 1. Ambil `Amnesia-vX.dmg` dari [Releases](../../releases/latest), buka, lalu seret **Amnesia** ke folder **Applications**. Di dalamnya ada file `READ ME FIRST` berisi peringatan singkat.
 2. App ini belum ditandatangani Apple, jadi macOS memblokirnya pertama kali. Buka sekali, lalu ke **System Settings → Privacy & Security** dan klik **Open Anyway**.
    Atau lewat Terminal: `xattr -dr com.apple.quarantine /Applications/Amnesia.app`
+3. Mau mengecek file-nya? Setiap rilis punya `SHA256SUMS.txt` (dan tanda tangannya `SHA256SUMS.txt.sig`). Bandingkan dengan `shasum -a 256 ~/Downloads/Amnesia-v*.dmg`.
 
 **Cara 3: Build sendiri** (butuh Command Line Tools)
 
@@ -153,6 +177,12 @@ Keep List untuk hal yang tidak rahasia dan boleh tetap ada (misalnya setting VPN
 
 **Kalau saya logout lewat menu Apple, bagaimana?**
 Aman. Amnesia menahan sebentar untuk menunjukkan apa yang akan dihapus, lalu menyimpan login kamu ke vault secara otomatis sebelum membersihkan. Kedua fitur ini bisa dimatikan di Pengaturan.
+
+**Apakah folder Keep dienkripsi?**
+Tidak oleh Amnesia. Kunci Keep membuat Finder dan app lain tidak bisa membukanya, tapi itu izin macOS, bukan enkripsi. Nyalakan FileVault supaya seluruh disk terenkripsi, dan simpan file yang benar-benar rahasia di Brankas.
+
+**Saya terlanjur restore dan data yang lebih baru jadi mundur. Bagaimana?**
+Tekan **Kembalikan data sebelum restore** di halaman Profile Vault, kapan saja sebelum logout. Sejak v5.23 Amnesia juga bertanya dulu kalau data sebuah app lebih baru dari snapshot-nya.
 
 **Kalau lupa password vault?**
 Vault tidak bisa dibuka siapa pun, termasuk kamu. Hapus vault, buat yang baru, lalu login ulang ke app-app kamu.
@@ -215,6 +245,8 @@ Cara paling gampang: buka **Pengaturan** di app lalu tekan **Hapus Amnesia**. Pr
 3. Kalau kamu mencentangnya, ada konfirmasi kedua sekali lagi. File-file itu dipindah ke Trash, tidak langsung hilang.
 4. Amnesia dimatikan untuk seterusnya dan app-nya dipindah ke Trash. Folder Keep kamu tidak pernah disentuh.
 
+Kunci Keep nyala? Amnesia meminta password Keep dan membuka kunci Keep dulu. Tanpa password, Keep tetap terkunci dan kamu diberi perintah untuk membukanya: `chmod -RN ~/Keep`.
+
 Terlanjur menyeret Amnesia ke Trash? Itu juga aman: Amnesia tahu, mematikan dirinya sendiri dan tidak membersihkan apa pun lagi.
 
 Lebih suka Terminal? Tempel ini:
@@ -240,7 +272,8 @@ Script ini mematikan agent login lebih dulu (supaya waktu dihentikan tidak ada y
 | `keep.example.conf` | Contoh Keep List. `build.sh` menyalinnya jadi `keep.conf` saat pertama dipasang. |
 | `app/` | Kode app SwiftUI, ikon, dan script build/rilis. `app/screenshots.sh` memotret app asli dengan data contoh (opsional). |
 | `docs/` | Website (GitHub Pages). `docs/readme/` berisi gambar README yang diambil dari website. |
-| `windows/` | Versi Windows (**v0.7.2**): app tray C# + halaman HTML, vault, backup dan Setup.exe dengan update dari dalam app. Benar-benar menghapus setelah diaktifkan, jadi cek dulu Yang akan dihapus. Di-build dan dites oleh GitHub Actions (`.github/workflows/windows.yml`); tag `win-v*` membuat release Windows. |
+| `keeplock.sh` | Kunci Keep dan Brankas (disk terenkripsi di dalam Keep). |
+| `windows/` | Versi Windows (**v0.8.1**): app tray C# .NET 8 + halaman HTML, vault, backup, Cek kesehatan dan Setup.exe dengan update bertanda tangan dari dalam app. Benar-benar menghapus setelah diaktifkan, jadi cek dulu Yang akan dihapus. Di-build dan dites oleh GitHub Actions (`.github/workflows/windows.yml`); tag `win-v*` membuat release Windows. |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Tes otomatis di "home palsu", aman dijalankan kapan saja. |
 
 ---

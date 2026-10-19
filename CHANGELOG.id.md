@@ -7,6 +7,25 @@ Sedikit cerita: tanggal 6 Oktober 2026 Amnesia masih berupa beberapa skrip. Dua 
 
 Nomor versi kamu ada di samping judul Amnesia dan di bagian bawah panel menu bar.
 
+## v5.23.1 · Popup panjang bisa di-scroll, website dan README menyusul (18 Okt 2026)
+
+**Matikan** Amnesia dulu sebelum memasang, lalu nyalakan lagi.
+
+### Diperbaiki
+- **Popup panjang sekarang bisa di-scroll.** Restore banyak app membuat popup hasilnya lebih tinggi dari layar, jadi tombolnya tidak terjangkau. Sekarang popup berhenti di sekitar setengah tinggi layar dan isinya di-scroll; tombol OK dan Batal selalu terlihat.
+
+### Website dan README
+- **Halaman Mac** menampilkan v5.23: enam kartu fitur baru (Kunci Keep, Cek kesehatan, Brankas, update bertanda tangan, aman untuk iCloud, Claude dan Claude Code), Kembalikan data sebelum restore, cara cek file unduhan, dan lima jawaban FAQ baru. Tidak lagi bergeser ke samping di HP.
+- **Halaman Windows** dibangun ulang untuk v0.8: bagian open source dengan grafik commit 3D, papan folder 3D untuk yang aman saat sign out, brankas 3D, Cek kesehatan, peringatan Windows yang asli, tutorial 8 langkah dan 36 foto layar app yang baru. Jawaban FAQ yang salah dibetulkan: membatalkan sign out tidak lagi membatalkan pembersihan.
+- **README** (Inggris dan Indonesia) memuat versi dan fitur terbaru, plus bagian Amnesia untuk Windows. Cek update mingguan sampai bulanan, bukan harian. `windows/README.md` tidak lagi bilang "preview, tes di VM".
+
+## Windows v0.8.2 · Pertanyaan panjang bisa di-scroll (18 Okt 2026)
+
+Belum dirilis. Ikut rilis Windows berikutnya.
+
+### Diperbaiki
+- **Pertanyaan panjang di-scroll di dalam popup**, jadi tombolnya selalu terlihat. Tur selamat datang juga bisa di-scroll di jendela kecil.
+
 ## v5.23.0 · Claude di Keep List benar-benar tersimpan, restore lebih aman, Brankas tertutup dengan benar (17 Okt 2026)
 
 **Matikan** Amnesia dulu sebelum memasang, lalu nyalakan lagi.
