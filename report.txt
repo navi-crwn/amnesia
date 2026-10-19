@@ -1,19 +1,26 @@
+HAPUS  ~/Library/Application Support/Animoji
 HAPUS  ~/Library/Application Support/CrashReporter
+HAPUS  ~/Library/Application Support/DifferentialPrivacy
 HAPUS  ~/Library/Application Support/FaceTime
 HAPUS  ~/Library/Application Support/FileProvider
 HAPUS  ~/Library/Application Support/Google/Chrome
+HAPUS  ~/Library/Application Support/Google/Chrome-headless
 HAPUS  ~/Library/Application Support/Google/RLZ
 HAPUS  ~/Library/Application Support/Session
 HAPUS  ~/Library/Application Support/Signal
 HAPUS  ~/Library/Application Support/Softdeluxe
-HAPUS  ~/Library/Application Support/ZeroTier
 HAPUS  ~/Library/Application Support/google-heartbeat-storage
 HAPUS  ~/Library/Application Support/homeenergyd
 HAPUS  ~/Library/Application Support/locationaccessstored
 HAPUS  ~/Library/Application Support/networkserviceproxy
+HAPUS  ~/Library/Containers/com.apple.AMPArtworkAgent
 HAPUS  ~/Library/Containers/com.apple.AppSSOKerberos.KerberosExtension
 HAPUS  ~/Library/Containers/com.apple.AquaAppearanceHelper
 HAPUS  ~/Library/Containers/com.apple.AuthKitUI.AKAppSSOExtension
+HAPUS  ~/Library/Containers/com.apple.AvatarUI.AvatarPickerMemojiEditor
+HAPUS  ~/Library/Containers/com.apple.AvatarUI.AvatarPickerMemojiPicker
+HAPUS  ~/Library/Containers/com.apple.AvatarUI.AvatarPickerPosePicker
+HAPUS  ~/Library/Containers/com.apple.BKAgentService
 HAPUS  ~/Library/Containers/com.apple.Batteries
 HAPUS  ~/Library/Containers/com.apple.CalendarUI.SpotlightEventPreview
 HAPUS  ~/Library/Containers/com.apple.CloudPhotosConfiguration
@@ -57,6 +64,7 @@ HAPUS  ~/Library/Containers/com.apple.SafariPlatformSupport.Helper
 HAPUS  ~/Library/Containers/com.apple.SceneKitQLPreviewExtension
 HAPUS  ~/Library/Containers/com.apple.SceneKitQLThumbnailExtension
 HAPUS  ~/Library/Containers/com.apple.ScreenTimeAgent
+HAPUS  ~/Library/Containers/com.apple.SiriMetrics.SiriTurnRestatementExtension
 HAPUS  ~/Library/Containers/com.apple.TV.TVCacheExtension
 HAPUS  ~/Library/Containers/com.apple.VoiceMemos.SpotlightIndexExtension
 HAPUS  ~/Library/Containers/com.apple.WatchFaceAlert.ThumbnailExtension
@@ -69,6 +77,7 @@ HAPUS  ~/Library/Containers/com.apple.aiml.UnilogTelemetryWorker
 HAPUS  ~/Library/Containers/com.apple.assessmentagent
 HAPUS  ~/Library/Containers/com.apple.ax.KonaTTSSupport.KonaSynthesizer
 HAPUS  ~/Library/Containers/com.apple.ax.MauiTTSSupport.MauiAUSP
+HAPUS  ~/Library/Containers/com.apple.calculator
 HAPUS  ~/Library/Containers/com.apple.calendar.CalendarIntentsExtension
 HAPUS  ~/Library/Containers/com.apple.clock
 HAPUS  ~/Library/Containers/com.apple.contacts.ContactsCoreSpotlightExtension
@@ -102,6 +111,7 @@ HAPUS  ~/Library/Containers/com.apple.journal.JournalShareExtension
 HAPUS  ~/Library/Containers/com.apple.lighthouse.BiomeSELFIngestor
 HAPUS  ~/Library/Containers/com.apple.lighthouse.IFTelemetrySELFIngestor
 HAPUS  ~/Library/Containers/com.apple.lighthouse.IFTranscriptSELFIngestor
+HAPUS  ~/Library/Containers/com.apple.lighthouse.InferenceExtension
 HAPUS  ~/Library/Containers/com.apple.lighthouse.PnROnDeviceWorker
 HAPUS  ~/Library/Containers/com.apple.lighthouse.SAExtensionOrchestrator
 HAPUS  ~/Library/Containers/com.apple.mediaanalysisd
@@ -110,6 +120,7 @@ HAPUS  ~/Library/Containers/com.apple.messages.ShareExtension
 HAPUS  ~/Library/Containers/com.apple.mlhost.CloudWorker
 HAPUS  ~/Library/Containers/com.apple.mlhost.TelemetryWorker
 HAPUS  ~/Library/Containers/com.apple.osanalytics.IPSExtension
+HAPUS  ~/Library/Containers/com.apple.parsec.SafariBrowsingAssistantWorker
 HAPUS  ~/Library/Containers/com.apple.photoanalysisd
 HAPUS  ~/Library/Containers/com.apple.photolibraryd
 HAPUS  ~/Library/Containers/com.apple.podcasts
@@ -133,6 +144,9 @@ HAPUS  ~/Library/Containers/com.apple.siri.ODDIExperimentationExtension
 HAPUS  ~/Library/Containers/com.apple.siri.ODDIMetricsExtension
 HAPUS  ~/Library/Containers/com.apple.siri.ODDIPoirotExperimentationExtension
 HAPUS  ~/Library/Containers/com.apple.siri.ODDIPoirotMetricsExtension
+HAPUS  ~/Library/Containers/com.apple.siri.SiriPrivateLearningAnalytics.SiriUserSegmentation
+HAPUS  ~/Library/Containers/com.apple.siri.SiriSuggestionsLightHousePlugin
+HAPUS  ~/Library/Containers/com.apple.siri.media-indexer
 HAPUS  ~/Library/Containers/com.apple.siri.metrics.AssetMetricsExtension
 HAPUS  ~/Library/Containers/com.apple.siri.metrics.DevicePropertiesExtension
 HAPUS  ~/Library/Containers/com.apple.siri.metrics.MetricsExtension
@@ -154,6 +168,7 @@ HAPUS  ~/Library/Containers/com.apple.voicebankingd
 HAPUS  ~/Library/Containers/com.apple.weather
 HAPUS  ~/Library/Containers/com.apple.weather.widget
 HAPUS  ~/Library/Containers/com.microsoft.rdc.macos.qlx
+HAPUS  ~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts
 HAPUS  ~/Library/Group Containers/com.apple.bird
 HAPUS  ~/Library/Group Containers/com.apple.icloudwebd
 HAPUS  ~/Library/Group Containers/com.apple.poirot.poirot_tool
@@ -190,29 +205,36 @@ HAPUS  ~/Library/Group Containers/group.com.apple.mobiletimerd
 HAPUS  ~/Library/Group Containers/group.com.apple.photolibraryd.private
 HAPUS  ~/Library/Group Containers/group.com.apple.poirot.MessagesAnalyticsWorker
 HAPUS  ~/Library/Group Containers/group.com.apple.portrait.BackgroundReplacement
+HAPUS  ~/Library/Group Containers/group.com.apple.printtool
 HAPUS  ~/Library/Group Containers/group.com.apple.replicatord
 HAPUS  ~/Library/Group Containers/group.com.apple.scopedbookmarkagent
 HAPUS  ~/Library/Group Containers/group.com.apple.secure-control-center-preferences
 HAPUS  ~/Library/Group Containers/group.com.apple.shortcuts
+HAPUS  ~/Library/Group Containers/group.com.apple.siri.ASR.shared
 HAPUS  ~/Library/Group Containers/group.com.apple.siri.GMSSELFIngestor
+HAPUS  ~/Library/Group Containers/group.com.apple.siri.referenceResolution
 HAPUS  ~/Library/Group Containers/group.com.apple.siri.sirisuggestions
+HAPUS  ~/Library/Group Containers/group.com.apple.siri.userfeedbacklearning
 HAPUS  ~/Library/Group Containers/group.com.apple.spotlight
 HAPUS  ~/Library/Group Containers/group.com.apple.storekit
 HAPUS  ~/Library/Group Containers/group.com.apple.studentd
 HAPUS  ~/Library/Group Containers/group.com.apple.swtransparency
 HAPUS  ~/Library/Group Containers/group.com.apple.telephonyutilities.callservicesd
 HAPUS  ~/Library/Group Containers/group.com.apple.tips
+HAPUS  ~/Library/Group Containers/group.com.apple.tipsnext
 HAPUS  ~/Library/Group Containers/group.com.apple.transparency
 HAPUS  ~/Library/Group Containers/group.com.apple.usernoted
 HAPUS  ~/Library/Group Containers/group.com.apple.weather
 HAPUS  ~/Library/Group Containers/group.is.workflow.my.app
 HAPUS  ~/Library/HTTPStorages/askpermissiond
+HAPUS  ~/Library/HTTPStorages/com.apple.AMPLibraryAgent
 HAPUS  ~/Library/HTTPStorages/com.apple.AddressBookSourceSync
 HAPUS  ~/Library/HTTPStorages/com.apple.FeatureAccessAgent
 HAPUS  ~/Library/HTTPStorages/com.apple.amsaccountsd
 HAPUS  ~/Library/HTTPStorages/com.apple.amsondevicestoraged
 HAPUS  ~/Library/HTTPStorages/com.apple.appleaccountd
 HAPUS  ~/Library/HTTPStorages/com.apple.appstoreagent
+HAPUS  ~/Library/HTTPStorages/com.apple.betaenrollmentagent
 HAPUS  ~/Library/HTTPStorages/com.apple.ctcategories.service
 HAPUS  ~/Library/HTTPStorages/com.apple.helpd
 HAPUS  ~/Library/HTTPStorages/com.apple.iCloudHelper
@@ -220,6 +242,8 @@ HAPUS  ~/Library/HTTPStorages/com.apple.iCloudNotificationAgent
 HAPUS  ~/Library/HTTPStorages/com.apple.icloudwebd
 HAPUS  ~/Library/HTTPStorages/com.apple.itunescloudd
 HAPUS  ~/Library/HTTPStorages/com.apple.managedappdistributionagent
+HAPUS  ~/Library/HTTPStorages/com.apple.nbagent
+HAPUS  ~/Library/HTTPStorages/com.apple.siriknowledged
 HAPUS  ~/Library/HTTPStorages/com.apple.tipsd
 HAPUS  ~/Library/HTTPStorages/com.apple.weatherd
 HAPUS  ~/Library/Safari
@@ -227,8 +251,6 @@ KEYCHAIN  anydesk.inst_id
 KEYCHAIN-WEB  github.com
 HAPUS  ~/.zsh_history
 HAPUS  ~/.cache
-HAPUS  ~/.config/gh
-HAPUS  ~/.gemini
 HAPUS  ~/.local/state
 HAPUS  ~/.npm
 HAPUS  ~/.zsh_sessions
@@ -246,6 +268,7 @@ HAPUS  ~/Library/Preferences/diagnostics_agent.plist
 HAPUS  ~/Library/Preferences/familycircled.plist
 HAPUS  ~/Library/Preferences/group.com.nordvpn.macos.firebase.plist
 HAPUS  ~/Library/Preferences/no_backup
+HAPUS  ~/Library/Preferences/org.cups.PrintingPrefs.plist
 HAPUS  ~/Library/Preferences/org.freedownloadmanager.fdm6.plist
 HAPUS  ~/Library/Preferences/org.whispersystems.signal-desktop.plist
 HAPUS  ~/Library/Preferences/pbs.plist
@@ -253,35 +276,43 @@ HAPUS  ~/Library/Preferences/systemgroup.com.apple.icloud.searchpartyd.sharedset
 HAPUS  ~/Library/Assistant
 HAPUS  ~/Library/Suggestions
 HAPUS  ~/Library/Caches/Amnesia
+HAPUS  ~/Library/Caches/Animoji
 HAPUS  ~/Library/Caches/CloudKit
 HAPUS  ~/Library/Caches/FamilyCircle
 HAPUS  ~/Library/Caches/GeoServices
 HAPUS  ~/Library/Caches/Google
 HAPUS  ~/Library/Caches/Homebrew
 HAPUS  ~/Library/Caches/INSTALLATION
+HAPUS  ~/Library/Caches/PassKit
 HAPUS  ~/Library/Caches/Softdeluxe
 HAPUS  ~/Library/Caches/askpermissiond
 HAPUS  ~/Library/Caches/claude-cli-nodejs
 HAPUS  ~/Library/Caches/com.anthropic.claudefordesktop
 HAPUS  ~/Library/Caches/com.anthropic.claudefordesktop.ShipIt
+HAPUS  ~/Library/Caches/com.apple.AMPLibraryAgent
 HAPUS  ~/Library/Caches/com.apple.AppleMediaServices
+HAPUS  ~/Library/Caches/com.apple.AuthenticationServicesCore.AuthenticationServicesAgent
 HAPUS  ~/Library/Caches/com.apple.AvatarKit
 HAPUS  ~/Library/Caches/com.apple.CloudTelemetry
 HAPUS  ~/Library/Caches/com.apple.DictionaryServices
 HAPUS  ~/Library/Caches/com.apple.FeatureAccessAgent
 HAPUS  ~/Library/Caches/com.apple.HomeKit
 HAPUS  ~/Library/Caches/com.apple.Safari
+HAPUS  ~/Library/Caches/com.apple.Safari.SafeBrowsing
 HAPUS  ~/Library/Caches/com.apple.Spotlight
 HAPUS  ~/Library/Caches/com.apple.amsaccountsd
 HAPUS  ~/Library/Caches/com.apple.amsengagementd
 HAPUS  ~/Library/Caches/com.apple.ap.adprivacyd
 HAPUS  ~/Library/Caches/com.apple.appleaccountd
 HAPUS  ~/Library/Caches/com.apple.appstoreagent
+HAPUS  ~/Library/Caches/com.apple.betaenrollmentagent
+HAPUS  ~/Library/Caches/com.apple.businessservicesd
 HAPUS  ~/Library/Caches/com.apple.cache_delete
 HAPUS  ~/Library/Caches/com.apple.containermanagerd
 HAPUS  ~/Library/Caches/com.apple.ctcategories.service
 HAPUS  ~/Library/Caches/com.apple.dataaccess.dataaccessd
 HAPUS  ~/Library/Caches/com.apple.duetexpertd
+HAPUS  ~/Library/Caches/com.apple.e5rt.e5bundlecache
 HAPUS  ~/Library/Caches/com.apple.feedbacklogger
 HAPUS  ~/Library/Caches/com.apple.findmy.findmylocateagent
 HAPUS  ~/Library/Caches/com.apple.geoanalyticsd
@@ -292,13 +323,16 @@ HAPUS  ~/Library/Caches/com.apple.iTunesCloud
 HAPUS  ~/Library/Caches/com.apple.icloudwebd
 HAPUS  ~/Library/Caches/com.apple.itunescloudd
 HAPUS  ~/Library/Caches/com.apple.managedappdistributionagent
+HAPUS  ~/Library/Caches/com.apple.nbagent
 HAPUS  ~/Library/Caches/com.apple.nsservicescache.plist
 HAPUS  ~/Library/Caches/com.apple.nsurlsessiond
 HAPUS  ~/Library/Caches/com.apple.parsecd
+HAPUS  ~/Library/Caches/com.apple.passd
 HAPUS  ~/Library/Caches/com.apple.preferencepanes.usercache
 HAPUS  ~/Library/Caches/com.apple.proactive.eventtracker
 HAPUS  ~/Library/Caches/com.apple.python
 HAPUS  ~/Library/Caches/com.apple.remindd
+HAPUS  ~/Library/Caches/com.apple.siri.findmy.syncdevicedata.json
 HAPUS  ~/Library/Caches/com.apple.sirittsd
 HAPUS  ~/Library/Caches/com.apple.storekitagent
 HAPUS  ~/Library/Caches/com.apple.systemsettings.menucache
@@ -311,20 +345,30 @@ HAPUS  ~/Library/Caches/google-sdks-events
 HAPUS  ~/Library/Caches/io.sentry
 HAPUS  ~/Library/Caches/io.tailscale.ipn.macsys
 HAPUS  ~/Library/Logs/Antigravity
+HAPUS  ~/Library/Logs/Assistant
 HAPUS  ~/Library/Logs/Baseband
 HAPUS  ~/Library/Logs/Claude
 HAPUS  ~/Library/Logs/CrashReporter
 HAPUS  ~/Library/Logs/DiagnosticReports
 HAPUS  ~/Library/Logs/Homebrew
+HAPUS  ~/Library/Logs/PrivacyPreservingMeasurement
+HAPUS  ~/Library/Logs/SiriTTSService
 HAPUS  ~/Library/Logs/com.apple.CloudTelemetry
 HAPUS  ~/Desktop/Amnesia.app
 HAPUS  ~/Desktop/Keep
 HAPUS  ~/Downloads/2528830.png
+HAPUS  ~/Downloads/Amnesia-Setup-0.8.2-x64.zip
+HAPUS  ~/Downloads/GLRouteBot.png
+HAPUS  ~/Downloads/amnesia-bersih-sisa-lama.sh
 HAPUS  ~/Downloads/amnesia-github-v5.23.0.zip
+HAPUS  ~/Downloads/amnesia-github-v5.23.1.zip
 HAPUS  ~/Downloads/amnesia-v5.23.0.sh
+HAPUS  ~/Downloads/amnesia-v5.23.1.sh
+HAPUS  ~/Downloads/pixelhop.pdf
 HAPUS  ~/Downloads/session-desktop-mac-arm64-1.18.2.dmg
 HAPUS  ~/Downloads/signal-desktop-mac-universal-8.31.0.dmg
+HAPUS  ~/Movies/TV
 HAPUS  ~/.Trash/ZeroTier One.pkg
 APP  /Applications/Session.app
 APP  /Applications/Signal.app
---- dry-run (logout): 329 items would be deleted. Nothing was deleted. ---
+--- dry-run (logout): 373 items would be deleted. Nothing was deleted. ---
