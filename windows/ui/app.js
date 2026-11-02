@@ -131,6 +131,13 @@
     vPanicText: 'Typing the panic word instead of your password deletes the vault on the spot. 3 wrong passwords in a row do the same (Doomsday). Write your password down somewhere safe: without it the vault can never be opened.',
     vPanicFull: 'The panic word also empties my Keep folder', vCreate: 'Create vault', vMismatch: 'The two passwords are not the same.',
     vAppsTitle: 'What goes in the vault', vAppsText: 'Pick the apps to keep. "Snapshot now" saves them (the apps are closed for a moment). No password needed for that.',
+    vStep1: 'Pick the apps to save', vStep2: 'Save your logins now', vStep3: 'Bring them back after you sign in',
+    vStep2Note: 'No password needed. The apps close for a moment.', vChange: 'Change...', vChangeDone: 'Done',
+    vNoneChosen: 'No app picked yet.', vMore: function (n) { return ' and ' + n + ' more'; },
+    vLastSaved: function (t, n, s) { return 'Last saved ' + t + ' · ' + n + ' saved' + (s ? ' · ' + s : ''); }, vNotSaved: 'Not saved yet. Sign in to your apps first, then press Snapshot now.',
+    vMainTitle: 'Restore or save your logins', vMainText: 'Snapshot now saves the apps you picked (no password needed, they close for a moment). Restore puts them back; what an app has now is moved to Temp first.',
+    vAppsFold: 'Pick apps and folders, see each snapshot', vOptsFold: 'Automatic snapshot, reminder, password, panic word',
+    infoShow: 'Info', infoAbout: 'About: ',
     vSnap: 'Snapshot now', vAddFolder: 'Add a folder...', vNever: 'no snapshot yet', vNotHere: 'not installed here', vDelete: 'Delete snapshot',
     vRestoreTitle: 'Restore', vRestoreText: 'Puts every app with a snapshot back. What the app has now is moved to Temp first (wiped at the next sign out).',
     vPwPh: 'Vault password', vRestore: 'Restore', vRestored: function (n) { return 'Back: ' + n.join(', ') + '. Open the apps, you are signed in again.'; },
@@ -496,6 +503,13 @@
     vPanicText: 'Mengetik kata panik di kolom password langsung menghapus vault. Salah password 3 kali berturut-turut juga sama (Doomsday). Catat password kamu di tempat aman: tanpa itu vault tidak bisa dibuka selamanya.',
     vPanicFull: 'Kata panik juga mengosongkan folder Keep saya', vCreate: 'Buat vault', vMismatch: 'Kedua password tidak sama.',
     vAppsTitle: 'Isi vault', vAppsText: 'Pilih app yang mau disimpan. "Snapshot sekarang" menyimpannya (app ditutup sebentar). Tidak perlu password.',
+    vStep1: 'Pilih app yang disimpan', vStep2: 'Simpan login sekarang', vStep3: 'Kembalikan setelah login',
+    vStep2Note: 'Tanpa password. App ditutup sebentar.', vChange: 'Ubah...', vChangeDone: 'Selesai',
+    vNoneChosen: 'Belum ada app yang dipilih.', vMore: function (n) { return ' dan ' + n + ' lainnya'; },
+    vLastSaved: function (t, n, s) { return 'Terakhir disimpan ' + t + ' · ' + n + ' tersimpan' + (s ? ' · ' + s : ''); }, vNotSaved: 'Belum disimpan. Login ke app dulu, lalu tekan Snapshot sekarang.',
+    vMainTitle: 'Pulihkan atau simpan login', vMainText: 'Snapshot sekarang menyimpan app yang dipilih (tanpa password, app ditutup sebentar). Pulihkan mengembalikannya; data app yang ada sekarang dipindah ke Temp dulu.',
+    vAppsFold: 'Pilih app dan folder, lihat tiap snapshot', vOptsFold: 'Snapshot otomatis, pengingat, password, kata panik',
+    infoShow: 'Info', infoAbout: 'Tentang: ',
     vSnap: 'Snapshot sekarang', vAddFolder: 'Tambah folder...', vNever: 'belum ada snapshot', vNotHere: 'belum terpasang di sini', vDelete: 'Hapus snapshot',
     vRestoreTitle: 'Pulihkan', vRestoreText: 'Mengembalikan semua app yang punya snapshot. Data app yang ada sekarang dipindah ke Temp dulu (terhapus saat sign out berikutnya).',
     vPwPh: 'Password vault', vRestore: 'Pulihkan', vRestored: function (n) { return 'Kembali: ' + n.join(', ') + '. Buka app-nya, kamu sudah login lagi.'; },
@@ -761,6 +775,8 @@
     document.querySelectorAll('[data-tip]').forEach(function (el) { var v = L[el.dataset.tip]; if (typeof v === 'string') { el.title = v; el.setAttribute('aria-label', v); } });
     $('unWord').placeholder = L.unWord;
     advOpen(!!advIsOpen);
+    if ($('vAppsBox')) vChange(!$('vAppsBox').hidden);
+    if (infoCards.length) infoLabels(); else foldInfo();
     if (current) title(current);
     if (info && 'enabled' in info) show(info);
   }
@@ -854,8 +870,39 @@
     $('advToggle').setAttribute('aria-expanded', on ? 'true' : 'false');
   }
   $('advToggle').addEventListener('click', function () { advOpen(!advIsOpen); });
+
+  // v0.10 (owner, 27 Oct): long explanations in Settings and Vault fold behind a small "Info" button per card.
+  // A card keeps its title, switches and buttons; the grey help text shows after Info (or while searching).
+  var infoCards = [];
+  function foldInfo() {
+    document.querySelectorAll('#settings section.card, #vault details.fold').forEach(function (card) {
+      var items = card.querySelectorAll(':scope > p.muted:not([id]):not([role]), label.switch > span > span.muted');
+      var h = card.querySelector('h2, summary > b');
+      if (!items.length || !h || card.classList.contains('has-info')) return;
+      items.forEach(function (x) { x.classList.add('finfo'); });
+      card.classList.add('has-info');
+      if (h.tagName === 'H2') h.classList.add('ihead');
+      var b = el('button', 'infobtn'); b.type = 'button'; b.setAttribute('aria-expanded', 'false');
+      b.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        var on = card.classList.toggle('show-info');
+        b.setAttribute('aria-expanded', on ? 'true' : 'false');
+      });
+      // in a fold the button sits at the top of the open part, not in the summary (a click there would close it)
+      if (h.tagName === 'H2') h.after(b); else card.querySelector(':scope > summary').after(b);
+      infoCards.push({ b: b, h: h });
+    });
+    infoLabels();
+  }
+  function infoLabels() {
+    infoCards.forEach(function (c) {
+      c.b.textContent = '\u24D8 ' + L.infoShow;
+      c.b.setAttribute('aria-label', L.infoAbout + c.h.textContent);
+    });
+  }
   $('setSearch').addEventListener('input', function () {
     advOpen(advIsOpen);
+    $('settings').classList.toggle('searching', !!this.value.trim()); // v0.10: explanations show while searching
     window.scrollTo(0, 0); // v0.10 (item 191): the first hit is at the top, not above the window
     var words = this.value.toLowerCase().split(/\s+/).filter(Boolean), any = false;
     document.querySelectorAll('#settings .sgroup').forEach(function (g) {
@@ -1154,7 +1201,21 @@
       sg.append(c);
     });
     $('vSuggBox').hidden = !sg.childElementCount;
+    // v0.11: step 1 says which apps are picked, step 2 when they were saved
+    var chosen = v.apps.filter(function (a) { return a.chosen; }), saved = v.apps.filter(function (a) { return a.time; });
+    var names = chosen.map(function (a) { return a.name; });
+    $('vChosen').textContent = !names.length ? L.vNoneChosen : names.slice(0, 4).join(', ') + (names.length > 4 ? L.vMore(names.length - 4) : '');
+    var last = saved.map(function (a) { return a.time; }).sort().pop(), bytes = saved.reduce(function (t, a) { return t + (a.size || 0); }, 0);
+    $('vLast').textContent = last ? L.vLastSaved(last, saved.length, bytes ? size(bytes) : '') : L.vNotSaved;
+    $('vSnap').disabled = !chosen.length;
+    if (!names.length) vChange(true); // nothing picked yet: the list opens by itself
   }
+  function vChange(on) {
+    $('vAppsBox').hidden = !on;
+    $('vChange').textContent = on ? L.vChangeDone : L.vChange;
+    $('vChange').setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  $('vChange').addEventListener('click', function () { vChange($('vAppsBox').hidden); });
   loaders.vault = function () { ask('vaultInfo').then(showVault); };
   // ---------- v0.10 vault profiles ----------
   // The Restore card gets a profile picker: Everything, or only the apps of one profile (Work, Personal...).

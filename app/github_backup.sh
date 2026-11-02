@@ -33,7 +33,9 @@ rm -rf docs/banner.png docs/banner.id.png docs/features.png docs/fitur.png docs/
 # screenshot lama (v5.6) diganti hasil app/screenshots.sh
 [ -f docs/screens/en/home.png ] && rm -f docs/screens/menu.png docs/screens/home.png docs/screens/vault.png docs/screens/keep.png docs/screens/backup.png
 
-# Data pribadi, rahasia & catatan TIDAK ikut ke GitHub
+# Data pribadi, rahasia & catatan TIDAK ikut ke GitHub.
+# v5.26: daftar ini SAMA dengan .gitignore di repo (dulu daftar lama di sini membuang profiles.json, bin/amnesia
+# dan SECURITY.md dari .gitignore). test_clean.sh mengecek keduanya sama.
 cat > .gitignore <<'IGN'
 vault/
 *.log
@@ -52,12 +54,24 @@ video/paper/music/
 video/hyperframes/
 .DS_Store
 keep.conf
+keep.conf.*
 settings.conf
+profiles.json
+# v5.26: data pribadi dari Mac pemilik (daftar file yang akan dihapus, daftar app, laporan AI, trash)
+report.txt
+apps_baseline.txt
+amnesia-report*.md
+trash.failed
+history.log
 backup.ok
 backup.vault.ok
 clean.done
 crash/
 bin/
+# v5.25: perintah Terminal bin/amnesia ikut repo (isi bin/ lain, mis. 7zz, tetap diabaikan)
+!/bin/
+/bin/*
+!/bin/amnesia
 obj/
 windows/out/
 .engine_version
@@ -68,6 +82,7 @@ windows/out/
 !CHANGELOG.id.md
 !TERMS.md
 !TERMS.id.md
+!SECURITY.md
 !windows/README.md
 !windows/THIRD-PARTY-NOTICES.md
 IGN
@@ -76,7 +91,7 @@ echo "2/7  Commit & push..."
 [ -d .git ] || git init -q -b main
 git config user.name >/dev/null || git config user.name "$(gh api user -q .login)"
 git config user.email >/dev/null || git config user.email "$(gh api user -q .id)+$(gh api user -q .login)@users.noreply.github.com"
-git rm -r -q --cached --ignore-unmatch keep.conf settings.conf backup.ok AMNESIA_SPEK.md PROFILE_VAULT_SPEK.md reset.sh clean_keychain.sh keep_apps.conf amnesia_app.py templates __pycache__ >/dev/null
+git rm -r -q --cached --ignore-unmatch keep.conf settings.conf backup.ok report.txt apps_baseline.txt profiles.json AMNESIA_SPEK.md PROFILE_VAULT_SPEK.md reset.sh clean_keychain.sh keep_apps.conf amnesia_app.py templates __pycache__ >/dev/null
 git add -A
 git commit -q -m "Amnesia v$V - $(date '+%F %H:%M')" || echo "     nothing new to commit"
 if git remote get-url origin >/dev/null 2>&1; then git push -q -u origin main

@@ -15,12 +15,24 @@ video/paper/music/
 video/hyperframes/
 .DS_Store
 keep.conf
+keep.conf.*
 settings.conf
+profiles.json
+# v5.26: data pribadi dari Mac pemilik (daftar file yang akan dihapus, daftar app, laporan AI, trash)
+report.txt
+apps_baseline.txt
+amnesia-report*.md
+trash.failed
+history.log
 backup.ok
 backup.vault.ok
 clean.done
 crash/
 bin/
+# v5.25: perintah Terminal bin/amnesia ikut repo (isi bin/ lain, mis. 7zz, tetap diabaikan)
+!/bin/
+/bin/*
+!/bin/amnesia
 obj/
 windows/out/
 .engine_version
@@ -31,5 +43,6 @@ windows/out/
 !CHANGELOG.id.md
 !TERMS.md
 !TERMS.id.md
+!SECURITY.md
 !windows/README.md
 !windows/THIRD-PARTY-NOTICES.md

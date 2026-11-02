@@ -642,10 +642,10 @@ struct TerminalCommandCard: View {
                 IconBadge(icon: "terminal.fill", colors: Pal.gray, size: 34)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(SettingsView.tTerminal.title).font(.system(size: 14, weight: .semibold))
-                    MoreText(SettingsView.tTerminal.sub).font(.system(size: 11)).foregroundStyle(.secondary)
+                    InfoText(SettingsView.tTerminal.sub).font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
-                Toggle("", isOn: Binding(get: { on }, set: { v in toggle(v) }))
+                Toggle(SettingsView.tTerminal.title, isOn: Binding(get: { on }, set: { v in toggle(v) }))
                     .toggleStyle(.switch)
                     .labelsHidden()
                     .accessibilityLabel(SettingsView.tTerminal.title)      // v5.25 (197)

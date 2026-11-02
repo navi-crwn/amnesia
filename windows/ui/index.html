@@ -392,27 +392,33 @@
       <p class="muted" id="vCreateMsg" role="status"></p>
     </section>
 
+    <!-- v0.11 (owner, 2 Nov): the vault page as three numbered steps, in the order you use them:
+         1 pick the apps, 2 save now, 3 bring them back. Vault options sit apart below. -->
     <div id="vMain" class="view" hidden>
-      <section class="card">
-        <div class="card-head">
-          <div>
-            <h2 data-t="vAppsTitle"></h2>
-            <p class="muted" data-t="vAppsText"></p>
+      <section class="card step">
+        <h2><span class="stepn" aria-hidden="true">1</span><span data-t="vStep1"></span></h2>
+        <p class="muted" id="vChosen"></p>
+        <div class="row"><button class="btn ghost" id="vChange" aria-expanded="false" aria-controls="vAppsBox"></button></div>
+        <div id="vAppsBox" hidden>
+          <p class="muted small" data-t="vAppsText"></p>
+          <ul class="list rows" id="vApps"></ul>
+          <div class="row"><button class="btn ghost" id="vAddFolder" data-t="vAddFolder"></button></div>
+          <div id="vSuggBox" hidden>
+            <p class="muted small" data-t="vSuggText"></p>
+            <div class="chips" id="vSugg"></div>
           </div>
-          <button class="btn" id="vSnap" data-t="vSnap"></button>
         </div>
-        <ul class="list rows" id="vApps"></ul>
-        <div class="row"><button class="btn ghost" id="vAddFolder" data-t="vAddFolder"></button></div>
-        <div id="vSuggBox" hidden>
-          <p class="muted small" data-t="vSuggText"></p>
-          <div class="chips" id="vSugg"></div>
-        </div>
+      </section>
+      <section class="card step">
+        <h2><span class="stepn" aria-hidden="true">2</span><span data-t="vStep2"></span></h2>
+        <p class="muted" id="vLast"></p>
+        <div class="row"><button class="btn" id="vSnap" data-t="vSnap"></button></div>
+        <p class="muted small" data-t="vStep2Note"></p>
         <div class="progress" id="vProg" hidden><div class="bar"><i></i></div><span></span><button class="btn ghost small" data-cancel data-t="cancel"></button></div>
         <p class="muted" id="vMsg" role="status"></p>
       </section>
-      <section class="card">
-        <h2 data-t="vRestoreTitle"></h2>
-        <p class="muted" data-t="vRestoreText"></p>
+      <section class="card step">
+        <h2><span class="stepn" aria-hidden="true">3</span><span data-t="vStep3"></span></h2>
         <!-- v0.10 vault profiles: restore only the apps of one profile -->
         <div class="row vp-pick" id="vpPick" hidden>
           <label class="vp-label" for="vProfile" data-t="vpLabel"></label>
@@ -424,14 +430,14 @@
         <p class="warn small vp-shared" id="vpShared" hidden></p>
         <p class="muted small" id="vpFull" data-t="vpFull" hidden></p>
         <div class="row">
-          <input class="input" type="password" id="vRestorePw" data-ph="vPwPh" autocomplete="current-password">
+          <input class="input" type="password" id="vRestorePw" data-ph="vPwPh" autocomplete="current-password" data-tip="vPwPh">
           <button class="btn" id="vRestore" data-t="vRestore"></button>
         </div>
         <label class="check"><input type="checkbox" id="vRestorePrev"> <span data-t="vRestorePrev"></span></label>
         <p id="vRestoreMsg" role="status" class="muted"></p>
       </section>
-      <section class="card">
-        <h2 data-t="vOptions"></h2>
+      <details class="card fold" id="vFoldOpts">
+        <summary><b data-t="vOptions"></b><span class="muted small" data-t="vOptsFold"></span></summary>
         <label class="switch"><input type="checkbox" data-set="vaultAuto"><span><b data-t="vAuto"></b><span class="muted" data-t="vAutoText"></span></span></label>
         <label class="switch"><input type="checkbox" data-set="restoreRemind"><span><b data-t="vRemind"></b><span class="muted" data-t="vRemindText"></span></span></label>
         <label class="switch"><input type="checkbox" data-set="doomsday"><span><b data-t="vDoom"></b><span class="muted" data-t="vDoomText"></span></span></label>
@@ -453,7 +459,7 @@
           </div>
         </details>
         <p class="muted" id="vOptMsg" role="status"></p>
-      </section>
+      </details>
     </div>
 
     <!-- v0.10 vault profiles: editor (opened from the Restore card) -->

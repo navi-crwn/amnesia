@@ -166,12 +166,9 @@ public static class VaultProfiles
                 var f = ReadFile();
                 var stored = Stored(f);
                 if (id == LastRaw() && f != null) return; // v0.10 (item 189): nothing changed, nothing written
-                if (stored == null && id == AllId)
-                {
-                    // v0.10 (item 189): "Everything" is the default, so no file is needed for it
-                    try { if (System.IO.File.Exists(File)) System.IO.File.Delete(File); } catch { }
-                    return;
-                }
+                // v0.10 (item 189): "Everything" is the default, so no file is made for it.
+                // Item 201: a file that is already there is not deleted, it gets "last": "all".
+                if (stored == null && id == AllId && f == null) return;
                 Write(stored, id); // no profiles stored yet: only "last" is written, the built-ins still follow the language
             }
         }

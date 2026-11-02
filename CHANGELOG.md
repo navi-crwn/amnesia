@@ -7,6 +7,37 @@ Quick backstory: on October 6, 2026 Amnesia was a handful of scripts. Two days a
 
 Your version number is next to the Amnesia title and at the bottom of the menu bar panel.
 
+## v5.26.0 · A Profile Vault you can follow step by step (Nov 2, 2026)
+
+**Turn Off** Amnesia before installing, then turn it on again.
+
+### Changed
+- Profile Vault now has three numbered steps, in the order you use them: 1 pick the apps to save, 2 save your logins now (Snapshot Now), 3 bring them back after you log in (profile, password, Restore Profiles). Password, panic word, moving to a new Mac and the delete buttons are in Vault settings at the bottom.
+- In step 1, Change… opens the app list, other apps with logins, the light snapshot switches and folders. It opens by itself when no app is picked yet.
+- In step 2, See each app shows every snapshot with its size and its own trash button.
+- Settings show one line per setting. The ⓘ button next to a title opens its explanation, and explanations also show while you search. Longer cards (Keep lock, Brankas, Terminal command, auto logout) have an Info link instead of a long text.
+- README texts are shorter and plainer.
+
+### Fixed
+- VoiceOver reads the name of every button and switch: Back, Settings, the minus and trash buttons, switches, home tiles and group titles. The names sit inside the controls now, and a test checks this.
+- A preview that can't read the Keep List says "STOPPED, nothing was checked" instead of "0 items would be deleted". The preview also accepts a Keep List given as a pipe (`--keep-file=<(...)`).
+- Going back to Everything in Memory Recall keeps `profiles.json` and writes "last: all" in it, instead of deleting the file.
+
+### Privacy
+- Two files from the developer's own Mac were in the repository since v5.8: `report.txt` (a list of files a cleanup would delete) and `apps_baseline.txt` (installed apps). They are removed from the repository and can't be added by the release script again. Your own copies of these files are never uploaded by the app.
+- The release script now writes the same `.gitignore` as the repository, so `profiles.json`, `keep.conf.last` and the files above stay on the Mac. A test checks both lists.
+
+## Windows v0.11.0 · A Vault page you can follow step by step (Nov 2, 2026)
+
+Not released yet. It comes with the next Windows release, together with everything from v0.10.0 below.
+
+### Changed
+- The Vault page has three numbered steps: 1 pick the apps to save (with Change...), 2 save your logins now (Snapshot now, and when they were last saved), 3 bring them back after you sign in. Vault options are folded away below.
+- Settings and Vault cards show a small Info button; the grey explanations open with it, and show while you search.
+
+### Fixed
+- Going back to Everything for a restore keeps `profiles.json` (it now says "last: all") instead of deleting it.
+
 ## v5.25.0 · Amnesia modes, vault profiles and Ask an AI (Oct 26, 2026)
 
 This release also contains everything from v5.24.0 below, which was never released on its own.

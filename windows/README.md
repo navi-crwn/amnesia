@@ -2,7 +2,7 @@
 
 # Amnesia for Windows
 
-**v0.10.0**, an official release for Windows 10 and 11 (x64 and ARM). Once you press **Turn On**, Amnesia **really deletes** what's in your user folder at sign out, restart and shutdown (and checks again at sign in), except your Keep folder and Keep List. Look at **What gets wiped** before you turn it on. Website: [navi-crwn.github.io/amnesia/win](https://navi-crwn.github.io/amnesia/win/).
+**v0.11.0**, an official release for Windows 10 and 11 (x64 and ARM). Once you press **Turn On**, Amnesia **really deletes** what's in your user folder at sign out, restart and shutdown (and checks again at sign in), except your Keep folder and Keep List. Look at **What gets wiped** before you turn it on. Website: [navi-crwn.github.io/amnesia/win](https://navi-crwn.github.io/amnesia/win/).
 
 ## Install
 - **Setup.exe** (`Amnesia-Setup-<version>-x64.exe` for normal PCs, `-arm64.exe` for Windows on ARM) from the Windows release on [Releases](../../../releases) (tags start with `win-v`). It installs just for you, no admin, into `%LOCALAPPDATA%\Programs\Amnesia`, with a Start menu entry and an Apps & features entry. Amnesia stays off until you turn it on.

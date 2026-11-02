@@ -412,7 +412,12 @@ try:
     cli("profile-last", "work")
     assert os.path.exists(v.F_PROFILES) and cli("profiles")["last"] == "work"
     cli("profile-last", "all")
-    assert not os.path.exists(v.F_PROFILES) and cli("profiles")["last"] == "all"
+    # 201: file yang sudah ada tidak dihapus, isinya "last": "all"
+    assert os.path.exists(v.F_PROFILES) and cli("profiles")["last"] == "all"
+    assert _json.load(open(v.F_PROFILES)).get("last") == "all"
+    os.remove(v.F_PROFILES)
+    cli("profile-last", "all")
+    assert not os.path.exists(v.F_PROFILES), "189: Semua tanpa file = tidak ada file baru"
     # profil bawaan tanpa app di Mac ini disembunyikan
     old_b = v.BUILTIN_PROFILES
     v.BUILTIN_PROFILES = old_b + [("empty", ("Empty", "Kosong"), ["Zoom", "Bitwarden"])]

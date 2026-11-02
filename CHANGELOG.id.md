@@ -7,6 +7,37 @@ Sedikit cerita: tanggal 6 Oktober 2026 Amnesia masih berupa beberapa skrip. Dua 
 
 Nomor versi kamu ada di samping judul Amnesia dan di bagian bawah panel menu bar.
 
+## v5.26.0 · Profile Vault yang bisa diikuti langkah demi langkah (2 Nov 2026)
+
+**Turn Off** Amnesia dulu sebelum memasang, lalu nyalakan lagi.
+
+### Diubah
+- Profile Vault sekarang punya 3 langkah bernomor sesuai urutan pakai: 1 pilih app yang disimpan, 2 simpan login sekarang (Snapshot Sekarang), 3 kembalikan setelah login (profil, password, Restore Profil). Password, kata panik, pindah Mac dan tombol hapus ada di Pengaturan vault di bagian bawah.
+- Di langkah 1, Ubah… membuka daftar app, app lain yang punya login, tombol snapshot ringan dan folder. Daftar ini terbuka sendiri kalau belum ada app yang dipilih.
+- Di langkah 2, Lihat per app menampilkan tiap snapshot dengan ukurannya dan tombol hapusnya sendiri.
+- Pengaturan cukup 1 baris per pengaturan. Tombol ⓘ di samping judul membuka penjelasannya, dan penjelasan juga tampil saat mencari. Kartu yang panjang (Kunci Keep, Brankas, perintah Terminal, logout otomatis) memakai link Info, bukan teks panjang.
+- Teks README lebih pendek dan lebih sederhana.
+
+### Diperbaiki
+- VoiceOver membaca nama setiap tombol dan sakelar: Kembali, Pengaturan, tombol minus dan tempat sampah, sakelar, tile beranda dan judul grup. Namanya sekarang ada di dalam kontrolnya sendiri, dan ada tes yang mengeceknya.
+- Pratinjau yang tidak bisa membaca Keep List menulis "BERHENTI, tidak ada yang dicek", bukan "0 item akan dihapus". Pratinjau juga menerima Keep List berupa pipa (`--keep-file=<(...)`).
+- Kembali ke Semua di Memory Recall tidak lagi menghapus `profiles.json`; isinya jadi "last: all".
+
+### Privasi
+- Dua file dari Mac developer ada di repository sejak v5.8: `report.txt` (daftar file yang akan dihapus pembersihan) dan `apps_baseline.txt` (daftar app terpasang). Keduanya dikeluarkan dari repository dan tidak bisa ditambahkan lagi oleh script rilis. Salinan file ini di Mac kamu tidak pernah diunggah oleh app.
+- Script rilis sekarang menulis `.gitignore` yang sama dengan repository, jadi `profiles.json`, `keep.conf.last` dan file di atas tetap di Mac. Ada tes yang mengecek kedua daftar itu.
+
+## Windows v0.11.0 · Halaman Vault yang bisa diikuti langkah demi langkah (2 Nov 2026)
+
+Belum dirilis. Ikut rilis Windows berikutnya, bersama semua perubahan v0.10.0 di bawah.
+
+### Diubah
+- Halaman Vault punya 3 langkah bernomor: 1 pilih app yang disimpan (dengan Ubah...), 2 simpan login sekarang (Snapshot sekarang, dan kapan terakhir disimpan), 3 kembalikan setelah login. Pilihan vault dilipat di bawah.
+- Kartu Pengaturan dan Vault punya tombol Info kecil; penjelasan abu-abu dibuka lewat tombol itu, dan tampil saat mencari.
+
+### Diperbaiki
+- Kembali ke Semua untuk restore tidak lagi menghapus `profiles.json` (isinya jadi "last: all").
+
 ## v5.25.0 · Mode Amnesia, profil vault dan Tanya AI (26 Okt 2026)
 
 Rilis ini juga berisi semua perubahan v5.24.0 di bawah, yang tidak pernah dirilis sendiri.

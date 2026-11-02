@@ -238,7 +238,8 @@ elif [ -e "$A/keep.example.conf" ]; then
 fi
 if [ -n "$KEEPF" ]; then
     # dibaca utuh dulu: gagal di tengah jalan = tidak bisa dibaca (bukan Keep List yang setengah)
-    if [ -f "$KEEPF" ] && KTXT="$(cat "$KEEPF" 2>/dev/null)"; then
+    # v5.25 (item 200): --keep-file (hanya dry-run) boleh juga pipa seperti <(grep ...) (/dev/fd/N), dibaca sekali
+    if { [ -f "$KEEPF" ] || { [ "$KFSET" = 1 ] && [ -r "$KEEPF" ] && [ ! -d "$KEEPF" ]; }; } && KTXT="$(cat "$KEEPF" 2>/dev/null)"; then
         while IFS= read -r line || [ -n "$line" ]; do
             line="${line%$'\r'}"
             line="${line#"${line%%[![:space:]]*}"}"; line="${line%"${line##*[![:space:]]}"}"
@@ -256,7 +257,12 @@ fi
 if [ -n "$KSTOP" ]; then
     if [ "$DRY" = 1 ]; then
         echo "STOP  $KSTOP"
-        echo "--- dry-run ($MODE): $(t "0 items would be deleted. Nothing was deleted." "0 item akan dihapus. Tidak ada yang dihapus.") ---"
+        # v5.25 (item 200): bukan "0 item akan dihapus", karena memang tidak ada yang dicek
+        case "$KSTOP" in
+            keeplist-missing) why="$(t "the Keep List is missing" "Keep List hilang")" ;;
+            *) why="$(t "the Keep List can't be read" "Keep List tidak bisa dibaca")" ;;
+        esac
+        echo "--- dry-run ($MODE): $(t "STOPPED, $why. Nothing was checked and nothing was deleted." "BERHENTI, $why. Tidak ada yang dicek dan tidak ada yang dihapus.") ---"
         exit 0
     fi
     echo "$(date '+%F %T') $MODE: STOPPED $KSTOP" > "$A/clean.log"

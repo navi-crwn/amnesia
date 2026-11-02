@@ -309,3 +309,18 @@ select.input{flex:0 0 auto;padding-right:28px}
 .ainotes{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px}
 .aisugg{display:grid;gap:10px}
 #ai details summary{cursor:pointer;color:var(--cyan);font-size:14px}
+/* v0.10 (owner, 27 Oct): compact pages. Folding cards (Vault) and explanations behind an "Info" button (Settings, Vault) */
+details.fold{margin-top:0}
+details.fold>summary{list-style:none;display:flex;flex-direction:column;gap:2px;color:var(--text);padding-right:22px;position:relative}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::after{content:"\203A";position:absolute;right:2px;top:50%;transform:translateY(-50%);font-size:20px;color:var(--muted);transition:transform .15s}
+details.fold[open]>summary::after{transform:translateY(-50%) rotate(90deg)}
+details.fold[open]>summary{margin-bottom:10px}
+.has-info h2.ihead{display:inline-block;margin-right:8px}
+.infobtn{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--cyan);font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px;border-radius:6px}
+.infobtn:focus-visible{outline:2px solid var(--cyan)}
+.has-info:not(.show-info) .finfo{display:none!important}
+#settings.searching .has-info .finfo{display:block!important}
+/* v0.11 (owner, 2 Nov): numbered steps on the Vault page */
+.card.step h2{display:flex;align-items:center;gap:10px}
+.stepn{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--indigo);color:#fff;font-size:13px;font-weight:700;flex:none}

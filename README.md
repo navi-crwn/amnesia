@@ -9,7 +9,7 @@
 <p align="center"><a href="https://navi-crwn.github.io/amnesia/#film"><img src="docs/media/teaser.gif" alt="A 15-second paper craft clip: a spy logs in to a Mac and finds nothing" width="720"></a><br><sub>▶ Watch the full 54-second story, with sound, on the <a href="https://navi-crwn.github.io/amnesia/#film">website</a></sub></p>
 
 <p align="center">
-  <a href="../../releases/latest"><b>⬇️ Download the app</b></a> ·
+  <a href="../../releases/latest"><b>Download the app</b></a> ·
   <a href="https://navi-crwn.github.io/amnesia/">Website</a> ·
   <a href="https://navi-crwn.github.io/amnesia/win/">Windows</a> ·
   <a href="#install">Install</a> ·
@@ -19,7 +19,7 @@
   <a href="TERMS.md">Terms</a>
 </p>
 
-<p align="center"><sub>Latest: <b>Mac v5.25.0</b> · <b>Windows v0.10.0</b> · free and open source (MIT)</sub></p>
+<p align="center"><sub>Latest: <b>Mac v5.26.0</b> · <b>Windows v0.11.0</b> · free and open source (MIT)</sub></p>
 
 > [!WARNING]
 > **Amnesia really deletes data.** Once you turn it on, everything outside your Keep folder and Keep List is deleted at every logout, restart and shutdown. It doesn't go to the Trash and can't be undone. Please read the short [terms & warning](TERMS.md) before you install.
@@ -30,7 +30,7 @@
 
 Think of your Mac as a desk. When you're done for the day, Amnesia **clears the desk**: browser history, cookies, downloads, caches, Terminal history, all gone. Tomorrow you start fresh, with nothing left over from yesterday.
 
-The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, Telegram and the rest every single day. That's 15–20 minutes of your life. So Amnesia comes with a **Profile Vault**, a locked safe for your logins. After you log in to your Mac, type **one password** and all your logins are back.
+If everything is gone, you'd have to log back in to Gmail, WhatsApp, Telegram and the rest every day, which takes 15 to 20 minutes. So Amnesia comes with a **Profile Vault**, a locked safe for your logins. After you log in to your Mac, type **one password** and all your logins are back.
 
 **Good for you if you:**
 - share your Mac (or Windows PC), or use it in public places,
@@ -41,7 +41,7 @@ The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, 
 
 <p align="center"><picture><source media="(prefers-color-scheme: light)" srcset="docs/readme/app-en-light.webp"><img src="docs/readme/app-en-dark.webp" alt="The Amnesia main window" width="46%"></picture></p>
 
-📖 **The full story, a click-along tutorial and the FAQ:** [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/)
+The full story, a click-along tutorial and the FAQ are on the website: [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/)
 
 <details>
 <summary><b>A closer look</b></summary>
@@ -55,7 +55,7 @@ The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, 
 
 ## What gets wiped, what stays?
 
-| 🗑️ Wiped at every logout | ✅ Stays safe |
+| Wiped at every logout | Stays safe |
 |---|---|
 | Browser history & cookies | Everything in your **Keep folder** (`~/Keep` by default; put it anywhere, call it anything) |
 | Desktop, Downloads, Documents, Pictures | Logins saved in the **Profile Vault** |
@@ -73,50 +73,50 @@ bash ~/.amnesia/clean.sh logout --dry-run
 
 ## Features
 
-- **🛡️ Auto wipe.** Cleaning runs **before** your Mac logs out, restarts or shuts down. At the next login Amnesia checks again, so anything that slipped through gets cleaned too.
-- **🔐 Profile Vault.** Your Chrome logins (Gmail, WhatsApp Web, Telegram Web), Claude, WhatsApp, and coding tools like Claude Code, OpenCode, Gemini CLI and GitHub CLI go into an encrypted safe (AES-256). One password brings them back. Other Chromium browsers (Brave, Edge, Vivaldi, Arc, Opera) can be added with one tap, and so can Signal, Session, Element, Telegram, Obsidian, Notion, Zoom and Bitwarden. Amnesia also suggests other installed apps that look like they keep a login.
-- **↩️ Restore that never goes backwards.** If an app's data on your Mac is newer than its snapshot, you're asked first. Anything on your Keep List is never overwritten by a restore. And until your next logout, **Undo Restore** on the vault page puts back what was there before.
-- **🪶 Light snapshot, per browser.** The **Light snapshot** card in Profile Vault has a switch for each browser. On (default): the browser's caches and the program files of Web Store extensions are skipped, so the snapshot is much smaller and faster; logins, bookmarks and settings are still saved, and after Restore you press *Repair* on each extension. Off: everything is saved. Save & Log Out and the auto snapshot follow the same switch.
-- **⏏️ Save & Log Out.** One click: your logins are saved to the vault first, then the Mac logs out. If saving fails, the logout is cancelled, so nothing gets lost.
-- **⏸️ Pause 1 Session.** Need to skip the wipe just once? Hit Pause. After one logout and login, Amnesia turns itself back on.
-- **📌 Keep List.** Pick the folders and apps that should never be wiped, right from the app. Switch an app on and you see exactly what's kept (app data, settings, sizes). Keeping **Claude** also keeps your Claude Code chats (`~/.claude`, `~/.claude.json`).
-- **🔏 Keep lock.** Finder and other apps can't open or change your Keep folder until you type the Keep password in Amnesia. It locks again after 5–60 minutes, when the screen locks and at every logout. Honest note: this uses macOS permissions, not encryption, and file names right inside Keep stay visible. Off by default.
-- **🗄️ Brankas (experimental).** An encrypted disk (APFS, AES-256) inside your Keep folder for files that must stay secret. Amnesia closes it before every cleanup and tells you if it couldn't. Forget its password and the files are gone.
-- **🩺 Health check.** One page in Settings: is Amnesia on, Full Disk Access, iCloud Desktop & Documents, symlinked folders, virtual machines, big files about to go, your last backup, Keep lock, the Brankas, FileVault, free disk space, memory and battery condition. Most rows have a fix button. Next to it, **Limitations** lists what Amnesia can't wipe (Time Machine, Spotlight, iCloud, swap, system logs, other accounts).
-- **🧹 Care.** A page to free up space when you want, always with a list to check first: a read-only **Disk overview**, **Clean now** (caches, logs, Amnesia's trash; caches of open apps are skipped), **Uninstall apps** (to the Trash, personal data stays unless you tick it), **Project build folders** (node_modules, target, build, dist and more; folders used in the last 7 days or tracked by git are left alone), **Old installers** (.dmg, .pkg; disk images and virtual machines are never picked for you) and **Safe tune-ups** without an admin password. Nothing risky is ticked for you, and every run is in History with the space freed. Amnesia already wipes most of your home folder at logout, so Care mostly helps with your Keep folder, kept apps and big files from this session.
-- **🛑 Stops when unsure.** If the Keep List can't be read or has gone missing, the cleanup deletes nothing and says so in History. A copy of your last good Keep List is kept to restore it. When a check can't tell (cloud, iCloud, links, owner), the item is kept.
-- **🎚️ Amnesia modes.** Pick how much is forgotten at every logout. **Retrograde Amnesia** is like a brand-new account at every login: only your Keep folder and what Amnesia needs to work stay. **Selective Amnesia** (recommended) is the basic list for a new install: your Keep folder, app logins from the vault, SSH keys, Git and shell settings. You add your own apps. **Partial Amnesia** lets apps keep their settings and logins in place, while your files, Downloads, Desktop, caches, logs, the Trash and shell history are wiped (honest note: browsing history and cookies inside a browser's own folder stay too, because that folder is kept). **Custom Amnesia** is your own Keep List. Every switch shows a preview first (what will now be wiped, what will now be kept), warns you when more is wiped, and takes effect at the next logout. A mode only changes its own marked section of the Keep List, so your own lines stay. A missing or damaged mode file never empties your Keep List.
-- **👥 Vault profiles.** Restore only what you need, like **Work** or **Personal**, or everything. Rename, add and remove profiles. When one app is in two profiles, Amnesia says so: one browser holds one set of logins, so a second browser (or a separate browser profile) keeps personal use apart.
-- **🤖 Ask an AI.** Get advice without sharing your files. Amnesia makes a report with no file contents and no names of your files (folder names can be hidden too), plus a ready prompt. Copy it or save it to your Keep folder, paste it into the AI you choose, then paste the answer back. Every suggested change gets a checkbox and the same preview as a mode switch; nothing is applied until you confirm, and Amnesia's own lines can't be removed this way. Amnesia makes no network calls for this.
-- **⌨️ Terminal command.** Switch it on in Settings and get a read-only `amnesia` command: `amnesia status`, `amnesia preview`, `amnesia report` (`--json`, `--hide-names`), `amnesia keep`, `amnesia history`. It never deletes or changes anything.
-- **🗂️ Your own Keep folder.** Files in it are never wiped. Put it anywhere (even on an external drive) and give it any name.
-- **💾 Backup anywhere.** Your chosen folders get locked into one `.7z` file (AES-256) and sent to:
+- **Auto wipe.** Cleaning runs **before** your Mac logs out, restarts or shuts down. At the next login Amnesia checks again, so anything that slipped through gets cleaned too.
+- **Profile Vault.** Your Chrome logins (Gmail, WhatsApp Web, Telegram Web), Claude, WhatsApp, and coding tools like Claude Code, OpenCode, Gemini CLI and GitHub CLI go into an encrypted safe (AES-256). One password brings them back. The page has three numbered steps in the order you use them: pick the apps, save them (Snapshot Now), and bring them back after you log in (Restore Profiles). Other Chromium browsers (Brave, Edge, Vivaldi, Arc, Opera) can be added with one tap, and so can Signal, Session, Element, Telegram, Obsidian, Notion, Zoom and Bitwarden. Amnesia also suggests other installed apps that look like they keep a login.
+- **Restore asks before going back in time.** If an app's data on your Mac is newer than its snapshot, you're asked first. Anything on your Keep List is never overwritten by a restore. And until your next logout, **Undo Restore** on the vault page puts back what was there before.
+- **Light snapshot, per browser.** In Profile Vault, step 1 → **Change…** has a **Light snapshot** switch for each browser. On (default): the browser's caches and the program files of Web Store extensions are skipped, so the snapshot is much smaller and faster; logins, bookmarks and settings are still saved, and after Restore you press *Repair* on each extension. Off: everything is saved. Save & Log Out and the auto snapshot follow the same switch.
+- **Save & Log Out.** One click: your logins are saved to the vault first, then the Mac logs out. If saving fails, the logout is cancelled, so nothing gets lost.
+- **Pause 1 Session.** Need to skip the wipe just once? Hit Pause. After one logout and login, Amnesia turns itself back on.
+- **Keep List.** Pick the folders and apps that should never be wiped, right from the app. Switch an app on and you see exactly what's kept (app data, settings, sizes). Keeping **Claude** also keeps your Claude Code chats (`~/.claude`, `~/.claude.json`).
+- **Keep lock.** Finder and other apps can't open or change your Keep folder until you type the Keep password in Amnesia. It locks again after 5 to 60 minutes, when the screen locks and at every logout. It uses macOS permissions rather than encryption, and file names right inside Keep stay visible. Off by default.
+- **Brankas (experimental).** An encrypted disk (APFS, AES-256) inside your Keep folder for files that must stay secret. Amnesia closes it before every cleanup and tells you if it couldn't. Forget its password and the files are gone.
+- **Health check.** One page in Settings: is Amnesia on, Full Disk Access, iCloud Desktop & Documents, symlinked folders, virtual machines, big files about to go, your last backup, Keep lock, the Brankas, FileVault, free disk space, memory and battery condition. Most rows have a fix button. Next to it, **Limitations** lists what Amnesia can't wipe (Time Machine, Spotlight, iCloud, swap, system logs, other accounts).
+- **Care.** A page to free up space when you want, always with a list to check first: a read-only **Disk overview**, **Clean now** (caches, logs, Amnesia's trash; caches of open apps are skipped), **Uninstall apps** (to the Trash, personal data stays unless you tick it), **Project build folders** (node_modules, target, build, dist and more; folders used in the last 7 days or tracked by git are left alone), **Old installers** (.dmg, .pkg; disk images and virtual machines are never picked for you) and **Safe tune-ups** without an admin password. Nothing risky is ticked for you, and every run is in History with the space freed. Amnesia already wipes most of your home folder at logout, so Care mostly helps with your Keep folder, kept apps and big files from this session.
+- **Stops when unsure.** If the Keep List can't be read or has gone missing, the cleanup deletes nothing and says so in History. A copy of your last good Keep List is kept to restore it. When a check can't tell (cloud, iCloud, links, owner), the item is kept.
+- **Amnesia modes.** Pick how much is forgotten at every logout. **Retrograde Amnesia** is like a brand-new account at every login: only your Keep folder and what Amnesia needs to work stay. **Selective Amnesia** (recommended) is the basic list for a new install: your Keep folder, app logins from the vault, SSH keys, Git and shell settings. You add your own apps. **Partial Amnesia** lets apps keep their settings and logins in place, while your files, Downloads, Desktop, caches, logs, the Trash and shell history are wiped. Browsing history and cookies inside a browser's own folder stay too, because that folder is kept. **Custom Amnesia** is your own Keep List. Every switch shows a preview first (what will now be wiped, what will now be kept), warns you when more is wiped, and takes effect at the next logout. A mode only changes its own marked section of the Keep List, so your own lines stay. A missing or damaged mode file never empties your Keep List.
+- **Vault profiles.** Restore only what you need, like **Work** or **Personal**, or everything. Rename, add and remove profiles. When one app is in two profiles, Amnesia says so: one browser holds one set of logins, so a second browser (or a separate browser profile) keeps personal use apart.
+- **Ask an AI.** Get advice without sharing your files. Amnesia makes a report with no file contents and no names of your files (folder names can be hidden too), plus a ready prompt. Copy it or save it to your Keep folder, paste it into the AI you choose, then paste the answer back. Every suggested change gets a checkbox and the same preview as a mode switch; nothing is applied until you confirm, and Amnesia's own lines can't be removed this way. Amnesia makes no network calls for this.
+- **Terminal command.** Switch it on in Settings and get a read-only `amnesia` command: `amnesia status`, `amnesia preview`, `amnesia report` (`--json`, `--hide-names`), `amnesia keep`, `amnesia history`. It never deletes or changes anything.
+- **Your own Keep folder.** Files in it are never wiped. Put it anywhere (even on an external drive) and give it any name.
+- **Backup anywhere.** Your chosen folders get locked into one `.7z` file (AES-256) and sent to:
   - a **USB drive / SSD** that's plugged in,
   - **your own server / VPS** over SSH + rsync. Type the server password once, Amnesia sets up the key. No Terminal.
   - the **cloud**: Google Drive, Dropbox, OneDrive, Box or pCloud. You log in through your browser, no Terminal needed. (S3, WebDAV and 40+ more work through rclone.)
-- **⏰ Scheduled backups.** Daily or weekly, running on their own while the Amnesia icon is in the menu bar. **Run the scheduled backup now** tests it right away.
-- **🔎 Check a backup file.** Pick a backup `.7z` and Amnesia opens it in a temporary folder to check that the vault inside can be restored. Nothing in your current vault changes. It tells you clearly if the password is wrong or the file has no vault inside.
-- **↩️ Restore Files.** Pick files or folders from a backup and Amnesia puts them back where they came from. Anything already there is moved to `~/.amnesia/before-restore` first, never overwritten. Prefer another place? Press **To Another Folder**.
-- **🕘 History.** A page that lists every cleanup, snapshot, restore and backup, grouped by day. Only times and app names, never your file names.
-- **🚚 Move to a new Mac.** Take all your logins with you: the Keychain keys go into the vault, the vault goes into a backup, and you restore it on the new Mac.
-- **👋 Welcome tour.** The first time you open it, Amnesia shows you around, checks that everything's ready, finds your apps and asks which ones should keep their data.
-- **🔥 Panic button.** Get the vault password wrong 3 times, or type your *panic word*, and the vault is destroyed on the spot.
-- **👀 Check before logout.** Logging out or restarting from the Apple menu? Amnesia holds on for a second and shows what's about to be deleted. You decide: continue or cancel. The list is prepared in the background, so it opens right away.
-- **🏠 Offline & private.** No servers, no accounts, no tracking, no analytics. Nothing leaves your Mac unless you set up a backup yourself. The only thing Amnesia asks the internet is GitHub's newest version number (every week, 2 weeks or month, your pick), and you can switch that off.
-- **🔗 Safe with iCloud and symlinks.** With iCloud Desktop & Documents on, those two folders are skipped, so nothing is deleted from iCloud or your other Apple devices. Folders that are symlinks are never emptied through the link. Files that couldn't be deleted are counted as "could not be deleted", never as cleaned.
-- **📸 Auto snapshot.** Forgot to press Save & Log Out? On a normal logout, restart or shutdown, Amnesia still saves the apps whose data **changed** since their last snapshot (at most 150 seconds, so the Mac doesn't hang). Apps you switched off in the vault are skipped. If it runs out of time, the older snapshot of that app stays. It also runs when you made a snapshot just a few minutes earlier, so work done after a manual snapshot isn't lost.
-- **🎨 Clear warnings.** Every popup is split into colored boxes: *What will happen* (blue), *What gets deleted* (red), *These stay saved (not deleted)* (green) and *What you need to do* (purple).
-- **🔔 Notifications.** After login, Amnesia tells you the Mac is clean and reminds you to restore your profiles.
-- **⚙️ Settings.** Turn any of the above on or off. **Run in the background** keeps Amnesia as just the menu bar icon at login, no window. A Keep alias on the Desktop and Keep in the Finder sidebar come back after every cleanup (both can be switched off), and the menu bar panel has **Open Keep**.
-- **🧰 Advanced.** Settings that need a bit of thought live together on one page: **log out when the Mac is left alone** (5 to 60 minutes, with a 60-second countdown you cancel by touching anything), **remove apps installed later** (apps you install after switching it on go at logout, unless you press Keep; apps installed with an admin password are left alone), the panic word and Move to a New Mac.
-- **⬇️ Signed updates from the app.** Amnesia checks GitHub on the schedule you pick, downloads the new version, checks it against `SHA256SUMS.txt` **and** the developer's signature on that file (`SHA256SUMS.txt.sig`, ECDSA P-256), and installs it when you press **Install & Reopen**. No valid signature, no install: it opens the release page instead. Installed with Homebrew? Then `brew upgrade` stays the way to update.
-- **🔒 FileVault check.** The Health check shows whether disk encryption is on. Amnesia only wipes at logout and your Keep folder isn't encrypted, so FileVault is strongly recommended.
-- **🌐 Two languages.** English or Bahasa Indonesia, pick one in Settings.
-- **🟢 Menu bar icon.** You can always see Amnesia's status in the top right: green is on, orange is paused, red is off. The big **Turn On / Turn Off** button sits right on the status card of the home page.
+- **Scheduled backups.** Daily or weekly, running on their own while the Amnesia icon is in the menu bar. **Run the scheduled backup now** tests it right away.
+- **Check a backup file.** Pick a backup `.7z` and Amnesia opens it in a temporary folder to check that the vault inside can be restored. Nothing in your current vault changes. It tells you clearly if the password is wrong or the file has no vault inside.
+- **Restore Files.** Pick files or folders from a backup and Amnesia puts them back where they came from. Anything already there is moved to `~/.amnesia/before-restore` first, never overwritten. Prefer another place? Press **To Another Folder**.
+- **History.** A page that lists every cleanup, snapshot, restore and backup, grouped by day. Only times and app names, never your file names.
+- **Move to a new Mac.** Take all your logins with you: the Keychain keys go into the vault, the vault goes into a backup, and you restore it on the new Mac.
+- **Welcome tour.** The first time you open it, Amnesia shows you around, checks that everything's ready, finds your apps and asks which ones should keep their data.
+- **Panic button.** Get the vault password wrong 3 times, or type your *panic word*, and the vault is destroyed on the spot.
+- **Check before logout.** Logging out or restarting from the Apple menu? Amnesia holds on for a second and shows what's about to be deleted. You decide: continue or cancel. The list is prepared in the background, so it opens right away.
+- **Offline & private.** No servers, no accounts, no tracking, no analytics. Nothing leaves your Mac unless you set up a backup yourself. The only thing Amnesia asks the internet is GitHub's newest version number (every week, 2 weeks or month, your pick), and you can switch that off.
+- **Safe with iCloud and symlinks.** With iCloud Desktop & Documents on, those two folders are skipped, so nothing is deleted from iCloud or your other Apple devices. Folders that are symlinks are never emptied through the link. Files that couldn't be deleted are counted as "could not be deleted", never as cleaned.
+- **Auto snapshot.** Forgot to press Save & Log Out? On a normal logout, restart or shutdown, Amnesia still saves the apps whose data **changed** since their last snapshot (at most 150 seconds, so the Mac doesn't hang). Apps you switched off in the vault are skipped. If it runs out of time, the older snapshot of that app stays. It also runs when you made a snapshot just a few minutes earlier, so work done after a manual snapshot isn't lost.
+- **Clear warnings.** Every popup is split into colored boxes: *What will happen* (blue), *What gets deleted* (red), *These stay saved (not deleted)* (green) and *What you need to do* (purple).
+- **Notifications.** After login, Amnesia tells you the Mac is clean and reminds you to restore your profiles.
+- **Settings.** Turn any of the above on or off. **Run in the background** keeps Amnesia as just the menu bar icon at login, no window. A Keep alias on the Desktop and Keep in the Finder sidebar come back after every cleanup (both can be switched off), and the menu bar panel has **Open Keep**.
+- **Advanced.** Settings that need a bit of thought live together on one page: **log out when the Mac is left alone** (5 to 60 minutes, with a 60-second countdown you cancel by touching anything), **remove apps installed later** (apps you install after switching it on go at logout, unless you press Keep; apps installed with an admin password are left alone), the panic word and Move to a New Mac.
+- **Signed updates from the app.** Amnesia checks GitHub on the schedule you pick, downloads the new version, checks it against `SHA256SUMS.txt` **and** the developer's signature on that file (`SHA256SUMS.txt.sig`, ECDSA P-256), and installs it when you press **Install & Reopen**. Without a valid signature it installs nothing and opens the release page instead. Installed with Homebrew? Then `brew upgrade` stays the way to update.
+- **FileVault check.** The Health check shows whether disk encryption is on. Amnesia only wipes at logout and your Keep folder isn't encrypted, so FileVault is strongly recommended.
+- **Two languages.** English or Bahasa Indonesia, pick one in Settings.
+- **Menu bar icon.** You can always see Amnesia's status in the top right: green is on, orange is paused, red is off. The big **Turn On / Turn Off** button sits right on the status card of the home page.
 
 ## Amnesia for Windows
 
-Amnesia also runs on **Windows 10 and 11** (x64 and ARM). It's an official release now, **v0.10.0**, built from the `windows/` folder. Same idea, made for Windows:
+Amnesia also runs on **Windows 10 and 11** (x64 and ARM). It's an official release now, **v0.11.0**, built from the `windows/` folder. Same idea, made for Windows:
 
 - wipes your user folder and Windows traces (recent files, jump lists, Explorer and search history, clipboard history and more) at **sign out, restart and shutdown**, and checks again at sign in
 - Keep folder and Keep List with app icons, one-click **Keep an app**, and a 3-day trash for apps you remove
@@ -165,12 +165,12 @@ bash ~/.amnesia/app/build.sh
 The welcome tour walks you through this, but here's the short version:
 
 1. **Create the vault.** Open *Profile Vault*, pick a password (at least 12 characters), then press *Create Vault*. This password **can't be recovered** if you forget it, so keep it somewhere safe.
-2. **Save your logins.** Log in to Chrome, WhatsApp and your other apps like normal, then press *Snapshot*.
+2. **Save your logins.** Log in to Chrome, WhatsApp and your other apps like normal. In Profile Vault, check the apps in step 1, then press *Snapshot Now* in step 2.
 3. **Protect your files.** Move anything important into your Keep folder (`~/Keep`, or wherever you put it).
 4. **Double-check.** Open Settings (⚙️) → **See what would be deleted now**, and make sure nothing important is on the list.
 5. **Turn it on.** Press *Turn On* on the home page's status card. From the next logout on, your Mac always starts clean.
 
-**Day to day:** log out with **Save & Log Out**. When you log back in, open Profile Vault and press **Restore Profiles**.
+**Day to day:** log out with **Save & Log Out**. When you log back in, open Profile Vault, type your password in step 3 and press **Restore Profiles**.
 
 ## Glossary
 
@@ -202,7 +202,7 @@ If you still know it and just want a new one: Profile Vault → **Password**. Yo
 No. The vault locks snapshots with a key that only your password can open, so saving needs no password; only **Restore** does. Every app has its own snapshot, so saving one app never overwrites another; only the newest one per app is kept. You choose which apps (and folders) go in it on the Profile Vault page, which also shows their sizes. The trash icon next to a snapshot deletes just that one; **Delete All Snapshots** removes them all but keeps your vault and password. Snapshot, Restore and Backup can be cancelled; your previous one stays safe.
 
 **Does my data get sent to the internet?**
-No. Amnesia has no servers, no accounts, no tracking and no analytics, so there's nothing to send. The only exception is a backup to a server or cloud that **you** set up, and even then only the locked `.7z` file goes, straight from your Mac to the place you picked. Your vault and your personal Keep List never go to GitHub either.
+No. Amnesia has no servers, no accounts, no tracking and no analytics, so there's nothing to send. The only exception is a backup to a server or cloud that **you** set up, and even then only the locked `.7z` file goes, straight from your Mac to the place you picked. Your vault, your Keep List and your settings never go to GitHub either.
 
 **Why does it want Full Disk Access?**
 To clean your Desktop, Documents and Downloads, macOS would otherwise ask permission folder by folder (and it can't ask during a logout). Allow it once in **System Settings → Privacy & Security → Full Disk Access** and you're done. If you build the app yourself, `build.sh` signs it with a local certificate so the permission survives updates (the first build may ask for your Mac password once: press **Always Allow**). The wiping at logout runs through the app too, so the same permission covers it.
@@ -217,7 +217,7 @@ To clean your Desktop, Documents and Downloads, macOS would otherwise ask permis
 
 If you change your server password later, backups keep working (they use the key). Only if the server is reinstalled or the key is removed will a backup fail, and the message tells you to press **Connect** again.
 
-Heads up: every backup is uploaded in full (not just what changed), because the file is encrypted. Old backups aren't deleted automatically, so clean them up at the destination now and then.
+Every backup is uploaded in full, because the file is encrypted and can't be updated piece by piece. Old backups aren't deleted automatically, so clean them up at the destination now and then.
 
 **How do I open a backup file?**
 Double-clicking it opens Archive Utility, which can't open this kind of locked `.7z`. Use **Keka** (free), or Terminal: `~/.amnesia/bin/7zz x amnesia_backup_xxx.7z`, then type your backup password when it asks (don't put the password in the command). Easier still: Backup → **Restore Files** in the app.
@@ -285,10 +285,10 @@ It turns off the login agent first (so stopping it can't wipe anything), stops A
 | `presets/` | The Amnesia modes: `full.conf`, `balanced.conf`, `light.conf`. A mode copies one of them into a marked section at the top of `keep.conf`. |
 | `report.py`, `bin/amnesia` | The Ask an AI report (no file contents, no file names) and the read-only `amnesia` Terminal command. |
 | `keeplock.sh` | Keep lock and the Brankas (encrypted disk inside Keep). |
-| `windows/` | The Windows version (**v0.10.0**): C# .NET 8 tray app + HTML pages, vault, backup, Health check and a Setup.exe with signed in-app updates. It really wipes once turned on, so check What gets wiped first. Built and tested by GitHub Actions (`.github/workflows/windows.yml`); a `win-v*` tag makes the Windows release. |
+| `windows/` | The Windows version (**v0.11.0**): C# .NET 8 tray app + HTML pages, vault, backup, Health check and a Setup.exe with signed in-app updates. It really wipes once turned on, so check What gets wiped first. Built and tested by GitHub Actions (`.github/workflows/windows.yml`); a `win-v*` tag makes the Windows release. |
 | `SECURITY.md`, `llms.txt` | How to report a security problem, and a short guide for AI assistants that help someone install Amnesia. |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh`, `test_report.py` | Automatic tests in a fake home folder, safe to run anytime. |
 
 ---
 
-<p align="center">MIT License · <a href="TERMS.md">Terms & warning</a> · Use it wisely: Amnesia really does delete your data.</p>
+<p align="center">MIT License · <a href="TERMS.md">Terms & warning</a> · Amnesia really deletes your data.</p>

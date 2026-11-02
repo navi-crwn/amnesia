@@ -3286,7 +3286,7 @@ struct PageHeader: View {
     var body: some View {
         HStack(spacing: 12) {
             Button(action: back) {
-                Image(systemName: "chevron.left")
+                Label(T("Back", "Kembali"), systemImage: "chevron.left").labelStyle(.iconOnly)
                     .font(.system(size: 13, weight: .bold))
                     .frame(width: 28, height: 28)
                     .roundButtonFace()
@@ -3297,6 +3297,7 @@ struct PageHeader: View {
             .accessibilityLabel(T("Back", "Kembali"))      // v5.25 (197)
             IconBadge(icon: icon, colors: colors, size: 30)
             Text(title).font(.system(size: 20, weight: .bold))
+                .accessibilityLabel(title)      // v5.25 (199)
                 .accessibilityAddTraits(.isHeader)
             Spacer()
         }
@@ -3393,6 +3394,108 @@ struct MoreText: View {
     }
 }
 
+/// v5.25 (paket 4): penjelasan yang dilipat. Yang terlihat hanya tombol kecil "ⓘ Info"; teksnya muncul saat diklik.
+/// Untuk Pengaturan dan Vault, supaya tiap baris pendek. Font dan warna mengikuti modifier di luar.
+struct InfoText: View {
+    let text: String
+    @State private var open = false
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Button { withAnimation(.easeOut(duration: 0.15)) { open.toggle() } } label: {
+                Label(open ? T("Hide info", "Tutup info") : T("Info", "Info"), systemImage: "info.circle")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Pal.accent.last ?? .accentColor)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(open ? T("Hides the explanation", "Menyembunyikan penjelasan")
+                                    : T("Shows the explanation", "Menampilkan penjelasan"))
+            if open { Text(text).fixedSize(horizontal: false, vertical: true) }
+        }
+    }
+}
+
+/// v5.26: 1 langkah bernomor (halaman Vault: ① pilih, ② simpan, ③ kembalikan).
+struct StepCard<Content: View>: View {
+    let number: Int
+    let title: String
+    let content: Content
+
+    init(number: Int, title: String, @ViewBuilder content: () -> Content) {
+        self.number = number
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        Card {
+            HStack(spacing: 10) {
+                Text("\(number)")
+                    .font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
+                    .frame(width: 24, height: 24)
+                    .background(Circle().fill(Th.indigo))
+                    .accessibilityHidden(true)
+                Text(title).font(.system(size: 14, weight: .semibold))
+                    .accessibilityLabel(T("Step \(number): \(title)", "Langkah \(number): \(title)"))
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 0)
+            }
+            VStack(alignment: .leading, spacing: 8) { content }
+                .padding(.leading, 34)
+        }
+    }
+}
+
+/// v5.25 (paket 4): baris lipat: judul + ringkasan 1 baris + panah. Isinya (kartu biasa) tampil di bawahnya saat dibuka.
+struct FoldRow<Content: View>: View {
+    let title: String
+    let sub: String
+    let icon: String
+    let colors: [Color]
+    @Binding var open: Bool
+    let content: Content
+
+    init(_ title: String, sub: String, icon: String, colors: [Color], open: Binding<Bool>,
+         @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.sub = sub
+        self.icon = icon
+        self.colors = colors
+        _open = open
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Button { withAnimation(.easeInOut(duration: 0.15)) { open.toggle() } } label: {
+                HStack(spacing: 10) {
+                    IconBadge(icon: icon, colors: colors, size: 28)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(title).font(.system(size: 13, weight: .semibold))
+                        if !sub.isEmpty {
+                            Text(sub).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
+                        }
+                    }
+                    Spacer(minLength: 6)
+                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(open ? 90 : 0))
+                        .accessibilityHidden(true)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .surface(14)
+                .contentShape(Rectangle())
+                .accessibilityElement(children: .combine)
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityValue(open ? T("open", "terbuka") : T("closed", "tertutup"))
+            if open { content }
+        }
+    }
+}
+
 // MARK: - Halaman utama
 
 struct HeroCard: View {
@@ -3484,6 +3587,7 @@ struct Tile: View {
             .scaleEffect(hover && enabled ? 1.02 : 1)
             .opacity(enabled ? 1 : 0.45)
             .contentShape(Rectangle())
+            .accessibilityElement(children: .combine)      // v5.25 (198): 1 elemen bernama untuk VoiceOver
         }
         .buttonStyle(.plain)
         .onHover { h in withAnimation(.easeOut(duration: 0.15)) { hover = h } }
@@ -3613,7 +3717,7 @@ struct MainView: View {
                 }
                 Spacer()
                 Button { m.page = .settings } label: {
-                    Image(systemName: "gearshape.fill")
+                    Label(T("Settings", "Pengaturan"), systemImage: "gearshape.fill").labelStyle(.iconOnly)
                         .font(.system(size: 16, weight: .semibold))
                         .frame(width: 36, height: 36)
                         .roundButtonFace()
@@ -3656,6 +3760,7 @@ struct MainView: View {
                 .padding(12)
                 .surface(18, fill: Th.tile)
                 .contentShape(Rectangle())
+                .accessibilityElement(children: .combine)      // v5.25 (198): 1 elemen bernama untuk VoiceOver
             }
             .buttonStyle(.plain)
             // v5.24: Perawatan
@@ -3673,6 +3778,7 @@ struct MainView: View {
                 .padding(12)
                 .surface(18, fill: Th.tile)
                 .contentShape(Rectangle())
+                .accessibilityElement(children: .combine)      // v5.25 (198): 1 elemen bernama untuk VoiceOver
             }
             .buttonStyle(.plain)
             // v5.25: Tanya AI (laporan tanpa nama file, Amnesia tidak mengirim apa pun)
@@ -3690,6 +3796,7 @@ struct MainView: View {
                 .padding(12)
                 .surface(18, fill: Th.tile)
                 .contentShape(Rectangle())
+                .accessibilityElement(children: .combine)      // v5.25 (198): 1 elemen bernama untuk VoiceOver
             }
             .buttonStyle(.plain)
             // v5.22: Cek kesehatan
@@ -3707,6 +3814,7 @@ struct MainView: View {
                 .padding(12)
                 .surface(18, fill: Th.tile)
                 .contentShape(Rectangle())
+                .accessibilityElement(children: .combine)      // v5.25 (198): 1 elemen bernama untuk VoiceOver
             }
             .buttonStyle(.plain)
             AppFooter().padding(.top, 4)
@@ -3787,6 +3895,10 @@ struct VaultView: View {
     @State private var profileChoice = "all"
     @State private var profilesLoaded = false
     @State private var editingProfile: ProfileDraft?
+    // v5.25 (paket 4): bagian yang dilipat
+    @State private var foldSnaps = false
+    @State private var foldChoose = false
+    @State private var foldSettings = false
 
     static let bigMB = 500.0
 
@@ -3863,18 +3975,67 @@ struct VaultView: View {
                   "Pindah dari Mac lama? Ambil vault dari file backup saja."))
     }
 
+    /// v5.26 (permintaan pemilik 2 Nov): Vault disusun sebagai 3 langkah berurutan, seperti urutan pakainya:
+    /// ① pilih app → ② simpan (Snapshot Sekarang) → ③ kembalikan (Restore Profil). Tiap langkah 1 kartu bernomor
+    /// dengan 1 tombol utama. Pengaturan vault (password, kata panik, pindah Mac, hapus) terpisah di bawah.
     @ViewBuilder
     private func opened(_ v: VaultReply) -> some View {
         let maxTry = v.max ?? 3
         let left = maxTry - (v.attempts ?? 0)
-        Card {
+        let chosen = (v.apps ?? []).filter { !isOff($0) }
+        if left < maxTry {
+            Card {
+                Note(text: T("\(left) tries left. If all of them are wrong, the vault is DELETED FOREVER.",
+                             "Kesempatan tinggal \(left) kali. Kalau semuanya salah, vault DIHAPUS PERMANEN."),
+                     icon: "exclamationmark.octagon.fill", color: Th.red)
+            }
+        }
+        // ① pilih app
+        StepCard(number: 1, title: T("Pick the apps to save", "Pilih app yang disimpan")) {
+            Text(chosen.isEmpty ? T("No app picked yet.", "Belum ada app yang dipilih.") : appList(chosen))
+                .font(.system(size: 12)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button { withAnimation(.easeInOut(duration: 0.15)) { foldChoose.toggle() } } label: {
+                Label(foldChoose ? T("Done", "Selesai") : T("Change…", "Ubah…"),
+                      systemImage: foldChoose ? "checkmark" : "slider.horizontal.3")
+            }
+            .buttonStyle(Pill(colors: Pal.gray))
+        }
+        if foldChoose || chosen.isEmpty {      // belum ada app dipilih: daftarnya langsung terbuka
+            appsCard(v)
+            suggestCard(v)
+            lightCard(v)
+            foldersCard(v)
+        }
+        // ② simpan sekarang
+        StepCard(number: 2, title: T("Save your logins now", "Simpan login sekarang")) {
             if let man = v.manifest {
-                HStack {
-                    Text(T("Snapshots", "Snapshot")).font(.system(size: 13, weight: .semibold))
-                    Spacer()
-                    Text(T("\(mbText(man.size_mb)) in total", "total \(mbText(man.size_mb))"))
-                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                Text(T("Last saved \(man.time) · \(man.apps.count) saved · \(mbText(man.size_mb))",
+                       "Terakhir disimpan \(man.time) · \(man.apps.count) tersimpan · \(mbText(man.size_mb))"))
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
+            } else {
+                Text(T("Not saved yet. Log in to your apps first, then press Snapshot Now.",
+                       "Belum disimpan. Login ke app dulu, lalu tekan Snapshot Sekarang."))
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: 10) {
+                Button { snapshot(v) } label: { Label(T("Snapshot Now", "Snapshot Sekarang"), systemImage: "camera.fill") }
+                    .buttonStyle(Pill(colors: Pal.logout))
+                    .disabled(chosen.isEmpty)
+                if v.manifest != nil {
+                    Button { withAnimation(.easeInOut(duration: 0.15)) { foldSnaps.toggle() } } label: {
+                        Text(foldSnaps ? T("Hide the list", "Tutup daftar") : T("See each app", "Lihat per app"))
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .buttonStyle(.plain).foregroundStyle(Pal.ink)
                 }
+            }
+            Text(T("No password needed. The apps close for a moment.", "Tanpa password. App ditutup sebentar."))
+                .font(.system(size: 11)).foregroundStyle(.secondary)
+        }
+        if foldSnaps, let man = v.manifest {
+            Card {
                 ForEach(man.apps, id: \.self) { a in
                     let p = man.per_app?[a]
                     HStack(spacing: 8) {
@@ -3888,29 +4049,20 @@ struct VaultView: View {
                                 .frame(width: 64, alignment: .trailing)
                         }
                         Button { deleteSnapshots(only: a) } label: {
-                            Image(systemName: "trash").font(.system(size: 11)).foregroundStyle(Th.red)
+                            Label(T("Delete the snapshot of \(a)", "Hapus snapshot \(a)"), systemImage: "trash").labelStyle(.iconOnly).font(.system(size: 11)).foregroundStyle(Th.red)
                         }
                         .buttonStyle(.plain).help(T("Delete only this snapshot", "Hapus snapshot ini saja"))
-                        .accessibilityLabel(T("Delete only this snapshot", "Hapus snapshot ini saja"))      // v5.25 (197)
+                        .accessibilityLabel(T("Delete the snapshot of \(a)", "Hapus snapshot \(a)"))      // v5.25 (197)
                     }
                 }
                 Text(T("Each app has its own snapshot: saving one app doesn't touch the others.",
                        "Tiap app punya snapshot sendiri: menyimpan 1 app tidak mengubah yang lain."))
                     .font(.system(size: 11)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-            } else {
-                Note(text: T("The vault is ready, no snapshot yet. Log in to your apps, then press Snapshot Now.",
-                             "Vault siap, belum ada snapshot. Login ke app dulu, lalu tekan Snapshot Sekarang."))
             }
         }
-        if left < maxTry {
-            Card {
-                Note(text: T("\(left) tries left. If all of them are wrong, the vault is DELETED FOREVER.",
-                             "Kesempatan tinggal \(left) kali. Kalau semuanya salah, vault DIHAPUS PERMANEN."),
-                     icon: "exclamationmark.octagon.fill", color: Th.red)
-            }
-        }
-        Card {
+        // ③ kembalikan
+        StepCard(number: 3, title: T("Bring them back after you log in", "Kembalikan setelah login")) {
             profilePicker(v)        // v5.25: Semua / profil
             Field(label: T("Vault password", "Password vault"), text: $pw).onSubmit { restore() }
             Button { restore() } label: {
@@ -3932,32 +4084,39 @@ struct VaultView: View {
                     .buttonStyle(Pill(colors: Pal.gray))
             }
         }
-        appsCard(v)
-        suggestCard(v)
-        lightCard(v)
-        foldersCard(v)
-        Button { snapshot(v) } label: { Label(T("Snapshot Now", "Snapshot Sekarang"), systemImage: "camera.fill") }
-            .buttonStyle(Pill(colors: Pal.logout))
-        HStack(spacing: 10) {
-            Button { pwStep = 0; showPassword = true } label: { Label(T("Password", "Password"), systemImage: "key.fill") }
-                .buttonStyle(Pill(colors: Pal.gray))
-            Button { showPanic = true } label: { Label(T("Panic Word", "Kata Panik"), systemImage: "flame.fill") }
-                .buttonStyle(Pill(colors: Pal.vault))
+        FoldRow(T("Vault settings", "Pengaturan vault"),
+                sub: T("Password, panic word, move to a new Mac, delete", "Password, kata panik, pindah Mac, hapus"),
+                icon: "gearshape.fill", colors: Pal.gray, open: $foldSettings) {
+            HStack(spacing: 10) {
+                Button { pwStep = 0; showPassword = true } label: { Label(T("Password", "Password"), systemImage: "key.fill") }
+                    .buttonStyle(Pill(colors: Pal.gray))
+                Button { showPanic = true } label: { Label(T("Panic Word", "Kata Panik"), systemImage: "flame.fill") }
+                    .buttonStyle(Pill(colors: Pal.vault))
+            }
+            moveRow(T("Moving to a new Mac? Take your logins with you.", "Pindah ke Mac baru? Bawa login kamu."))
+            Card {
+                Text(T("Delete", "Hapus")).font(.system(size: 13, weight: .semibold))
+                    .accessibilityAddTraits(.isHeader)
+                HStack(spacing: 10) {
+                    Button { deleteSnapshots() } label: { Label(T("Delete All Snapshots", "Hapus Semua Snapshot"), systemImage: "camera.badge.ellipsis") }
+                        .buttonStyle(Pill(colors: Pal.pause))
+                        .disabled(v.manifest == nil)
+                    Button { deleteVault() } label: { Label(T("Delete Vault", "Hapus Vault"), systemImage: "trash.fill") }
+                        .buttonStyle(Pill(colors: Pal.danger))
+                }
+                InfoText(T("To delete one app's snapshot, press See each app in step 2 and use the trash icon next to it. Delete All Snapshots keeps "
+                           + "the vault and its password. Delete Vault removes everything.",
+                           "Untuk menghapus snapshot 1 app, tekan Lihat per app di langkah 2 lalu pakai ikon tempat sampah di sampingnya. Hapus Semua "
+                           + "Snapshot: vault dan password tetap ada. Hapus Vault: semuanya dihapus."))
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+            }
         }
-        HStack(spacing: 10) {
-            Button { deleteSnapshots() } label: { Label(T("Delete All Snapshots", "Hapus Semua Snapshot"), systemImage: "camera.badge.ellipsis") }
-                .buttonStyle(Pill(colors: Pal.pause))
-                .disabled(v.manifest == nil)
-            Button { deleteVault() } label: { Label(T("Delete Vault", "Hapus Vault"), systemImage: "trash.fill") }
-                .buttonStyle(Pill(colors: Pal.danger))
-        }
-        Text(T("To delete one app's snapshot, use the trash icon next to it. Delete All Snapshots keeps the vault and its "
-               + "password. Delete Vault removes everything.",
-               "Untuk menghapus snapshot 1 app, pakai ikon tempat sampah di sampingnya. Hapus Semua Snapshot: vault dan "
-               + "password tetap ada. Hapus Vault: semuanya dihapus."))
-            .font(.system(size: 11)).foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        moveRow(T("Moving to a new Mac? Take your logins with you.", "Pindah ke Mac baru? Bawa login kamu."))
+    }
+
+    /// "Chrome, Claude, WhatsApp dan 3 lainnya"
+    private func appList(_ a: [String]) -> String {
+        a.count <= 4 ? a.joined(separator: ", ")
+            : a.prefix(4).joined(separator: ", ") + T(" and \(a.count - 4) more", " dan \(a.count - 4) lainnya")
     }
 
     /// App tidak ikut vault: kamu matikan, atau app baru (browser lain) yang belum kamu pilih.
@@ -3975,7 +4134,7 @@ struct VaultView: View {
                     Image(systemName: "leaf.fill").foregroundStyle(Th.green)
                     Text(T("Light snapshot", "Snapshot ringan")).font(.system(size: 13, weight: .semibold))
                 }
-                MoreText(T("For browsers. Light skips the browser's caches and the program files of Web Store extensions, so the "
+                InfoText(T("For browsers. Light skips the browser's caches and the program files of Web Store extensions, so the "
                        + "snapshot is much smaller (Chrome: about 1 GB → 150 MB). Your logins, bookmarks, extension settings "
                        + "and extensions that are not from the Web Store are always saved. After Restore Profiles, press Repair "
                        + "in the browser's extensions page to download the Web Store ones again.",
@@ -4188,7 +4347,7 @@ struct VaultView: View {
         let folders = v.folders ?? []
         return Card {
             Text(T("Folders in the vault", "Folder di vault")).font(.system(size: 13, weight: .semibold))
-            MoreText(T("For documents, PDFs, music or videos you want locked away. They're wiped at logout like everything "
+            InfoText(T("For documents, PDFs, music or videos you want locked away. They're wiped at logout like everything "
                    + "else, but a copy stays locked in the vault. Restore Profiles brings them back with your password.",
                    "Untuk dokumen, PDF, musik atau video yang mau dikunci. Ikut dihapus saat logout seperti yang lain, "
                    + "tapi salinannya terkunci di vault. Restore Profil mengembalikannya dengan password kamu."))
@@ -4200,7 +4359,7 @@ struct VaultView: View {
                     Text("~/" + f).font(.system(size: 12, design: .monospaced)).lineLimit(1).truncationMode(.middle)
                     Spacer()
                     Text(sizeText("~/" + f)).font(.system(size: 11)).foregroundStyle(.secondary)
-                    Button { removeFolder(f) } label: { Image(systemName: "minus.circle.fill").foregroundStyle(Th.red) }
+                    Button { removeFolder(f) } label: { Label(T("Remove from the vault", "Keluarkan dari vault"), systemImage: "minus.circle.fill").labelStyle(.iconOnly).foregroundStyle(Th.red) }
                         .buttonStyle(.plain).help(T("Remove from the vault", "Keluarkan dari vault"))
                         .accessibilityLabel(T("Remove from the vault", "Keluarkan dari vault"))      // v5.25 (197)
                 }
@@ -4463,7 +4622,7 @@ struct VaultView: View {
             HStack(spacing: 8) {
                 Text(T("Memory Recall: what comes back", "Memory Recall: yang dikembalikan")).font(.system(size: 12, weight: .semibold))
                 Spacer(minLength: 6)
-                Picker("", selection: $profileChoice) {
+                Picker(T("Memory Recall: what comes back", "Memory Recall: yang dikembalikan"), selection: $profileChoice) {
                     Text(T("Everything", "Semua")).tag("all")
                     ForEach(profiles) { p in Text(p.name).tag(p.id) }
                 }
@@ -4471,20 +4630,20 @@ struct VaultView: View {
                 .accessibilityLabel(T("Memory Recall: what comes back", "Memory Recall: yang dikembalikan"))      // v5.25 (197)
                 .disabled(!profilesLoaded)
                 Button { editingProfile = ProfileDraft(profileId: nil, name: "", apps: []) } label: {
-                    Image(systemName: "plus").font(.system(size: 11, weight: .semibold))
+                    Label(T("New profile", "Profil baru"), systemImage: "plus").labelStyle(.iconOnly).font(.system(size: 11, weight: .semibold))
                 }
                 .buttonStyle(.plain).foregroundStyle(Pal.ink).disabled(!profilesLoaded)
                 .help(T("New profile", "Profil baru"))
                 .accessibilityLabel(T("New profile", "Profil baru"))      // v5.25 (197)
                 if let p = chosen {
                     Button { editingProfile = ProfileDraft(profileId: p.id, name: p.name, apps: Set(p.apps)) } label: {
-                        Image(systemName: "pencil").font(.system(size: 11, weight: .semibold))
+                        Label(T("Edit this profile", "Ubah profil ini"), systemImage: "pencil").labelStyle(.iconOnly).font(.system(size: 11, weight: .semibold))
                     }
                     .buttonStyle(.plain).foregroundStyle(Pal.ink)
                     .help(T("Edit this profile", "Ubah profil ini"))
                     .accessibilityLabel(T("Edit this profile", "Ubah profil ini"))      // v5.25 (197)
                     Button { deleteProfile(p) } label: {
-                        Image(systemName: "trash").font(.system(size: 11)).foregroundStyle(Th.red)
+                        Label(T("Delete this profile (your snapshots stay)", "Hapus profil ini (snapshot tetap ada)"), systemImage: "trash").labelStyle(.iconOnly).font(.system(size: 11)).foregroundStyle(Th.red)
                     }
                     .buttonStyle(.plain).help(T("Delete this profile (your snapshots stay)", "Hapus profil ini (snapshot tetap ada)"))
                     .accessibilityLabel(T("Delete this profile (your snapshots stay)", "Hapus profil ini (snapshot tetap ada)"))      // v5.25 (197)
@@ -5358,7 +5517,7 @@ struct KeepView: View {
                 .lineLimit(1).truncationMode(.middle)
             Spacer()
             Button { remove(e) } label: {
-                Image(systemName: "minus.circle.fill").foregroundStyle(Th.red)
+                Label(T("Remove from Keep List", "Keluarkan dari Keep List"), systemImage: "minus.circle.fill").labelStyle(.iconOnly).foregroundStyle(Th.red)
             }
             .buttonStyle(.plain)
             .help(T("Remove from Keep List", "Keluarkan dari Keep List"))
@@ -5790,7 +5949,7 @@ struct KeepFolderCard: View {
                         .lineLimit(1).truncationMode(.middle)
                 }
                 Spacer(minLength: 8)
-                Button { KeepLinks.open() } label: { Image(systemName: "folder") }
+                Button { KeepLinks.open() } label: { Label(T("Show in Finder", "Buka di Finder"), systemImage: "folder").labelStyle(.iconOnly) }
                     .help(T("Show in Finder", "Buka di Finder"))
                     .accessibilityLabel(T("Show in Finder", "Buka di Finder"))      // v5.25 (197)
                 Button(T("Change…", "Ganti…")) { if chooseKeepDir() { shown = KeepDir.shown } }
@@ -5961,7 +6120,7 @@ struct AppleKeepCard: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 6)
-            Toggle("", isOn: Binding(get: { on[a.id] ?? false }, set: { v in
+            Toggle(a.title, isOn: Binding(get: { on[a.id] ?? false }, set: { v in
                 if !v && !ask(T("Stop keeping \(a.title)?", "Berhenti menyimpan \(a.title)?"), "",
                               [PopSection(.deleted, [T("\(a.title) is DELETED from this Mac at the next logout.",
                                                        "\(a.title) DIHAPUS dari Mac ini saat logout berikutnya.")])],
@@ -6033,7 +6192,7 @@ struct AppPickList: View {
                     Text(subtitle(a, on)).font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Toggle("", isOn: Binding(get: { on }, set: { v in
+                Toggle(a.name, isOn: Binding(get: { on }, set: { v in
                     withAnimation(.easeInOut(duration: 0.15)) { if v { _ = picked.insert(a.name) } else { _ = picked.remove(a.name) } }
                 }))
                 .toggleStyle(.switch).labelsHidden().controlSize(.small)
@@ -6293,7 +6452,7 @@ struct OnboardingView: View {
                 HStack {
                     Label(T("Language", "Bahasa"), systemImage: "globe").font(.system(size: 15, weight: .semibold))
                     Spacer()
-                    Picker("", selection: $m.lang) {
+                    Picker(T("Language", "Bahasa"), selection: $m.lang) {
                         ForEach(Lang.allCases, id: \.self) { l in Text(l.name).tag(l) }
                     }
                     .labelsHidden().frame(width: 170)
@@ -6453,7 +6612,7 @@ struct OnboardingView: View {
                     Text(sub).font(.system(size: 12.5)).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Toggle("", isOn: .constant(on)).toggleStyle(.switch).labelsHidden().controlSize(.small)
+                Toggle(name, isOn: .constant(on)).toggleStyle(.switch).labelsHidden().controlSize(.small)
                     .accessibilityLabel(name)      // v5.25 (197)
             }
             ForEach(0..<detail.count, id: \.self) { i in
@@ -6639,7 +6798,9 @@ struct RestoreFilesSheet: View {
         HStack(spacing: 8) {
             if indent == 0 && it.isDir {
                 Button { if open.contains(it.path) { open.remove(it.path) } else { open.insert(it.path) } } label: {
-                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold))
+                    Label(open.contains(it.path) ? T("Close \(it.path)", "Tutup \(it.path)") : T("Open \(it.path)", "Buka \(it.path)"),
+                          systemImage: "chevron.right")
+                        .labelStyle(.iconOnly).font(.system(size: 10, weight: .bold))
                         .rotationEffect(.degrees(open.contains(it.path) ? 90 : 0)).frame(width: 14)
                 }
                 .buttonStyle(.plain).foregroundStyle(.secondary)
@@ -6854,7 +7015,7 @@ struct BackupView: View {
                     .buttonStyle(.plain)
                     .help(destOpen ? T("Fold", "Lipat") : T("Change where backups go", "Ubah tujuan backup"))
                     if destOpen {
-                        Picker("", selection: $dest) {
+                        Picker(T("Where backups go", "Tujuan backup"), selection: $dest) {
                             Text(T("USB / SSD", "Flashdisk / SSD")).tag("drive")
                             Text(T("SSH Server", "Server SSH")).tag("ssh")
                             Text("Cloud").tag("rclone")
@@ -6918,7 +7079,7 @@ struct BackupView: View {
                 }
                 Card {
                     Text(T("Schedule", "Jadwal")).font(.system(size: 13, weight: .semibold))
-                    Picker("", selection: $schedule) {
+                    Picker(T("Schedule", "Jadwal"), selection: $schedule) {
                         Text(T("Off", "Mati")).tag("off")
                         Text(T("Daily", "Harian")).tag("daily")
                         Text(T("Weekly", "Mingguan")).tag("weekly")
@@ -7006,7 +7167,7 @@ struct BackupView: View {
         HStack {
             Text(T("Plugged-in drives", "Drive yang tercolok")).font(.system(size: 12)).foregroundStyle(.secondary)
             Spacer()
-            Button { load() } label: { Image(systemName: "arrow.clockwise") }
+            Button { load() } label: { Label(T("Look again", "Cari drive lagi"), systemImage: "arrow.clockwise").labelStyle(.iconOnly) }
                 .buttonStyle(.plain).help(T("Look again", "Cari drive lagi"))
                 .accessibilityLabel(T("Look again", "Cari drive lagi"))      // v5.25 (197)
         }
@@ -7015,7 +7176,7 @@ struct BackupView: View {
                          "Tidak ada drive eksternal. Colok SSD/flashdisk lalu tekan ↻."),
                  icon: "externaldrive.badge.xmark", color: Th.red)
         } else {
-            Picker("", selection: $drive) {
+            Picker(T("Drive", "Drive"), selection: $drive) {
                 ForEach(drives) { d in Text("\(d.name)  ·  \(d.free)").tag(d.name) }
             }
             .pickerStyle(.radioGroup)
@@ -7068,7 +7229,7 @@ struct BackupView: View {
         .pickerStyle(.menu)
         .onChange(of: provider) { _, p in cloud = p.remote + ":" + cleanFolder }
         if provider.id == "drive" {
-            Picker("", selection: $gMode) {
+            Picker(T("Google Drive connection", "Koneksi Google Drive"), selection: $gMode) {
                 Text(T("Through the Google Drive app (recommended)", "Lewat app Google Drive (disarankan)")).tag("app")
                 Text(T("Connect directly (advanced)", "Hubungkan langsung (lanjutan)")).tag("direct")
             }
@@ -7829,6 +7990,7 @@ struct SettingsView: View {
                 Spacer()
             }
             .padding(.top, 6).padding(.leading, 4)
+            .accessibilityElement(children: .combine)      // v5.25 (199): judul grup terbaca sebagai teks
             .accessibilityAddTraits(.isHeader)
         }
     }
@@ -7868,7 +8030,7 @@ struct SettingsView: View {
                 .font(.system(size: 13))
             if !query.isEmpty {
                 Button { query = "" } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                    Label(T("Clear the search", "Hapus pencarian"), systemImage: "xmark.circle.fill").labelStyle(.iconOnly).foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
                 .help(T("Clear the search", "Hapus pencarian"))
@@ -7998,7 +8160,7 @@ struct SettingsView: View {
                         .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
-                Picker("", selection: $m.lang) {
+                Picker(Self.tLanguage.title, selection: $m.lang) {
                     ForEach(Lang.allCases, id: \.self) { l in Text(l.name).tag(l) }
                 }
                 .labelsHidden()
@@ -8010,21 +8172,51 @@ struct SettingsView: View {
 
     private func row(_ t: SetText, _ icon: String, _ colors: [Color], _ value: Binding<Bool>,
                      save: @escaping (Bool) -> Void) -> some View {
-        Card {
-            HStack(alignment: .top, spacing: 12) {
-                IconBadge(icon: icon, colors: colors, size: 34)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(t.title).font(.system(size: 14, weight: .semibold))
-                    MoreText(t.sub).font(.system(size: 11)).foregroundStyle(.secondary)
+        SettingRow(t: t, icon: icon, colors: colors, value: value, showInfo: searching, save: save)
+    }
+}
+
+/// v5.25 (paket 4, permintaan pemilik): 1 pengaturan = 1 baris: ikon kecil, judul, tombol ⓘ, sakelar.
+/// Penjelasan panjang hanya muncul setelah ⓘ diklik (atau saat mencari). Nama sakelar = judulnya, jadi
+/// VoiceOver membacanya langsung (item 198: .accessibilityLabel di sakelar tanpa judul tidak terbaca).
+struct SettingRow: View {
+    let t: SetText
+    let icon: String
+    let colors: [Color]
+    @Binding var value: Bool
+    var showInfo = false
+    let save: (Bool) -> Void
+    @State private var info = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                IconBadge(icon: icon, colors: colors, size: 26)
+                Text(t.title).font(.system(size: 13, weight: .semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+                if !t.sub.isEmpty {
+                    Button { withAnimation(.easeOut(duration: 0.15)) { info.toggle() } } label: {
+                        Label(T("About: \(t.title)", "Tentang: \(t.title)"), systemImage: info ? "info.circle.fill" : "info.circle")
+                            .labelStyle(.iconOnly)
+                            .font(.system(size: 12)).foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(info ? T("Hide the explanation", "Sembunyikan penjelasan") : T("What does this do?", "Apa fungsinya?"))
                 }
                 Spacer(minLength: 8)
-                Toggle("", isOn: Binding(get: { value.wrappedValue },
-                                         set: { on in value.wrappedValue = on; save(on) }))
+                Toggle(t.title, isOn: Binding(get: { value }, set: { on in value = on; save(on) }))
                     .toggleStyle(.switch)
                     .labelsHidden()
-                    .accessibilityLabel(t.title)      // v5.25 (197): VoiceOver membaca nama pengaturan, bukan hanya "switch"
+                    .controlSize(.small)
+            }
+            if info || showInfo {
+                Text(t.sub).font(.system(size: 11)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .surface(14)
     }
 }
 
@@ -8208,7 +8400,7 @@ struct PreviewView: View {
                 .font(.system(size: 13))
             if !query.isEmpty {
                 Button { query = "" } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                    Label(T("Clear the search", "Hapus pencarian"), systemImage: "xmark.circle.fill").labelStyle(.iconOnly).foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
                 .help(T("Clear the search", "Hapus pencarian"))
@@ -8223,7 +8415,7 @@ struct PreviewView: View {
     /// v5.21: tampilkan 1 kelompok saja, dan urutkan dari yang terbesar
     private var filterBar: some View {
         HStack(spacing: 10) {
-            Picker("", selection: $groupFilter) {
+            Picker(T("Group", "Kelompok"), selection: $groupFilter) {
                 Text(T("All groups", "Semua kelompok")).tag("all")
                 ForEach(all) { g in Text(g.name).tag(g.id) }
             }
@@ -8430,6 +8622,7 @@ struct MenuTile: View {
             .shadow(color: (colors.last ?? Th.indigo).opacity(hover && enabled ? 0.18 : 0), radius: hover ? 10 : 0, y: hover ? 4 : 0)
             .opacity(enabled ? 1 : 0.45)
             .contentShape(Rectangle())
+            .accessibilityElement(children: .combine)      // v5.25 (198): 1 elemen bernama untuk VoiceOver
         }
         .buttonStyle(.plain)
         .onHover { h in withAnimation(.easeOut(duration: 0.15)) { hover = h } }

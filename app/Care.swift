@@ -1124,6 +1124,7 @@ struct CareView: View {
             .padding(12)
             .surface(18, fill: Th.tile)
             .contentShape(Rectangle())
+            .accessibilityElement(children: .combine)      // v5.25 (198)
         }
         .buttonStyle(.plain)
     }
@@ -1435,7 +1436,7 @@ struct CareRunView: View {
     private func row(_ it: CareItem) -> some View {
         let line = it.locked ?? (it.tag.map { $0 + (it.detail.isEmpty ? "" : ". " + it.detail) } ?? it.detail)
         return HStack(alignment: .top, spacing: 8) {
-            Toggle("", isOn: Binding(get: { picked.contains(it.id) && it.locked == nil },
+            Toggle(it.name, isOn: Binding(get: { picked.contains(it.id) && it.locked == nil },
                                      set: { on in if on { _ = picked.insert(it.id) } else { _ = picked.remove(it.id) } }))
                 .toggleStyle(.checkbox).labelsHidden()
                 .accessibilityLabel(it.name)      // v5.25 (197)
@@ -1451,7 +1452,7 @@ struct CareRunView: View {
             Spacer(minLength: 6)
             if !it.path.hasPrefix("task:") {
                 Text(careSize(it.kb)).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
-                Button { careReveal(it.path) } label: { Image(systemName: "magnifyingglass") }
+                Button { careReveal(it.path) } label: { Label(T("Show in Finder", "Tampilkan di Finder"), systemImage: "magnifyingglass").labelStyle(.iconOnly) }
                     .buttonStyle(.plain).font(.system(size: 10)).foregroundStyle(.secondary)
                     .help(T("Show in Finder", "Tampilkan di Finder"))
                     .accessibilityLabel(T("Show in Finder", "Tampilkan di Finder"))      // v5.25 (197)
@@ -1609,7 +1610,7 @@ struct CareOverviewView: View {
                     }
                     Spacer(minLength: 6)
                     Text(careSize(s.kb)).font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
-                    Button { careReveal(s.path) } label: { Image(systemName: "magnifyingglass") }
+                    Button { careReveal(s.path) } label: { Label(T("Show in Finder", "Tampilkan di Finder"), systemImage: "magnifyingglass").labelStyle(.iconOnly) }
                         .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(.secondary)
                         .help(T("Show in Finder", "Tampilkan di Finder"))
                         .accessibilityLabel(T("Show in Finder", "Tampilkan di Finder"))      // v5.25 (197)

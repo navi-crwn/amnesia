@@ -1442,10 +1442,9 @@ def profile_set_last(pid):
     if pid == profile_last():
         return
     if _stored_profiles() is None:          # profil bawaan belum disimpan: simpan pilihan terakhir saja
-        # v5.25 (item 189): "Semua" = bawaan, jadi tidak perlu file. Hanya pilihan yang berbeda yang ditulis.
-        if pid == "all":
-            if os.path.exists(F_PROFILES):
-                os.remove(F_PROFILES)
+        # v5.25 (item 189): "Semua" = bawaan, jadi file tidak dibuat untuk itu. Item 201: file yang sudah ada
+        # tidak dihapus, tapi ditulis "last": "all" (uji Mac 27 Okt: menghapusnya mengejutkan).
+        if pid == "all" and not os.path.exists(F_PROFILES):
             return
         os.makedirs(AMNESIA, exist_ok=True)
         _write_json(F_PROFILES, {"version": 1, "last": pid})

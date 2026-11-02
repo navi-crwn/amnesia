@@ -48,6 +48,9 @@ static class ProfilesTests
         Check(!File.Exists(VaultProfiles.File), "189: picking Everything writes no file");
         VaultProfiles.Last = "work";
         Check(VaultProfiles.Last == "work" && File.Exists(VaultProfiles.File), "the last profile is remembered");
+        VaultProfiles.Last = "all";
+        Check(File.Exists(VaultProfiles.File) && VaultProfiles.Last == "all", "201: back to Everything keeps the file (last = all)");
+        VaultProfiles.Last = "work";
         Check(VaultProfiles.All().Skip(1).All(p => p.BuiltIn), "remembering the last profile does not turn the built-ins into stored ones");
         VaultProfiles.Last = "nope";
         Check(VaultProfiles.Last == "all", "a last profile that does not exist reads as Everything");

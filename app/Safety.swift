@@ -300,7 +300,7 @@ struct KeepLockCard: View {
                         Text(T("Keep lock", "Kunci Keep")).font(.system(size: 14, weight: .semibold))
                         NewBadge(text: T("NEW", "BARU"))
                     }
-                    MoreText(T("Finder and other apps can't open or change what's in your Keep folder until you type the "
+                    InfoText(T("Finder and other apps can't open or change what's in your Keep folder until you type the "
                                + "Keep password here. It locks again after a few minutes, when the screen locks, and at logout.\n"
                                + "Honest note: this is light protection with macOS permissions, not encryption. Anyone "
                                + "logged in as you can remove it in Terminal with chmod -RN \(KeepDir.shown), and it does "
@@ -317,7 +317,7 @@ struct KeepLockCard: View {
                         .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
-                Toggle("", isOn: Binding(get: { on }, set: { v in if v { setting = true } else { turnOff() } }))
+                Toggle(T("Keep lock", "Kunci Keep"), isOn: Binding(get: { on }, set: { v in if v { setting = true } else { turnOff() } }))
                     .toggleStyle(.switch).labelsHidden()
                     .accessibilityLabel(T("Keep lock", "Kunci Keep"))      // v5.25 (197)
                     .disabled(st == "unsupported" || m.busy != nil)
@@ -423,7 +423,7 @@ struct BrankasCard: View {
                         Text("Brankas").font(.system(size: 14, weight: .semibold))
                         NewBadge(text: T("EXPERIMENTAL", "EKSPERIMEN"), color: Th.orange)
                     }
-                    MoreText(T("An encrypted disk (AES-256) inside your Keep folder. Files you put in it can't be read "
+                    InfoText(T("An encrypted disk (AES-256) inside your Keep folder. Files you put in it can't be read "
                                + "without the Brankas password, even by someone who copies the folder or takes the disk. "
                                + "Amnesia closes it before every cleanup.\n"
                                + "Forget the password and the files in it are gone for good. Nobody can open it for you.",

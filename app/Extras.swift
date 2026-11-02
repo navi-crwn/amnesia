@@ -416,7 +416,7 @@ struct UpdateCard: View {
             HStack(spacing: 8) {
                 Text(T("Check for updates", "Cek update")).font(.system(size: 12))
                 Spacer(minLength: 8)
-                Picker("", selection: Binding(get: { every }, set: { d in
+                Picker(T("Check for updates", "Cek update"), selection: Binding(get: { every }, set: { d in
                     every = d; check = d > 0; UpdateEvery.set(d)
                 })) {
                     ForEach(UpdateEvery.choices, id: \.self) { d in Text(UpdateEvery.label(d)).tag(d) }
@@ -861,11 +861,11 @@ struct AdvancedGroup: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(Self.tAutoLogout.title)
                         .font(.system(size: 14, weight: .semibold))
-                    MoreText(Self.tAutoLogout.sub)
+                    InfoText(Self.tAutoLogout.sub)
                         .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
-                Picker("", selection: Binding(get: { idleMin }, set: { setIdle($0) })) {
+                Picker(Self.tAutoLogout.title, selection: Binding(get: { idleMin }, set: { setIdle($0) })) {
                     ForEach(IdleWatch.choices, id: \.self) { n in
                         Text(n == 0 ? T("Off", "Mati") : T("\(n) min", "\(n) menit")).tag(n)
                     }
@@ -900,11 +900,11 @@ struct AdvancedGroup: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(Self.tNewApps.title)
                         .font(.system(size: 14, weight: .semibold))
-                    MoreText(Self.tNewApps.sub)
+                    InfoText(Self.tNewApps.sub)
                         .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
-                Toggle("", isOn: Binding(get: { newOn }, set: { setNewApps($0) }))
+                Toggle(Self.tNewApps.title, isOn: Binding(get: { newOn }, set: { setNewApps($0) }))
                     .toggleStyle(.switch).labelsHidden()
                     .accessibilityLabel(Self.tNewApps.title)      // v5.25 (197)
             }
@@ -977,7 +977,7 @@ struct AdvancedGroup: View {
                 IconBadge(icon: icon, colors: colors, size: 34)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(t.title).font(.system(size: 14, weight: .semibold))
-                    MoreText(t.sub).font(.system(size: 11)).foregroundStyle(.secondary)
+                    InfoText(t.sub).font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
             }

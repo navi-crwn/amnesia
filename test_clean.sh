@@ -290,7 +290,8 @@ grep -q "clean logout: stop: keep list missing" "$K/trace.log" || bad "trace has
 AMNESIA_HOME="$T" bash "$K/clean.sh" logout --dry-run > "$T/dry2.txt" 2>&1; rc=$?
 [ "$rc" = 0 ] || bad "stopped dry-run exit code $rc"
 grep -qx "STOP  keeplist-missing" "$T/dry2.txt" || bad "dry-run has no STOP line"
-grep -q "^--- dry-run (logout): 0 items would be deleted" "$T/dry2.txt" || bad "stopped dry-run footer"
+grep -q "^--- dry-run (logout): STOPPED, the Keep List" "$T/dry2.txt" || bad "stopped dry-run footer says it stopped (200)"
+grep -q "0 items would be deleted" "$T/dry2.txt" && bad "stopped dry-run still says 0 items would be deleted (200)"
 grep -q "^HAPUS" "$T/dry2.txt" && bad "stopped dry-run still lists items"
 AMNESIA_HOME="$T" bash "$K/clean.sh" now >/dev/null 2>&1; here "Downloads/i.txt"
 
@@ -656,6 +657,11 @@ AMNESIA_HOME="$Z" bash "$Z/.amnesia/clean.sh" logout --dry-run --keep-file="$Z/k
 grep -q "Desktop/d.txt" "$Z/dry.txt" || bad "190: dry-run without .zshrc line did not run"
 grep -Eq '\.zshrc|\.zprofile|\.gitconfig' "$Z/dry.txt" && bad "190: dry-run lists a home dot file (preview would be right to say wiped)"
 for f in .zshrc .zprofile .gitconfig; do [ -f "$Z/$f" ] || bad "190: dry-run deleted $f"; done
+# 200: --keep-file boleh berupa pipa (<(...)), isinya dibaca seperti file biasa
+AMNESIA_HOME="$Z" bash "$Z/.amnesia/clean.sh" logout --dry-run --keep-file=<(printf 'Desktop/d.txt\n') > "$Z/dry3.txt" 2>/dev/null
+grep -q "^STOP" "$Z/dry3.txt" && bad "200: --keep-file from a pipe stops the dry-run"
+grep -q "Desktop/d.txt" "$Z/dry3.txt" && bad "200: --keep-file from a pipe was not used (Desktop/d.txt is kept there)"
+grep -q "^--- dry-run (logout):" "$Z/dry3.txt" || bad "200: dry-run with a pipe did not finish"
 rm -rf "$Z"
 SW="$DIR/app/Amnesia.swift"
 grep -q "static func lineWipes" "$SW" && grep -q "removedIdle" "$SW" || bad "190: Swift preview does not separate lines that wipe nothing"
@@ -670,25 +676,45 @@ grep -q 'proxy.scrollTo("top", anchor: .top)' "$SW" || bad "191: Settings search
 for g in logoutGroup keepGroup appGroup safetyGroup advancedToggle; do grep -q "private var $g" "$SW" || bad "195: Settings group $g missing"; done
 # 196: "Jangan tampilkan lagi" di dialog Disalin (Tanya AI)
 grep -q 'AI_COPIED_HIDE' "$DIR/app/AskAI.swift" || bad "196: Ask AI Copied dialog has no Don't show again"
-# 197: setiap sakelar/pilihan tanpa judul dan setiap tombol yang hanya berisi ikon punya label aksesibilitas
+# 197 + 198: VoiceOver membaca nama yang ada DI DALAM kontrol (uji Mac 27 Okt: .accessibilityLabel di luar sakelar
+# tanpa judul atau tombol ikon tidak terbaca). Jadi: tidak ada Toggle("" / Picker("", dan tombol yang isinya hanya ikon
+# memakai Label("nama", systemImage:) + .labelStyle(.iconOnly), bukan Image(systemName:) saja.
 a11y="$(python3 - "$DIR/app" <<'PY'
 import glob, re, sys
 out = []
 for f in sorted(glob.glob(sys.argv[1] + "/*.swift")):
+    if f.endswith("makeicon.swift"):
+        continue
     L = open(f, encoding="utf-8").read().split("\n")
     for i, l in enumerate(L):
-        icon_btn = re.search(r'Button\b.*label:\s*\{\s*Image\(', l) or (
-            re.search(r'Button\b.*label:\s*\{\s*$', l) and i + 1 < len(L) and re.match(r'\s*Image\(', L[i + 1])
-            and not any('Text(' in L[k] or 'Label(' in L[k] for k in range(i + 1, min(i + 4, len(L)))))
-        if icon_btn or 'Toggle("",' in l or 'Picker("",' in l:
-            if 'accessibilityLabel' not in "\n".join(L[i:i + 12]):
-                out.append(f"{f.rsplit('/', 1)[1]}:{i + 1}")
+        name = f"{f.rsplit('/', 1)[1]}:{i + 1}"
+        if 'Toggle("",' in l or 'Picker("",' in l:
+            out.append(name + "(no-title)")
+        btn = re.search(r'Button\b.*(label:\s*\{|\)\s*\{)\s*$', l) or re.search(r'Button\b.*label:\s*\{\s*Image\(', l)
+        if not btn:
+            continue
+        first = l.split("{")[-1].strip() if re.search(r'label:\s*\{\s*Image\(', l) else (L[i + 1].strip() if i + 1 < len(L) else "")
+        if first.startswith("Image(systemName") and not re.search(r'(?<![A-Za-z.])(Text|Label)\(', "\n".join(L[i:i + 5])):
+            out.append(name + "(image-only)")
 print(" ".join(out))
 PY
 )"
-[ -z "$a11y" ] || bad "197: no accessibility label at $a11y"
+[ -z "$a11y" ] || bad "197/198: control without a name inside it at $a11y"
+grep -q 'accessibilityElement(children: .combine)      // v5.25 (198)' "$DIR/app/Amnesia.swift" || bad "198: home tiles are not one named element"
 # 194: perintah Terminal memakai satuan desimal seperti app (1 MB = 1000 KB)
 grep -q 'b >= 1e6' "$DIR/bin/amnesia" || bad "194: bin/amnesia still uses 1024 for MB"
+# v5.26: github_backup.sh menulis .gitignore yang SAMA dengan .gitignore di repo, dan data pribadi tidak ikut GitHub
+ign="$(sed -n "/^cat > .gitignore <<'IGN'$/,/^IGN$/p" "$DIR/app/github_backup.sh" | sed '1d;$d')"
+[ "$ign" = "$(cat "$DIR/.gitignore")" ] || bad "v5.26: github_backup.sh writes a different .gitignore than the repo has"
+Y=$(mktemp -d); printf '%s\n' "$ign" > "$Y/.gitignore"; (cd "$Y" && git init -q . 2>/dev/null)
+for f in report.txt apps_baseline.txt profiles.json keep.conf keep.conf.last settings.conf history.log trash.failed; do
+    (cd "$Y" && git check-ignore -q "$f") || bad "v5.26: $f is not ignored, github_backup.sh would send it to GitHub"
+done
+for f in bin/amnesia SECURITY.md README.md llms.txt report.py; do
+    (cd "$Y" && git check-ignore -q "$f") && bad "v5.26: $f is ignored but belongs on GitHub"
+done
+rm -rf "$Y"
+grep -q 'git rm -r -q --cached --ignore-unmatch keep.conf settings.conf backup.ok report.txt apps_baseline.txt profiles.json' "$DIR/app/github_backup.sh" || bad "v5.26: github_backup.sh does not untrack the private files"
 # ===== end v5.25 temuan uji =====
 
 [ $fail = 0 ] && echo "OK: all clean.sh tests passed" || exit 1
