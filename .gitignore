@@ -16,18 +16,11 @@ video/hyperframes/
 .DS_Store
 keep.conf
 settings.conf
-profiles.json
-keep.conf.mode.tmp
-keep.conf.preview-*.tmp
 backup.ok
 backup.vault.ok
 clean.done
 crash/
 bin/
-# v5.25: perintah Terminal bin/amnesia ikut repo (isi bin/ lain, mis. 7zz, tetap diabaikan)
-!/bin/
-/bin/*
-!/bin/amnesia
 obj/
 windows/out/
 .engine_version
@@ -38,6 +31,5 @@ windows/out/
 !CHANGELOG.id.md
 !TERMS.md
 !TERMS.id.md
-!SECURITY.md
 !windows/README.md
 !windows/THIRD-PARTY-NOTICES.md
