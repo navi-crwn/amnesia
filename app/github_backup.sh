@@ -127,7 +127,16 @@ TXT
 PKG="$(mktemp -d)/Amnesia-v$V.dmg"
 hdiutil create -quiet -volname "Amnesia $V" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$PKG"
 NOTES="$(mktemp)"
-awk -v v="## v$V" '$0 ~ "^"v {on=1; next} on && /^## / {exit} on' CHANGELOG.md > "$NOTES"
+# v5.25: "... never released on its own" = the next Mac section (## vX) belongs to this release too, so it is
+# included. Windows sections (## Windows ...) in between are skipped.
+awk -v v="## v$V" '$0 ~ "^"v {on=1; next}
+    on && /^## / {
+        if (!more) exit
+        if ($0 ~ /^## v[0-9]/) { more = 0; skip = 0; print; next }
+        skip = 1; next
+    }
+    on && !skip && /never released on its own/ { more = 1 }
+    on && !skip' CHANGELOG.md > "$NOTES"
 
 # Proof the download is clean and unchanged: SHA-256 checksum file + (optional) VirusTotal scan.
 # The VirusTotal key is only read from your Keychain (set it once with: bash ~/.amnesia/app/virustotal_key.sh).

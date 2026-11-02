@@ -14,6 +14,8 @@
 // OneDrive, Microsoft Store app data. Links/junctions are never followed. Standard folders stay, only their content goes.
 // v0.8: also cloud folders (Dropbox, Google Drive, iCloud...: their app deletes from the cloud too when the local copy
 // goes), files that are only in the cloud, and virtual machines (VirtualBox, VMware, WSL, Docker, disk images).
+// v0.9: the cleanup stops (deletes nothing) when the Keep List can't be read or has gone missing (Skipped =
+// "keeplist-unreadable" / "keeplist-missing"), and every move or delete first goes through one check (Refuse).
 namespace Amnesia.Core;
 
 public sealed record CleanItem(string Path, string Kind);
@@ -34,6 +36,8 @@ public sealed class CleanResult
     /// <summary>v0.8: -1 when the sizes were not counted (sign out and panic are kept fast).</summary>
     public long Bytes { get; set; }
     public double Seconds { get; set; }
+    /// <summary>v0.9: items the last safety check (Refuse) would not let go. They stay where they are.</summary>
+    public int Refused { get; set; }
     public List<CleanItem> Items { get; set; } = new();
     public List<string> Kept { get; set; } = new();
 }
@@ -187,6 +191,10 @@ public sealed class CleanEngine
     /// trash that is emptied at the next sign in (it ran first and the app was gone for good, with no way back).</summary>
     public Func<IEnumerable<string>>? NewAppFolders { get; set; }
     List<string> appDirs = new();
+    /// <summary>v0.9: the list of new program folders could not be made (see Run: AppData folders then wait 3 days).</summary>
+    bool appsUnknown;
+    /// <summary>v0.9: Windows could not tell us the cloud folders (see Visit: top level folders then stay).</summary>
+    bool cloudUnknown;
     /// <summary>v0.8.1: does this item (Windows style, home relative) belong to a new app's program folder?</summary>
     bool IsAppDir(string item)
     {
@@ -239,8 +247,24 @@ public sealed class CleanEngine
                 r.Skipped = "paused";
                 return r;
             }
-            T("start");
         }
+
+        // v0.9: a Keep List that can't be read (or that has gone missing) means we can't tell what must stay: stop
+        var ks = KeepList.Check(out var keepText);
+        if (ks != null)
+        {
+            r.Skipped = "keeplist-" + ks;
+            if (!dryRun)
+            {
+                Home.History("stopped", $"{mode} {r.Skipped}");
+                T($"stop: keep list {ks}");
+                // a missing list comes back from its last good copy, so the next cleanup has it again
+                if (ks == "missing" && KeepList.RestoreLast()) T("keep list restored from the last good copy");
+            }
+            r.Seconds = watch.Elapsed.TotalSeconds;
+            return r;
+        }
+        T("start");
 
         if (scanned && scannedMode == mode && DateTime.UtcNow - scannedAt < TimeSpan.FromMinutes(2)) T($"using the list made {(DateTime.UtcNow - scannedAt).TotalSeconds:0.0} s ago");
         else Scan(mode, T);
@@ -252,7 +276,9 @@ public sealed class CleanEngine
         T($"list ready ({items.Count}) after {watch.Elapsed.TotalSeconds:0.0} s");
 
         // ---------- the real thing ----------
-        int moved = 0, failed = 0, blocked = 0;
+        int moved = 0, failed = 0, blocked = 0, refused = 0;
+        var linkSeen = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        var keepDir = Conf.KeepDir; // v0.9: for Refuse, read once (can't be read = the run stops here, nothing moved yet)
         long bytes = Fast ? -1 : 0;
         if (mode == "login") { T("empty trash"); Purge(); }
         try { BeforeMove?.Invoke(items); } catch (Exception e) { T($"before move failed: {e.GetType().Name}"); }
@@ -265,9 +291,13 @@ public sealed class CleanEngine
             if (i.Kind != "file" && i.Kind != "folder") continue;
             var full = Path.Combine(H, i.Path.Replace('\\', Sep));
             if (!Exists(full)) continue; // already gone
+            // v0.9: the last check before anything moves (never the user folder, Keep, .amnesia, a link...)
+            if (Refuse(full, false, linkSeen, keepDir) != null) { refused++; continue; }
             if (!Fast) bytes += SizeOf(full);
-            // v0.8.1: a new app's program folder waits 3 days in the trash (see NewAppFolders)
-            if (appDirs.Count > 0 && IsAppDir(i.Path) && ToTrash(full)) { moved++; apps++; continue; }
+            // v0.8.1: a new app's program folder waits 3 days in the trash (see NewAppFolders).
+            // v0.9: when that list could not be made, every folder in AppData waits 3 days too (could not tell = careful)
+            if ((appDirs.Count > 0 && IsAppDir(i.Path) || appsUnknown && i.Kind == "folder" && i.Path.StartsWith("AppData\\", StringComparison.OrdinalIgnoreCase))
+                && ToTrash(full)) { moved++; apps++; continue; }
             // move = instant (same disk). The folder structure is kept in the trash so names never collide.
             var dest = Path.Combine(batch, i.Path.Replace('\\', Sep));
             try
@@ -289,7 +319,10 @@ public sealed class CleanEngine
         foreach (var i in items)
         {
             if (i.Kind != "trace" || !i.Path.StartsWith("AppData\\", StringComparison.OrdinalIgnoreCase)) continue;
-            if (Delete(Path.Combine(H, i.Path.Replace('\\', Sep)))) moved++;
+            var tf = Path.Combine(H, i.Path.Replace('\\', Sep));
+            if (!Exists(tf)) continue;
+            if (Refuse(tf, false, linkSeen, keepDir) != null) { refused++; continue; } // v0.9
+            if (Delete(tf)) moved++;
             else { failed++; Busy(i.Path); if (IsExplorerLive(i.Path)) liveFailed++; } // often in use at sign out: next sign in
         }
         // v0.8: so a test can show whether Explorer still held its caches at this moment
@@ -306,10 +339,13 @@ public sealed class CleanEngine
         if (keepRel.Length > 0) try { Directory.CreateDirectory(Home.Full(keepRel)); } catch { }
         if (mode != "logout") { T("empty trash"); Purge(); } // at sign out time is short: emptied at the next sign in
 
-        r.Count = moved; r.Failed = failed; r.Blocked = blocked; r.Bytes = bytes;
+        r.Count = moved; r.Failed = failed; r.Blocked = blocked; r.Bytes = bytes; r.Refused = refused;
         r.Seconds = watch.Elapsed.TotalSeconds;
         Home.History("clean", $"{mode} {moved} {bytes}");
         if (blocked > 0) Home.History("blocked", blocked.ToString());
+        if (refused > 0) T($"left by the safety check: {refused}");
+        // v0.9: the run went to the end: this Keep List is the last good one
+        if (keepText != null) KeepList.SaveLast(keepText);
         T($"done ({moved}, {failed} in use, {blocked} denied) in {r.Seconds:0.0} s");
         // v0.6: WHERE the files in use are (folders only, never file names), so "8 in use" can be looked into
         if (busyAreas.Count > 0) T("in use: " + string.Join(", ", busyAreas.OrderByDescending(x => x.Value).Take(8).Select(x => $"{x.Key} ({x.Value})")));
@@ -360,6 +396,7 @@ public sealed class CleanEngine
         }
         foreach (var s in system) items.Add(new CleanItem(s.Label, "trace"));
         appDirs = new List<string>();
+        appsUnknown = false;
         try
         {
             foreach (var f in NewAppFolders?.Invoke() ?? Enumerable.Empty<string>())
@@ -372,7 +409,8 @@ public sealed class CleanEngine
                 appDirs.Add(Win(rel));
             }
         }
-        catch (Exception e) { T($"new app list failed: {e.GetType().Name}"); }
+        catch (Exception e) { appsUnknown = true; appDirs.Clear(); T($"new app list failed: {e.GetType().Name}, AppData folders wait 3 days in the trash"); }
+        if (cloudUnknown) T("cloud folders could not be checked: folders right in the user folder stay");
         scanned = true; scannedMode = mode; scannedAt = DateTime.UtcNow;
     }
 
@@ -381,6 +419,9 @@ public sealed class CleanEngine
     {
         patterns.AddRange(BuiltInKeep);
         var keepRel = Conf.KeepRel;
+        // v0.9: "Documents/../Keep" is the folder "Keep": protect it by its real name (could not tell = stop)
+        if (keepRel.Split('/').Any(x => x == ".." || x == "."))
+            keepRel = InHome(Home.Full(keepRel)) ?? throw new InvalidOperationException("keep folder unclear");
         if (keepRel.Length > 0) patterns.Add(keepRel);
         // v0.3: the shortcut to the Keep folder that Amnesia puts on the Desktop
         if (Conf.Get("KEEP_SHORTCUT") != "0")
@@ -392,6 +433,7 @@ public sealed class CleanEngine
         patterns.AddRange(userKeep);
         // v0.8: cloud folders and virtual machines
         patterns.AddRange(CloudNames);
+        cloudUnknown = false;
         try
         {
             foreach (var c in CloudRoots?.Invoke() ?? Enumerable.Empty<string>())
@@ -400,7 +442,7 @@ public sealed class CleanEngine
                 if (rel != null && rel.Length > 0 && !rel.Contains('*')) patterns.Add(rel);
             }
         }
-        catch { }
+        catch { cloudUnknown = true; } // v0.9: could not tell = careful (see Visit)
         if (KeepVm) patterns.AddRange(VmDirs);
     }
 
@@ -442,7 +484,7 @@ public sealed class CleanEngine
             var opt = new EnumerationOptions { RecurseSubdirectories = true, MaxRecursionDepth = 3, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
             return new DirectoryInfo(dir.FullName).EnumerateFiles("*", opt).Any(f => StaysByItself(f));
         }
-        catch { return false; }
+        catch { return true; } // v0.9: could not look inside = look into it item by item (what can't be read stays)
     }
 
     /// <summary>v0.8 (CRIT-WIN-01): may "Remove new apps" take this program folder (full path)? Only a folder of its own
@@ -451,7 +493,9 @@ public sealed class CleanEngine
     public bool MayRemoveAppFolder(string full)
     {
         if (string.IsNullOrWhiteSpace(full)) return false;
-        if (patterns.Count == 0) Patterns();
+        // v0.9: a Keep List or cloud list that can't be read means we can't tell: the folder stays
+        try { if (patterns.Count == 0) Patterns(); } catch { return false; }
+        if (cloudUnknown || KeepList.Check(out _) != null || Refuse(full) != null) return false;
         var rel = InHome(full);
         if (string.IsNullOrEmpty(rel)) return false;
         var parts = rel.Split('/');
@@ -498,7 +542,7 @@ public sealed class CleanEngine
     /// your Keep folder or anything on your Keep List.</summary>
     public bool ExtraOk(string full)
     {
-        if (patterns.Count == 0) Patterns();
+        try { if (patterns.Count == 0) Patterns(); } catch { return false; } // v0.9: could not tell = it stays
         var rel = Path.GetRelativePath(H, full).Replace(Sep, '/');
         if (rel.StartsWith("..") || Path.IsPathRooted(rel) || rel.Contains("/../")) return false;
         if (!ExtraZones.Any(z => rel.StartsWith(z, StringComparison.OrdinalIgnoreCase))) return false;
@@ -523,6 +567,10 @@ public sealed class CleanEngine
             var r = rel.Length > 0 ? $"{rel}/{c.Name}" : c.Name;
             if (c.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue; // junctions/links: never followed, never deleted
             if (IsKept(r) || StaysByItself(c)) { kept.Add(Win(r)); continue; }
+            // v0.9: Windows could not tell us the cloud folders: a folder of your own right in the user folder could be
+            // one (its sync app would delete the files in the cloud too), so it stays this time
+            if (cloudUnknown && rel.Length == 0 && c is DirectoryInfo && !c.Name.StartsWith('.')
+                && !Containers.Contains(c.Name, StringComparer.OrdinalIgnoreCase)) { kept.Add(Win(r)); continue; }
             bool isDir = c is DirectoryInfo;
             if (isDir && (Containers.Contains(r, StringComparer.OrdinalIgnoreCase) || HoldsKept(r) || HasVmInside(r, c))) { Visit(r); continue; }
             items.Add(new CleanItem(Win(r), isDir ? "folder" : "file"));
@@ -614,6 +662,67 @@ public sealed class CleanEngine
     // ---------- deleting ----------
     static bool Exists(string p) => File.Exists(p) || Directory.Exists(p);
 
+    /// <summary>v0.9: the one check before anything is moved or deleted (the cleanup, the Amnesia trash, "Remove new apps",
+    /// Care). Returns null when the item may go, or why not: "empty", "dots" (a ".." in the path), "outside" (not inside
+    /// the user folder), "home" (the user folder itself), "amnesia" (.amnesia or anything in it), "trash" (the
+    /// .amnesia-trash folder itself; what is inside it may go), "keep" (the Keep folder, what is inside it unless
+    /// insideKeep, or a folder that holds it), "link" (a link or junction, or inside one), "gone" (not there any more),
+    /// "unknown" (Windows could not tell us: then it stays too). Never follows links. linkSeen: remembers folders
+    /// already checked, so a long list does not ask Windows about the same folder again.</summary>
+    public static string? Refuse(string full, bool insideKeep = false, Dictionary<string, bool>? linkSeen = null) => Refuse(full, insideKeep, linkSeen, null);
+
+    /// <summary>keepDir: the Keep folder, looked up once by the caller (a long list then reads settings.conf only once).</summary>
+    static string? Refuse(string full, bool insideKeep, Dictionary<string, bool>? linkSeen, string? keepDir)
+    {
+        if (string.IsNullOrWhiteSpace(full)) return "empty";
+        if (full.Split('\\', '/').Any(x => x == "..")) return "dots";
+        try
+        {
+            if (!Path.IsPathFullyQualified(full)) return "outside";
+            var cmp = StringComparison.OrdinalIgnoreCase;
+            var seps = new[] { '\\', '/' };
+            var home = Path.GetFullPath(Home.User).TrimEnd(seps);
+            var f = Path.GetFullPath(full).TrimEnd(seps);
+            if (home.Length == 0) return "unknown";
+            if (f.Equals(home, cmp)) return "home";
+            if (!f.StartsWith(home, cmp) || f.Length <= home.Length || !seps.Contains(f[home.Length])) return "outside";
+            var parts = f[(home.Length + 1)..].Split(seps, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0) return "home";
+            if (parts[0].Equals(".amnesia", cmp)) return "amnesia";
+            if (parts[0].Equals(".amnesia-trash", cmp) && parts.Length == 1) return "trash";
+            // the Keep folder (only when it is inside the user folder: one outside it never comes here anyway)
+            var keep = Path.GetFullPath(keepDir ?? Conf.KeepDir).TrimEnd(seps);
+            if (keep.Length > home.Length && keep.StartsWith(home, cmp) && seps.Contains(keep[home.Length]))
+            {
+                if (f.Equals(keep, cmp)) return "keep";
+                if (keep.StartsWith(f, cmp) && seps.Contains(keep[f.Length])) return "keep"; // a folder with Keep inside
+                if (!insideKeep && f.StartsWith(keep, cmp) && seps.Contains(f[keep.Length])) return "keep";
+            }
+            // links: the item itself and every folder between it and the user folder
+            var at = home;
+            for (int n = 0; n < parts.Length; n++)
+            {
+                at = Path.Combine(at, parts[n]);
+                bool last = n == parts.Length - 1;
+                bool link;
+                if (!last && linkSeen != null && linkSeen.TryGetValue(at, out var known)) link = known;
+                else
+                {
+                    if (last && !File.Exists(at) && !Directory.Exists(at)) return "gone";
+                    link = (File.GetAttributes(at) & FileAttributes.ReparsePoint) != 0;
+                    if (!last && linkSeen != null) linkSeen[at] = link;
+                }
+                if (link) return "link";
+            }
+            return null;
+        }
+        catch { return "unknown"; }
+    }
+
+    /// <summary>v0.9: Delete, but only after Refuse said yes. For Care and anything new: never call Delete directly
+    /// on a path that came from a list. insideKeep: the item may be inside the Keep folder (never the folder itself).</summary>
+    public static bool SafeDelete(string full, bool insideKeep = false) => Refuse(full, insideKeep) == null && Delete(full);
+
     public static long SizeOf(string p)
     {
         try
@@ -655,13 +764,20 @@ public sealed class CleanEngine
     public static int DeleteExplorerCaches()
     {
         int n = 0;
+        // v0.9: a Keep List that can't be trusted stops this too (the panic runs it before the cleanup checks)
+        if (KeepList.Check(out _) != null) return 0;
+        var keep = KeepList.Paths();
         foreach (var f in TraceFiles.Where(t => t.Contains("/Explorer/")).Append("AppData/Local/IconCache.db"))
         {
             var slash = f.LastIndexOf('/');
             var dir = Home.Full(f[..slash]);
             if (!Directory.Exists(dir)) continue;
             foreach (var c in new DirectoryInfo(dir).EnumerateFiles(f[(slash + 1)..]))
-                if (Delete(c.FullName)) n++;
+            {
+                var rel = Path.GetRelativePath(Home.User, c.FullName).Replace(Path.DirectorySeparatorChar, '/');
+                if (keep.Any(p => Wild.Like(rel, p) || Wild.Like(rel, p + "/*"))) continue; // v0.9: on the Keep List
+                if (SafeDelete(c.FullName)) n++; // v0.9
+            }
         }
         return n;
     }
@@ -675,6 +791,7 @@ public sealed class CleanEngine
     {
         try
         {
+            if (Refuse(full) != null) return false; // v0.9: nothing outside the user folder, no Keep, no links...
             var rel = Path.GetRelativePath(Home.User, full);
             if (rel.StartsWith("..") || Path.IsPathRooted(rel)) return false;
             var dest = Path.Combine(Home.Trash, $"{DateTime.Now:yyyyMMdd-HHmmss}-{tag}", rel);
@@ -690,10 +807,12 @@ public sealed class CleanEngine
     static void Purge()
     {
         if (!Directory.Exists(Home.Trash)) return;
+        // v0.9: a .amnesia-trash that is a link (or sits in one) is never emptied: it would empty another folder
+        try { if ((File.GetAttributes(Home.Trash) & FileAttributes.ReparsePoint) != 0) return; } catch { return; }
         foreach (var c in new DirectoryInfo(Home.Trash).EnumerateFileSystemInfos().ToList())
         {
             if (c.Name.EndsWith("-apps", StringComparison.OrdinalIgnoreCase) && DateTime.Now - c.CreationTime < AppsKeptFor) continue;
-            Delete(c.FullName);
+            if (Refuse(c.FullName) == null) Delete(c.FullName);
         }
         try { if (!Directory.EnumerateFileSystemEntries(Home.Trash).Any()) Directory.Delete(Home.Trash); } catch { }
     }

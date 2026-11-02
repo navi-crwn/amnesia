@@ -7,6 +7,131 @@ Sedikit cerita: tanggal 6 Oktober 2026 Amnesia masih berupa beberapa skrip. Dua 
 
 Nomor versi kamu ada di samping judul Amnesia dan di bagian bawah panel menu bar.
 
+## v5.25.0 · Mode Amnesia, profil vault dan Tanya AI (26 Okt 2026)
+
+Rilis ini juga berisi semua perubahan v5.24.0 di bawah, yang tidak pernah dirilis sendiri.
+
+**Matikan** Amnesia dulu sebelum memasang, lalu nyalakan lagi.
+
+### Baru
+- **Mode Amnesia: pilih seberapa banyak yang dilupakan setiap logout.** Retrograde Amnesia, Selective Amnesia (disarankan), Partial Amnesia atau Custom Amnesia.
+  - **Retrograde Amnesia** seperti akun baru setiap login. Hanya folder Keep kamu dan yang dibutuhkan Amnesia yang tetap ada. Snapshot otomatis saat logout dimatikan; snapshot kamu tetap ada dan masih bisa di-restore manual.
+  - **Selective Amnesia** adalah daftar dasar untuk instalasi baru: folder Keep, login app dari vault, kunci SSH, pengaturan Git dan shell. Daftar bawaan tidak lagi berisi app milik pembuatnya (app VPN, alat terminal); app kamu sendiri kamu tambahkan di Keep List. Keep List kamu yang sudah ada tidak diubah.
+  - **Partial Amnesia** membiarkan app tetap menyimpan pengaturan dan loginnya. File kamu, Downloads, Desktop, cache, log, Trash dan riwayat terminal dihapus. Catatan jujur: riwayat dan cookie browser di dalam folder browser itu sendiri juga tetap ada, karena foldernya disimpan.
+  - **Custom Amnesia** adalah Keep List buatan kamu sendiri. Dipilih otomatis saat kamu mengubah baris dari sebuah mode.
+- **Setiap ganti mode ada pratinjau dulu**: apa yang mulai dihapus dan apa yang mulai disimpan, dengan peringatan kalau yang dihapus lebih banyak. Berlaku mulai logout berikutnya.
+- **Baris Keep List kamu sendiri tetap ada**: mode hanya mengubah bagiannya sendiri yang ditandai.
+- **Profil vault: restore hanya yang kamu perlukan**, misalnya Kerja atau Santai, atau semuanya. Profil bisa diganti nama, ditambah dan dihapus. Kalau satu app ada di dua profil, Amnesia memberi tahu: satu browser menyimpan satu kumpulan login, jadi browser kedua (atau profil browser terpisah) membuat pemakaian pribadi tetap terpisah.
+- **Tanya AI: saran tanpa membagikan file kamu.** Amnesia membuat laporan tanpa isi file dan tanpa nama file kamu, plus prompt siap pakai. Kamu tempel ke AI pilihanmu, lalu tempel jawabannya kembali dan centang perubahan yang kamu mau. Nama folder juga bisa disembunyikan, dan laporannya bisa disimpan ke folder Keep.
+- **Perintah Terminal `amnesia`**: status, preview, report, keep, history. Hanya membaca, tidak pernah menghapus apa pun. Nyalakan di Pengaturan.
+
+### Lebih aman
+- **Tanya AI tidak memakai internet**: tidak ada yang keluar dari komputer kecuali kamu menempelnya sendiri.
+- **File mode yang hilang atau rusak tidak pernah mengosongkan Keep List**; modenya saja yang tidak diganti.
+- **Saran AI tidak diterapkan tanpa centang dan konfirmasi kamu**; baris milik Amnesia tidak bisa dihapus lewat cara ini.
+
+### Lebih sederhana dan diperbaiki setelah uji coba
+- **Virtual machine dan Foto tidak lagi ditambahkan sendiri ke Keep List.** Kalau Amnesia menemukan virtual machine (UTM, Parallels, VirtualBox, VMware Fusion) atau library Foto yang belum disimpan, halaman Keep List dan Yang Akan Dihapus menampilkan peringatan dengan ukurannya dan dua tombol: **Keep** atau **Jangan Simpan**. Baris yang sudah ada tetap seperti semula.
+- **Pengaturan dikelompokkan**: Logout, Keep, App, serta Keamanan & cek. Yang jarang dipakai (perintah Terminal, Brankas, logout otomatis, hapus app baru, kata panik, pindah Mac) ada di **Tampilkan pengaturan lanjutan**, tertutup sampai kamu membukanya. Pencarian tetap menemukan semuanya.
+- **Pencarian Pengaturan menampilkan hasil pertama di atas**, tidak tersembunyi di luar jendela.
+- **Membuka halaman Keep List tidak lagi menulis mode ke settings.conf**; mode hanya ditulis saat kamu benar-benar menggantinya. Memilih **Semua** di Memory Recall tidak lagi membuat `profiles.json`.
+- **Pratinjau mode tidak lagi menyebut `.zshrc`, `.zprofile` atau `.gitconfig` akan dihapus.** Amnesia tidak pernah menghapus file itu di folder home; baris yang keluar dari Keep List tanpa menghapus apa pun ditampilkan terpisah.
+- **Snapshot kecil menampilkan ukuran aslinya** (GitHub CLI tadinya "0 KB").
+- **Cek kesehatan tidak lagi menyebut app di Profile Vault (misalnya Chrome) sebagai file besar yang ikut dihapus**: app itu kembali lewat Restore Profil.
+- **Satuan ukuran sama di semua tempat** (1 MB = 1000 KB, seperti Finder): app, perintah Terminal dan laporan Tanya AI.
+- **Tanya AI: "Jangan tampilkan lagi"** di pesan Disalin.
+- **Aksesibilitas**: setiap sakelar, pilihan dan tombol ikon punya nama untuk VoiceOver, dan ada tes yang mengeceknya.
+
+### Website dan README
+- **Kedua website dan README** punya bagian untuk mode, profil vault dan Tanya AI, dan mencantumkan Mac v5.25.0 dan Windows v0.10.0.
+- **`SECURITY.md`** menjelaskan isi laporan Tanya AI dan bahwa laporan itu tetap di komputer kecuali kamu menempelnya sendiri.
+- **`llms.txt`** menjelaskan ke asisten AI cara memakai `amnesia report` dan format sarannya.
+
+## Windows v0.10.0 · Mode Amnesia, profil vault dan Tanya AI (26 Okt 2026)
+
+Belum dirilis. Ikut rilis Windows berikutnya.
+
+Rilis ini juga berisi semua perubahan v0.9.0 di bawah, yang tidak pernah dirilis sendiri.
+
+### Baru
+- **Mode Amnesia: pilih seberapa banyak yang dilupakan setiap sign out.** Retrograde Amnesia, Selective Amnesia (disarankan, sama seperti sebelumnya), Partial Amnesia atau Custom Amnesia.
+  - **Retrograde Amnesia** seperti akun baru setiap sign in. Hanya folder Keep kamu dan yang dibutuhkan Amnesia yang tetap ada. Snapshot otomatis vault saat sign out dimatikan; snapshot kamu tetap ada dan masih bisa di-restore manual.
+  - **Selective Amnesia** menyimpan folder Keep dan mengembalikan login app dari vault, sama seperti sebelumnya.
+  - **Partial Amnesia** membiarkan app tetap menyimpan pengaturan dan loginnya: semua isi AppData tetap ada. File kamu, Desktop, Documents dan Downloads dihapus. Catatan jujur: karena seluruh AppData disimpan, riwayat dan cookie browser di dalam folder browser itu sendiri (Edge juga), file Temp, daftar file terakhir dan riwayat PowerShell juga tetap ada. Cache thumbnail dan ikon, riwayat notifikasi, Recycle Bin, clipboard dan daftar terakhir di registry tetap dihapus.
+  - **Custom Amnesia** adalah Keep List buatan kamu sendiri. Dipilih otomatis saat kamu mengubah baris dari sebuah mode.
+- **Setiap ganti mode ada pratinjau dulu**: apa yang mulai dihapus dan apa yang mulai disimpan, dengan peringatan kalau yang dihapus lebih banyak. Berlaku mulai sign out berikutnya.
+- **Baris Keep List kamu sendiri tetap ada**: mode hanya mengubah bagiannya sendiri yang ditandai.
+- **Profil vault: restore hanya yang kamu perlukan**, misalnya Kerja atau Santai, atau semuanya. Profil bisa diganti nama, ditambah dan dihapus. Kalau satu app ada di dua profil, Amnesia memberi tahu: satu browser menyimpan satu kumpulan login, jadi browser kedua (atau profil browser terpisah) membuat pemakaian pribadi tetap terpisah.
+- **Tanya AI: saran tanpa membagikan file kamu.** Amnesia membuat laporan tanpa isi file dan tanpa nama file kamu, plus prompt siap pakai. Kamu tempel ke AI pilihanmu, lalu tempel jawabannya kembali dan centang perubahan yang kamu mau. Nama folder juga bisa disembunyikan, dan laporannya bisa disimpan ke folder Keep.
+
+### Lebih aman
+- **Tanya AI tidak memakai internet**: tidak ada yang keluar dari komputer kecuali kamu menempelnya sendiri.
+- **Daftar mode yang hilang atau rusak tidak pernah mengosongkan Keep List**; modenya saja yang tidak diganti.
+- **Saran AI tidak diterapkan tanpa centang dan konfirmasi kamu.**
+
+### Lebih sederhana dan diperbaiki setelah uji coba
+- **Pengaturan dikelompokkan**: Keep (pintasan dan Kunci Keep), Yang tetap aman, dan App. Pengaturan lanjutan tertutup sampai kamu membukanya; pencarian tetap menemukan semuanya dan menampilkan hasil pertama di atas.
+- **Membuka halaman Keep List tidak lagi menulis mode ke pengaturan**; mode hanya ditulis saat kamu benar-benar menggantinya. Memilih **Semua** untuk restore tidak lagi membuat `profiles.json`.
+- **Pratinjau mode menampilkan terpisah baris yang keluar dari Keep List tanpa menghapus apa pun**, bukan di bawah "mulai sekarang dihapus".
+- **Ukuran di laporan Tanya AI memakai satuan yang sama dengan app** (1 MB = 1000 KB).
+- **Aksesibilitas**: tombol Keluarkan, Keep, Hapus dan Uninstall di daftar, serta kotak centang dan pilihan tanpa judul yang terlihat, sekarang memberi tahu pembaca layar item mana yang dimaksud.
+
+## v5.24.0 · Halaman Perawatan, dan pembersihan yang berhenti kalau ragu (26 Okt 2026)
+
+**Matikan** Amnesia dulu sebelum memasang, lalu nyalakan lagi.
+
+Amnesia sudah menghapus sebagian besar folder home di setiap logout, jadi Perawatan terutama berguna untuk folder Keep, app yang kamu simpan dan file besar yang dibuat di sesi ini.
+
+### Baru
+- **Perawatan: halaman baru untuk mengosongkan ruang kapan saja, selalu dengan daftar untuk dicek dulu.** Tidak ada yang berisiko dicentang untukmu, dan kamu mengonfirmasi jumlah, ukuran dan tujuannya sebelum ada yang dipindah.
+- **Ringkasan disk** menunjukkan apa yang memakan ruang: folder Keep, vault, tempat sampah, cache, folder dan file terbesar, unduhan lama. Hanya dibaca.
+- **Bersihkan sekarang** mengosongkan cache, log dan tempat sampah Amnesia; cache app yang sedang terbuka dilewati. Mengosongkan Trash macOS juga ada di daftar, tapi tidak pernah dicentang untukmu, karena itu permanen.
+- **Hapus app** memindahkan app yang kamu pasang beserta cachenya ke Trash; data pribadinya tetap ada kecuali kamu centang.
+- **Folder build project** (node_modules, target, build, dist dan lainnya) bisa dipindah ke Trash; folder yang dipakai 7 hari terakhir atau dilacak git tidak disentuh.
+- **Installer lama** (.dmg, .pkg) dipindah ke Trash; image disk dan mesin virtual tidak pernah dipilihkan.
+- **Perawatan ringan** tanpa password admin: segarkan thumbnail Quick Look, mulai ulang Dock.
+- **Cek kesehatan** menampilkan sisa ruang disk, memori dan kondisi baterai.
+- **Setiap Perawatan tercatat di Riwayat** beserta ruang yang dikosongkan.
+
+### Diperbaiki
+- **Kolom cari di Pengaturan tetap di atas** saat kamu scroll pengaturan.
+
+### Lebih aman
+- **Pembersihan berhenti dan tidak menghapus apa pun kalau Keep List tidak bisa dibaca atau hilang**, dan dicatat di Riwayat.
+- **Salinan Keep List terakhir yang baik disimpan** dan dipakai untuk memulihkannya.
+- **Setiap penghapusan lewat satu pengecekan** yang menolak folder home, folder Keep, `~/.amnesia` dan apa pun di luar folder home (kecuali app baru yang Anda minta dihapus Amnesia).
+- **Kalau pengecekan tidak yakin** (cloud, iCloud, link, pemilik), item disimpan.
+- **Saat login dan Bersihkan Sekarang, folder yang masih dipakai app yang terbuka dilewati** dan dibersihkan lain kali.
+
+### Website dan README
+- **Kedua website dan README** punya bagian Perawatan dan mencantumkan Mac v5.24.0 dan Windows v0.9.0.
+- **`SECURITY.md` baru**: cara melaporkan masalah keamanan secara pribadi, dan daftar jujur apa yang dijaga Amnesia dan apa yang tidak bisa.
+- **`llms.txt` baru**: panduan singkat untuk asisten AI yang membantu orang memasang Amnesia, supaya mereka mengecek Yang Akan Dihapus dan folder Keep dulu.
+- **Tempat mendapatkan Amnesia**: README sekarang menyebut Amnesia hanya tersedia dari github.com/navi-crwn/amnesia, websitenya di GitHub Pages dan Homebrew tap `navi-crwn/tap`.
+
+## Windows v0.9.0 · Halaman Perawatan, dan pembersihan yang berhenti kalau ragu (26 Okt 2026)
+
+Belum dirilis. Ikut rilis Windows berikutnya.
+
+Amnesia sudah menghapus sebagian besar folder user di setiap sign out, jadi Perawatan terutama berguna untuk folder Keep, app yang kamu simpan dan file besar yang dibuat di sesi ini.
+
+### Baru
+- **Perawatan: halaman baru untuk mengosongkan ruang kapan saja, selalu dengan daftar untuk dicek dulu.** Tidak ada yang berisiko dicentang untukmu, dan kamu mengonfirmasi jumlah, ukuran dan tujuannya sebelum ada yang dipindah.
+- **Ringkasan disk** menunjukkan apa yang memakan ruang: folder Keep, vault, Recycle Bin, Temp, folder dan file terbesar, unduhan lama. Hanya dibaca.
+- **Bersihkan sekarang** mengosongkan Temp, crash dump, cache app dan tempat sampah Amnesia. Recycle Bin juga ada di daftar, tapi tidak pernah dicentang untukmu, karena mengosongkannya permanen. File yang masih dibuka Windows dilewati dan dihitung, bukan ditampilkan sebagai error.
+- **Hapus app**: program yang dipasang khusus untukmu menjalankan uninstaller-nya sendiri, program yang dipasang untuk semua pengguna membuka Pengaturan Windows. Sisa cache dipindah ke Recycle Bin; data pribadi tetap ada kecuali kamu centang.
+- **Folder build project** (node_modules, target, build, dist, juga bin dan obj dari project .NET, dan lainnya) bisa dipindah ke Recycle Bin; folder yang dipakai 7 hari terakhir atau dilacak git tidak disentuh.
+- **Installer lama** (.msi, .msix) dipindah ke Recycle Bin; file setup .exe ditampilkan tapi tidak pernah dipilihkan, dan image disk serta mesin virtual tidak pernah dipilihkan.
+- **Perawatan ringan** tanpa admin: mulai ulang Explorer, buka Startup apps dan pengaturan Storage.
+- **Cek kesehatan** menampilkan sisa ruang disk, memori dan isi baterai.
+- **Setiap Perawatan tercatat di Riwayat** beserta ruang yang dikosongkan.
+
+### Lebih aman
+- **Pembersihan berhenti dan tidak menghapus apa pun kalau Keep List tidak bisa dibaca atau hilang**, dan dicatat di Riwayat.
+- **Salinan Keep List terakhir yang baik disimpan** dan dipakai untuk memulihkannya.
+- **Setiap penghapusan lewat satu pengecekan** yang menolak folder user, folder Keep, `.amnesia` dan apa pun di luar folder user.
+- **Kalau pengecekan tidak yakin** (folder cloud, link, pemilik), item disimpan.
+
 ## v5.23.1 · Popup panjang bisa di-scroll, website dan README menyusul (18 Okt 2026)
 
 **Matikan** Amnesia dulu sebelum memasang, lalu nyalakan lagi.

@@ -129,7 +129,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
   <div class="wrap two">
     <div class="hero-copy">
-      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.8.1</span><svg><use href="#i-github"/></svg><span>在 GitHub 上开源</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.10.0</span><svg><use href="#i-github"/></svg><span>在 GitHub 上开源</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
       <h1 id="hero-title">
         <span><span class="split">你的电脑会忘记</span> <em class="word">一切。</em><span class="after split">除了你要保留的。</span></span>
       </h1>
@@ -158,7 +158,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
     <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
       <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
       <span class="rc-desc"><span>注销时，你的电脑会忘记一切，只留下你选择保留的。</span></span>
-      <span class="rc-meta"><span>MIT</span><span>Windows v0.8.1</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
+      <span class="rc-meta"><span>MIT</span><span>Windows v0.10.0</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
     </a>
   </div>
 </section>
@@ -184,7 +184,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <span class="rc-legend" data-gh="langs" hidden></span>
         <span class="rc-stats">
           <span><small><span>许可证</span></small><b>MIT</b></span>
-          <span><small>Windows</small><b>v0.8.1</b></span>
+          <span><small>Windows</small><b>v0.10.0</b></span>
           <span><small><span>测试</span></small><b>294</b></span>
           <span><small>Commits</small><b data-gh="commits">–</b></span>
           <span><small><span>贡献者</span></small><b data-gh="contributors">–</b></span>
@@ -523,7 +523,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <h2><span>它在正常工作吗？<em>看一眼就知道。</em></span></h2>
       <p class="lead"><span>一个页面回答“Amnesia 现在能正常干活吗？”。绿色表示没问题，黄色和红色告诉你该看哪里，每一行都会说明去哪里修复。</span></p>
       <ul class="facts">
-        <li><b><span>它检查什么。</span></b> <span>是否开启、是否随 Windows 启动、上次清理、留到下次登录处理的文件、Windows 安全中心的拦截、云盘文件夹、虚拟机、Keep 锁、保险库、上次备份、紧急快捷键和更新。</span></li>
+        <li><b><span>它检查什么。</span></b> <span>是否开启、是否随 Windows 启动、上次清理、留到下次登录处理的文件、Windows 安全中心的拦截、云盘文件夹、虚拟机、Keep 锁、保险库、上次备份、紧急快捷键、更新、磁盘剩余空间、内存和电池。</span></li>
         <li><b><span>启动项被关了？</span></b> <span>如果有人在任务管理器里关掉了 Amnesia，主页会显示警告，并附带一个“Switch it back on”按钮。</span></li>
         <li><b><span>签名更新。</span></b> <span>只有当 SHA256SUMS.txt 上的开发者签名验证通过时，更新才会安装。没有签名的话，Amnesia 会打开发布页面，而不是安装任何东西。</span></li>
       </ul>
@@ -608,6 +608,35 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div><h3><span>磁盘加密检查</span></h3><p><span>“设置”会显示 BitLocker 或设备加密是否开启，以及如何开启。</span></p></div>
       <div><h3><span>擦除可用空间</span></h3><p><span>运行 Windows 自带的 cipher /w，让已删除的文件更难被恢复。速度慢，而且会先问你。</span></p></div>
     </div>
+
+    <div class="head" id="care" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>维护。<em>先看清单，再腾空间。</em></span></h2>
+      <p class="lead"><span>Amnesia 每次注销时本来就会清空你用户文件夹的大部分内容，所以“维护”是为留下来的东西准备的：你的 Keep 文件夹、你保留的 App，以及这次会话里产生的大文件。每个操作都会先扫描并列出清单，有风险的项目不会替你勾选。</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>磁盘概览</span></h3><p><span>看看是什么占了空间：Keep 文件夹、保险库、回收站、Temp、最大的文件夹和文件、旧的下载。只读，这里不会删除任何东西。</span></p></div>
+      <div><h3><span>立即清理</span></h3><p><span>清空 Temp、崩溃转储、App 缓存和 Amnesia 的回收站。Windows 仍在使用的文件会被跳过。Windows 回收站也在清单里，但从不替你勾选。</span></p></div>
+      <div><h3><span>卸载 App</span></h3><p><span>只为你安装的程序会运行它自己的卸载程序。为所有人安装的程序会打开 Windows 设置。剩下的缓存移到回收站，个人数据会保留，除非你勾选。</span></p></div>
+      <div><h3><span>项目构建文件夹</span></h3><p><span>node_modules、target、build、dist，以及 .NET 项目的 bin 和 obj 可以移到回收站。最近 7 天用过的文件夹或被 git 跟踪的文件夹不会被动。</span></p></div>
+      <div><h3><span>旧安装包</span></h3><p><span>旧的 .msi 和 .msix 文件会移到回收站。setup .exe 文件会列出来，但从不替你选中，磁盘映像和虚拟机也一样。</span></p></div>
+      <div><h3><span>安全的小保养</span></h3><p><span>重启资源管理器，或打开“启动应用”和“存储”设置。不需要管理员。</span></p></div>
+      <div><h3><span>拿不准就停下</span></h3><p><span>如果 Keep List 读不出来或不见了，清理就什么都不删，并记在历史记录里。检查拿不准时，项目会被保留。</span></p></div>
+      <div><h3><span>每次都记入历史</span></h3><p><span>每次“维护”都会连同释放的空间记入历史记录。健康检查还会显示磁盘剩余空间、内存和电池。</span></p></div>
+    </div>
+
+    <div class="head" id="modes" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>模式与配置组。<em>忘掉多少，由你决定。</em></span></h2>
+      <p class="lead"><span>为每次注销选一个模式，只恢复你需要的应用，并在不分享文件的情况下向 AI 请教。每项更改都会先显示预览，并在下次注销时生效。</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>Retrograde Amnesia</span></h3><p><span>每次登录都像一个全新的账户。只保留你的 Keep 文件夹和 Amnesia 运行所需的内容。注销时保险库的自动快照会关闭，你仍可以手动恢复快照。</span></p></div>
+      <div><h3><span>Selective Amnesia <small>(推荐)</small></span></h3><p><span>Keep 文件夹保留，应用登录从保险库恢复。和以前一样。</span></p></div>
+      <div><h3><span>Partial Amnesia</span></h3><p><span>AppData 中的所有内容都会保留，所以应用会保留设置和登录，缓存也一样。你的文件、下载和桌面会被清除。浏览器自己文件夹里的浏览记录和 Cookie 也会保留，因为那个文件夹被保留了。</span></p></div>
+      <div><h3><span>Custom Amnesia</span></h3><p><span>你自己的 Keep List。当你修改某个模式添加的行时会自动选中。模式只改动它自己标记的部分，所以你自己的行始终保留。</span></p></div>
+      <div><h3><span>每次切换前都有预览</span></h3><p><span>查看从现在起会被清除和会被保留的内容，清除更多时会有警告。切换时不会删除任何东西。模式列表缺失或损坏时，绝不会清空你的 Keep List。</span></p></div>
+      <div><h3><span>保险库配置组</span></h3><p><span>只恢复你需要的，例如工作或个人，或者全部。可以重命名、添加和删除配置组。一个浏览器只保存一套登录，所以用第二个浏览器能把个人使用分开。</span></p></div>
+      <div><h3><span>问问 AI</span></h3><p><span>Amnesia 会生成一份不含文件内容、也不含你文件名的报告，并附上现成的提示词。把它粘贴到你选择的 AI，再把回答粘贴回来，勾选你想要的更改。Amnesia 本身不发送任何内容。</span></p></div>
+    </div>
   </div>
 </section>
 
@@ -646,7 +675,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="aw-bar"><img src="../../logo.png" alt="" width="14" height="14"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
         <div class="aw-head">
           <img src="../../logo.png" alt="" width="36" height="36">
-          <div><b>Amnesia <span class="ver">v0.8.1</span></b><small><span>你的电脑会忘记一切，除了你选择保留的。</span></small></div>
+          <div><b>Amnesia <span class="ver">v0.10.0</span></b><small><span>你的电脑会忘记一切，除了你选择保留的。</span></small></div>
           <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span>设置</span></span>
         </div>
         <div class="aw-hero pc" data-p="home">
@@ -961,7 +990,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <p class="label"><span class="n">15</span> · <span>安装</span></p>
       <h2><span>一个 Setup，<em>无需管理员。</em></span></h2>
       <div class="badges">
-        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.8.1</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.10.0</b></a>
         <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
         <span class="bdg"><svg><use href="#i-laptop"/></svg><span>Windows</span><b>10 · 11</b></span>
       </div>
@@ -998,7 +1027,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><div><h3><span>校验文件</span></h3><p class="small"><span>可选</span></p></div></div>
         <div class="shell">
           <div class="sh-bar"><i></i><i></i><i></i><span>PowerShell</span></div>
-          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.8.1-x64.exe</code><button class="copy" type="button">Copy</button></div>
+          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.10.0-x64.exe</code><button class="copy" type="button">Copy</button></div>
           <pre class="sh-out"><span>Algorithm  Hash</span>
 <span>---------  ----</span>
 <span>SHA256     3F9A…C21E</span>
@@ -1010,7 +1039,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><div><h3>navi-crwn/amnesia</h3><p class="small"><span>在 GitHub 上开源</span></p></div></div>
         <dl class="ghstats">
           <div><dt><span>许可证</span></dt><dd>MIT</dd></div>
-          <div><dt>Windows</dt><dd>v0.8.1</dd></div>
+          <div><dt>Windows</dt><dd>v0.10.0</dd></div>
           <div><dt><span>测试</span></dt><dd>294</dd></div>
           <div><dt><span>芯片</span></dt><dd>x64 · arm64</dd></div>
         </dl>
@@ -1057,7 +1086,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
                 <p class="wsm-h">Windows protected your PC</p>
                 <p class="wsm-t">Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p>
                 <p class="wsm-more" data-a="1" data-on=".wsm-app,.wsm-run">More info</p>
-                <p class="wsm-app">App: Amnesia-Setup-0.8.1-x64.exe</p>
+                <p class="wsm-app">App: Amnesia-Setup-0.10.0-x64.exe</p>
                 <div class="wsm-btns"><span class="wsm-run" data-a="2" data-on=".pop0">Run anyway</span><span>Don't run</span></div>
               </div>
               <div class="pop tw-pop pop0">
@@ -1310,7 +1339,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="ft-tag"><span>注销时，你的电脑会忘记一切，只留下你选择保留的。免费、开源，而且什么都不会离开你的电脑。</span></p>
         <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
           <svg><use href="#i-github"/></svg>
-          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.8.1</small></span>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.10.0</small></span>
         </a>
       </div>
       <nav class="ft-cols" aria-label="页脚">

@@ -422,6 +422,7 @@ struct UpdateCard: View {
                     ForEach(UpdateEvery.choices, id: \.self) { d in Text(UpdateEvery.label(d)).tag(d) }
                 }
                 .labelsHidden()
+                .accessibilityLabel(T("Check for updates", "Cek update"))      // v5.25 (197)
                 .frame(width: 170)
             }
             Toggle(T("Download new versions by themselves", "Unduh versi baru otomatis"), isOn: Binding(get: { auto }, set: {
@@ -870,6 +871,7 @@ struct AdvancedGroup: View {
                     }
                 }
                 .labelsHidden()
+                .accessibilityLabel(Self.tAutoLogout.title)      // v5.25 (197)
                 .frame(width: 110)
             }
         }
@@ -904,6 +906,7 @@ struct AdvancedGroup: View {
                 Spacer(minLength: 8)
                 Toggle("", isOn: Binding(get: { newOn }, set: { setNewApps($0) }))
                     .toggleStyle(.switch).labelsHidden()
+                    .accessibilityLabel(Self.tNewApps.title)      // v5.25 (197)
             }
             if newOn {
                 if apps.isEmpty {

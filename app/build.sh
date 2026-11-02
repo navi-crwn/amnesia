@@ -57,12 +57,13 @@ sign() {
   codesign --force --deep -s - "$1"
 }
 echo "1/4  Compile app..."
-swiftc -swift-version 5 -O -parse-as-library -target "$ARCH-apple-macos15.0" Amnesia.swift Extras.swift Safety.swift -o "$APP/Contents/MacOS/Amnesia"
+swiftc -swift-version 5 -O -parse-as-library -target "$ARCH-apple-macos15.0" Amnesia.swift Extras.swift Safety.swift Care.swift AskAI.swift -o "$APP/Contents/MacOS/Amnesia"
 cp Info.plist "$APP/Contents/Info.plist"
 
 # Mesin Amnesia ikut di dalam app, jadi app dari GitHub Releases langsung bisa dipakai
 R="$APP/Contents/Resources"; mkdir -p "$R/engine" "$R/bin"
-cp ../clean.sh ../agent.sh ../vault.py ../backup.sh ../uninstall.sh ../keeplock.sh ../keep.example.conf "$R/engine/"
+cp ../clean.sh ../agent.sh ../vault.py ../backup.sh ../uninstall.sh ../keeplock.sh ../keep.example.conf ../report.py "$R/engine/"
+cp ../bin/amnesia "$R/engine/amnesia"; chmod 755 "$R/engine/amnesia"   # v5.25: perintah Terminal (hanya membaca)
 echo "     getting 7-Zip..."
 SZ="$B/7zip"; mkdir -p "$SZ"
 if curl -fsSL https://github.com/ip7z/7zip/releases/download/24.09/7z2409-mac.tar.xz -o "$SZ/7z.tar.xz" \
@@ -74,6 +75,8 @@ else
   echo "     (no 7-Zip bundled: install it with  brew install sevenzip)"
 fi
 [ -f "$R/bin/7zz" ] && sign "$R/bin/7zz"
+# v5.25: preset Amnesia mode (full / balanced / light), dipasang ke ~/.amnesia/presets oleh app
+mkdir -p "$R/engine/presets"; cp ../presets/*.conf "$R/engine/presets/"
 
 echo "2/4  Drawing the icon..."
 swiftc -O makeicon.swift -o "$B/makeicon"

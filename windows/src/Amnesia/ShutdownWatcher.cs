@@ -233,6 +233,16 @@ static class Text2
         : (n > 0 ? $"Your safe box still has {n} file(s)." : "Your safe box still has files.") + " Open it and move them first, or keep it: it opens again after you reinstall Amnesia (as long as Amnesia's data is not deleted too).\n\nUninstall anyway?";
     public static string KeepAclTitle => Id ? "Folder Keep masih terkunci" : "Keep is still locked";
     public static string KeepAclText => Id ? "Kunci lama dari versi sebelumnya masih ada. Klik untuk membukanya." : "An old lock from an earlier version is still on it. Click to open it.";
+    // v0.9: the cleanup stopped because it could not trust the Keep List
+    public static string StoppedTitle => Id ? "Pembersihan dihentikan" : "Cleanup stopped";
+    public static string Stopped(string? why, bool restored) => why == "keeplist-missing"
+        ? (restored
+            ? (Id ? "Keep List hilang, jadi tidak ada yang dihapus. Salinan terakhir yang baik sudah dipulihkan. Klik untuk mengeceknya."
+                  : "The Keep List was missing, so nothing was deleted. Your last good copy is back. Click to check it.")
+            : (Id ? "Keep List hilang, jadi tidak ada yang dihapus. Klik untuk membuka Keep List dan mengeceknya."
+                  : "The Keep List is missing, so nothing was deleted. Click to open Keep List and check it."))
+        : (Id ? "Keep List tidak bisa dibaca, jadi tidak ada yang dihapus. Klik untuk membuka Keep List dan mengeceknya."
+              : "The Keep List could not be read, so nothing was deleted. Click to open Keep List and check it.");
     public static string Blocked(int n) => Id
         ? $"{n} item tidak bisa dibersihkan karena diblok Windows Security atau antivirus. Buka Amnesia untuk caranya."
         : $"{n} items could not be cleaned: Windows Security or an antivirus blocked Amnesia. Open Amnesia to see how to fix it.";

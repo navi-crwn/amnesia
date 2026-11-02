@@ -319,6 +319,7 @@ struct KeepLockCard: View {
                 Spacer(minLength: 8)
                 Toggle("", isOn: Binding(get: { on }, set: { v in if v { setting = true } else { turnOff() } }))
                     .toggleStyle(.switch).labelsHidden()
+                    .accessibilityLabel(T("Keep lock", "Kunci Keep"))      // v5.25 (197)
                     .disabled(st == "unsupported" || m.busy != nil)
             }
             if st == "unsupported" {
@@ -749,7 +750,10 @@ enum Health {
         // v5.23: folder sementara Amnesia sendiri (salinan sebelum restore) tidak dihitung, tapi dijelaskan di bawah.
         // Ukuran = ruang yang benar-benar terpakai di disk (du), jadi file sparse dihitung sebesar isinya saja.
         if let groups = report {
-            let items = groups.filter { !$0.system }.flatMap(\.items).filter { !$0.keychain && !isAmnesiaCache($0.rel) }
+            // v5.25 (item 193): app di Profile Vault (mis. Chrome) dihapus tapi kembali lewat Restore, jadi tidak ditulis
+            // "ikut dihapus" (sama seperti di Yang Akan Dihapus)
+            let items = groups.filter { !$0.system && $0.id != "vault" }.flatMap(\.items)
+                .filter { !$0.keychain && !isAmnesiaCache($0.rel) }
             let sizes = itemSizes(items)
             let big = items.filter { (sizes[$0.id] ?? 0) >= 1_048_576 }
                 .sorted { (sizes[$0.id] ?? 0) > (sizes[$1.id] ?? 0) }
@@ -823,6 +827,8 @@ enum Health {
                                          fix: .fileVault))
         case .unknown: rows.append(HealthRow(level: .info, title: "FileVault", detail: T("Couldn't check.", "Tidak bisa dicek.")))
         }
+        // v5.24: sisa ruang disk, memori, kondisi baterai (lihat Care.swift)
+        rows += CareHealth.rows()
         return rows
     }
 }

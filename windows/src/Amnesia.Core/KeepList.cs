@@ -5,7 +5,10 @@ namespace Amnesia.Core;
 public static class KeepList
 {
     /// <summary>v0.7: while the lab lock is on, the administrator's locked copy is the Keep List.</summary>
-    public static string File => Lab.Active ? Lab.KeepFile : Path.Combine(Home.Dir, "keep.conf");
+    public static string File => PreviewFile ?? (Lab.Active ? Lab.KeepFile : Path.Combine(Home.Dir, "keep.conf"));
+
+    /// <summary>v0.10: set only around a mode preview's dry run (this thread only): the cleanup then reads this copy.</summary>
+    [ThreadStatic] public static string? PreviewFile;
 
     /// <summary>The paths on the Keep List, cleaned up (always with /, no slash at the ends).</summary>
     public static List<string> Paths()
@@ -25,6 +28,61 @@ public static class KeepList
 
     public static string Norm(string p) => p.Trim().Replace('\\', '/').Trim('/');
 
+    // ---------- v0.9: the last good copy (keep.conf.last) ----------
+
+    /// <summary>v0.9: the copy of the Keep List as it was at the last cleanup that ran to the end.</summary>
+    public static string Last => File + ".last";
+
+    /// <summary>v0.9: can the cleanup trust the Keep List right now? null = yes. "missing" = keep.conf is gone but there
+    /// was one before (the last good copy is there). "unreadable" = it is there but can't be read (locked, denied, or
+    /// broken: zero bytes inside). A cleanup that gets an answer other than null stops and deletes nothing.
+    /// text = what was read (null when there is no keep.conf).</summary>
+    public static string? Check(out string? text)
+    {
+        text = null;
+        try
+        {
+            var f = File;
+            if (!System.IO.File.Exists(f))
+            {
+                // File.Exists also says false when the folder can't be read: then we can't tell, so it is "unreadable"
+                var dir = Path.GetDirectoryName(f);
+                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir)) _ = Directory.EnumerateFileSystemEntries(dir).Any();
+                // never had one (a new install): fine. Had one before (its copy is there): stop.
+                return System.IO.File.Exists(Last) ? "missing" : null;
+            }
+            text = System.IO.File.ReadAllText(f);
+            if (text.IndexOf('\0') >= 0) { text = null; return "unreadable"; }
+            return null;
+        }
+        catch { text = null; return "unreadable"; }
+    }
+
+    /// <summary>v0.9: saves the last good copy (temp file + rename, so a cut off write never leaves half a copy).
+    /// Only after a real cleanup ran to the end. Errors are ignored (in lab mode the folder is the admin's).</summary>
+    public static void SaveLast(string text)
+    {
+        var tmp = Last + ".tmp";
+        try
+        {
+            System.IO.File.WriteAllText(tmp, text);
+            System.IO.File.Move(tmp, Last, overwrite: true);
+        }
+        catch { try { System.IO.File.Delete(tmp); } catch { } }
+    }
+
+    /// <summary>v0.9: keep.conf is gone but its last good copy is there: put the copy back. True when it did.</summary>
+    public static bool RestoreLast()
+    {
+        try
+        {
+            if (System.IO.File.Exists(File) || !System.IO.File.Exists(Last)) return false;
+            System.IO.File.Copy(Last, File, overwrite: false);
+            return true;
+        }
+        catch { return false; }
+    }
+
     /// <summary>Adds a path (a full path inside the user folder is turned into a relative one). Returns the line, or null
     /// when the path is outside the user folder or already there.</summary>
     public static string? Add(string path)
@@ -35,8 +93,9 @@ public static class KeepList
         else if (Path.IsPathFullyQualified(path) || (p.Length > 1 && p[1] == ':')) return null;
         p = Norm(p);
         if (p.Length == 0 || p.StartsWith("..")) return null;
-        if (Paths().Any(x => string.Equals(x, p, StringComparison.OrdinalIgnoreCase))) return null;
         Directory.CreateDirectory(Home.Dir);
+        RestoreLast(); // v0.9: a lost keep.conf comes back first, so adding one line does not make a list of one
+        if (Paths().Any(x => string.Equals(x, p, StringComparison.OrdinalIgnoreCase))) return null;
         System.IO.File.AppendAllText(File, p + Environment.NewLine);
         return p;
     }
@@ -44,6 +103,7 @@ public static class KeepList
     /// <summary>Takes a path off the list (comments and other lines stay as they are).</summary>
     public static bool Remove(string path)
     {
+        RestoreLast(); // v0.9
         if (!System.IO.File.Exists(File)) return false;
         var p = Norm(path);
         var lines = System.IO.File.ReadAllLines(File).ToList();

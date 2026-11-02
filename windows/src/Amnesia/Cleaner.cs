@@ -130,10 +130,13 @@ static class Cleaner
     }
 
     /// <summary>v0.8 (CRIT-WIN-02): cloud folders Windows knows about. Cloud apps (OneDrive, Dropbox, Google Drive, iCloud,
-    /// Box...) register their folder as a "sync root"; Dropbox also writes it in info.json. Only read, never changed.</summary>
+    /// Box...) register their folder as a "sync root"; Dropbox also writes it in info.json. Only read, never changed.
+    /// v0.9: when the list can't be read (registry denied, a broken info.json) it throws, so the cleanup knows it could
+    /// not tell and keeps the folders right in the user folder (CleanEngine.CloudRoots). A missing key is fine.</summary>
     public static IEnumerable<string> CloudRoots()
     {
         var list = new List<string>();
+        bool failed = false;
         try
         {
             var me = System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value;
@@ -145,7 +148,7 @@ static class Cleaner
                     if ((me == null || v.Equals(me, StringComparison.OrdinalIgnoreCase)) && u!.GetValue(v) is string p && p.Length > 3) list.Add(p);
             }
         }
-        catch { }
+        catch { failed = true; }
         foreach (var root in new[] { Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolder.ApplicationData })
             try
             {
@@ -155,7 +158,8 @@ static class Cleaner
                 foreach (var kv in json ?? new System.Text.Json.Nodes.JsonObject())
                     if (kv.Value?["path"]?.GetValue<string>() is { Length: > 3 } p) list.Add(p);
             }
-            catch { }
+            catch { failed = true; }
+        if (failed) throw new IOException("cloud folders could not be read");
         return list;
     }
 

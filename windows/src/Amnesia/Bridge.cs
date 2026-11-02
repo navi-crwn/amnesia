@@ -16,6 +16,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
     {
         "info", "preview", "history", "encryption", "keepList", "vaultInfo", "backupInfo", "advInfo", "open", "openKeep",
         "collectLog", "updateCheck", "signOut", "panicNow", "cancel", "labUnlock", "keepLockNow", "health", "safeInfo", "safeClose", "startupState",
+        "modeInfo", "aiReport", "aiParse", // v0.10: only look (modeInfo writes nothing while the lab lock is on)
     };
 
     public async Task<string> HandleAsync(string json)
@@ -68,10 +69,14 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 "vaultAddFolder" => S("path").Length > 0 ? await Task.Run(() => { if (Vault.AddFolder(Core.Home.Full(S("path"))) == null) throw new InvalidOperationException("outside-home"); return VaultInfo(); }) : await VaultAddFolder(),
                 "vaultRemoveFolder" => await Do(() => Vault.RemoveFolder(S("name")), VaultInfo),
                 "vaultSnapshot" => await Job("vault", (p, c) => { Vault.Snapshot(null, false, null, p, c); return VaultInfo(); }),
-                "vaultRestore" => await Job("vault", (p, c) => { var n = Vault.Restore(S("password"), null, p, c, B("previous")); var i = VaultInfo(); i["restored"] = new JsonArray(n.Select(x => (JsonNode)x!).ToArray()); var pr = new JsonObject(); foreach (var kv in Vault.LastProblems) pr[kv.Key] = kv.Value; i["problems"] = pr; return i; }),
+                "vaultRestore" => await Job("vault", (p, c) => { var only = VaultProfiles.AppsFor(S("profile")); var n = RestoreSome(S("password"), S("profile"), only, p, c, B("previous")); var i = VaultInfo(); i["ignored"] = new JsonArray((only == null ? new List<string>() : VaultProfiles.Ignored(only)).Select(x => (JsonNode)x!).ToArray()); i["restored"] = new JsonArray(n.Select(x => (JsonNode)x!).ToArray()); var pr = new JsonObject(); foreach (var kv in Vault.LastProblems) pr[kv.Key] = kv.Value; i["problems"] = pr; return i; }),
                 "vaultDelete" => await Do(() => Vault.DeleteSnapshots(S("name") is { Length: > 0 } n ? new[] { n } : null), VaultInfo),
                 "vaultPassword" => await Task.Run(() => { Vault.ChangePassword(S("old"), S("new")); return VaultInfo(); }),
                 "vaultPanic" => await Task.Run(() => { Vault.ChangePanicWord(S("password"), S("word"), B("full")); return VaultInfo(); }),
+                // v0.10 vault profiles: named groups of vault apps, so a restore brings back only what you need
+                "profiles" => await Task.Run(ProfilesInfo),
+                "profileSave" => await Task.Run(() => { var sp = VaultProfiles.Save(S("id"), S("name"), arg?["apps"]?.AsArray().Select(x => x!.GetValue<string>()).ToList() ?? new List<string>()); var i = ProfilesObj(); i["saved"] = sp.Id; return (JsonNode)i; }),
+                "profileDelete" => await Do(() => VaultProfiles.Delete(S("id")), ProfilesInfo),
                 // Backup
                 "backupInfo" => await Task.Run(BackupInfo),
                 "backupFolder" => await BackupFolder(),
@@ -112,6 +117,22 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
                 "updateCheck" => await UpdateCheck(),
                 "updateInstall" => await UpdateInstall(),
                 "uninstall" => await Do(() => { Setup.Uninstall(B("all"), S("password")); tray.Invoke(() => Task.Delay(1500).ContinueWith(_ => tray.Invoke(tray.Quit))); }),
+                // v0.9 Care
+                "careOverview" => await Job("care", (p, c) => CareOverview(c)),
+                "careScan" => await Job("care", (p, c) => CareScan(S("feature"), c)),
+                "careAct" => await Job("care", (p, c) => CareAct(S("feature"), arg, c)),
+                "carePrograms" => await Task.Run(CarePrograms),
+                "careUninstall" => await Job("care", (p, c) => CareUninstall(S("id"), c)),
+                "careTune" => await Task.Run(() => CareTune(arg)),
+                "careOpen" => await Do(() => CareWin.Open(S("target"))),
+                "careReveal" => await Do(() => CareWin.Reveal(S("path"))),
+                // v0.10 Amnesia modes + Ask an AI (no network: the page copies or saves, the user pastes)
+                "modeInfo" => await Task.Run(ModeInfo),
+                "modePreview" => await Job("mode", (p, c) => ModePreviewJob(S("mode"), Strs(arg?["add"]), Strs(arg?["remove"]))),
+                "modeCommit" => await Task.Run(() => ModeCommit(S("mode"))),
+                "aiReport" => await Job("ai", (p, c) => AiReportJob(B("hideNames"), S("lang"))),
+                "aiSave" => await Job("ai", (p, c) => AiSaveJob(B("hideNames"), S("lang"))),
+                "aiParse" => await Task.Run(() => (JsonNode)AiReport.Parse(S("text"))),
                 "cancel" => await Do(() => job?.Cancel()),
                 _ => throw new InvalidOperationException($"Unknown command: {cmd}"),
             };
@@ -268,6 +289,7 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
             ["count"] = r.Count,
             ["items"] = new JsonArray(r.Items.Select(i => (JsonNode)new JsonObject { ["path"] = i.Path, ["kind"] = i.Kind, ["size"] = sizes.GetValueOrDefault(i.Path, -1), ["app"] = AppOf(i.Path) }).ToArray()),
             ["kept"] = new JsonArray(r.Kept.Select(k => (JsonNode)k!).ToArray()),
+            ["skipped"] = r.Skipped,   // v0.9: "keeplist-missing|keeplist-unreadable" when the Keep List stops the run
         };
         if (Apps.On)
             o["apps"] = await Task.Run(() => new JsonArray(Apps.NewGroups().Where(g => g.Items.Any(a => a.Auto)).Select(g => (JsonNode)new JsonObject { ["name"] = g.Name, ["kind"] = g.Items.First(a => a.Auto).Kind }).ToArray()));
@@ -453,6 +475,59 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
         }
         catch { }
         return arr;
+    }
+
+    // ---------- v0.10 vault profiles ----------
+    /// <summary>Restores everything (no profile) or only the apps of one profile. The choice is remembered for next time.
+    /// A profile with no snapshot gets its own error, so the page can say "none of these apps has a snapshot yet".</summary>
+    static List<string> RestoreSome(string password, string profile, List<string>? only, Action<double, string> p, CancellationToken c, bool previous)
+    {
+        VaultProfiles.Last = profile.Length == 0 ? VaultProfiles.AllId : profile;
+        try { return Vault.Restore(password, only, p, c, previous); }
+        catch (VaultError e) when (e.Code == "no-snapshot" && only != null) { throw new VaultError("no-snapshot-profile"); }
+    }
+
+    static JsonNode ProfilesInfo() => ProfilesObj();
+
+    /// <summary>{profiles:[{id,name,apps,builtin,missing,snapshots}], last, shared:{app:[ids]}, apps:[{name,present,snapshot}], mode}</summary>
+    static JsonObject ProfilesObj()
+    {
+        VaultProfiles.Indonesian ??= () => AppInfo.Id;
+        var m = Vault.Manifest();
+        var here = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var apps = new JsonArray();
+        foreach (var a in Vault.All())
+        {
+            bool present = Vault.Present(a).Length > 0, snap = m.ContainsKey(a.Name);
+            if (present) here.Add(a.Name);
+            if (!present && !snap && !a.Name.StartsWith(Vault.FolderPrefix)) continue; // not on this PC
+            apps.Add(new JsonObject { ["name"] = a.Name, ["present"] = present, ["snapshot"] = snap });
+        }
+        static JsonArray Arr(IEnumerable<string> xs) => new(xs.Select(x => (JsonNode)x!).ToArray());
+        var list = new JsonArray();
+        foreach (var pr in VaultProfiles.All())
+        {
+            var own = pr.Id == VaultProfiles.AllId ? pr.Apps.Where(a => m.ContainsKey(a) || here.Contains(a)).ToList() : pr.Apps;
+            list.Add(new JsonObject
+            {
+                ["id"] = pr.Id,
+                ["name"] = pr.Name,
+                ["apps"] = Arr(own),
+                ["builtin"] = pr.BuiltIn,
+                ["missing"] = Arr(own.Where(a => !here.Contains(a))),
+                ["snapshots"] = Arr(own.Where(m.ContainsKey)),
+            });
+        }
+        var shared = new JsonObject();
+        foreach (var kv in VaultProfiles.Shared()) shared[kv.Key] = Arr(kv.Value);
+        return new JsonObject
+        {
+            ["profiles"] = list,
+            ["last"] = VaultProfiles.Last,
+            ["shared"] = shared,
+            ["apps"] = apps,
+            ["mode"] = Settings.Get("AMNESIA_MODE") ?? "",
+        };
     }
 
     async Task<JsonNode> VaultAddFolder()
@@ -726,5 +801,196 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
         // 1 on, 2 off, 3 encrypting, 4 decrypting, 5 suspended, 6 on (locked); nothing = not available on this PC
         var state = v?.ToString() switch { "1" or "3" or "6" => "on", "5" => "paused", "2" or "4" => "off", _ => "unknown" };
         return new JsonObject { ["state"] = state, ["drive"] = drive };
+    }
+
+    // ---------- v0.9 Care ----------
+    // The last list of each feature. The page sends back only ids: paths never come from the page.
+    static readonly Dictionary<string, List<CareItem>> careLists = new();
+    // what the uninstall itself did, counted in the History line written after its leftovers
+    static (int items, long kb, int failed) careBase;
+
+    static JsonObject CareJson(CareItem i) => new()
+    {
+        ["id"] = i.Id, ["cat"] = i.Cat, ["name"] = i.Name, ["rel"] = i.Rel, ["group"] = i.Group, ["bytes"] = i.Bytes, ["cut"] = i.SizeCut,
+        ["reason"] = i.Reason, ["selected"] = i.Selected, ["disabled"] = i.Disabled, ["where"] = i.Where,
+        ["newest"] = i.Newest == default ? null : i.Newest.ToLocalTime().ToString("yyyy-MM-dd"),
+    };
+
+    static JsonArray CareArr(IEnumerable<CareItem> list) => new(list.Select(i => (JsonNode)CareJson(i)).ToArray());
+
+    static JsonNode CareOverview(CancellationToken c)
+    {
+        var o = CareWin.NewCare().Overview(new CareBudget(c));
+        JsonObject E(CareEntry e) => new() { ["rel"] = e.Rel, ["bytes"] = e.Bytes, ["cut"] = e.Cut };
+        var sizes = new JsonObject();
+        foreach (var kv in o.Sizes) sizes[kv.Key] = E(kv.Value);
+        return new JsonObject
+        {
+            ["total"] = o.DiskTotal, ["free"] = o.DiskFree, ["sizes"] = sizes, ["cut"] = o.Cut,
+            ["folders"] = new JsonArray(o.Folders.Select(f => (JsonNode)E(f)).ToArray()),
+            ["files"] = new JsonArray(o.Files.Select(f => (JsonNode)E(f)).ToArray()),
+            ["oldCount"] = o.OldDownloads, ["oldBytes"] = o.OldDownloadsBytes,
+        };
+    }
+
+    static JsonNode CareScan(string feature, CancellationToken c)
+    {
+        var care = CareWin.NewCare();
+        var b = new CareBudget(c);
+        var list = feature switch
+        {
+            "quick" => care.ScanQuick(b),
+            "projects" => care.ScanProjects(b),
+            "installers" => care.ScanInstallers(b),
+            _ => throw new InvalidOperationException("unknown care feature"),
+        };
+        lock (careLists) careLists[feature] = list;
+        return new JsonObject { ["feature"] = feature, ["items"] = CareArr(list), ["cut"] = b.Cut };
+    }
+
+    static JsonNode CareAct(string feature, JsonNode? arg, CancellationToken c)
+    {
+        var ids = arg?["ids"]?.AsArray().Select(x => x!.GetValue<string>()).ToHashSet() ?? new HashSet<string>();
+        List<CareItem>? list;
+        lock (careLists) if (!careLists.Remove(feature, out list)) throw new InvalidOperationException("care-rescan");
+        var chosen = list.Where(i => ids.Contains(i.Id) && !i.Disabled).ToList();
+        (int items, long kb, int failed) bs = feature == "apps" ? careBase : (0, 0L, 0);
+        if (feature == "apps") careBase = (0, 0, 0);
+        var r = CareWin.NewCare().Act(feature, chosen, c, bs.items, bs.kb, bs.failed);
+        return new JsonObject
+        {
+            ["feature"] = feature, ["done"] = r.Done + bs.items, ["failed"] = r.Failed + bs.failed, ["changed"] = r.Changed,
+            ["bytes"] = r.Bytes + bs.kb * 1024,
+            ["cats"] = new JsonArray(r.Cats.Select(k => (JsonNode)new JsonObject { ["cat"] = k.Cat, ["done"] = k.Done, ["failed"] = k.Failed, ["bytes"] = k.Bytes }).ToArray()),
+        };
+    }
+
+    static JsonNode CarePrograms() => new JsonArray(CareWin.Programs().Select(p => (JsonNode)new JsonObject
+    {
+        ["id"] = p.Id, ["kind"] = p.Kind, ["name"] = p.Name, ["publisher"] = p.Publisher, ["version"] = p.Version, ["bytes"] = p.Kb * 1024, ["canUninstall"] = p.CanUninstall,
+    }).ToArray());
+
+    /// <summary>Runs a just-for-you program's own uninstaller, then looks for what it left in AppData.</summary>
+    static JsonNode CareUninstall(string id, CancellationToken c)
+    {
+        var (gone, app) = CareWin.Uninstall(id);
+        var o = new JsonObject { ["gone"] = gone, ["name"] = app.Name, ["bytes"] = app.Kb * 1024 };
+        if (!gone)
+        {
+            Care.History("apps", 0, 0, 1);
+            o["items"] = new JsonArray();
+            return o;
+        }
+        List<CareItem> list;
+        // the uninstall itself happened: it is in History even when the leftovers can't be looked for (v0.9: Keep List
+        // missing or unreadable, Cancel)
+        try { list = CareWin.NewCare().ScanLeftovers(app.Name, app.Publisher, new CareBudget(c)); }
+        catch { Care.History("apps", 1, app.Kb, 0); throw; }
+        if (list.Count == 0) Care.History("apps", 1, app.Kb, 0);
+        else
+        {
+            lock (careLists) careLists["apps"] = list;
+            careBase = (1, app.Kb, 0);
+        }
+        o["items"] = CareArr(list);
+        return o;
+    }
+
+    static JsonNode CareTune(JsonNode? arg)
+    {
+        var tasks = arg?["tasks"]?.AsArray().Select(x => x!.GetValue<string>()).ToList() ?? new List<string>();
+        var res = new JsonArray();
+        int done = 0, failed = 0;
+        foreach (var t in tasks.Distinct())
+        {
+            bool ok = t switch { "explorer" => CareWin.RestartExplorer(), _ => false };
+            if (ok) done++; else failed++;
+            res.Add(new JsonObject { ["task"] = t, ["ok"] = ok });
+        }
+        Care.History("tune", done, 0, failed);
+        AppInfo.Trace($"care: tune-ups {done} done, {failed} skipped");
+        return new JsonObject { ["results"] = res, ["done"] = done, ["failed"] = failed };
+    }
+    // ---------- v0.10 Amnesia modes + Ask an AI ----------
+    // The last preview: "Switch mode" commits exactly what the page showed (Modes.Commit refuses when the Keep List
+    // changed since). The page never sends Keep List text, only the mode and the lines it ticked.
+    ModePreview? modePending;
+    // the last report, so "Save to Keep folder" saves what the page shows without counting everything again
+    (string key, string text)? aiLast;
+
+    static List<string> Strs(JsonNode? n) => n is JsonArray a
+        ? a.Select(x => x is JsonValue v && v.TryGetValue<string>(out var s) ? s : null).Where(x => x != null).Select(x => x!).Take(AiReport.MaxList).ToList()
+        : new List<string>();
+
+    static JsonArray Arr(IEnumerable<string> l, int cap = 300) => new(l.Take(cap).Select(x => (JsonNode)JsonValue.Create(x)!).ToArray());
+
+    static JsonNode ModeInfo()
+    {
+        var mode = Modes.Sync(); // what the Keep List really is (v0.10: read only, item 189)
+        var presets = new JsonObject();
+        foreach (var id in Modes.Ids) presets[id] = Modes.PresetLines(id) is { } l ? Arr(l) : null;
+        return new JsonObject
+        {
+            ["mode"] = mode, ["blockOk"] = Modes.BlockOk(), ["presets"] = presets, ["own"] = Arr(Modes.Own(), 1000),
+            ["lab"] = LabLock.Active, ["vaultAuto"] = Settings.Get("VAULT_AUTO") != "0",
+        };
+    }
+
+    static JsonObject ModeJson(ModePreview p)
+    {
+        var set = new JsonObject();
+        foreach (var kv in p.Settings) set[kv.Key] = kv.Value;
+        return new JsonObject
+        {
+            ["asked"] = p.Asked, ["mode"] = p.Mode, ["from"] = p.From, ["problem"] = p.Problem, ["note"] = p.Note,
+            ["added"] = Arr(p.Added), ["removed"] = Arr(p.Removed), ["removedIdle"] = Arr(p.RemovedIdle), ["outside"] = Arr(p.Outside, 1000),
+            ["newlyWiped"] = Arr(p.NewlyWiped), ["newlyWipedCount"] = p.NewlyWiped.Count,
+            ["newlyKept"] = Arr(p.NewlyKept), ["newlyKeptCount"] = p.NewlyKept.Count,
+            ["wipeBefore"] = p.WipeBefore, ["wipeAfter"] = p.WipeAfter, ["wipesMore"] = p.WipesMore, ["settings"] = set,
+        };
+    }
+
+    JsonNode ModePreviewJob(string mode, List<string> add, List<string> remove)
+    {
+        Modes.NewEngine = Cleaner.Rules; // the dry runs know the cloud folders, like the real cleanup
+        modePending = null;
+        var p = Modes.Preview(mode, add, remove);
+        if (p.Problem == null) modePending = p;
+        AppInfo.Trace($"mode preview: {p.From} -> {p.Mode}{(p.Problem != null ? " (" + p.Problem + ")" : "")}");
+        return ModeJson(p);
+    }
+
+    JsonNode ModeCommit(string mode)
+    {
+        var p = modePending;
+        if (p == null || p.Asked != mode) throw new InvalidOperationException("mode-rescan");
+        modePending = null;
+        if (!Modes.Commit(p)) throw new InvalidOperationException(p.Problem ?? "mode-write");
+        return ModeInfo();
+    }
+
+    JsonNode AiReportJob(bool hideNames, string lang)
+    {
+        lang = lang == "id" ? "id" : "en";
+        Modes.NewEngine = Cleaner.Rules;
+        AiReport.CareProvider = () => CareWin.NewCare().Overview(new CareBudget());
+        AiReport.NewAppsCount = () => Apps.On ? Apps.NewGroups().Count(g => g.Items.Any(a => a.Auto)) : 0;
+        var r = AiReport.Build(hideNames, () => CareWin.Programs().Select(x => x.Name));
+        var md = AiReport.Markdown(r);
+        var full = AiReport.WithPrompt(lang, md);
+        aiLast = ((hideNames ? "1" : "0") + lang, full);
+        AppInfo.Trace($"ask an ai: report made (names {(hideNames ? "hidden" : "shown")})");
+        return new JsonObject { ["markdown"] = md, ["prompt"] = AiReport.Prompt(lang), ["full"] = full, ["json"] = r };
+    }
+
+    JsonNode AiSaveJob(bool hideNames, string lang)
+    {
+        lang = lang == "id" ? "id" : "en";
+        var key = (hideNames ? "1" : "0") + lang;
+        var text = aiLast is { } last && last.key == key ? last.text : null;
+        if (text == null) { AiReportJob(hideNames, lang); text = aiLast!.Value.text; }
+        // the Keep lock: Keep is opened for the moment it takes
+        var path = KeepLock.With(() => AiReport.Save(text));
+        return new JsonObject { ["path"] = path };
     }
 }

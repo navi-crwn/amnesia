@@ -57,6 +57,22 @@ static class Health
         }
         Add("hotkey", string.IsNullOrEmpty(Settings.Get("PANIC_HOTKEY")) ? "info" : "ok", Settings.Get("PANIC_HOTKEY"));
         Add("updates", Updater.Signed ? "ok" : "info");
+        // v0.9: free space on the drive of the user folder (warn under 10% or 15 GB), memory and battery. Can't tell = info.
+        try
+        {
+            var d = new DriveInfo(Path.GetPathRoot(Core.Home.User)!);
+            long free = d.AvailableFreeSpace, total = d.TotalSize;
+            Add("disk", total > 0 && (free < total / 10 || free < 15L << 30) ? "warn" : "ok", $"{free} {total}");
+        }
+        catch { Add("disk", "info"); }
+        var mem = CareWin.Memory();
+        if (mem is { } mm) Add("memory", mm.used > 90 ? "warn" : "ok", mm.used.ToString());
+        else Add("memory", "info");
+        try
+        {
+            if (CareWin.Battery() is { } bat) Add("battery", "info", $"{bat.percent} {(bat.charging ? 1 : 0)}");
+        }
+        catch { Add("battery", "info"); }
         return list;
     }
 

@@ -174,27 +174,43 @@ def T(en, id_):
 
 # ---------------- v5.23: Keep List (sama seperti clean.sh), supaya restore tidak menimpa yang disimpan ----------------
 class KeepRules:
-    """Pola Keep List (keep.conf, kalau belum ada keep.example.conf) + folder Keep. Cocok seperti [[ == ]] di clean.sh:
+    """Pola Keep List (keep.conf, lalu keep.conf.last, lalu keep.example.conf) + folder Keep. Cocok seperti [[ == ]] di clean.sh:
     * juga melewati '/'. Claude di Keep List = Claude Code ikut disimpan (sama dengan clean.sh)."""
 
     def __init__(self):
-        conf = os.path.join(AMNESIA, "keep.conf")
-        if not os.path.exists(conf):
-            conf = os.path.join(AMNESIA, "keep.example.conf")
+        # v5.24: keep.conf hilang atau tidak bisa dibaca -> salinan terakhir yang baik (keep.conf.last), baru
+        # keep.example.conf. Dulu langsung contoh (atau kosong kalau gagal dibaca), jadi restore bisa menimpa
+        # yang sebenarnya disimpan.
+        # Ada Keep List (atau salinannya) tapi tidak ada yang bisa dibaca: berhenti, jangan pakai contoh (yang tidak
+        # menyimpan barang kamu). Ragu = tidak menimpa apa pun.
+        lines = None
+        seen = False
+        for name in ("keep.conf", "keep.conf.last", "keep.example.conf"):
+            conf = os.path.join(AMNESIA, name)
+            if not os.path.lexists(conf):
+                continue
+            if name == "keep.example.conf" and seen:
+                break
+            seen = True
+            try:
+                with open(conf, encoding="utf-8", errors="replace") as f:
+                    lines = f.read().splitlines()
+                break
+            except OSError:
+                continue
+        if lines is None and seen:
+            raise VaultError(T("The Keep List could not be read, so nothing was changed. Open Keep List to check it.",
+                               "Keep List tidak bisa dibaca, jadi tidak ada yang diubah. Buka Keep List untuk mengeceknya."))
         pats = []
-        try:
-            with open(conf, encoding="utf-8", errors="replace") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith("#") or line.startswith("keychain:") or line.startswith("app:"):
-                        continue
-                    line = line[2:] if line.startswith("~/") else line
-                    for form in ("NFC", "NFD"):          # nama dari Finder/backup lama bisa beda bentuk Unicode
-                        x = unicodedata.normalize(form, line)
-                        if x not in pats:
-                            pats.append(x)
-        except OSError:
-            pass
+        for line in lines or []:
+            line = line.strip()
+            if not line or line.startswith("#") or line.startswith("keychain:") or line.startswith("app:"):
+                continue
+            line = line[2:] if line.startswith("~/") else line
+            for form in ("NFC", "NFD"):          # nama dari Finder/backup lama bisa beda bentuk Unicode
+                x = unicodedata.normalize(form, line)
+                if x not in pats:
+                    pats.append(x)
         self.pats = pats
         kd = keep_dir()
         self.keep_rel = os.path.relpath(kd, HOME) if kd.startswith(os.path.normpath(HOME) + os.sep) else ""
@@ -466,10 +482,17 @@ def _summary(per):
     """Ringkasan untuk app: daftar app, waktu snapshot terbaru, total ukuran."""
     names = [n for n in items() if n in per] + sorted(n for n in per if n not in items())
     times = [v.get("time") or "" for v in per.values()]
+    # v5.25 (item 192): ukuran dari arsip yang ada (byte persis). Dulu dibulatkan ke 0,1 MB, jadi snapshot kecil
+    # seperti GitHub CLI (beberapa KB) tampil "0 KB".
+    for n, v in per.items():
+        if not v.get("legacy"):
+            arc = _app_files(n)[0]
+            if os.path.exists(arc):
+                v["size_mb"] = round(os.path.getsize(arc) / 1048576, 6)
     size = sum(v.get("size_mb") or 0 for v in per.values() if not v.get("legacy"))
     if any(v.get("legacy") for v in per.values()) and os.path.exists(F_SNAP):
         size += os.path.getsize(F_SNAP) / 1048576
-    return {"apps": names, "time": max(times) if times else "", "size_mb": round(size, 1), "per_app": per}
+    return {"apps": names, "time": max(times) if times else "", "size_mb": round(size, 6), "per_app": per}
 
 
 def _load_manifest():
@@ -547,7 +570,7 @@ def _size(paths, light=(), exact=()):
 
 def sizes():
     """Ukuran tiap app (MB), untuk ditampilkan sebelum snapshot."""
-    return {n: round(_size(app_paths(n), *_light_skip(n)) / 1048576, 1) for n in installed_apps()}
+    return {n: round(_size(app_paths(n), *_light_skip(n)) / 1048576, 6) for n in installed_apps()}   # v5.25 (192)
 
 
 # ---------------- buat vault ----------------
@@ -759,7 +782,7 @@ def _snapshot_all(names, weight, total, changed):
                 os.replace(new_arc, arc)
                 os.replace(new_key, keyf)
                 per[n] = {"time": time.strftime("%Y-%m-%d %H:%M"), "ts": ts, "light": bool(exact),
-                          "size_mb": round(os.path.getsize(arc) / 1048576, 1)}
+                          "size_mb": round(os.path.getsize(arc) / 1048576, 6)}      # v5.25 (192): tidak dibulatkan ke 0,1 MB
                 _save_manifest(per)
         finally:
             for f in (new_arc, new_key):
@@ -876,13 +899,18 @@ def check_password(password):
     _unlock_many(password, [])
 
 
-def restore(password):
+def restore(password, only=None):
     """Kembalikan semua app dari snapshot. Arsip dibongkar ke folder sementara dulu;
-    data app saat ini baru diganti setelah semuanya berhasil dibongkar (aman kalau dibatalkan)."""
+    data app saat ini baru diganti setelah semuanya berhasil dibongkar (aman kalau dibatalkan).
+    v5.25: only = daftar nama app (profil vault): hanya app itu yang dikembalikan. None = semua, seperti dulu."""
     per = _load_manifest()
     names = [n for n in per if n in items() and (per[n].get("legacy") or os.path.exists(_app_files(n)[0]))]
     if not names:
         raise VaultError(T("No snapshot yet. Make one first.", "Belum ada snapshot. Buat snapshot dulu."))
+    if only is not None:
+        names = [n for n in names if n in only]
+        if not names:
+            raise VaultError(T("None of these apps has a snapshot yet.", "Belum ada snapshot untuk app-app ini."))
     legacy = [n for n in names if per[n].get("legacy")]
     fresh = [n for n in names if n not in legacy]
     keys = _unlock_many(password, [_app_files(n)[1] for n in fresh] + ([F_SNAPKEY] if legacy else []))
@@ -907,8 +935,8 @@ def restore(password):
         _progress(92, f"swap 1/1 {names[0]}")
         # v5.21: app yang sempat terbuka (mis. dibuka otomatis saat login, dengan profil kosong) ditutup dulu,
         # lalu dibuka lagi setelah datanya kembali
+        keep = KeepRules()           # v5.24: dibaca sebelum app ditutup (Keep List tidak terbaca = berhenti di sini)
         was_running = quit_apps(names)
-        keep = KeepRules()
         skipped = set()
         rec = {"time": time.strftime("%Y-%m-%d %H:%M"), "ts": time.time(), "apps": names,
                "moved": [], "placed": [], "held": []}
@@ -1238,6 +1266,203 @@ def keep_check(word):
         raise VaultError(T("Wrong Keep password.", "Password Keep salah."))
 
 
+# ---------------- v5.25: profil vault (kelompok app, supaya restore hanya yang kamu perlukan) ----------------
+# ~/.amnesia/profiles.json: {"version":1,"last":"all","profiles":[{"id","name","apps"}]}. Hanya nama, tanpa rahasia.
+# "Semua" (id all) tidak pernah disimpan. Selama file belum ada, profil bawaan dipakai (hanya app yang ada di sini).
+F_PROFILES = os.path.join(AMNESIA, "profiles.json")
+MAX_PROFILES = 20
+BUILTIN_PROFILES = [
+    ("work", ("Work", "Kerja"),
+     ["Claude", "Claude Code", "OpenCode", "Gemini CLI", "GitHub CLI", "CodeBuddy", "Kimi", "Antigravity",
+      "Notion", "Zoom", "Windows App", "Chrome"]),
+    # browser kedua (untuk streaming dll.) ikut di sini kalau ada di Mac ini
+    ("personal", ("Personal", "Santai"),
+     ["WhatsApp", "Telegram", "Signal", "Session", "Element",
+      "Brave Browser", "Arc", "Vivaldi", "Opera", "Microsoft Edge"]),
+]
+_PROFILE_ID = re.compile(r"^[a-z0-9-]{1,32}$")
+
+
+def snapshot_apps():
+    """v5.25: app yang punya snapshot (arsip ada, atau snapshot lama 1 arsip)."""
+    per = _load_manifest()
+    return [n for n in per if n in items() and (per[n].get("legacy") or os.path.exists(_app_files(n)[0]))]
+
+
+def profile_apps_here():
+    """v5.25: app yang bisa masuk profil di Mac ini: datanya ada ATAU sudah ada snapshot-nya
+    (setelah logout data app hilang, tapi snapshot-nya tetap bisa di-restore)."""
+    have = set(installed_apps()) | set(snapshot_apps())
+    return [n for n in items() if n in have]
+
+
+def _profile_name_ok(name):
+    return isinstance(name, str) and 1 <= len(name) <= 40 and not any(ord(c) < 32 or ord(c) == 127 for c in name) \
+        and name.strip().lower() not in ("all", "everything", "semua")
+
+
+def _profile_slug(name, taken):
+    s = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+    s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")[:32].strip("-") or "profile"
+    base, i = s, 2
+    while s in taken or s == "all":
+        tail = f"-{i}"
+        s = base[:32 - len(tail)] + tail
+        i += 1
+    return s
+
+
+def _builtin_profiles():
+    here = profile_apps_here()
+    out = []
+    for pid, (en, id_), apps in BUILTIN_PROFILES:
+        apps = [a for a in apps if a in here]
+        if apps:
+            out.append({"id": pid, "name": T(en, id_), "apps": apps, "builtin": True})
+    return out
+
+
+def _stored_profiles():
+    """Isi profiles.json, sudah dicek. None = belum pernah disimpan (profil bawaan dipakai)."""
+    if not os.path.exists(F_PROFILES):
+        return None
+    raw = _read_json(F_PROFILES, {})
+    if isinstance(raw, dict) and "profiles" not in raw:      # baru "last" yang tersimpan
+        return None
+    out, seen = [], set()
+    for p in raw.get("profiles", []) if isinstance(raw, dict) and isinstance(raw.get("profiles"), list) else []:
+        if not isinstance(p, dict):
+            continue
+        pid, name = p.get("id"), p.get("name")
+        if not isinstance(pid, str) or not _PROFILE_ID.match(pid) or pid == "all" or pid in seen \
+                or not _profile_name_ok(name):
+            continue
+        apps = []
+        for a in p.get("apps", []) if isinstance(p.get("apps"), list) else []:
+            if isinstance(a, str) and a not in apps:
+                apps.append(a)
+        seen.add(pid)
+        out.append({"id": pid, "name": name, "apps": apps})
+    return out[:MAX_PROFILES]
+
+
+def profiles_list():
+    """Profil yang ditampilkan: app yang tidak dikenal lagi (mis. app tambahan yang sudah dikeluarkan) tidak ikut."""
+    stored = _stored_profiles()
+    if stored is None:
+        return _builtin_profiles()
+    known = items()
+    return [{"id": p["id"], "name": p["name"], "apps": [a for a in p["apps"] if a in known], "builtin": False}
+            for p in stored]
+
+
+def profiles_shared(profs):
+    """App yang ada di 2 profil atau lebih: {app: [id, ...]}. 1 browser = 1 kumpulan login, tidak bisa dibagi."""
+    out = {}
+    for p in profs:
+        for a in p["apps"]:
+            out.setdefault(a, []).append(p["id"])
+    return {a: ids for a, ids in out.items() if len(ids) > 1}
+
+
+def profile_last():
+    raw = _read_json(F_PROFILES, {})
+    last = raw.get("last") if isinstance(raw, dict) else None
+    ids = [p["id"] for p in profiles_list()]
+    return last if isinstance(last, str) and last in ids else "all"
+
+
+def _save_profiles(profs, last=None):
+    """Mulai simpan pertama, file ini berisi SELURUH daftar (profil bawaan yang dihapus tetap hilang)."""
+    data = {"version": 1, "last": last if last is not None else profile_last(),
+            "profiles": [{"id": p["id"], "name": p["name"], "apps": list(p["apps"])} for p in profs]}
+    os.makedirs(AMNESIA, exist_ok=True)
+    _write_json(F_PROFILES, data)
+
+
+def profile_info():
+    profs = profiles_list()
+    have = set(snapshot_apps())
+    shown = [dict(p, missing=[a for a in p["apps"] if a not in have]) for p in profs]
+    return {"profiles": shown, "last": profile_last(), "shared": profiles_shared(profs), "apps": profile_apps_here()}
+
+
+def profile_set(entry):
+    """Buat atau ubah 1 profil. entry = {"id"?, "name", "apps"}. App yang tidak dikenal dibuang (dilaporkan di "ignored").
+    Tanpa id: profil dengan nama yang sama (huruf besar/kecil tidak dibedakan) diubah, kalau tidak ada dibuat baru."""
+    if not isinstance(entry, dict):
+        raise VaultError(T("Bad profile data.", "Data profil tidak valid."))
+    name = entry.get("name")
+    name = name.strip() if isinstance(name, str) else ""
+    if not _profile_name_ok(name):
+        raise VaultError(T("Give the profile a name of 1 to 40 characters (not \"Everything\").",
+                           "Beri profil nama 1 sampai 40 karakter (bukan \"Semua\")."))
+    raw_apps = entry.get("apps", [])
+    if not isinstance(raw_apps, list):
+        raise VaultError(T("Bad profile data.", "Data profil tidak valid."))
+    known = items()
+    apps, ignored = [], []
+    for a in raw_apps:
+        if isinstance(a, str) and a in known:
+            if a not in apps:
+                apps.append(a)
+        elif isinstance(a, str) and a not in ignored:
+            ignored.append(a)
+    profs = profiles_list()
+    pid = entry.get("id")
+    cur = next((p for p in profs if isinstance(pid, str) and p["id"] == pid), None)
+    if cur is None and not pid:
+        cur = next((p for p in profs if p["name"].lower() == name.lower()), None)
+    same = next((p for p in profs if p["name"].lower() == name.lower() and p is not cur), None)
+    if same:
+        raise VaultError(T(f"There is already a profile called {same['name']}.", f"Sudah ada profil bernama {same['name']}."))
+    if cur is None:
+        if len(profs) >= MAX_PROFILES:
+            raise VaultError(T(f"You can have up to {MAX_PROFILES} profiles.", f"Maksimal {MAX_PROFILES} profil."))
+        cur = {"id": _profile_slug(name, {p["id"] for p in profs}), "name": name, "apps": apps}
+        profs.append(cur)
+    else:
+        cur["name"], cur["apps"] = name, apps
+    _save_profiles(profs)
+    out = {"id": cur["id"], "name": cur["name"], "apps": cur["apps"], "builtin": False}
+    return out, profiles_shared(profs), ignored
+
+
+def profile_delete(pid):
+    if pid == "all":
+        raise VaultError(T("\"Everything\" can't be deleted.", "\"Semua\" tidak bisa dihapus."))
+    profs = profiles_list()
+    last = profile_last()
+    _save_profiles([p for p in profs if p["id"] != pid], last="all" if last == pid else last)
+
+
+def profile_set_last(pid):
+    if pid != "all" and pid not in [p["id"] for p in profiles_list()]:
+        raise VaultError(T("This profile no longer exists.", "Profil ini sudah tidak ada."))
+    if pid == profile_last():
+        return
+    if _stored_profiles() is None:          # profil bawaan belum disimpan: simpan pilihan terakhir saja
+        # v5.25 (item 189): "Semua" = bawaan, jadi tidak perlu file. Hanya pilihan yang berbeda yang ditulis.
+        if pid == "all":
+            if os.path.exists(F_PROFILES):
+                os.remove(F_PROFILES)
+            return
+        os.makedirs(AMNESIA, exist_ok=True)
+        _write_json(F_PROFILES, {"version": 1, "last": pid})
+    else:
+        _save_profiles(profiles_list(), last=pid)
+
+
+def profile_apps(pid):
+    """App di profil (None = Semua)."""
+    if pid == "all":
+        return None
+    p = next((p for p in profiles_list() if p["id"] == pid), None)
+    if p is None:
+        raise VaultError(T("This profile no longer exists.", "Profil ini sudah tidak ada."))
+    return p["apps"]
+
+
 def logout():
     """Logout macOS tanpa dialog konfirmasi."""
     subprocess.run(["osascript", "-e", 'tell application "loginwindow" to «event aevtrlgo»'])
@@ -1249,7 +1474,7 @@ def _cli(argv, stdin):
     full = "full" in argv[2:]
     line = lambda: stdin.readline().rstrip("\n")
     out = {}
-    if cmd not in ("status", "sizes", "logout", "keephash", "keepcheck", "newer"):
+    if cmd not in ("status", "sizes", "logout", "keephash", "keepcheck", "newer", "profiles"):   # v5.25: + profiles
         _lock_and_sweep()                 # v5.22: 1 perintah sekaligus + sapu sisa yang terputus
     if cmd == "status":
         out = {"exists": exists(), "manifest": manifest() or None, "attempts": attempts(),
@@ -1271,10 +1496,31 @@ def _cli(argv, stdin):
         args = [a for a in argv[2:] if not a.startswith("--")]
         out = {"apps": snapshot(args or None, changed="--changed" in argv[2:], reopen="--reopen" in argv[2:])}
     elif cmd == "restore":
-        names, checks, skipped = restore(line())
+        # v5.25: restore [--profile <id>] [App ...]: hanya app itu (+ app di profil). Tanpa keduanya: semua, seperti dulu.
+        args, prof, i = [], None, 2
+        while i < len(argv):
+            if argv[i] == "--profile" and i + 1 < len(argv):
+                prof, i = argv[i + 1], i + 2
+                continue
+            if not argv[i].startswith("--"):
+                args.append(argv[i])
+            i += 1
+        only, ignored = None, []
+        if prof is not None:
+            only = profile_apps(prof)
+            profile_set_last(prof)
+        if args:
+            known = items()
+            ignored = [a for a in args if a not in known]
+            only = (only if only is not None else []) + [a for a in args if a in known]
+        if only is not None:
+            have = set(snapshot_apps())
+            ignored += [a for a in only if a not in have and a not in ignored]   # belum ada snapshot-nya
+        names, checks, skipped = restore(line(), only)
         per = _load_manifest()
         out = {"apps": names, "checks": checks, "light": [n for n in names if per.get(n, {}).get("light")],
-               "skipped": skipped}               # v5.23: berapa path dilewati karena ada di Keep List
+               "skipped": skipped,               # v5.23: berapa path dilewati karena ada di Keep List
+               "ignored": ignored}               # v5.25: nama yang tidak dikenal / belum ada snapshot-nya
     elif cmd == "newer":                         # v5.23: dicek app sebelum restore
         out = {"newer": newer_apps()}
     elif cmd == "undo":                          # v5.23: Kembalikan data sebelum restore
@@ -1307,6 +1553,20 @@ def _cli(argv, stdin):
         out = {"hash": keep_hash(line())}
     elif cmd == "keepcheck":
         keep_check(line())
+    elif cmd == "profiles":                # v5.25: profil vault (hanya membaca)
+        out = profile_info()
+    elif cmd == "profile-set":             # v5.25: 1 baris JSON {"id"?, "name", "apps"}
+        try:
+            entry = json.loads(line() or "{}")
+        except ValueError:
+            raise VaultError(T("Bad profile data.", "Data profil tidak valid."))
+        prof, shared, ignored = profile_set(entry)
+        out = {"profile": prof, "shared": shared, "ignored": ignored}
+    elif cmd == "profile-delete":
+        for pid in argv[2:]:
+            profile_delete(pid)
+    elif cmd == "profile-last":
+        profile_set_last(argv[2] if len(argv) > 2 else "all")
     else:
         raise VaultError(T(f"Unknown command: {cmd}", f"Perintah tidak dikenal: {cmd}"))
     return out

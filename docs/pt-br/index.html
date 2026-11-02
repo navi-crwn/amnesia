@@ -122,7 +122,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
   <div class="wrap two">
     <div class="hero-copy">
-      <a class="hbadge" href="https://github.com/navi-crwn/amnesia"><span class="hb-ver" data-gh="version">v5.23.1</span><svg><use href="#i-github"/></svg><span>Código aberto no GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia"><span class="hb-ver" data-gh="version">v5.25.0</span><svg><use href="#i-github"/></svg><span>Código aberto no GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
       <h1 id="hero-title">
         <span><span class="split">Seu Mac esquece</span> <em class="word">tudo.</em><span class="after split">Menos o que você guarda.</span></span>
       </h1>
@@ -152,7 +152,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
     <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
       <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
       <span class="rc-desc"><span>Seu Mac esquece tudo no logout, menos o que você escolhe guardar.</span></span>
-      <span class="rc-meta"><span>MIT</span><span data-gh="version">v5.23.1</span><span class="rc-langs" data-gh="langs-mini"><span><i style="--c:var(--orange)"></i>Swift</span><span><i style="--c:var(--green)"></i>Shell</span></span></span>
+      <span class="rc-meta"><span>MIT</span><span data-gh="version">v5.25.0</span><span class="rc-langs" data-gh="langs-mini"><span><i style="--c:var(--orange)"></i>Swift</span><span><i style="--c:var(--green)"></i>Shell</span></span></span>
     </a>
   </div>
 </section>
@@ -191,7 +191,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <span class="rc-legend" data-gh="langs" hidden></span>
         <span class="rc-stats">
           <span><small><span>Licença</span></small><b>MIT</b></span>
-          <span><small><span>Versão mais recente</span></small><b data-gh="version">v5.23.1</b></span>
+          <span><small><span>Versão mais recente</span></small><b data-gh="version">v5.25.0</b></span>
           <span><small>Commits</small><b data-gh="commits">–</b></span>
           <span><small>Releases</small><b data-gh="releases">–</b></span>
           <span><small><span>Colaboradores</span></small><b data-gh="contributors">–</b></span>
@@ -283,7 +283,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <li><span>Tudo na sua pasta Keep (em qualquer lugar, com qualquer nome)</span></li>
         <li><span>Logins salvos no Profile Vault (voltam com Restore)</span></li>
         <li><span>Apps da sua Keep List (VPN, chaves SSH, conta Apple…)</span></li>
-        <li><span>Máquinas virtuais (UTM, Parallels, VirtualBox, VMware Fusion), mantidas por padrão</span></li>
+        <li><span>Máquinas virtuais (UTM, Parallels, VirtualBox, VMware Fusion), depois que você toca em Keep</span></li>
         <li><span>Os próprios apps que você instalou</span></li></ul></div>
     </div>
   </div>
@@ -463,7 +463,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div><h3><span>Snapshots leves do navegador</span></h3><p><span>Chrome, Brave, Edge, Arc, Vivaldi e Opera podem ser salvos sem caches: cerca de 1 GB vira 150 MB. Uma chave por navegador.</span></p></div>
       <div><h3><span>Save & Log Out</span></h3><p><span>Um clique salva seus logins e depois faz logout. Se o salvamento falhar, o logout é cancelado.</span></p></div>
       <div><h3><span>Snapshot automático</span></h3><p><span>Esqueceu do Save & Log Out? Um logout normal ainda salva antes os apps que mudaram.</span></p></div>
-      <div><h3><span>Escolha o que fica</span></h3><p><span>Uma pasta Keep para seus arquivos e uma Keep List para apps como VPNs e chaves SSH. As máquinas virtuais já estão nela por padrão.</span></p></div>
+      <div><h3><span>Escolha o que fica</span></h3><p><span>Uma pasta Keep para seus arquivos e uma Keep List para apps como VPNs e chaves SSH. Achou uma máquina virtual? O Amnesia pergunta antes de guardá-la.</span></p></div>
       <div><h3><span>Veja antes</span></h3><p><span>"What Gets Deleted" lista tudo antes de qualquer coisa ser apagada, com busca e Biggest first. Arquivos de 1 GB ou mais ganham um aviso. O logout pode esperar o seu OK.</span></p></div>
       <div><h3><span>Pause 1 Session</span></h3><p><span>Pule o próximo logout e login uma vez, sem desligar o Amnesia.</span></p></div>
       <div><h3><span>Backup em qualquer lugar</span></h3><p><span>Pendrive, seu próprio servidor via SSH, Google Drive, Dropbox, OneDrive, Box ou pCloud. Diário ou semanal, e você pode conferir um arquivo de backup.</span></p></div>
@@ -473,11 +473,41 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div><h3><span>Ferramentas de desenvolvedor</span></h3><p><span>Mantenha suas configurações de SSH, GitHub CLI, shell, editor, Docker, nuvem e CLIs de IA. Pick Apps só mostra as que estão no seu Mac.</span></p></div>
       <div><h3><span>Ache qualquer configuração</span></h3><p><span>Digite na caixa de busca no topo de Settings, em inglês. A janela também muda de tamanho.</span></p></div>
       <div><h3><span>Keep lock</span></h3><p><span>O Finder e outros apps não conseguem abrir sua pasta Keep até você digitar a senha da Keep no Amnesia. Ela se tranca de novo sozinha. Isso usa permissões do macOS, não criptografia, então os nomes dos arquivos logo dentro da Keep continuam visíveis.</span></p></div>
-      <div><h3><span>Health check</span></h3><p><span>Uma página que avisa quando algo precisa de você: Full Disk Access, Mesa e Documentos do iCloud, pastas com link simbólico, máquinas virtuais, arquivos grandes, seu último backup e o FileVault. A maioria das linhas tem um botão para resolver.</span></p></div>
+      <div><h3><span>Health check</span></h3><p><span>Uma página que avisa quando algo precisa de você: Full Disk Access, Mesa e Documentos do iCloud, pastas com link simbólico, máquinas virtuais, arquivos grandes, seu último backup, o FileVault, espaço livre em disco, memória e bateria. A maioria das linhas tem um botão para resolver.</span></p></div>
       <div><h3><span>Brankas <small>(experimental)</small></span></h3><p><span>Um disco criptografado (AES-256) dentro da sua pasta Keep para arquivos que precisam continuar secretos. O Amnesia fecha esse disco antes de cada limpeza e avisa se não conseguir. Esqueceu a senha dele? Os arquivos se perdem.</span></p></div>
       <div><h3><span>Atualizações assinadas</span></h3><p><span>As atualizações feitas de dentro do app só são instaladas quando o SHA256SUMS.txt da versão tem uma assinatura válida. Se não tiver, você é levado para a página da versão.</span></p></div>
       <div><h3><span>Seguro com o iCloud</span></h3><p><span>Com Mesa e Documentos do iCloud ativado, essas duas pastas são ignoradas, então nada é apagado do iCloud nem dos seus outros dispositivos. Pastas que são links simbólicos nunca são esvaziadas através do link.</span></p></div>
       <div><h3><span>Claude e Claude Code</span></h3><p><span>Coloque o Claude na sua Keep List e suas conversas do Claude Code (~/.claude) ficam também. Antes do logout, os apps marcados no cofre ganham um snapshot novo, então uma restauração nunca fica desatualizada.</span></p></div>
+    </div>
+
+    <div class="head" id="care" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>Care. <em>Espaço de volta, com uma lista antes.</em></span></h2>
+      <p class="lead"><span>O Amnesia já apaga quase toda a sua pasta pessoal a cada logout, então o Care é para o que fica: sua pasta Keep, os apps que você guardou e os arquivos grandes desta sessão. Cada ação procura primeiro e mostra uma lista, e nada arriscado é marcado por você.</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>Visão geral do disco</span></h3><p><span>Veja o que ocupa espaço: pasta Keep, cofre, lixeira, caches, as maiores pastas e arquivos, downloads antigos. Só leitura, nada é apagado aqui.</span></p></div>
+      <div><h3><span>Limpar agora</span></h3><p><span>Esvazia caches, logs e a lixeira do Amnesia. Caches de apps que estão abertos são pulados. Esvaziar a Lixeira aparece na lista, mas nunca é marcado por você.</span></p></div>
+      <div><h3><span>Desinstalar apps</span></h3><p><span>Move para a Lixeira um app que você instalou e os caches dele. Os dados pessoais ficam, a menos que você marque.</span></p></div>
+      <div><h3><span>Pastas de build de projetos</span></h3><p><span>node_modules, target, build, dist e outras podem ir para a Lixeira. Pastas usadas nos últimos 7 dias ou rastreadas pelo git não são tocadas.</span></p></div>
+      <div><h3><span>Instaladores antigos</span></h3><p><span>Arquivos .dmg e .pkg antigos vão para a Lixeira. Imagens de disco e máquinas virtuais nunca são escolhidas por você.</span></p></div>
+      <div><h3><span>Ajustes seguros</span></h3><p><span>Atualize as miniaturas do Quick Look ou reinicie o Dock, sem senha de administrador.</span></p></div>
+      <div><h3><span>Para quando está em dúvida</span></h3><p><span>Se a Keep List não puder ser lida ou tiver sumido, a limpeza não apaga nada e registra isso no histórico. Quando uma verificação não tem certeza, o item é mantido.</span></p></div>
+      <div><h3><span>Cada uso no histórico</span></h3><p><span>Cada uso do Care fica no histórico com o espaço liberado. O Health check também mostra o espaço livre em disco, a memória e o estado da bateria.</span></p></div>
+    </div>
+
+    <div class="head" id="modes" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>Modos e perfis. <em>Você escolhe quanto é esquecido.</em></span></h2>
+      <p class="lead"><span>Escolha um modo para cada logout, restaure só os apps de que precisa e peça conselhos a uma IA sem compartilhar seus arquivos. Cada mudança mostra uma prévia antes e vale a partir do próximo logout.</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>Retrograde Amnesia</span></h3><p><span>Como uma conta nova em cada login. Só ficam sua pasta Keep e o que o Amnesia precisa para funcionar. O snapshot automático no logout é desligado, e você ainda pode restaurar um snapshot manualmente.</span></p></div>
+      <div><h3><span>Selective Amnesia <small>(recomendado)</small></span></h3><p><span>A lista básica para uma nova instalação: sua pasta Keep, logins dos apps do cofre, chaves SSH, configurações do Git e do shell. Adicione seus próprios apps na Keep List.</span></p></div>
+      <div><h3><span>Partial Amnesia</span></h3><p><span>Os apps mantêm suas configurações e logins. Seus arquivos, Downloads, Mesa, caches, logs, a Lixeira e o histórico do terminal são apagados. O histórico e os cookies dentro da própria pasta de um navegador também ficam, porque essa pasta é mantida.</span></p></div>
+      <div><h3><span>Custom Amnesia</span></h3><p><span>Sua própria Keep List. Escolhida automaticamente quando você muda as linhas que um modo adicionou. Um modo só muda a própria seção marcada, então suas próprias linhas sempre ficam.</span></p></div>
+      <div><h3><span>Uma prévia antes de cada troca</span></h3><p><span>Veja o que passa a ser apagado e o que passa a ser mantido, com um aviso quando mais coisas são apagadas. Nada é apagado na troca. Um arquivo de modo ausente ou danificado nunca esvazia sua Keep List.</span></p></div>
+      <div><h3><span>Perfis do cofre</span></h3><p><span>Restaure só o que precisa, como Trabalho ou Pessoal, ou tudo. Renomeie, adicione e remova perfis. Um navegador guarda um conjunto de logins, então um segundo navegador mantém o uso pessoal separado.</span></p></div>
+      <div><h3><span>Pergunte a uma IA</span></h3><p><span>O Amnesia faz um relatório sem conteúdo de arquivos e sem os nomes dos seus arquivos, mais um prompt pronto. Cole na IA que você escolher, cole a resposta de volta e marque as mudanças que quiser. O próprio Amnesia não envia nada.</span></p></div>
+      <div><h3><span>Comando de terminal</span></h3><p><span>Ative em Ajustes para ter um comando <code>amnesia</code> somente leitura: status, preview, report, keep e history. Ele nunca apaga nem muda nada.</span></p></div>
     </div>
   </div>
 </section>
@@ -527,7 +557,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="aw-bar"><i></i><i></i><i></i></div>
         <div class="aw-head">
           <img src="../logo.png" alt="" width="36" height="36">
-          <div><b>Amnesia <span class="ver" data-gh="version">v5.23.1</span></b><small><span>Seu Mac esquece tudo, menos o que você escolhe.</span></small></div>
+          <div><b>Amnesia <span class="ver" data-gh="version">v5.25.0</span></b><small><span>Seu Mac esquece tudo, menos o que você escolhe.</span></small></div>
           <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span>Settings</span></span>
         </div>
         <div class="aw-hero pc" data-p="home">
@@ -587,7 +617,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
           <ul>
             <li><b><span>Pick Apps</span></b> <span>encontra mais dados de cada app, como logins da web.</span></li>
             <li><b><span>Ferramentas de desenvolvedor e terminal</span></b>: <span>SSH, GitHub CLI, zsh, Vim, Docker, AWS, Claude Code e mais.</span></li>
-            <li><span>Máquinas virtuais (UTM, Parallels, VirtualBox, VMware Fusion) são mantidas por padrão.</span></li>
+            <li><span>Máquinas virtuais (UTM, Parallels, VirtualBox, VMware Fusion) e sua biblioteca do Fotos recebem um aviso e um botão Keep. Nada é adicionado sem você.</span></li>
             <li><span>Manter o Claude mantém também suas conversas do Claude Code.</span></li>
           </ul>
         </article>
@@ -709,7 +739,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <p class="label"><span class="n">10</span> · <span>Instalar</span></p>
       <h2><span>Instale com <em>uma linha.</em></span></h2>
       <div class="badges">
-        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg><use href="#i-tag"/></svg><span>Release</span><b data-gh="version">v5.23.1</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg><use href="#i-tag"/></svg><span>Release</span><b data-gh="version">v5.25.0</b></a>
         <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
         <span class="bdg"><svg><use href="#i-laptop"/></svg><span>macOS</span><b>15+</b></span>
       </div>
@@ -753,7 +783,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <dl class="ghstats">
           <div><dt><span>Licença</span></dt><dd>MIT</dd></div>
           <div><dt>Releases</dt><dd data-gh="releases">–</dd></div>
-          <div><dt><span>Mais recente</span></dt><dd data-gh="version">v5.23.1</dd></div>
+          <div><dt><span>Mais recente</span></dt><dd data-gh="version">v5.25.0</dd></div>
         </dl>
         <div class="cta">
           <a class="btn main" href="https://github.com/navi-crwn/amnesia"><svg><use href="#i-github"/></svg><span>Dar estrela no repositório</span></a>
@@ -1027,7 +1057,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div class="cell fq f-safe">
         <h3 class="fq-h"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><span>Segurança</span></h3>
         <details><summary><span>Meus dados são enviados para algum lugar?</span></summary><p><span>Não. O Amnesia não tem servidores, contas, rastreamento nem analytics. Tudo roda no seu Mac. Só se você configurar um backup em servidor ou na nuvem é que um arquivo .7z trancado sai do seu Mac, direto para o lugar que você escolheu, e ninguém consegue ler sem a sua senha. A verificação de atualizações só pergunta ao GitHub qual é o número da versão mais nova, uma vez por semana por padrão. Em Settings você pode mudar para a cada 2 semanas, todo mês ou Off.</span></p></details>
-    <details><summary><span>Existe uma versão para Windows?</span></summary><p><span>Sim, o Amnesia para Windows v0.8.1, uma versão oficial. Ele apaga ao sair da conta, reiniciar e desligar, e tem o cofre, backups, Keep lock, uma caixa-forte, um Health check e um Setup.exe com atualizações assinadas de dentro do app. Veja a <a href="win/">página do Windows</a>.</span></p></details>
+    <details><summary><span>Existe uma versão para Windows?</span></summary><p><span>Sim, o Amnesia para Windows v0.10.0, uma versão oficial. Ele apaga ao sair da conta, reiniciar e desligar, e tem o cofre, backups, Keep lock, uma caixa-forte, um Health check e um Setup.exe com atualizações assinadas de dentro do app. Veja a <a href="win/">página do Windows</a>.</span></p></details>
     <details><summary><span>Dá para testar sem apagar nada?</span></summary><p><span>Sim. O Amnesia fica desligado até você clicar em Turn On. What Gets Deleted (ou Settings → "See what would be deleted now") mostra a lista completa antes.</span></p></details>
     <details><summary><span>Para onde vão os arquivos apagados? Dá para recuperar?</span></summary><p><span>No logout eles são movidos para uma pasta do próprio Amnesia (~/.amnesia-trash), que é esvaziada em segundo plano depois do seu próximo login. Eles não vão para a Lixeira do macOS e não dá para recuperar. Tudo de que você precisa vai na pasta Keep, na Keep List ou no cofre.</span></p></details>
     <details><summary><span>Minha pasta Keep é criptografada?</span></summary><p><span>Não pelo Amnesia. O Keep lock impede que o Finder e outros apps abram a pasta até você digitar a senha da Keep, mas isso são permissões do macOS, não criptografia. Ative o FileVault para que o disco inteiro seja criptografado, e coloque no Brankas os arquivos que precisam continuar secretos.</span></p></details>
@@ -1113,7 +1143,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="ft-tag"><span>Seu Mac esquece tudo no logout, menos o que você escolhe guardar. Grátis, open source, e nada nunca sai do seu Mac.</span></p>
         <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
           <svg><use href="#i-github"/></svg>
-          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · <span data-gh="version">v5.23.1</span></small></span>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · <span data-gh="version">v5.25.0</span></small></span>
         </a>
       </div>
       <nav class="ft-cols" aria-label="Rodapé">

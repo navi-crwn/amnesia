@@ -129,7 +129,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
   <div class="wrap two">
     <div class="hero-copy">
-      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.8.1</span><svg><use href="#i-github"/></svg><span>Código abierto en GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.10.0</span><svg><use href="#i-github"/></svg><span>Código abierto en GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
       <h1 id="hero-title">
         <span><span class="split">Tu PC lo olvida</span> <em class="word">todo.</em><span class="after split">Menos lo que guardas.</span></span>
       </h1>
@@ -158,7 +158,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
     <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
       <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
       <span class="rc-desc"><span>Tu PC lo olvida todo al cerrar sesión, menos lo que eliges guardar.</span></span>
-      <span class="rc-meta"><span>MIT</span><span>Windows v0.8.1</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
+      <span class="rc-meta"><span>MIT</span><span>Windows v0.10.0</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
     </a>
   </div>
 </section>
@@ -184,7 +184,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <span class="rc-legend" data-gh="langs" hidden></span>
         <span class="rc-stats">
           <span><small><span>Licencia</span></small><b>MIT</b></span>
-          <span><small>Windows</small><b>v0.8.1</b></span>
+          <span><small>Windows</small><b>v0.10.0</b></span>
           <span><small><span>Pruebas</span></small><b>294</b></span>
           <span><small>Commits</small><b data-gh="commits">–</b></span>
           <span><small><span>Colaboradores</span></small><b data-gh="contributors">–</b></span>
@@ -523,7 +523,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <h2><span>¿Funciona? <em>Solo tienes que mirar.</em></span></h2>
       <p class="lead"><span>Una página responde a "¿puede Amnesia hacer su trabajo ahora mismo?". Verde está bien, amarillo y rojo te dicen qué revisar, y cada línea indica dónde arreglarlo.</span></p>
       <ul class="facts">
-        <li><b><span>Qué comprueba.</span></b> <span>Si está activada o no, si arranca con Windows, la última limpieza, los archivos pendientes para el próximo inicio de sesión, los bloqueos de Seguridad de Windows, las carpetas en la nube, las máquinas virtuales, el Keep lock, la bóveda, tu última copia de seguridad, el atajo de pánico y las actualizaciones.</span></li>
+        <li><b><span>Qué comprueba.</span></b> <span>Si está activada o no, si arranca con Windows, la última limpieza, los archivos pendientes para el próximo inicio de sesión, los bloqueos de Seguridad de Windows, las carpetas en la nube, las máquinas virtuales, el Keep lock, la bóveda, tu última copia de seguridad, el atajo de pánico, las actualizaciones, el espacio libre en disco, la memoria y la batería.</span></li>
         <li><b><span>¿Se desactivó el inicio automático?</span></b> <span>Si alguien desactiva Amnesia en el Administrador de tareas, Home muestra un aviso con un botón "Switch it back on".</span></li>
         <li><b><span>Actualizaciones firmadas.</span></b> <span>Las actualizaciones solo se instalan si la firma del desarrollador en SHA256SUMS.txt es válida. Si no la hay, Amnesia abre la página de la versión en lugar de instalar nada.</span></li>
       </ul>
@@ -608,6 +608,35 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div><h3><span>Comprobación del cifrado del disco</span></h3><p><span>Settings muestra si BitLocker o el cifrado del dispositivo están activados, y cómo activarlos.</span></p></div>
       <div><h3><span>Borrar el espacio libre</span></h3><p><span>Ejecuta el propio cipher /w de Windows, para que los archivos borrados sean más difíciles de recuperar. Es lento, y pregunta antes.</span></p></div>
     </div>
+
+    <div class="head" id="care" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>Care. <em>Recupera espacio, con una lista primero.</em></span></h2>
+      <p class="lead"><span>Amnesia ya borra casi toda tu carpeta de usuario en cada cierre de sesión, así que Care es para lo que se queda: tu carpeta Keep, las apps que conservas y los archivos grandes de esta sesión. Cada acción busca primero y muestra una lista, y nada arriesgado se marca por ti.</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>Resumen del disco</span></h3><p><span>Mira qué ocupa espacio: carpeta Keep, bóveda, Papelera de reciclaje, Temp, las carpetas y archivos más grandes, descargas antiguas. Solo lectura, aquí no se borra nada.</span></p></div>
+      <div><h3><span>Limpiar ahora</span></h3><p><span>Vacía Temp, volcados de bloqueo, cachés de apps y la papelera de Amnesia. Se saltan los archivos que Windows aún tiene abiertos. La Papelera de reciclaje aparece en la lista, pero nunca se marca por ti.</span></p></div>
+      <div><h3><span>Desinstalar apps</span></h3><p><span>Los programas instalados solo para ti ejecutan su propio desinstalador. Los programas para todos abren la Configuración de Windows. Las cachés que quedan van a la Papelera de reciclaje; los datos personales se quedan, salvo que los marques.</span></p></div>
+      <div><h3><span>Carpetas de compilación</span></h3><p><span>node_modules, target, build, dist, y bin y obj de proyectos .NET pueden ir a la Papelera de reciclaje. Las carpetas usadas en los últimos 7 días o seguidas por git no se tocan.</span></p></div>
+      <div><h3><span>Instaladores antiguos</span></h3><p><span>Los archivos .msi y .msix antiguos van a la Papelera de reciclaje. Los archivos setup .exe aparecen en la lista, pero nunca se eligen por ti, igual que las imágenes de disco o las máquinas virtuales.</span></p></div>
+      <div><h3><span>Ajustes seguros</span></h3><p><span>Reinicia el Explorador, o abre Aplicaciones de arranque y la configuración de Almacenamiento. No hace falta ser administrador.</span></p></div>
+      <div><h3><span>Se detiene si duda</span></h3><p><span>Si la Keep List no se puede leer o ha desaparecido, la limpieza no borra nada y lo indica en el historial. Si una comprobación no está segura, el elemento se conserva.</span></p></div>
+      <div><h3><span>Cada uso, en el historial</span></h3><p><span>Cada uso de Care queda en el historial con el espacio liberado. El Health check también muestra el espacio libre en disco, la memoria y la batería.</span></p></div>
+    </div>
+
+    <div class="head" id="modes" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>Modos y perfiles. <em>Tú eliges cuánto se olvida.</em></span></h2>
+      <p class="lead"><span>Elige un modo para cada cierre de sesión, restaura solo las apps que necesitas y pide consejo a una IA sin compartir tus archivos. Cada cambio muestra primero una vista previa y se aplica en el siguiente cierre de sesión.</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>Retrograde Amnesia</span></h3><p><span>Como una cuenta nueva en cada inicio de sesión. Solo quedan tu carpeta Keep y lo que Amnesia necesita para funcionar. La instantánea automática de la bóveda al cerrar sesión se apaga, y aún puedes restaurar una instantánea a mano.</span></p></div>
+      <div><h3><span>Selective Amnesia <small>(recomendado)</small></span></h3><p><span>Tu carpeta Keep se queda y los inicios de sesión de las apps vuelven desde la bóveda. Igual que antes.</span></p></div>
+      <div><h3><span>Partial Amnesia</span></h3><p><span>Todo lo que hay en AppData se queda, así que las apps conservan sus ajustes e inicios de sesión, y también sus cachés. Se borran tus archivos, Descargas y Escritorio. El historial y las cookies dentro de la propia carpeta de un navegador también se quedan, porque esa carpeta se conserva.</span></p></div>
+      <div><h3><span>Custom Amnesia</span></h3><p><span>Tu propia Keep List. Se elige sola cuando cambias las líneas que añadió un modo. Un modo solo cambia su propia sección marcada, así que tus propias líneas siempre se quedan.</span></p></div>
+      <div><h3><span>Una vista previa antes de cada cambio</span></h3><p><span>Mira qué se borrará a partir de ahora y qué se conservará, con un aviso cuando se borra más. No se borra nada al cambiar. Una lista de modo que falta o está dañada nunca vacía tu Keep List.</span></p></div>
+      <div><h3><span>Perfiles de la bóveda</span></h3><p><span>Restaura solo lo que necesitas, por ejemplo Trabajo o Personal, o todo. Cambia el nombre, añade y quita perfiles. Un navegador guarda un solo conjunto de inicios de sesión, así que un segundo navegador mantiene aparte el uso personal.</span></p></div>
+      <div><h3><span>Pregunta a una IA</span></h3><p><span>Amnesia crea un informe sin contenido de archivos y sin los nombres de tus archivos, más un prompt listo. Pégalo en la IA que elijas, pega la respuesta de vuelta y marca los cambios que quieras. Amnesia por sí misma no envía nada.</span></p></div>
+    </div>
   </div>
 </section>
 
@@ -646,7 +675,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="aw-bar"><img src="../../logo.png" alt="" width="14" height="14"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
         <div class="aw-head">
           <img src="../../logo.png" alt="" width="36" height="36">
-          <div><b>Amnesia <span class="ver">v0.8.1</span></b><small><span>Tu PC lo olvida todo, menos lo que eliges.</span></small></div>
+          <div><b>Amnesia <span class="ver">v0.10.0</span></b><small><span>Tu PC lo olvida todo, menos lo que eliges.</span></small></div>
           <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span>Settings</span></span>
         </div>
         <div class="aw-hero pc" data-p="home">
@@ -961,7 +990,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <p class="label"><span class="n">15</span> · <span>Instalar</span></p>
       <h2><span>Un solo Setup, <em>sin administrador.</em></span></h2>
       <div class="badges">
-        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.8.1</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.10.0</b></a>
         <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
         <span class="bdg"><svg><use href="#i-laptop"/></svg><span>Windows</span><b>10 · 11</b></span>
       </div>
@@ -998,7 +1027,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><div><h3><span>Comprueba el archivo</span></h3><p class="small"><span>Opcional</span></p></div></div>
         <div class="shell">
           <div class="sh-bar"><i></i><i></i><i></i><span>PowerShell</span></div>
-          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.8.1-x64.exe</code><button class="copy" type="button">Copy</button></div>
+          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.10.0-x64.exe</code><button class="copy" type="button">Copy</button></div>
           <pre class="sh-out"><span>Algorithm  Hash</span>
 <span>---------  ----</span>
 <span>SHA256     3F9A…C21E</span>
@@ -1010,7 +1039,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><div><h3>navi-crwn/amnesia</h3><p class="small"><span>Código abierto en GitHub</span></p></div></div>
         <dl class="ghstats">
           <div><dt><span>Licencia</span></dt><dd>MIT</dd></div>
-          <div><dt>Windows</dt><dd>v0.8.1</dd></div>
+          <div><dt>Windows</dt><dd>v0.10.0</dd></div>
           <div><dt><span>Pruebas</span></dt><dd>294</dd></div>
           <div><dt><span>Chips</span></dt><dd>x64 · arm64</dd></div>
         </dl>
@@ -1057,7 +1086,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
                 <p class="wsm-h">Windows protected your PC</p>
                 <p class="wsm-t">Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p>
                 <p class="wsm-more" data-a="1" data-on=".wsm-app,.wsm-run">More info</p>
-                <p class="wsm-app">App: Amnesia-Setup-0.8.1-x64.exe</p>
+                <p class="wsm-app">App: Amnesia-Setup-0.10.0-x64.exe</p>
                 <div class="wsm-btns"><span class="wsm-run" data-a="2" data-on=".pop0">Run anyway</span><span>Don't run</span></div>
               </div>
               <div class="pop tw-pop pop0">
@@ -1310,7 +1339,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="ft-tag"><span>Tu PC lo olvida todo al cerrar sesión, menos lo que eliges guardar. Gratis, de código abierto, y nada sale nunca de tu PC.</span></p>
         <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
           <svg><use href="#i-github"/></svg>
-          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.8.1</small></span>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.10.0</small></span>
         </a>
       </div>
       <nav class="ft-cols" aria-label="Pie de página">

@@ -264,14 +264,15 @@ func vaultCall(_ args: [String], input: String = "", job: JobBox? = nil,
 
 enum Engine {
     static let files = ["clean.sh", "agent.sh", "vault.py", "backup.sh", "uninstall.sh", "keeplock.sh",   // v5.22: + keeplock.sh
-                         "keep.example.conf"]
+                         "keep.example.conf", "report.py", "amnesia"]      // v5.25: + report.py, amnesia (perintah Terminal)
 
     static var sevenz: String? {
         [P.a + "/bin/7zz", "/opt/homebrew/bin/7zz", "/usr/local/bin/7zz"]
             .first { FileManager.default.isExecutableFile(atPath: $0) }
     }
 
-    static var ready: Bool { files.allSatisfy { FileManager.default.fileExists(atPath: P.a + "/" + $0) } }
+    // v5.25: perintah Terminal tidak wajib (di folder hasil git clone letaknya bin/amnesia)
+    static var ready: Bool { files.allSatisfy { $0 == "amnesia" || FileManager.default.fileExists(atPath: P.a + "/" + $0) } }
 
     /// Python untuk Profile Vault: dari Homebrew, atau dari Command Line Tools Apple.
     static var hasPython: Bool {
@@ -331,7 +332,34 @@ enum Engine {
             try? fm.copyItem(atPath: z, toPath: dz)
             sh("/usr/bin/xattr", ["-d", "com.apple.quarantine", dz])
         }
-        if !fm.fileExists(atPath: P.keep) { try? fm.copyItem(atPath: P.a + "/keep.example.conf", toPath: P.keep) }
+        // v5.24: keep.conf hilang tapi salinan terakhir yang baik (keep.conf.last, ditulis clean.sh) ada: pulihkan
+        // dari salinan itu, bukan dari contoh. Kalau gagal, keep.conf sengaja dibiarkan tidak ada (clean.sh lalu
+        // berhenti dan tidak menghapus apa pun) daripada diisi contoh yang tidak menyimpan barang kamu.
+        let lastKeep = P.a + "/keep.conf.last"
+        if !fm.fileExists(atPath: P.keep) {
+            if fm.fileExists(atPath: lastKeep) {
+                do {
+                    try fm.copyItem(atPath: lastKeep, toPath: P.keep)
+                    trace("keep list restored from keep.conf.last")
+                } catch {
+                    trace("keep list missing, restore from keep.conf.last failed")
+                }
+            } else {
+                try? fm.copyItem(atPath: P.a + "/keep.example.conf", toPath: P.keep)
+            }
+        }
+        // v5.25: preset mode (presets/full.conf, balanced.conf, light.conf) ikut dipasang, aturan fresh/dev sama
+        let pres = res + "/engine/presets"
+        if !dev, let names = try? fm.contentsOfDirectory(atPath: pres) {
+            try? fm.createDirectory(atPath: P.a + "/presets", withIntermediateDirectories: true)
+            for f in names where f.hasSuffix(".conf") {
+                let d = P.a + "/presets/" + f
+                if fresh || !fm.fileExists(atPath: d) {
+                    try? fm.removeItem(atPath: d)
+                    try? fm.copyItem(atPath: pres + "/" + f, toPath: d)
+                }
+            }
+        }
         if Config.get("LANG").isEmpty { Config.set("LANG", Lang.current.rawValue) }
         try? appVersion.write(toFile: mark, atomically: true, encoding: .utf8)
     }
@@ -559,8 +587,9 @@ func isVMData(_ path: String) -> Bool {
     return ["com.utmapp.utm", "com.parallels.desktop", "virtualbox vms", "virtual machines.localized"].contains { low.contains($0) }
 }
 
-/// v5.21: data VM yang ada otomatis masuk Keep List, sekali per path (seperti kartu Akun Apple).
-/// Kalau kamu mematikannya di Pilih App, tidak dinyalakan lagi. Path yang sudah diurus dicatat di VM_KEEP_SEEN.
+/// v5.21: data VM yang ada, sekali per path. v5.25 (item 187): TIDAK lagi diam-diam ditambahkan ke Keep List.
+/// Sekarang muncul sebagai saran (KeepSuggestCard) dengan peringatan dan tombol Keep. Path yang sudah kamu jawab
+/// (Keep atau Jangan simpan) dicatat di VM_KEEP_SEEN, jadi tidak ditanyakan lagi.
 enum VMKeep {
     static var seen: Set<String> { Set(Config.get("VM_KEEP_SEEN").split(separator: "|").map(String.init)) }
 
@@ -571,23 +600,54 @@ enum VMKeep {
         return paths.contains { data.contains($0) && !s.contains($0) }
     }
 
-    static func applyDefaults() {
-        var s = seen
-        let before = s.count
+    /// Saran: per app VM, data yang ada di Mac ini, belum di Keep List dan belum pernah kamu jawab.
+    static func pending() -> [VMSuggestion] {
+        let s = seen
         let kept = Keep.entries()
-        var add: [String] = []
+        var out: [VMSuggestion] = []
         for v in vmApps {
-            for p in vmDataPaths(v) where !s.contains(p) {
-                s.insert(p)
-                if !keepMatches(p, kept) && !add.contains(p) { add.append(p) }
-            }
+            let p = vmDataPaths(v).filter { !s.contains($0) && !keepMatches($0, kept) }
+            if !p.isEmpty { out.append(VMSuggestion(name: v.name, paths: p)) }
         }
-        guard s.count != before else { return }
-        if !add.isEmpty {
-            Keep.add(add)
-            trace("vm keep: \(add.count) path(s) added to the Keep List")
+        return out
+    }
+
+    /// Jawaban kamu: keep = tambah ke Keep List. Dua-duanya dicatat supaya tidak ditanyakan lagi.
+    static func answer(_ paths: [String], keep: Bool) {
+        if keep {
+            let kept = Keep.entries()
+            let add = paths.filter { !keepMatches($0, kept) }
+            if !add.isEmpty { Keep.add(add) }
+            trace("vm keep: \(add.count) path(s) added to the Keep List (you pressed Keep)")
+        } else {
+            trace("vm keep: \(paths.count) path(s) not kept (your choice)")
         }
+        var s = seen
+        for p in paths { s.insert(p) }
         Config.set("VM_KEEP_SEEN", s.sorted().joined(separator: "|"))
+    }
+}
+
+/// v5.25 (item 187): Foto tidak lagi otomatis masuk Keep List. Kalau library Foto ada dan tidak disimpan,
+/// muncul saran dengan peringatan. PHOTOS_SUGGEST=done setelah kamu menjawab.
+/// 1 saran VM (nama app VM + path datanya yang belum disimpan).
+struct VMSuggestion: Identifiable {
+    let name: String
+    let paths: [String]
+    var id: String { name }
+}
+
+enum PhotosKeep {
+    static var item: AppleItem? { appleItems.first { $0.id == "photos" } }
+    static var libraryExists: Bool { FileManager.default.fileExists(atPath: P.home + "/Pictures/Photos Library.photoslibrary") }
+    static var pending: Bool {
+        guard let a = item, libraryExists, Config.get("PHOTOS_SUGGEST") != "done" else { return false }
+        return !AppleKeep.isOn(a)
+    }
+    static func answer(keep: Bool) {
+        if keep, let a = item { AppleKeep.set(a, true) }
+        trace(keep ? "photos keep: added (you pressed Keep)" : "photos keep: not kept (your choice)")
+        Config.set("PHOTOS_SUGGEST", "done")
     }
 }
 
@@ -662,7 +722,7 @@ func defaultPicks(_ apps: [FoundApp]) -> Set<String> {
     return Set(apps.filter { a in
         a.paths.contains { keepMatches($0, kept) }
             || (!a.inVault && suggestWords.contains { a.name.lowercased().contains($0) })
-            || (a.vm && VMKeep.isNew(a.paths))      // v5.21: VM baru, belum pernah kamu matikan
+            || (a.vm && VMKeep.isNew(a.paths))      // v5.21: VM baru, dicentang di daftar (kamu lihat dulu sebelum Simpan)
     }.map(\.name))
 }
 
@@ -750,9 +810,10 @@ enum AppleKeep {
     }
 
     /// Sekali saja (v5.10): semua dicentang otomatis, supaya aman secara default. Sesudahnya pilihan kamu dihormati.
+    /// v5.25 (item 187): kecuali Foto. Foto bisa sangat besar, jadi kamu ditanya dulu (PhotosKeep, kartu saran).
     static func applyDefaultsOnce() {
         guard Config.get("APPLE_KEEP").isEmpty else { return }
-        for a in appleItems { set(a, true) }
+        for a in appleItems where a.id != "photos" { set(a, true) }
         Config.set("APPLE_KEEP", "1")
     }
 }
@@ -760,7 +821,14 @@ enum AppleKeep {
 // MARK: - Keep List (keep.conf)
 
 enum Keep {
-    static func text() -> String { (try? String(contentsOfFile: P.keep, encoding: .utf8)) ?? "" }
+    /// v5.24: keep.conf hilang (mis. dihapus saat app terbuka) tapi salinan terakhir yang baik ada: isinya dipakai, jadi
+    /// menambah/menghapus 1 baris di halaman Keep List menulis Keep List lengkap, bukan daftar yang hampir kosong.
+    static func text() -> String {
+        if let t = try? String(contentsOfFile: P.keep, encoding: .utf8) { return t }
+        if !FileManager.default.fileExists(atPath: P.keep),
+           let t = try? String(contentsOfFile: P.a + "/keep.conf.last", encoding: .utf8) { return t }
+        return ""
+    }
 
     static func entries() -> [String] {
         text().components(separatedBy: "\n")
@@ -796,6 +864,400 @@ enum Keep {
                 && fm.fileExists(atPath: P.home + "/" + n, isDirectory: &dir) && dir.boolValue
         }
         return (out + dots).filter { !kept.contains($0) }
+    }
+}
+
+// MARK: - v5.25: Mode Amnesia (preset Keep List: full / balanced / light / custom)
+
+/// v5.25: hasil pratinjau ganti mode. Dibuat Keep.applyMode (2 dry-run), ditulis Keep.commitMode.
+/// problem != nil = mode tidak bisa diganti, tidak ada yang ditulis.
+struct ModePreview: Sendable {
+    let mode: String              // mode yang akan ditulis (jadi "custom" kalau baris preset dicentang untuk dihapus)
+    let from: String              // mode sekarang
+    let oldText: String           // keep.conf saat pratinjau (commit menolak kalau sudah berubah)
+    let newText: String           // keep.conf baru
+    let added: [String]           // baris Keep List yang baru
+    let removed: [String]         // baris Keep List yang tidak disimpan lagi
+    let outside: [String]         // baris kamu sendiri (di luar bagian mode)
+    let wipeBefore: Int           // jumlah item yang dihapus logout berikutnya: sekarang
+    let wipeAfter: Int            // ... dan dengan Keep List baru
+    let newlyWiped: [String]
+    let newlyKept: [String]
+    let settings: [String: String]
+    let wipesMore: Bool
+    let problem: String?
+    let note: String?
+    /// v5.25 (item 190): baris yang keluar dari Keep List tapi isinya tidak dihapus clean.sh (dry-run tidak
+    /// menyebutnya), mis. ~/.zshrc atau ~/.gitconfig: file di home yang memang tidak pernah dihapus, atau tidak ada.
+    var removedIdle: [String] = []
+}
+
+extension Keep {
+    static let modeIds = ["full", "balanced", "light", "custom"]
+    /// Baris yang dibutuhkan Amnesia sendiri (sama dengan presets/full.conf). Saran AI tidak pernah boleh menghapusnya.
+    static let requiredLines = ["keychain:Amnesia Backup", "keychain:Amnesia VirusTotal", ".config/rclone", "keychain:* Safe Storage"]
+    static let modeEndMarker = "# amnesia-mode end"
+    static let modeHint = "# Amnesia writes the lines between these markers when you pick a mode. Put your own lines below the end marker."
+    static func modeBeginMarker(_ id: String) -> String { "# amnesia-mode: \(id) begin" }
+    /// Alasan terakhir kalau commitMode gagal (untuk ditampilkan).
+    static var commitError = ""
+
+    static func modeTitle(_ id: String) -> String {
+        switch id {
+        case "full": return T("Retrograde Amnesia", "Retrograde Amnesia")
+        case "balanced": return T("Selective Amnesia (recommended)", "Selective Amnesia (disarankan)")
+        case "light": return T("Partial Amnesia", "Partial Amnesia")
+        default: return T("Custom Amnesia", "Custom Amnesia")
+        }
+    }
+
+    /// Nama pendek (tanpa "(disarankan)"), untuk judul dan Riwayat.
+    static func modeName(_ id: String) -> String {
+        id == "balanced" ? T("Selective Amnesia", "Selective Amnesia") : modeTitle(id)
+    }
+
+    static func modeSub(_ id: String) -> String {
+        switch id {
+        case "full":
+            return T("Like a brand-new account at every login. Only your Keep folder and what Amnesia needs to work stay.",
+                     "Seperti akun baru setiap login. Hanya folder Keep kamu dan yang dibutuhkan Amnesia yang tetap ada.")
+        case "balanced":
+            return T("The basic list for a new install: your Keep folder, app logins from the vault, SSH keys, Git and shell settings. Add your own apps on the Keep List.",
+                     "Daftar dasar untuk instalasi baru: folder Keep, login app dari vault, kunci SSH, pengaturan Git dan shell. Tambahkan app kamu sendiri di Keep List.")
+        case "light":
+            return T("Apps keep their settings and logins in place. Your files, Downloads, Desktop, caches, logs, the Trash and shell history are wiped.",
+                     "App tetap menyimpan pengaturan dan loginnya. File kamu, Downloads, Desktop, cache, log, Trash dan riwayat terminal dihapus.")
+        default:
+            return T("Your own Keep List. Picked for you when you change the lines a mode added.",
+                     "Keep List buatan kamu sendiri. Dipilih otomatis saat kamu mengubah baris dari sebuah mode.")
+        }
+    }
+
+    /// Catatan jujur untuk mode Ringan.
+    static var lightNote: String {
+        T("Browsing history and cookies inside a browser's own folder stay too, because that folder is kept.",
+          "Riwayat dan cookie browser di dalam folder browser itu sendiri juga tetap ada, karena foldernya disimpan.")
+    }
+
+    static func modeIcon(_ id: String) -> String {
+        switch id {
+        case "full": return "sparkles"
+        case "balanced": return "circle.lefthalf.filled"
+        case "light": return "leaf.fill"
+        default: return "slider.horizontal.3"
+        }
+    }
+
+    /// Baris teks (tanpa "\r", tanpa baris kosong terakhir dari "\n" di akhir file).
+    static func splitLines(_ text: String) -> [String] {
+        var l = text.components(separatedBy: "\n").map { $0.hasSuffix("\r") ? String($0.dropLast()) : $0 }
+        if l.last == "" { l.removeLast() }
+        return l
+    }
+
+    /// Baris yang benar-benar menyimpan sesuatu: di-trim, tanpa komentar dan baris kosong.
+    static func keepLines(_ lines: [String]) -> [String] {
+        lines.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty && !$0.hasPrefix("#") }
+    }
+
+    /// Isi preset dari ~/.amnesia/presets/<id>.conf, baris "##" (catatan file) dibuang, sisanya apa adanya.
+    /// nil = hilang, tidak bisa dibaca, kosong, atau berisi penanda mode. Preset seperti itu TIDAK pernah dipakai,
+    /// jadi Keep List tidak pernah jadi kosong karena file preset yang rusak.
+    static func presetLines(_ id: String) -> [String]? {
+        guard ["full", "balanced", "light"].contains(id),
+              let t = try? String(contentsOfFile: P.a + "/presets/\(id).conf", encoding: .utf8) else { return nil }
+        var l = splitLines(t).filter { !$0.hasPrefix("##") }
+        while let f = l.first, f.trimmingCharacters(in: .whitespaces).isEmpty { l.removeFirst() }
+        while let x = l.last, x.trimmingCharacters(in: .whitespaces).isEmpty { l.removeLast() }
+        if l.contains(where: { $0.trimmingCharacters(in: .whitespaces).hasPrefix("# amnesia-mode") }) { return nil }
+        return keepLines(l).isEmpty ? nil : l
+    }
+
+    /// Semua preset bisa dibaca (kalau tidak, mode yang tersimpan tidak diubah otomatis).
+    static var presetsReadable: Bool { ["full", "balanced", "light"].allSatisfy { presetLines($0) != nil } }
+
+    /// Bagian mode di keep.conf. ok = tepat 1 penanda awal lalu 1 penanda akhir. broken = kombinasi lain.
+    /// ok dan broken dua-duanya false = belum ada bagian mode.
+    static func modeBlock(_ lines: [String]) -> (ok: Bool, broken: Bool, id: String, begin: Int, end: Int) {
+        var begins: [Int] = []
+        var ends: [Int] = []
+        var other = false
+        for (i, raw) in lines.enumerated() {
+            let s = raw.trimmingCharacters(in: .whitespaces)
+            guard s.hasPrefix("# amnesia-mode") else { continue }
+            if s == modeEndMarker {
+                ends.append(i)
+            } else if s.hasPrefix("# amnesia-mode:") && s.hasSuffix(" begin") {
+                begins.append(i)
+            } else {
+                other = true
+            }
+        }
+        if begins.isEmpty && ends.isEmpty && !other { return (false, false, "", -1, -1) }
+        guard !other, begins.count == 1, ends.count == 1, begins[0] < ends[0] else { return (false, true, "", -1, -1) }
+        let s = lines[begins[0]].trimmingCharacters(in: .whitespaces)
+        let id = String(s.dropFirst("# amnesia-mode:".count).dropLast(" begin".count)).trimmingCharacters(in: .whitespaces)
+        return (true, false, id, begins[0], ends[0])
+    }
+
+    /// Keep List seperti yang dipakai clean.sh. nil = pembersihan berhenti (keep.conf hilang padahal keep.conf.last ada,
+    /// atau tidak bisa dibaca): mode tidak boleh diganti. Belum pernah ada Keep List = isi keep.example.conf.
+    static func modeReadText() -> String? {
+        let fm = FileManager.default
+        var isDir: ObjCBool = false
+        if fm.fileExists(atPath: P.keep, isDirectory: &isDir) {
+            if isDir.boolValue { return nil }
+            return try? String(contentsOfFile: P.keep, encoding: .utf8)
+        }
+        if (try? fm.destinationOfSymbolicLink(atPath: P.keep)) != nil { return nil }      // link rusak
+        if fm.fileExists(atPath: P.a + "/keep.conf.last") { return nil }
+        return (try? String(contentsOfFile: P.a + "/keep.example.conf", encoding: .utf8)) ?? ""
+    }
+
+    /// Mode sekarang, dilihat dari keep.conf (lihat kontrak v5.25).
+    static func currentMode() -> String {
+        let lines = splitLines(text())
+        let b = modeBlock(lines)
+        if b.broken { return "custom" }
+        if b.ok {
+            guard let p = presetLines(b.id) else { return "custom" }
+            return keepLines(Array(lines[(b.begin + 1)..<b.end])) == keepLines(p) ? b.id : "custom"
+        }
+        let stored = Config.get("AMNESIA_MODE")
+        if stored == "custom" { return "custom" }
+        guard let bal = presetLines("balanced") else { return modeIds.contains(stored) ? stored : "custom" }
+        let have = Set(keepLines(lines))
+        return keepLines(bal).allSatisfy { have.contains($0) } ? "balanced" : "custom"
+    }
+
+    /// v5.25: baris yang dikeluarkan tapi isinya tetap disimpan oleh baris lain (mis. "Library/Containers/*nordvpn*"
+    /// saat "Library/Containers/*" ada, atau "keychain:gh:*" saat "keychain:*" ada). Pola sama dengan clean.sh
+    /// (* juga cocok dengan "/"); folder di atasnya yang disimpan = isinya juga disimpan.
+    static func covered(_ line: String, by keep: [String]) -> Bool {
+        let strip: (String) -> String = { $0.hasPrefix("~/") ? String($0.dropFirst(2)) : $0 }
+        if line.hasPrefix("keychain:") {
+            let n = String(line.dropFirst(9))
+            return keep.contains { $0.hasPrefix("keychain:") && fnmatch(String($0.dropFirst(9)), n, 0) == 0 }
+        }
+        if line.hasPrefix("app:") { return keep.contains(line) }
+        let paths = keep.filter { !$0.hasPrefix("keychain:") && !$0.hasPrefix("app:") }.map(strip)
+        let parts = strip(line).split(separator: "/").map(String.init)
+        if parts.isEmpty { return false }
+        for i in 1...parts.count {
+            let pre = parts[0..<i].joined(separator: "/")
+            if paths.contains(where: { fnmatch($0, pre, 0) == 0 }) { return true }
+        }
+        return false
+    }
+
+    /// Baris tambahan yang aman: path relatif di dalam home (tanpa "..", tanpa "/" di depan), atau keychain:<nama>.
+    static func modeLineOK(_ l: String) -> Bool {
+        if l.isEmpty || l.hasPrefix("#") || l.count > 300 { return false }
+        if l.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) { return false }
+        if l.hasPrefix("keychain:") { return l.count > "keychain:".count }
+        if l.hasPrefix("/") || l.hasPrefix("~") || l.hasPrefix(".amnesia") || l.hasPrefix(".Trash") { return false }
+        return !l.split(separator: "/").contains { $0 == ".." || $0 == "." }
+    }
+
+    /// Pratinjau ganti mode. Tidak menulis keep.conf. Menjalankan 2 dry-run (bisa lama): panggil di luar main thread.
+    static func applyMode(_ id: String, extraAdd: [String] = [], extraRemove: [String] = []) -> ModePreview {
+        let from = currentMode()
+        func fail(_ why: String) -> ModePreview {
+            ModePreview(mode: id, from: from, oldText: "", newText: "", added: [], removed: [], outside: [],
+                        wipeBefore: 0, wipeAfter: 0, newlyWiped: [], newlyKept: [], settings: [:], wipesMore: false,
+                        problem: why, note: nil)
+        }
+        let clean: (String) -> String = { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        guard modeIds.contains(id) else { return fail(T("This mode is unknown.", "Mode ini tidak dikenal.")) }
+        guard let old = modeReadText() else {
+            return fail(T("Your Keep List is missing or can't be read, so cleanups are stopped and the mode was not changed. "
+                          + "Fix the Keep List first.",
+                          "Keep List kamu hilang atau tidak bisa dibaca, jadi pembersihan dihentikan dan mode tidak diganti. "
+                          + "Perbaiki Keep List dulu."))
+        }
+        let lines = splitLines(old)
+        let b = modeBlock(lines)
+        if b.broken {
+            return fail(T("Your Keep List has a damaged mode section, so the mode was not changed. Fix or remove the lines that start with \"# amnesia-mode\".",
+                          "Bagian mode di Keep List kamu rusak, jadi mode tidak diganti. Perbaiki atau hapus baris yang diawali \"# amnesia-mode\"."))
+        }
+        var preset: [String]? = nil
+        if id != "custom" {
+            guard let p = presetLines(id) else {
+                return fail(T("The \(modeName(id)) preset could not be read, so your Keep List was not changed.",
+                              "Preset \(modeName(id)) tidak bisa dibaca, jadi Keep List kamu tidak diubah."))
+            }
+            preset = p
+        }
+        let rm = Set(extraRemove.map(clean).filter { !$0.isEmpty && !$0.hasPrefix("#") })
+
+        // isi bagian mode lama dan baris kamu sendiri
+        var inner: [String] = []
+        var own: [String] = []
+        var migrated = false
+        if b.ok {
+            inner = Array(lines[(b.begin + 1)..<b.end])
+            own = Array(lines[..<b.begin]) + Array(lines[(b.end + 1)...])
+        } else if id != "custom", let bal = presetLines("balanced") {
+            // pindah sekali: baris yang persis sama dengan preset Seimbang masuk ke bagian mode yang baru
+            let balSet = Set(bal.map(clean).filter { !$0.isEmpty })
+            own = lines.filter { !balSet.contains(clean($0)) }
+            migrated = own.count != lines.count
+        } else {
+            own = lines
+        }
+        let outside = unique(keepLines(own))
+
+        var mode = id
+        var note: String? = nil
+        var top: [String]
+        if let p = preset, !rm.isDisjoint(with: keepLines(p)) {
+            mode = "custom"
+            note = T("You stopped keeping a line from this mode, so your Keep List becomes Custom Amnesia.",
+                     "Kamu berhenti menyimpan baris dari mode ini, jadi Keep List kamu menjadi Custom Amnesia.")
+            top = p
+        } else if let p = preset {
+            top = [modeBeginMarker(id), modeHint] + p + [modeEndMarker]
+        } else {
+            top = inner.filter { clean($0) != modeHint }      // Kustom: penanda dibuang, isinya tetap
+        }
+        if mode == "custom" { top = top.filter { !rm.contains(clean($0)) } }
+        own = own.filter { !rm.contains(clean($0)) }
+        if migrated {      // baris kosong berlebih dari bagian yang dipindah
+            var t: [String] = []
+            for l in own where !(clean(l).isEmpty && (t.isEmpty || clean(t[t.count - 1]).isEmpty)) { t.append(l) }
+            own = t
+        }
+        var have = Set(keepLines(top + own))
+        var adds: [String] = []
+        for a in extraAdd.map(clean) where modeLineOK(a) && !have.contains(a) && !rm.contains(a) {
+            have.insert(a)
+            adds.append(a)
+        }
+        if !adds.isEmpty {
+            while let x = own.last, clean(x).isEmpty { own.removeLast() }
+            own += adds
+        }
+        var newLines = top
+        if !top.isEmpty, let f = own.first, !clean(f).isEmpty { newLines.append("") }
+        newLines += own
+        let newText = newLines.isEmpty ? "" : newLines.joined(separator: "\n") + "\n"
+        if mode != "custom" && keepLines(newLines).isEmpty {
+            return fail(T("The \(modeName(id)) preset could not be read, so your Keep List was not changed.",
+                          "Preset \(modeName(id)) tidak bisa dibaca, jadi Keep List kamu tidak diubah."))
+        }
+
+        let oldKeep = keepLines(lines), newKeep = keepLines(newLines)
+        let oldSet = Set(oldKeep), newSet = Set(newKeep)
+        let added = unique(newKeep.filter { !oldSet.contains($0) })
+        let removed = unique(oldKeep.filter { !newSet.contains($0) })
+
+        // pengaturan: masuk Amnesia penuh = snapshot otomatis mati (dinyalakan lagi saat keluar dari mode itu)
+        var settings: [String: String] = [:]
+        if mode == "full" {
+            if Setting.autoSnapshot.isOn {
+                settings[Setting.autoSnapshot.rawValue] = "0"
+                settings["AMNESIA_MODE_AUTOSNAP"] = "1"
+            }
+        } else if Config.get("AMNESIA_MODE_AUTOSNAP") == "1" {
+            settings[Setting.autoSnapshot.rawValue] = "1"
+            settings["AMNESIA_MODE_AUTOSNAP"] = "0"
+        }
+
+        // dry-run sekarang, lalu dry-run dengan Keep List baru (file sementara 600, dihapus lagi)
+        let before = dryRun()
+        let fm = FileManager.default
+        let tmp = P.a + "/keep.conf.preview-\(UUID().uuidString.prefix(8)).tmp"
+        guard fm.createFile(atPath: tmp, contents: Data(newText.utf8), attributes: [.posixPermissions: 0o600]) else {
+            return fail(T("The preview could not be made, so nothing was changed.", "Pratinjau tidak bisa dibuat, jadi tidak ada yang diubah."))
+        }
+        let r = sh("/bin/bash", [P.a + "/clean.sh", "logout", "--dry-run", "--keep-file=" + tmp])
+        try? fm.removeItem(atPath: tmp)
+        let stopped = r.out.split(separator: "\n").contains { $0.hasPrefix("STOP  ") }
+        guard r.code == 0, !stopped, r.out.contains("--- dry-run") else {
+            return fail(T("The preview could not be made, so nothing was changed.", "Pratinjau tidak bisa dibuat, jadi tidak ada yang diubah."))
+        }
+        let after = parseDry(r.out)
+        func shown(_ e: DryEntry) -> String { e.keychain ? "Keychain: " + e.rel : (e.rel.hasPrefix("/") ? e.rel : "~/" + e.rel) }
+        let bSet = Set(before.map(shown)), aSet = Set(after.map(shown))
+        let newlyWiped = unique(after.map(shown).filter { !bSet.contains($0) })
+        let newlyKept = unique(before.map(shown).filter { !aSet.contains($0) })
+        // v5.25 (item 190): baris yang dikeluarkan hanya ditulis "dihapus" kalau dry-run baru memang menghapus sesuatu di sana
+        let afterShown = after.map(shown)
+        let idle = removed.filter { !covered($0, by: newKeep) && !lineWipes($0, afterShown) }
+        return ModePreview(mode: mode, from: from, oldText: old, newText: newText, added: added, removed: removed,
+                           outside: outside, wipeBefore: before.count, wipeAfter: after.count,
+                           newlyWiped: newlyWiped, newlyKept: newlyKept, settings: settings,
+                           // v5.25: baris yang dikeluarkan tapi masih disimpan baris lain (mis. Seimbang -> Ringan) bukan "lebih banyak dihapus"
+                           wipesMore: newlyWiped.count > 0 || after.count > before.count,
+                           problem: nil, note: note, removedIdle: idle)
+    }
+
+    /// v5.25 (item 190): apakah dry-run (daftar "~/path", "/path", "Keychain: nama") menghapus sesuatu yang dulu
+    /// dilindungi baris ini: path itu sendiri, isinya, atau folder di atasnya.
+    static func lineWipes(_ line: String, _ wiped: [String]) -> Bool {
+        if line.hasPrefix("keychain:") {
+            let pat = String(line.dropFirst(9))
+            return wiped.contains { $0.hasPrefix("Keychain: ") && fnmatch(pat, String($0.dropFirst(10)), 0) == 0 }
+        }
+        if line.hasPrefix("app:") {
+            let app = String(line.dropFirst(4))
+            return wiped.contains { $0 == app }
+        }
+        let l = line.hasPrefix("~/") ? String(line.dropFirst(2)) : line
+        for w in wiped where w.hasPrefix("~/") {
+            let r = String(w.dropFirst(2))
+            if covered(r, by: [l]) || l.hasPrefix(r + "/") { return true }
+        }
+        return false
+    }
+
+    private static func unique(_ a: [String]) -> [String] {
+        var seen = Set<String>()
+        return a.filter { seen.insert($0).inserted }
+    }
+
+    /// Tulis pratinjau ke keep.conf (file sementara + rename, 600). Menolak kalau keep.conf berubah sejak pratinjau.
+    /// Lalu: AMNESIA_MODE, pengaturan dari pratinjau, Riwayat. Gagal = commitError berisi alasannya.
+    @discardableResult
+    static func commitMode(_ p: ModePreview) -> Bool {
+        commitError = ""
+        if let why = p.problem { commitError = why; return false }
+        guard modeIds.contains(p.mode) else {
+            commitError = T("This mode is unknown.", "Mode ini tidak dikenal.")
+            return false
+        }
+        guard let cur = modeReadText(), cur == p.oldText else {
+            commitError = T("The Keep List changed since the preview. Look at the preview again.",
+                            "Keep List berubah sejak pratinjau. Lihat pratinjaunya lagi.")
+            return false
+        }
+        if p.mode != "custom" && keepLines(splitLines(p.newText)).isEmpty {
+            commitError = T("The \(modeName(p.mode)) preset could not be read, so your Keep List was not changed.",
+                            "Preset \(modeName(p.mode)) tidak bisa dibaca, jadi Keep List kamu tidak diubah.")
+            return false
+        }
+        let fm = FileManager.default
+        let tmp = P.keep + ".mode.tmp"
+        try? fm.removeItem(atPath: tmp)
+        guard fm.createFile(atPath: tmp, contents: Data(p.newText.utf8), attributes: [.posixPermissions: 0o600]),
+              rename(tmp, P.keep) == 0 else {
+            try? fm.removeItem(atPath: tmp)
+            commitError = T("The Keep List could not be saved. Nothing was changed.", "Keep List tidak bisa disimpan. Tidak ada yang diubah.")
+            return false
+        }
+        for (k, v) in p.settings { Config.set(k, v) }
+        Config.set("AMNESIA_MODE", p.mode)
+        trace("mode: \(p.from) -> \(p.mode), keep list +\(p.added.count) -\(p.removed.count)")
+        let line = "\(History.stamp())\tmode\t\(p.from) \(p.mode) \(p.added.count) \(p.removed.count)\n"
+        if let h = FileHandle(forWritingAtPath: History.path) {
+            h.seekToEndOfFile()
+            h.write(Data(line.utf8))
+            try? h.close()
+        } else {
+            try? line.write(toFile: History.path, atomically: true, encoding: .utf8)
+        }
+        return true
     }
 }
 
@@ -1651,6 +2113,11 @@ func whenText(_ date: String, _ time: String) -> String {
 /// dalam bahasa app yang sedang dipakai.
 func cleanText(_ log: String) -> String {
     let w = log.split(separator: " ").map(String.init)
+    // v5.24: "2026-10-26 08:00:01 logout: STOPPED keeplist-missing" (Keep List hilang/tidak bisa dibaca, tidak ada yang dihapus)
+    if w.count >= 4, w[2].hasSuffix(":"), w[3] == "STOPPED" {
+        return T("Cleanup stopped: the Keep List could not be read. Nothing was deleted.",
+                 "Pembersihan dihentikan: Keep List tidak bisa dibaca. Tidak ada yang dihapus.")
+    }
     guard w.count >= 4, w[2].hasSuffix(":"), let n = Int(w[3]) else {
         return log.isEmpty ? T("Never wiped yet", "Belum pernah dibersihkan") : T("Last: ", "Terakhir: ") + log
     }
@@ -2076,7 +2543,6 @@ final class Model: ObservableObject {
         AppleKeep.applyDefaultsOnce()        // v5.10: "Akun & data Apple" otomatis dicentang (sekali saja)
         if let c = cachedReport() { rawReport = c.entries; reportTime = c.time; regroup() }
         if Shots.on { state = .active; refreshVault(); return }    // mode screenshot: tanpa timer & backup
-        VMKeep.applyDefaults()               // v5.21: data virtual machine (UTM, Parallels, …) otomatis disimpan
         Agent.migrate()
         Agent.LoginItem.sync()
         // v5.19: update dari app mematikan Amnesia dulu; app versi baru menyalakannya lagi di sini
@@ -2145,7 +2611,6 @@ final class Model: ObservableObject {
     func updateReport() {
         guard !reportBusy else { return }
         reportBusy = true
-        if !Shots.on { VMKeep.applyDefaults() }     // v5.21: VM baru sejak laporan terakhir ikut disimpan dulu
         quiet({ dryRun() }) { e in
             self.rawReport = e
             self.reportTime = Date()
@@ -2479,7 +2944,8 @@ final class Model: ObservableObject {
                                             "Semuanya dipindah ke Trash dulu. Baru benar-benar terhapus saat kamu mengosongkan Trash.")])],
                       ok: T("Yes, Delete Everything", "Ya, Hapus Semuanya"), danger: true) else { return }
             let fm = FileManager.default
-            data = ["vault", "settings.conf", "keep.conf", "backup.vault.ok", "backup.ok", "clean.done",
+            // v5.24: + keep.conf.last (salinan Keep List terakhir, juga data pribadi)
+            data = ["vault", "settings.conf", "keep.conf", "keep.conf.last", "backup.vault.ok", "backup.ok", "clean.done",
                     "history.log", "trace.log", "clean.log", "backup.log", "backup_checksums.txt"]
                 .map { P.a + "/" + $0 }.filter { fm.fileExists(atPath: $0) }.map { URL(fileURLWithPath: $0) }
             sh("/usr/bin/security", ["delete-generic-password", "-s", "Amnesia Backup"])
@@ -2721,6 +3187,7 @@ struct IconBadge: View {
                 .foregroundStyle(tint)
         }
         .frame(width: size, height: size)
+        .accessibilityHidden(true)      // v5.25 (197): hiasan; nama tombol/kartu ada di teksnya
     }
 }
 
@@ -2827,8 +3294,10 @@ struct PageHeader: View {
             .buttonStyle(.plain)
             .keyboardShortcut(.cancelAction)
             .help(T("Back", "Kembali"))
+            .accessibilityLabel(T("Back", "Kembali"))      // v5.25 (197)
             IconBadge(icon: icon, colors: colors, size: 30)
             Text(title).font(.system(size: 20, weight: .bold))
+                .accessibilityAddTraits(.isHeader)
             Spacer()
         }
     }
@@ -3021,7 +3490,7 @@ struct Tile: View {
     }
 }
 
-enum Page { case home, vault, keep, backup, settings, preview, move, history, advanced, health, limits }   // v5.22: + health, limits
+enum Page { case home, vault, keep, backup, settings, preview, move, history, advanced, health, limits, care, ai }   // v5.22: + health, limits; v5.24: + care; v5.25: + ai
 
 struct MainView: View {
     @EnvironmentObject var m: Model
@@ -3046,6 +3515,8 @@ struct MainView: View {
                 case .advanced: SettingsView(back: { goHome() }, jumpToAdvanced: true)   // v5.20: Lanjutan ada di Pengaturan
                 case .health: HealthView(back: { goHome() })          // v5.22
                 case .limits: LimitsView(back: { m.page = .settings })  // v5.22
+                case .care: CareView(back: { goHome() })   // v5.24
+                case .ai: AskAIView(back: { goHome() })   // v5.25
                 }
                 }
             }
@@ -3149,6 +3620,7 @@ struct MainView: View {
                 }
                 .buttonStyle(.plain)
                 .help(T("Settings", "Pengaturan"))
+                .accessibilityLabel(T("Settings", "Pengaturan"))      // v5.25 (197)
             }
             HeroCard(state: m.state, lastClean: m.lastClean, power: { m.togglePower() })
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
@@ -3177,6 +3649,40 @@ struct MainView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(T("What Gets Deleted", "Yang Akan Dihapus")).font(.system(size: 15, weight: .semibold))
                         Text(previewSub).font(.system(size: 12)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                }
+                .padding(12)
+                .surface(18, fill: Th.tile)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            // v5.24: Perawatan
+            Button { m.page = .care } label: {
+                HStack(spacing: 10) {
+                    IconBadge(icon: "wrench.and.screwdriver.fill", colors: Pal.keep, size: 36)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(T("Care", "Perawatan")).font(.system(size: 15, weight: .semibold))
+                        Text(T("Free up space safely, with a preview first", "Kosongkan ruang dengan aman, lihat daftarnya dulu"))
+                            .font(.system(size: 12)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                }
+                .padding(12)
+                .surface(18, fill: Th.tile)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            // v5.25: Tanya AI (laporan tanpa nama file, Amnesia tidak mengirim apa pun)
+            Button { m.page = .ai } label: {
+                HStack(spacing: 10) {
+                    IconBadge(icon: "bubble.left.and.text.bubble.right.fill", colors: Pal.preview, size: 36)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(T("Ask an AI", "Tanya AI")).font(.system(size: 15, weight: .semibold))
+                        Text(T("Get advice without sharing your files", "Minta saran tanpa membagikan file kamu"))
+                            .font(.system(size: 12)).foregroundStyle(.secondary)
                     }
                     Spacer()
                     Image(systemName: "chevron.right").foregroundStyle(.secondary)
@@ -3274,6 +3780,13 @@ struct VaultView: View {
     @State private var sizesLoaded = false
     @State private var suggest: [VaultSuggestion]?            // v5.22: app lain yang kelihatannya menyimpan login
     @State private var ticked: Set<String> = []
+    // v5.25: profil vault (restore hanya app di profil yang dipilih)
+    @State private var profiles: [VaultProfile] = []
+    @State private var profileShared: [String: [String]] = [:]
+    @State private var profileApps: [String] = []
+    @State private var profileChoice = "all"
+    @State private var profilesLoaded = false
+    @State private var editingProfile: ProfileDraft?
 
     static let bigMB = 500.0
 
@@ -3378,6 +3891,7 @@ struct VaultView: View {
                             Image(systemName: "trash").font(.system(size: 11)).foregroundStyle(Th.red)
                         }
                         .buttonStyle(.plain).help(T("Delete only this snapshot", "Hapus snapshot ini saja"))
+                        .accessibilityLabel(T("Delete only this snapshot", "Hapus snapshot ini saja"))      // v5.25 (197)
                     }
                 }
                 Text(T("Each app has its own snapshot: saving one app doesn't touch the others.",
@@ -3397,6 +3911,7 @@ struct VaultView: View {
             }
         }
         Card {
+            profilePicker(v)        // v5.25: Semua / profil
             Field(label: T("Vault password", "Password vault"), text: $pw).onSubmit { restore() }
             Button { restore() } label: {
                 Label(T("Restore Profiles", "Restore Profil"), systemImage: "arrow.counterclockwise")
@@ -3687,6 +4202,7 @@ struct VaultView: View {
                     Text(sizeText("~/" + f)).font(.system(size: 11)).foregroundStyle(.secondary)
                     Button { removeFolder(f) } label: { Image(systemName: "minus.circle.fill").foregroundStyle(Th.red) }
                         .buttonStyle(.plain).help(T("Remove from the vault", "Keluarkan dari vault"))
+                        .accessibilityLabel(T("Remove from the vault", "Keluarkan dari vault"))      // v5.25 (197)
                 }
                 if (sizes["~/" + f] ?? 0) >= 1024 {
                     Note(text: T("This folder is big: snapshots and restores of it take a while, and the vault grows by its size.",
@@ -3912,11 +4428,141 @@ struct VaultView: View {
                            title: T("Your old app data", "Data app sebelumnya"))]
     }
 
+    // MARK: v5.25: profil vault
+
+    /// App di profil yang dipilih (nil = Semua).
+    private var restoreOnly: [String]? {
+        profileChoice == "all" ? nil : profiles.first(where: { $0.id == profileChoice })?.apps
+    }
+
+    private func loadProfiles(select name: String? = nil) {
+        m.quiet({ profilesCall(["profiles"]) }) { r in
+            guard r.ok else { return }
+            profiles = r.profiles ?? []
+            profileShared = r.shared ?? [:]
+            profileApps = r.apps ?? []
+            var pick = profilesLoaded ? profileChoice : (r.last ?? "all")
+            if let n = name, let p = profiles.first(where: { $0.name.lowercased() == n.lowercased() }) { pick = p.id }
+            if pick != "all" && !profiles.contains(where: { $0.id == pick }) { pick = "all" }
+            profileChoice = pick
+            profilesLoaded = true
+        }
+    }
+
+    /// Nama profil untuk teks: "Work", "Work and Personal", "A, B and C".
+    private func profileNames(_ ids: [String]) -> String {
+        let names = ids.map { id in profiles.first(where: { $0.id == id })?.name ?? id }
+        guard names.count > 1 else { return names.first ?? "" }
+        return names.dropLast().joined(separator: ", ") + T(" and ", " dan ") + (names.last ?? "")
+    }
+
+    @ViewBuilder
+    private func profilePicker(_ v: VaultReply) -> some View {
+        let chosen = profiles.first(where: { $0.id == profileChoice })
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text(T("Memory Recall: what comes back", "Memory Recall: yang dikembalikan")).font(.system(size: 12, weight: .semibold))
+                Spacer(minLength: 6)
+                Picker("", selection: $profileChoice) {
+                    Text(T("Everything", "Semua")).tag("all")
+                    ForEach(profiles) { p in Text(p.name).tag(p.id) }
+                }
+                .labelsHidden().pickerStyle(.menu).frame(maxWidth: 200)
+                .accessibilityLabel(T("Memory Recall: what comes back", "Memory Recall: yang dikembalikan"))      // v5.25 (197)
+                .disabled(!profilesLoaded)
+                Button { editingProfile = ProfileDraft(profileId: nil, name: "", apps: []) } label: {
+                    Image(systemName: "plus").font(.system(size: 11, weight: .semibold))
+                }
+                .buttonStyle(.plain).foregroundStyle(Pal.ink).disabled(!profilesLoaded)
+                .help(T("New profile", "Profil baru"))
+                .accessibilityLabel(T("New profile", "Profil baru"))      // v5.25 (197)
+                if let p = chosen {
+                    Button { editingProfile = ProfileDraft(profileId: p.id, name: p.name, apps: Set(p.apps)) } label: {
+                        Image(systemName: "pencil").font(.system(size: 11, weight: .semibold))
+                    }
+                    .buttonStyle(.plain).foregroundStyle(Pal.ink)
+                    .help(T("Edit this profile", "Ubah profil ini"))
+                    .accessibilityLabel(T("Edit this profile", "Ubah profil ini"))      // v5.25 (197)
+                    Button { deleteProfile(p) } label: {
+                        Image(systemName: "trash").font(.system(size: 11)).foregroundStyle(Th.red)
+                    }
+                    .buttonStyle(.plain).help(T("Delete this profile (your snapshots stay)", "Hapus profil ini (snapshot tetap ada)"))
+                    .accessibilityLabel(T("Delete this profile (your snapshots stay)", "Hapus profil ini (snapshot tetap ada)"))      // v5.25 (197)
+                }
+            }
+            if let p = chosen {
+                Text(p.apps.isEmpty ? T("This profile has no apps yet. Press the pencil to pick some.",
+                                        "Profil ini belum berisi app. Tekan pensil untuk memilih.")
+                                    : T("Only these apps come back: ", "Hanya app ini yang dikembalikan: ") + p.apps.joined(separator: ", "))
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                let missing = p.missing ?? []
+                if !missing.isEmpty {
+                    Note(text: T("No snapshot yet, so not restored: ", "Belum ada snapshot, jadi tidak di-restore: ")
+                         + missing.joined(separator: ", "), icon: "exclamationmark.circle", color: Th.orange)
+                }
+                ForEach(p.apps.filter { (profileShared[$0]?.count ?? 0) > 1 }, id: \.self) { a in
+                    Note(text: sharedProfileText(a, profileNames(profileShared[a] ?? [])), icon: "person.2.fill", more: true)
+                }
+            } else {
+                Text(T("Every app with a snapshot comes back. Pick a profile to restore only what you need now.",
+                       "Semua app yang punya snapshot dikembalikan. Pilih profil untuk restore hanya yang kamu perlukan sekarang."))
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if Keep.currentMode() == "full" {      // v5.25 (189): dari keep.conf, bukan settings.conf
+                Note(text: T("Retrograde Amnesia: logins are not saved at logout. You can still restore a snapshot by hand.",
+                             "Retrograde Amnesia: login tidak disimpan saat logout. Snapshot masih bisa di-restore manual."),
+                     icon: "info.circle.fill", color: Th.orange)
+            }
+        }
+        .onAppear { if !profilesLoaded { loadProfiles() } }
+        .onChange(of: profileChoice) { _, id in
+            // pilihan terakhir diingat (juga "Semua"), supaya halaman ini membuka profil yang sama lagi
+            guard profilesLoaded else { return }
+            m.quiet({ profilesCall(["profile-last", id]) }) { _ in }
+        }
+        .sheet(item: $editingProfile) { d in
+            ProfileEditorSheet(draft: d, allApps: profileApps, profiles: profiles, names: { profileNames($0) },
+                               onSave: { name, apps in saveProfile(d, name: name, apps: apps) },
+                               onCancel: { editingProfile = nil })
+        }
+    }
+
+    private func saveProfile(_ d: ProfileDraft, name: String, apps: [String]) {
+        var obj: [String: Any] = ["name": name, "apps": apps]
+        if let pid = d.profileId { obj["id"] = pid }
+        guard let data = try? JSONSerialization.data(withJSONObject: obj),
+              let json = String(data: data, encoding: .utf8) else { return }
+        editingProfile = nil
+        m.background(T("Saving the profile…", "Menyimpan profil…"), { profilesCall(["profile-set"], input: json + "\n") }) { r in
+            if !r.ok {
+                info("Profile Vault", r.error ?? T("Something went wrong.", "Terjadi kesalahan."), error: true)
+            }
+            loadProfiles(select: r.ok ? name : nil)
+        }
+    }
+
+    private func deleteProfile(_ p: VaultProfile) {
+        guard ask(T("Delete the profile \(p.name)?", "Hapus profil \(p.name)?"), "",
+                  [PopSection(.kept, [T("Your snapshots stay. Only this group of apps is removed.",
+                                        "Snapshot kamu tetap ada. Hanya kelompok app ini yang dihapus.")])],
+                  ok: T("Delete", "Hapus"), danger: true) else { return }
+        m.background(T("Deleting the profile…", "Menghapus profil…"), { profilesCall(["profile-delete", p.id]) }) { r in
+            if !r.ok {
+                info("Profile Vault", r.error ?? T("Something went wrong.", "Terjadi kesalahan."), error: true)
+            }
+            profileChoice = "all"
+            loadProfiles()
+        }
+    }
+
     /// v5.23: data app di Mac ini lebih baru dari snapshot-nya? Tanya dulu: restore akan memundurkannya.
     private func restore() {
         guard !pw.isEmpty, m.lastTryOK(), ensureFullDisk() else { return }
+        let only = restoreOnly          // v5.25: hanya app di profil yang dipilih
         m.background(T("Checking your app data…", "Mengecek data app…"), { vaultCall(["newer"]) }) { n in
-            let newer = n.newer ?? []
+            let newer = (n.newer ?? []).filter { x in only.map { $0.contains(x.app) } ?? true }
             if !newer.isEmpty {
                 let lines = newer.map { x in
                     T("\(x.app) data on this Mac is newer than the snapshot from \(x.snap). Restore takes it back to that time.",
@@ -3938,9 +4584,11 @@ struct VaultView: View {
         guard !pw.isEmpty else { return }
         let input = pw + "\n"
         let job = JobBox()
+        // v5.25: profil dipilih = hanya app di profil itu (vault.py mengingatnya sebagai pilihan terakhir)
+        let args = profileChoice == "all" ? ["restore"] : ["restore", "--profile", profileChoice]
         m.background(T("Restoring profiles…\nThe apps are closed just before the files are put back.",
                        "Memulihkan profil…\nApp ditutup sesaat sebelum file dikembalikan."), job: job,
-                     { vaultCall(["restore"], input: input, job: job, progress: Model.progressSink) }) { r in
+                     { vaultCall(args, input: input, job: job, progress: Model.progressSink) }) { r in
             pw = ""
             if r.ok {
                 let allOk = (r.checks ?? []).allSatisfy(\.ok)
@@ -4110,6 +4758,170 @@ struct VaultView: View {
     }
 }
 
+// MARK: - v5.25: Profil vault (kelompok app di vault, mis. Kerja / Santai)
+// Disimpan vault.py di ~/.amnesia/profiles.json (hanya nama profil dan nama app, tanpa rahasia).
+
+struct VaultProfile: Decodable, Identifiable {
+    let id: String
+    let name: String
+    let apps: [String]
+    let missing: [String]?      // app di profil ini yang belum punya snapshot
+    let builtin: Bool?
+}
+
+struct ProfilesReply: Decodable {
+    let ok: Bool
+    let error: String?
+    let profiles: [VaultProfile]?
+    let last: String?
+    let shared: [String: [String]]?
+    let apps: [String]?
+    let ignored: [String]?
+
+    static func fail(_ msg: String) -> ProfilesReply {
+        ProfilesReply(ok: false, error: msg, profiles: nil, last: nil, shared: nil, apps: nil, ignored: nil)
+    }
+}
+
+/// vault.py profiles / profile-set / profile-delete / profile-last. Jawabannya 1 baris JSON (baris terakhir stdout).
+func profilesCall(_ args: [String], input: String = "") -> ProfilesReply {
+    let r = sh(P.python, [P.vaultPy] + args, input: input)
+    let last = r.out.split(separator: "\n").last.map(String.init) ?? ""
+    if let rep = try? JSONDecoder().decode(ProfilesReply.self, from: Data(last.utf8)) { return rep }
+    let detail = r.err.split(separator: "\n").filter { !$0.hasPrefix("PROGRESS ") }.joined(separator: "\n")
+    return .fail(T("vault.py is not responding.\n", "vault.py tidak merespons.\n") + String(detail.suffix(300)))
+}
+
+/// 1 app (biasanya browser) ada di 2 profil atau lebih: 1 browser = 1 kumpulan login, tidak bisa dibagi.
+func sharedProfileText(_ app: String, _ profileNames: String) -> String {
+    T("\(app) is in \(profileNames). One browser holds one set of logins, so restoring either profile brings back all of them. "
+      + "For personal use, a second browser (or a separate browser profile) keeps things apart.",
+      "\(app) ada di \(profileNames). Satu browser menyimpan satu kumpulan login, jadi restore profil mana pun mengembalikan "
+      + "semuanya. Untuk pemakaian pribadi, browser kedua (atau profil browser terpisah) membuatnya terpisah.")
+}
+
+/// Profil yang sedang diubah di ProfileEditorSheet (profileId nil = profil baru).
+struct ProfileDraft: Identifiable {
+    let id = UUID()
+    let profileId: String?
+    let name: String
+    let apps: Set<String>
+}
+
+/// Lembar kecil: nama profil + centang app vault.
+struct ProfileEditorSheet: View {
+    let draft: ProfileDraft
+    let allApps: [String]
+    let profiles: [VaultProfile]
+    let names: ([String]) -> String
+    let onSave: (String, [String]) -> Void
+    let onCancel: () -> Void
+    @State private var name: String
+    @State private var picked: Set<String>
+
+    init(draft: ProfileDraft, allApps: [String], profiles: [VaultProfile], names: @escaping ([String]) -> String,
+         onSave: @escaping (String, [String]) -> Void, onCancel: @escaping () -> Void) {
+        self.draft = draft
+        self.allApps = allApps
+        self.profiles = profiles
+        self.names = names
+        self.onSave = onSave
+        self.onCancel = onCancel
+        _name = State(initialValue: draft.name)
+        _picked = State(initialValue: draft.apps)
+    }
+
+    /// App vault di Mac ini, lalu app profil ini yang sudah tidak ada di sini (tetap bisa dicentang/dilepas).
+    private var list: [String] {
+        allApps + draft.apps.filter { !allApps.contains($0) }.sorted()
+    }
+
+    private var cleanName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    private var nameProblem: String? {
+        let n = cleanName
+        if n.isEmpty { return nil }
+        if n.count > 40 { return T("Use 40 characters or fewer.", "Pakai paling banyak 40 karakter.") }
+        if ["all", "everything", "semua"].contains(n.lowercased()) {
+            return T("This name is taken by \"Everything\".", "Nama ini sudah dipakai \"Semua\".")
+        }
+        if profiles.contains(where: { $0.id != draft.profileId && $0.name.lowercased() == n.lowercased() }) {
+            return T("There is already a profile with this name.", "Sudah ada profil dengan nama ini.")
+        }
+        return nil
+    }
+
+    /// Id profil lain yang juga berisi app ini.
+    private func others(_ a: String) -> [String] {
+        profiles.filter { $0.id != draft.profileId && $0.apps.contains(a) }.map(\.id)
+    }
+
+    /// App yang dicentang dan juga ada di profil lain.
+    private var sharedHere: [String] {
+        list.filter { picked.contains($0) && !others($0).isEmpty }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(draft.profileId == nil ? T("New Profile", "Profil Baru") : T("Edit Profile", "Ubah Profil"))
+                .font(.system(size: 17, weight: .bold))
+            Text(T("Pick the apps you want back together, for example everything you need for work. "
+                   + "Your snapshots stay per app, a profile only groups them.",
+                   "Pilih app yang mau dikembalikan bersama, misalnya semua yang kamu perlukan untuk kerja. "
+                   + "Snapshot tetap per app, profil hanya mengelompokkannya."))
+                .font(.system(size: 12)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(T("Name", "Nama")).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                TextField(T("For example Work", "Misalnya Kerja"), text: $name)
+                    .textFieldStyle(.roundedBorder)
+                if let p = nameProblem {
+                    Text(p).font(.system(size: 11)).foregroundStyle(Th.red)
+                }
+            }
+            if list.isEmpty {
+                Note(text: T("There are no apps in the vault yet.", "Belum ada app di vault."))
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(list, id: \.self) { a in
+                            Toggle(isOn: Binding(get: { picked.contains(a) },
+                                                 set: { on in if on { picked.insert(a) } else { picked.remove(a) } })) {
+                                HStack(spacing: 8) {
+                                    vaultAppIcon(a).frame(width: 18, height: 18)
+                                    Text(a).font(.system(size: 12, weight: .semibold))
+                                    if !allApps.contains(a) {
+                                        Text(T("not on this Mac", "tidak ada di Mac ini"))
+                                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                            .toggleStyle(.checkbox)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxHeight: 260)
+            }
+            ForEach(sharedHere, id: \.self) { a in
+                Note(text: sharedProfileText(a, names(others(a) + [draft.profileId ?? cleanName].filter { !$0.isEmpty })),
+                     icon: "person.2.fill", more: true)
+            }
+            HStack {
+                Button(T("Cancel", "Batal")) { onCancel() }.keyboardShortcut(.cancelAction)
+                Spacer()
+                Button(T("Save", "Simpan")) {
+                    onSave(cleanName, list.filter { picked.contains($0) })
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(cleanName.isEmpty || nameProblem != nil || picked.isEmpty)
+            }
+        }
+        .padding(24)
+        .frame(width: 400)
+    }
+}
+
 // MARK: - Riwayat (v5.16)
 
 struct HistEvent: Identifiable {
@@ -4165,6 +4977,13 @@ enum History {
             return ev("lock.app.dashed", Th.orange, T("New apps not removed", "App baru tidak dihapus"),
                       T("\(data) app(s) were installed with an admin password, so Amnesia left them alone. See Settings → Advanced.",
                         "\(data) app dipasang dengan password admin, jadi tidak disentuh Amnesia. Lihat Pengaturan → Lanjutan."))
+        case "stopped":     // v5.24: "<mode> keeplist-missing|keeplist-unreadable" (clean.sh berhenti, tidak menghapus apa pun)
+            let missing = w.count > 1 && w[1] == "keeplist-missing"
+            return ev("exclamationmark.octagon.fill", Th.red, T("Cleanup stopped", "Pembersihan dihentikan"),
+                      missing ? T("The Keep List is missing, so nothing was deleted. Open Keep List to check it.",
+                                  "Keep List hilang, jadi tidak ada yang dihapus. Buka Keep List untuk mengeceknya.")
+                              : T("The Keep List could not be read, so nothing was deleted. Open Keep List to check it.",
+                                  "Keep List tidak bisa dibaca, jadi tidak ada yang dihapus. Buka Keep List untuk mengeceknya."))
         case "autologout":
             return ev("moon.zzz.fill", Th.orange, T("Logged out automatically", "Logout otomatis"),
                       T("The Mac was not used for \(data) minutes", "Mac tidak dipakai selama \(data) menit"))
@@ -4206,6 +5025,25 @@ enum History {
                       data == "keep" ? T("Too many wrong passwords or the panic word was typed. Keep folder emptied too",
                                          "Password salah terlalu banyak atau kata panik diketik. Folder Keep ikut dikosongkan")
                                      : T("Too many wrong passwords or the panic word was typed", "Password salah terlalu banyak atau kata panik diketik"))
+        case "mode":        // v5.25: ganti mode, "<dari> <ke> <baris ditambah> <baris dihapus>"
+            let fromM = w.first ?? "custom", to = w.count > 1 ? w[1] : "custom"
+            let a = w.count > 2 ? w[2] : "0", r = w.count > 3 ? w[3] : "0"
+            return ev(Keep.modeIcon(to), Th.green, T("Mode changed: \(Keep.modeName(to))", "Mode diganti: \(Keep.modeName(to))"),
+                      T("From \(Keep.modeName(fromM)). Keep List: \(a) lines added, \(r) removed",
+                        "Dari \(Keep.modeName(fromM)). Keep List: \(a) baris ditambah, \(r) dihapus"))
+        case "care":        // v5.24: Perawatan, "<fitur> <item> <KB> <gagal>"
+            let n = w.count > 1 ? w[1] : "?"
+            let failed = w.count > 3 ? Int(w[3]) ?? 0 : 0
+            let name = careFeatureName(w.first ?? "")
+            if w.first == "tune" {
+                return ev("wrench.and.screwdriver.fill", Th.green, T("Care: ", "Perawatan: ") + name,
+                          T("\(n) tasks done", "\(n) tugas selesai")
+                            + (failed > 0 ? T(", \(failed) skipped", ", \(failed) dilewati") : ""))
+            }
+            let size = w.count > 2 ? Double(w[2]).map { mbText($0 / 1024) } ?? "?" : "?"
+            return ev("wrench.and.screwdriver.fill", Th.green, T("Care: ", "Perawatan: ") + name,
+                      T("\(n) items, \(size) freed", "\(n) item, \(size) dikosongkan")
+                        + (failed > 0 ? T(", \(failed) could not be deleted", ", \(failed) gagal dihapus") : ""))
         default:
             return nil
         }
@@ -4474,12 +5312,14 @@ struct KeepView: View {
     var body: some View {
         VStack(spacing: 14) {
             PageHeader(title: "Keep List", icon: "pin.fill", colors: Pal.keep, back: back)
+            KeepModeCard { entries = Keep.entries() }      // v5.25
             Note(text: T("Everything here is NOT wiped at logout. Your Keep folder and ~/.amnesia are always safe.",
                          "Yang ada di sini TIDAK dihapus saat logout. Folder Keep kamu dan ~/.amnesia selalu aman."))
                 .frame(maxWidth: .infinity, alignment: .leading)
             KeepFolderCard()
             RoomyScroll(vertical: false) {
                 LazyVStack(spacing: 8) {
+                    KeepSuggestCard { entries = Keep.entries() }      // v5.25 (187): VM / Foto, kamu yang memilih
                     AppleKeepCard { entries = Keep.entries() }
                     ForEach(entries.filter { !applePaths.contains($0) }, id: \.self) { e in row(e) }
                 }
@@ -4522,6 +5362,7 @@ struct KeepView: View {
             }
             .buttonStyle(.plain)
             .help(T("Remove from Keep List", "Keluarkan dari Keep List"))
+            .accessibilityLabel(T("Remove from Keep List", "Keluarkan dari Keep List"))      // v5.25 (197)
         }
         .padding(10)
         .surface(10, fill: Th.tile)
@@ -4536,6 +5377,251 @@ struct KeepView: View {
                   ok: T("Remove", "Keluarkan"), danger: true) else { return }
         Keep.remove(e)
         entries = Keep.entries()
+    }
+}
+
+// MARK: - v5.25: Mode Amnesia di halaman Keep List
+
+/// Kartu "Mode Amnesia": 4 pilihan. Memilih = pratinjau dulu (dry-run), lalu konfirmasi. Berlaku mulai logout berikutnya.
+struct KeepModeCard: View {
+    @EnvironmentObject var m: Model
+    let changed: () -> Void
+    @State private var mode = Config.get("AMNESIA_MODE", "balanced")
+    @State private var open = false
+    @State private var preview: ModePreview?
+    @State private var showing = false
+    @State private var requested = ""
+    @State private var ticks = Set<String>()
+    @State private var applied = Set<String>()
+
+    init(changed: @escaping () -> Void = {}) { self.changed = changed }
+
+    var body: some View {
+        Card {
+            Button { withAnimation(.easeInOut(duration: 0.15)) { open.toggle() } } label: {
+                HStack(spacing: 10) {
+                    IconBadge(icon: "brain.head.profile", colors: Pal.keep, size: 30)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(T("Amnesia mode", "Mode Amnesia")).font(.system(size: 13, weight: .semibold))
+                        Text(Keep.modeTitle(mode)).font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 6)
+                    Text(open ? T("Close", "Tutup") : T("Change", "Ganti"))
+                        .font(.system(size: 11, weight: .bold)).foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(open ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if open {
+                Text(T("How much is forgotten at every logout. You see a preview before anything changes.",
+                       "Seberapa banyak yang dilupakan setiap logout. Kamu melihat pratinjau dulu sebelum ada yang berubah."))
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(Keep.modeIds, id: \.self) { id in row(id) }
+            }
+            if mode == "light" {
+                Note(text: Keep.lightNote, icon: "exclamationmark.circle.fill", color: Th.orange)
+            }
+        }
+        .onAppear { load() }
+        .task {
+            // halaman Keep List terbuka: baris dari bagian mode dihapus di daftar di bawah = mode jadi Kustom
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                load()
+            }
+        }
+        .sheet(isPresented: $showing) {
+            if let p = preview {
+                ModePreviewSheet(p: p, ticks: $ticks, applied: applied,
+                                 update: { showing = false; pick(requested, remove: ticks) },
+                                 confirm: { commit(p) },
+                                 cancel: { showing = false })
+            }
+        }
+    }
+
+    /// v5.25 (item 189): hanya membaca. Dulu membuka halaman ini menulis AMNESIA_MODE ke settings.conf;
+    /// sekarang settings.conf hanya ditulis saat kamu benar-benar mengganti mode (commitMode).
+    private func load() {
+        let c = Keep.currentMode()
+        if c != mode { mode = c }
+    }
+
+    private func row(_ id: String) -> some View {
+        let on = id == mode
+        return Button { pick(id) } label: {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: on ? "largecircle.fill.circle" : "circle")
+                    .font(.system(size: 14))
+                    .foregroundStyle(on ? Th.green : Color.secondary)
+                Image(systemName: Keep.modeIcon(id)).font(.system(size: 12)).foregroundStyle(.secondary).frame(width: 16)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(Keep.modeTitle(id)).font(.system(size: 12, weight: .semibold))
+                    Text(Keep.modeSub(id)).font(.system(size: 11)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(8)
+            .contentShape(Rectangle())
+            .surface(10, fill: on ? Th.green.opacity(0.10) : Th.tile)
+        }
+        .buttonStyle(.plain)
+        .disabled(m.busy != nil)
+    }
+
+    private func pick(_ id: String, remove: Set<String> = []) {
+        if id == mode && id != "custom" && remove.isEmpty {
+            info(Keep.modeTitle(id), T("This mode is already on.", "Mode ini sudah dipakai."))
+            return
+        }
+        requested = id
+        ticks = remove
+        applied = remove
+        m.background(T("Checking what the next logout would wipe…", "Mengecek yang akan dihapus saat logout berikutnya…"),
+                     { Keep.applyMode(id, extraRemove: Array(remove)) }) { p in
+            if let why = p.problem {
+                info(T("Mode not changed", "Mode tidak diganti"), why, error: true)
+                return
+            }
+            preview = p
+            showing = true
+        }
+    }
+
+    private func commit(_ p: ModePreview) {
+        showing = false
+        let ok = Keep.commitMode(p)
+        let why = Keep.commitError
+        load()
+        changed()
+        m.updateReport()
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            if ok {
+                info(T("Mode changed", "Mode diganti"),
+                     T("\(Keep.modeName(p.mode)) is on. It takes effect at the next logout. Nothing is deleted now.",
+                       "\(Keep.modeName(p.mode)) dipakai. Berlaku mulai logout berikutnya. Sekarang tidak ada yang dihapus."))
+            } else {
+                info(T("Mode not changed", "Mode tidak diganti"), why, error: true)
+            }
+        }
+    }
+}
+
+/// Pratinjau ganti mode: yang mulai dihapus, yang mulai disimpan, baris kamu sendiri (bisa dicentang untuk ikut dibuang).
+struct ModePreviewSheet: View {
+    let p: ModePreview
+    @Binding var ticks: Set<String>
+    let applied: Set<String>
+    let update: () -> Void
+    let confirm: () -> Void
+    let cancel: () -> Void
+
+    private static func pretty(_ l: String) -> String {
+        if l.hasPrefix("keychain:") { return T("Key: ", "Kunci: ") + String(l.dropFirst(9)) }
+        if l.hasPrefix("app:") { return "App: " + String(l.dropFirst(4)) }
+        return "~/" + l
+    }
+
+    private static func capped(_ items: [String], _ max: Int = 40) -> [String] {
+        items.count <= max ? items
+            : Array(items.prefix(max)) + [T("and \(items.count - max) more", "dan \(items.count - max) lainnya")]
+    }
+
+    private var sections: [PopSection] {
+        // v5.25: baris yang dikeluarkan tapi isinya masih disimpan baris lain tidak ditulis "dihapus"
+        let keepNow = Keep.keepLines(Keep.splitLines(p.newText))
+        // v5.25 (item 190): "dihapus" = yang dry-run baru benar-benar hapus. Baris yang keluar tanpa efek ditulis terpisah.
+        let idle = Set(p.removedIdle)
+        let gone = p.removed.filter { !Keep.covered($0, by: keepNow) && !idle.contains($0) }
+        var out = [PopSection(.deleted, Self.capped(gone.map { Self.pretty($0) } + p.newlyWiped),
+                              title: T("Will now be wiped at logout", "Mulai sekarang dihapus saat logout")),
+                   PopSection(.kept, Self.capped(p.added.map { Self.pretty($0) } + p.newlyKept),
+                              title: T("Will now be kept", "Mulai sekarang disimpan"))]
+        if !p.removedIdle.isEmpty {
+            out.append(PopSection(.note, Self.capped(p.removedIdle.map { Self.pretty($0) }),
+                                  title: T("Leaves the Keep List, nothing is wiped there", "Keluar dari Keep List, tidak ada yang dihapus di sana")))
+        }
+        return out
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(T("Switch to \(Keep.modeName(p.mode))?", "Ganti ke \(Keep.modeName(p.mode))?"), systemImage: Keep.modeIcon(p.mode))
+                .font(.system(size: 17, weight: .bold))
+            Text(Keep.modeSub(p.mode)).font(.system(size: 12)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    if p.wipesMore {
+                        Note(text: T("This mode wipes more than your current one. Move anything you still need into your Keep folder first.",
+                                     "Mode ini menghapus lebih banyak dari mode sekarang. Pindahkan dulu yang masih kamu perlukan ke folder Keep."),
+                             icon: "exclamationmark.triangle.fill", color: Th.red)
+                    }
+                    if let n = p.note { Note(text: n, icon: "info.circle.fill", color: Th.orange) }
+                    if p.mode == "light" { Note(text: Keep.lightNote, icon: "exclamationmark.circle.fill", color: Th.orange) }
+                    Note(text: T("Next logout: \(p.wipeAfter) items wiped (now \(p.wipeBefore)).",
+                                 "Logout berikutnya: \(p.wipeAfter) item dihapus (sekarang \(p.wipeBefore))."),
+                         icon: "number.circle.fill", color: Color.secondary)
+                    if p.removed.isEmpty && p.added.isEmpty && p.newlyWiped.isEmpty && p.newlyKept.isEmpty {
+                        Note(text: T("What is wiped and what is kept stays the same.", "Yang dihapus dan yang disimpan tetap sama."),
+                             icon: "equal.circle.fill", color: Color.secondary)
+                    }
+                    PopupBody(sections: sections, width: 430)
+                    if !p.outside.isEmpty { ownLines }
+                    if p.settings[Setting.autoSnapshot.rawValue] == "0" {
+                        Note(text: T("Auto snapshot at logout is turned off. Your snapshots stay and you can still restore by hand.",
+                                     "Snapshot otomatis saat logout dimatikan. Snapshot kamu tetap ada dan masih bisa di-restore manual."),
+                             icon: "camera.fill", color: Th.orange)
+                    } else if p.settings[Setting.autoSnapshot.rawValue] == "1" {
+                        Note(text: T("Auto snapshot at logout is turned on again.", "Snapshot otomatis saat logout dinyalakan lagi."),
+                             icon: "camera.fill", color: Color.secondary)
+                    }
+                    Note(text: T("It takes effect at the next logout. Nothing is deleted now.",
+                                 "Berlaku mulai logout berikutnya. Sekarang tidak ada yang dihapus."),
+                         icon: "clock.fill", color: Color.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: 440)
+            HStack {
+                Button(T("Cancel", "Batal")) { cancel() }.keyboardShortcut(.cancelAction)
+                Spacer()
+                if ticks != applied {
+                    Button(T("Update preview", "Perbarui pratinjau")) { update() }.keyboardShortcut(.defaultAction)
+                } else {
+                    Button { confirm() } label: { Text(T("Switch mode", "Ganti mode")) }
+                        .buttonStyle(Pill(colors: p.wipesMore ? Pal.danger : Pal.accent))
+                        .frame(width: 170)
+                }
+            }
+        }
+        .padding(20)
+        .frame(width: 480)
+    }
+
+    private var ownLines: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(T("Your own lines (not changed)", "Baris kamu sendiri (tidak diubah)"), systemImage: "person.crop.circle.fill")
+                .font(.system(size: 12, weight: .bold)).foregroundStyle(Th.green)
+            ForEach(p.outside, id: \.self) { l in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(Self.pretty(l)).font(.system(size: 11, design: .monospaced)).lineLimit(1).truncationMode(.middle)
+                    Toggle(T("Also stop keeping this line", "Berhenti menyimpan baris ini juga"),
+                           isOn: Binding(get: { ticks.contains(l) },
+                                         set: { on in if on { ticks.insert(l) } else { ticks.remove(l) } }))
+                        .toggleStyle(.checkbox)
+                        .font(.system(size: 11))
+                }
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .surface(11, fill: Th.tile)
     }
 }
 
@@ -4706,6 +5792,7 @@ struct KeepFolderCard: View {
                 Spacer(minLength: 8)
                 Button { KeepLinks.open() } label: { Image(systemName: "folder") }
                     .help(T("Show in Finder", "Buka di Finder"))
+                    .accessibilityLabel(T("Show in Finder", "Buka di Finder"))      // v5.25 (197)
                 Button(T("Change…", "Ganti…")) { if chooseKeepDir() { shown = KeepDir.shown } }
             }
             Text(T("Files in here are never wiped. Put it anywhere and call it anything, even on an external drive.",
@@ -4714,6 +5801,104 @@ struct KeepFolderCard: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .onAppear { shown = KeepDir.shown }
+    }
+}
+
+/// v5.25 (item 187): saran Keep untuk virtual machine dan Foto. Dulu langsung ditambahkan ke Keep List tanpa bertanya;
+/// sekarang kamu lihat peringatan (ukuran + "dihapus saat logout") dan memilih Keep atau Jangan simpan.
+struct KeepSuggestCard: View {
+    var changed: () -> Void = {}
+    @State private var vms: [VMSuggestion] = []
+    @State private var photos = false
+    @State private var sizes: [String: String] = [:]
+
+    init(changed: @escaping () -> Void = {}) { self.changed = changed }
+
+    var body: some View {
+        Group {
+            if !vms.isEmpty || photos {
+                Card {
+                    HStack(spacing: 10) {
+                        IconBadge(icon: "exclamationmark.triangle.fill", colors: Pal.pause, size: 30)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(T("Keep these?", "Simpan ini?")).font(.system(size: 13, weight: .semibold))
+                            Text(T("Not on the Keep List yet, so they are WIPED at the next logout. Nothing was added for you.",
+                                   "Belum ada di Keep List, jadi DIHAPUS saat logout berikutnya. Tidak ada yang ditambahkan tanpa kamu."))
+                                .font(.system(size: 11)).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    ForEach(vms) { v in
+                        row(icon: "desktopcomputer",
+                            title: T("\(v.name) virtual machines", "Virtual machine \(v.name)"),
+                            sub: T("Virtual machines can't be made again quickly.", "Virtual machine tidak bisa dibuat ulang dengan cepat."),
+                            sizeKey: v.name,
+                            keep: { VMKeep.answer(v.paths, keep: true); load(); changed() },
+                            skip: { skip(T("\(v.name) virtual machines", "Virtual machine \(v.name)")) { VMKeep.answer(v.paths, keep: false) } })
+                    }
+                    if photos {
+                        row(icon: "photo.on.rectangle.angled", title: T("Photos library", "Library Foto"),
+                            sub: T("Photos that are only on this Mac would be lost.", "Foto yang hanya ada di Mac ini akan hilang."),
+                            sizeKey: "photos",
+                            keep: { PhotosKeep.answer(keep: true); load(); changed() },
+                            skip: { skip(T("Photos library", "Library Foto")) { PhotosKeep.answer(keep: false) } })
+                    }
+                }
+            }
+        }
+        .onAppear { load() }
+    }
+
+    private func row(icon: String, title: String, sub: String, sizeKey: String,
+                     keep: @escaping () -> Void, skip: @escaping () -> Void) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon).font(.system(size: 13)).foregroundStyle(Th.orange).frame(width: 20)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).font(.system(size: 12, weight: .semibold))
+                Text(sizes[sizeKey].map { "\($0) · " + sub } ?? sub).font(.system(size: 10)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 6)
+            Button(T("Don't Keep", "Jangan Simpan")) { skip() }
+                .controlSize(.small)
+                .accessibilityLabel(T("Don't keep \(title)", "Jangan simpan \(title)"))
+            Button { keep() } label: { Label("Keep", systemImage: "pin.fill") }
+                .buttonStyle(Pill(colors: Pal.keep)).controlSize(.small)
+                .accessibilityLabel(T("Keep \(title)", "Simpan \(title)"))
+        }
+    }
+
+    private func skip(_ title: String, _ done: () -> Void) {
+        guard ask(T("Don't keep \(title)?", "Jangan simpan \(title)?"), "",
+                  [PopSection(.deleted, [T("\(title) is DELETED from this Mac at the next logout.",
+                                           "\(title) DIHAPUS dari Mac ini saat logout berikutnya.")]),
+                   PopSection(.todo, [T("You can still keep it later: Keep List > Pick Apps.",
+                                        "Masih bisa disimpan nanti: Keep List > Pilih App.")])],
+                  ok: T("Don't Keep", "Jangan Simpan"), danger: true) else { return }
+        done()
+        load()
+        changed()
+    }
+
+    private func load() {
+        let v = VMKeep.pending()
+        let ph = PhotosKeep.pending
+        vms = v
+        photos = ph
+        guard !v.isEmpty || ph else { return }
+        DispatchQueue.global(qos: .utility).async {
+            func size(_ rels: [String]) -> String {
+                let out = sh("/usr/bin/du", ["-sk"] + rels.map { P.home + "/" + $0 }, timeout: 20).out
+                let kb = out.split(separator: "\n").compactMap { Int($0.split(separator: "\t").first ?? "") }.reduce(0, +)
+                return bytesText(Int64(kb) * 1024)
+            }
+            var out: [String: String] = [:]
+            for x in v { out[x.name] = size(x.paths) }
+            if ph { out["photos"] = size(["Pictures/Photos Library.photoslibrary"]) }
+            Task { @MainActor in sizes = out }
+        }
     }
 }
 
@@ -4786,6 +5971,7 @@ struct AppleKeepCard: View {
                 changed()
             }))
             .toggleStyle(.switch).labelsHidden().controlSize(.small)
+            .accessibilityLabel(a.title)      // v5.25 (197)
         }
     }
 }
@@ -4851,6 +6037,7 @@ struct AppPickList: View {
                     withAnimation(.easeInOut(duration: 0.15)) { if v { _ = picked.insert(a.name) } else { _ = picked.remove(a.name) } }
                 }))
                 .toggleStyle(.switch).labelsHidden().controlSize(.small)
+                .accessibilityLabel(a.name)      // v5.25 (197)
             }
             if on { details(a) }
         }
@@ -5110,6 +6297,7 @@ struct OnboardingView: View {
                         ForEach(Lang.allCases, id: \.self) { l in Text(l.name).tag(l) }
                     }
                     .labelsHidden().frame(width: 170)
+                    .accessibilityLabel(T("Language", "Bahasa"))      // v5.25 (197)
                 }
             }
             PrivacyNote()
@@ -5266,6 +6454,7 @@ struct OnboardingView: View {
                 }
                 Spacer()
                 Toggle("", isOn: .constant(on)).toggleStyle(.switch).labelsHidden().controlSize(.small)
+                    .accessibilityLabel(name)      // v5.25 (197)
             }
             ForEach(0..<detail.count, id: \.self) { i in
                 let d = detail[i]
@@ -5454,6 +6643,8 @@ struct RestoreFilesSheet: View {
                         .rotationEffect(.degrees(open.contains(it.path) ? 90 : 0)).frame(width: 14)
                 }
                 .buttonStyle(.plain).foregroundStyle(.secondary)
+                .accessibilityLabel(open.contains(it.path) ? T("Close \(it.path)", "Tutup \(it.path)")
+                                                           : T("Open \(it.path)", "Buka \(it.path)"))      // v5.25 (197)
             } else {
                 Color.clear.frame(width: 14 + CGFloat(indent) * 14, height: 1)
             }
@@ -5670,6 +6861,7 @@ struct BackupView: View {
                         }
                         .pickerStyle(.segmented)
                         .labelsHidden()
+                        .accessibilityLabel(T("Where backups go", "Tujuan backup"))      // v5.25 (197)
                         switch dest {
                         case "ssh": sshBox
                         case "rclone": cloudBox
@@ -5733,6 +6925,7 @@ struct BackupView: View {
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
+                    .accessibilityLabel(T("Schedule", "Jadwal"))      // v5.25 (197)
                     Note(text: T("Runs on its own while the Amnesia icon is in the menu bar, using the password saved in "
                                  + "Keychain. If it goes to a USB drive, it runs when the drive is plugged in.",
                                  "Berjalan sendiri selama ikon Amnesia ada di menu bar, memakai password yang tersimpan di "
@@ -5815,6 +7008,7 @@ struct BackupView: View {
             Spacer()
             Button { load() } label: { Image(systemName: "arrow.clockwise") }
                 .buttonStyle(.plain).help(T("Look again", "Cari drive lagi"))
+                .accessibilityLabel(T("Look again", "Cari drive lagi"))      // v5.25 (197)
         }
         if drives.isEmpty {
             Note(text: T("No external drive found. Plug in an SSD/USB drive, then press ↻.",
@@ -5826,6 +7020,7 @@ struct BackupView: View {
             }
             .pickerStyle(.radioGroup)
             .labelsHidden()
+            .accessibilityLabel(T("Drive", "Drive"))      // v5.25 (197)
         }
     }
 
@@ -5878,6 +7073,7 @@ struct BackupView: View {
                 Text(T("Connect directly (advanced)", "Hubungkan langsung (lanjutan)")).tag("direct")
             }
             .pickerStyle(.radioGroup).labelsHidden().font(.system(size: 12))
+            .accessibilityLabel(T("Google Drive connection", "Koneksi Google Drive"))      // v5.25 (197)
         }
         if viaGoogleApp {
             stepTitle(T("2. The Google Drive app", "2. App Google Drive"))
@@ -6447,6 +7643,7 @@ struct SettingsView: View {
     @State private var bgStart = Setting.bgStart.isOn
     @State private var keepShortcut = Setting.keepShortcut.isOn
     @State private var keepSidebar = Setting.keepSidebar.isOn
+    @State private var advancedOpen = false     // v5.25 (195): Lanjutan tertutup sampai dibuka
 
     // v5.20: teks tiap kartu dalam 2 bahasa (+ kata lain), supaya pencarian cocok apa pun bahasa yang dipakai
     static let tLanguage = SetText(en: "Language", id: "Bahasa",
@@ -6561,20 +7758,39 @@ struct SettingsView: View {
                    Self.tUpdate, Self.tTour, Self.tUninstall, Self.tPrivacy,
                    Self.tKeepLock, Self.tBrankas, Self.tHealth, Self.tLimits]
         all += AdvancedGroup.texts
+        all.append(Self.tTerminal)          // v5.25
         if !fda { all.append(Self.tFullDisk) }
         return !all.contains { $0.hit(query) }
     }
 
     var body: some View {
+        // v5.24.0: judul dan kolom cari tetap di atas, hanya isi pengaturan yang di-scroll
+        VStack(spacing: 14) {
+            PageHeader(title: T("Settings", "Pengaturan"), icon: "gearshape.fill", colors: Pal.gray, back: back)
+            searchField
+            settingsList
+        }
+    }
+
+    /// v5.25 (item 195): pengaturan dikelompokkan (Logout, Keep, App, Keamanan). Yang jarang dipakai (perintah Terminal,
+    /// Brankas, dan pengaturan yang bisa menghapus lebih banyak) ada di Lanjutan, tertutup sampai kamu membukanya
+    /// atau mencari. v5.25 (item 191): pencarian berubah = gulir ke atas, supaya hasil pertama langsung terlihat.
+    private var settingsList: some View {
         ScrollViewReader { proxy in
             RoomyScroll {
                 VStack(spacing: 14) {
-                    PageHeader(title: T("Settings", "Pengaturan"), icon: "gearshape.fill", colors: Pal.gray, back: back)
-                    searchField
-                    general
-                    more
-                    // v5.19: pengaturan yang bisa menghapus lebih banyak. v5.20: bukan halaman sendiri lagi, tapi grup di sini
-                    AdvancedGroup(query: query).id("advanced")
+                    Color.clear.frame(height: 0).id("top")
+                    logoutGroup
+                    keepGroup
+                    appGroup
+                    safetyGroup
+                    advancedToggle.id("advanced")
+                    if advOpen {
+                        if show(Self.tTerminal) { TerminalCommandCard() }       // v5.25: perintah Terminal `amnesia` (hanya membaca)
+                        if show(Self.tBrankas) { BrankasCard() }                // v5.22 (eksperimen)
+                        // v5.19: pengaturan yang bisa menghapus lebih banyak. v5.20: bukan halaman sendiri lagi, tapi grup di sini
+                        AdvancedGroup(query: query)
+                    }
                     if show(Self.tUninstall) {
                         Button { m.uninstall() } label: {
                             Label(Self.tUninstall.title, systemImage: "trash.fill")
@@ -6591,11 +7807,56 @@ struct SettingsView: View {
             .scrollIndicators(.never)
             .onAppear {
                 guard jumpToAdvanced else { return }
+                advancedOpen = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                     withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo("advanced", anchor: .top) }
                 }
             }
+            .onChange(of: query) { _, _ in proxy.scrollTo("top", anchor: .top) }
         }
+    }
+
+    /// Lanjutan terbuka: kamu membukanya, sedang mencari, atau datang lewat tombol "Lanjutan".
+    private var advOpen: Bool { advancedOpen || searching }
+
+    /// Judul 1 kelompok (hanya kalau ada isinya yang tampil).
+    @ViewBuilder private func groupTitle(_ en: String, _ id: String, _ icon: String, _ visible: Bool) -> some View {
+        if visible {
+            HStack(spacing: 8) {
+                Image(systemName: icon).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                Text(T(en, id)).font(.system(size: 13, weight: .bold)).foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.top, 6).padding(.leading, 4)
+            .accessibilityAddTraits(.isHeader)
+        }
+    }
+
+    private var advancedToggle: some View {
+        Button { withAnimation(.easeInOut(duration: 0.15)) { advancedOpen.toggle() } } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                    .rotationEffect(.degrees(advOpen ? 90 : 0))
+                    .accessibilityHidden(true)
+                Text(advOpen ? T("Hide advanced settings", "Sembunyikan pengaturan lanjutan")
+                             : T("Show advanced settings", "Tampilkan pengaturan lanjutan"))
+                    .font(.system(size: 13, weight: .bold))
+                Spacer()
+                if !advOpen {
+                    Text(T("Terminal, Brankas, auto logout, more", "Terminal, Brankas, logout otomatis, dll."))
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                }
+            }
+            .foregroundStyle(.secondary)
+            .padding(.top, 6).padding(.leading, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(searching)
+        .opacity(searching ? 0 : 1)
+        .accessibilityLabel(advOpen ? T("Hide advanced settings", "Sembunyikan pengaturan lanjutan")
+                                    : T("Show advanced settings", "Tampilkan pengaturan lanjutan"))
     }
 
     /// v5.20: kolom cari di atas Pengaturan (juga mencari di grup Lanjutan)
@@ -6611,6 +7872,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 .help(T("Clear the search", "Hapus pencarian"))
+                .accessibilityLabel(T("Clear the search", "Hapus pencarian"))      // v5.25 (197)
             }
         }
         .padding(9)
@@ -6632,44 +7894,66 @@ struct SettingsView: View {
         .padding(.vertical, 24)
     }
 
-    /// Pengaturan biasa (nyala/mati)
-    @ViewBuilder private var general: some View {
-        if show(Self.tLanguage) { language }
+    /// Logout: apa yang terjadi saat kamu logout
+    @ViewBuilder private var logoutGroup: some View {
+        groupTitle("Logout", "Logout", "rectangle.portrait.and.arrow.right",
+                   [Self.tPreview, Self.tAuto, Self.tNotify, Self.tSeeNow].contains { show($0) })
+        if show(Self.tPreview) {
+            row(Self.tPreview, "eye.fill", Pal.logout, $preview) { Setting.preview.set($0) }
+        }
         if show(Self.tAuto) {
             row(Self.tAuto, "camera.fill", Pal.vault, $auto) { Setting.autoSnapshot.set($0) }
         }
         if show(Self.tNotify) {
             row(Self.tNotify, "bell.badge.fill", Pal.pause, $notify) { Setting.notify.set($0) }
         }
-        if show(Self.tPreview) {
-            row(Self.tPreview, "eye.fill", Pal.logout, $preview) { Setting.preview.set($0) }
-        }
-        if show(Self.tAtLogin) {
-            row(Self.tAtLogin, "power.circle.fill", Pal.keep, $atLogin) { Setting.openAtLogin.set($0); Agent.LoginItem.sync() }
-        }
-        if show(Self.tBgStart) {
-            row(Self.tBgStart, "menubar.rectangle", Pal.keep, $bgStart) { Setting.bgStart.set($0); Agent.LoginItem.sync() }
-        }
-        if show(Self.tKeepShortcut) {
-            row(Self.tKeepShortcut, "tray.full.fill", Pal.keep, $keepShortcut) { Setting.keepShortcut.set($0); KeepLinks.sync() }
-        }
-        if show(Self.tKeepSidebar) {
-            row(Self.tKeepSidebar, "sidebar.left", Pal.keep, $keepSidebar) { Setting.keepSidebar.set($0); KeepLinks.sync() }
-        }
-    }
-
-    /// Kartu lain: daftar hapus, folder Keep, enkripsi, update, izin, tur
-    @ViewBuilder private var more: some View {
         if show(Self.tSeeNow) {
             Button { m.page = .preview } label: {
                 Label(Self.tSeeNow.title, systemImage: "list.bullet.rectangle")
             }
             .buttonStyle(Pill(colors: Pal.backup))
         }
+    }
+
+    /// Semua soal Keep di satu tempat
+    @ViewBuilder private var keepGroup: some View {
+        groupTitle("Keep", "Keep", "tray.full.fill",
+                   [Self.tKeepFolder, Self.tKeepShortcut, Self.tKeepSidebar, Self.tKeepLock].contains { show($0) })
         if show(Self.tKeepFolder) { KeepFolderCard() }
-        if show(Self.tEncryption) { EncryptionCard() }
+        if show(Self.tKeepShortcut) {
+            row(Self.tKeepShortcut, "tray.full.fill", Pal.keep, $keepShortcut) { Setting.keepShortcut.set($0); KeepLinks.sync() }
+        }
+        if show(Self.tKeepSidebar) {
+            row(Self.tKeepSidebar, "sidebar.left", Pal.keep, $keepSidebar) { Setting.keepSidebar.set($0); KeepLinks.sync() }
+        }
         if show(Self.tKeepLock) { KeepLockCard() }          // v5.22
-        if show(Self.tBrankas) { BrankasCard() }            // v5.22 (eksperimen)
+    }
+
+    /// App: bahasa, saat login, update, tur
+    @ViewBuilder private var appGroup: some View {
+        groupTitle("App", "App", "app.fill",
+                   [Self.tLanguage, Self.tAtLogin, Self.tBgStart, Self.tUpdate, Self.tTour].contains { show($0) })
+        if show(Self.tLanguage) { language }
+        if show(Self.tAtLogin) {
+            row(Self.tAtLogin, "power.circle.fill", Pal.keep, $atLogin) { Setting.openAtLogin.set($0); Agent.LoginItem.sync() }
+        }
+        if show(Self.tBgStart) {
+            row(Self.tBgStart, "menubar.rectangle", Pal.keep, $bgStart) { Setting.bgStart.set($0); Agent.LoginItem.sync() }
+        }
+        if show(Self.tUpdate) { UpdateCard() }
+        if show(Self.tTour) {
+            Button { m.showTour() } label: {
+                Label(Self.tTour.title, systemImage: "sparkles")
+            }
+            .buttonStyle(Pill(colors: Pal.vault))
+        }
+    }
+
+    /// Keamanan & cek: FileVault, Cek kesehatan, Batasan, Akses Disk Penuh
+    @ViewBuilder private var safetyGroup: some View {
+        groupTitle("Safety & checks", "Keamanan & cek", "checkmark.shield.fill",
+                   [Self.tEncryption, Self.tHealth, Self.tLimits].contains { show($0) } || (!fda && show(Self.tFullDisk)))
+        if show(Self.tEncryption) { EncryptionCard() }
         if show(Self.tHealth) || show(Self.tLimits) {
             HStack(spacing: 10) {
                 if show(Self.tHealth) {
@@ -6685,7 +7969,6 @@ struct SettingsView: View {
                 }
             }
         }
-        if show(Self.tUpdate) { UpdateCard() }
         if !fda && show(Self.tFullDisk) {
             Card {
                 Note(text: T("Give Amnesia Full Disk Access once, so macOS stops asking about every folder.",
@@ -6703,12 +7986,6 @@ struct SettingsView: View {
                 }
             }
         }
-        if show(Self.tTour) {
-            Button { m.showTour() } label: {
-                Label(Self.tTour.title, systemImage: "sparkles")
-            }
-            .buttonStyle(Pill(colors: Pal.vault))
-        }
     }
 
     private var language: some View {
@@ -6725,6 +8002,7 @@ struct SettingsView: View {
                     ForEach(Lang.allCases, id: \.self) { l in Text(l.name).tag(l) }
                 }
                 .labelsHidden()
+                .accessibilityLabel(Self.tLanguage.title)
                 .frame(width: 170)
             }
         }
@@ -6744,6 +8022,7 @@ struct SettingsView: View {
                                          set: { on in value.wrappedValue = on; save(on) }))
                     .toggleStyle(.switch)
                     .labelsHidden()
+                    .accessibilityLabel(t.title)      // v5.25 (197): VoiceOver membaca nama pengaturan, bukan hanya "switch"
             }
         }
     }
@@ -6870,6 +8149,7 @@ struct PreviewView: View {
                 }
             }
             SkipNotice()            // v5.22: Desktop & Documents di iCloud / folder symlink tidak dibersihkan
+            KeepSuggestCard { m.updateReport() }      // v5.25 (187): VM / Foto yang belum disimpan
             if m.report != nil {
                 HStack {
                     Text(T("\(total) items", "\(total) item")).font(.system(size: 20, weight: .bold))
@@ -6932,6 +8212,7 @@ struct PreviewView: View {
                 }
                 .buttonStyle(.plain)
                 .help(T("Clear the search", "Hapus pencarian"))
+                .accessibilityLabel(T("Clear the search", "Hapus pencarian"))      // v5.25 (197)
             }
         }
         .padding(9)
@@ -6947,6 +8228,7 @@ struct PreviewView: View {
                 ForEach(all) { g in Text(g.name).tag(g.id) }
             }
             .labelsHidden()
+            .accessibilityLabel(T("Group", "Kelompok"))      // v5.25 (197)
             .frame(maxWidth: 250)
             Spacer(minLength: 6)
             if bySize && !sized { ProgressView().controlSize(.mini) }

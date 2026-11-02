@@ -125,7 +125,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
   <div class="wrap two">
     <div class="hero-copy">
-      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.8.1</span><svg><use href="#i-github"/></svg><span data-en>Open source on GitHub</span><span data-id>Open source di GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.10.0</span><svg><use href="#i-github"/></svg><span data-en>Open source on GitHub</span><span data-id>Open source di GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
       <h1 id="hero-title">
         <span data-en><span class="split">Your PC forgets</span> <em class="word">everything.</em><span class="after split">Except what you keep.</span></span>
         <span data-id><span class="split">PC kamu lupa</span> <em class="word">segalanya.</em><span class="after split">Kecuali yang kamu simpan.</span></span>
@@ -156,7 +156,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
     <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
       <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
       <span class="rc-desc"><span data-en>Your PC forgets everything at sign out, except what you choose to keep.</span><span data-id>PC kamu lupa segalanya setiap sign out, kecuali yang kamu pilih untuk disimpan.</span></span>
-      <span class="rc-meta"><span>MIT</span><span>Windows v0.8.1</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
+      <span class="rc-meta"><span>MIT</span><span>Windows v0.10.0</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
     </a>
   </div>
 </section>
@@ -183,7 +183,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <span class="rc-legend" data-gh="langs" hidden></span>
         <span class="rc-stats">
           <span><small><span data-en>License</span><span data-id>Lisensi</span></small><b>MIT</b></span>
-          <span><small>Windows</small><b>v0.8.1</b></span>
+          <span><small>Windows</small><b>v0.10.0</b></span>
           <span><small><span data-en>Tests</span><span data-id>Tes</span></small><b>294</b></span>
           <span><small>Commits</small><b data-gh="commits">–</b></span>
           <span><small><span data-en>Contributors</span><span data-id>Kontributor</span></small><b data-gh="contributors">–</b></span>
@@ -531,7 +531,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <h2><span data-en>Is it working? <em>Just look.</em></span><span data-id>Sudah jalan? <em>Tinggal lihat.</em></span></h2>
       <p class="lead"><span data-en>One page answers "can Amnesia do its job right now?". Green is fine, yellow and red tell you what to look at, and each line says where to fix it.</span><span data-id>Satu halaman menjawab "bisakah Amnesia bekerja sekarang?". Hijau berarti aman, kuning dan merah menunjukkan yang perlu dicek, dan tiap baris bilang di mana memperbaikinya.</span></p>
       <ul class="facts">
-        <li><b><span data-en>What it checks.</span><span data-id>Yang dicek.</span></b> <span data-en>On or off, starting with Windows, the last cleanup, files left for the next sign in, Windows Security blocks, cloud folders, virtual machines, the Keep lock, the vault, your last backup, the panic hotkey and updates.</span><span data-id>Menyala atau mati, ikut menyala bersama Windows, pembersihan terakhir, file yang menunggu sign in berikutnya, blokir Windows Security, folder cloud, mesin virtual, kunci Keep, vault, backup terakhir, tombol panik, dan update.</span></li>
+        <li><b><span data-en>What it checks.</span><span data-id>Yang dicek.</span></b> <span data-en>On or off, starting with Windows, the last cleanup, files left for the next sign in, Windows Security blocks, cloud folders, virtual machines, the Keep lock, the vault, your last backup, the panic hotkey, updates, free disk space, memory and battery.</span><span data-id>Menyala atau mati, ikut menyala bersama Windows, pembersihan terakhir, file yang menunggu sign in berikutnya, blokir Windows Security, folder cloud, mesin virtual, kunci Keep, vault, backup terakhir, tombol panik, update, sisa ruang disk, memori, dan baterai.</span></li>
         <li><b><span data-en>Startup switched off?</span><span data-id>Startup dimatikan?</span></b> <span data-en>If someone turns Amnesia off in Task Manager, Home shows a warning with a "Switch it back on" button.</span><span data-id>Kalau ada yang mematikan Amnesia di Task Manager, Beranda menampilkan peringatan dengan tombol "Nyalakan lagi".</span></li>
         <li><b><span data-en>Signed updates.</span><span data-id>Update bertanda tangan.</span></b> <span data-en>Updates install only when the developer's signature on SHA256SUMS.txt checks out. Without it, Amnesia opens the release page instead of installing anything.</span><span data-id>Update hanya terpasang kalau tanda tangan developer di SHA256SUMS.txt cocok. Kalau tidak ada, Amnesia membuka halaman rilis dan tidak memasang apa pun.</span></li>
       </ul>
@@ -618,6 +618,37 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div><h3><span data-en>Disk encryption check</span><span data-id>Cek enkripsi disk</span></h3><p><span data-en>Settings shows whether BitLocker or device encryption is on, and how to turn it on.</span><span data-id>Pengaturan menunjukkan apakah BitLocker atau enkripsi perangkat menyala, dan cara menyalakannya.</span></p></div>
       <div><h3><span data-en>Wipe free space</span><span data-id>Hapus ruang kosong</span></h3><p><span data-en>Runs Windows' own cipher /w, so deleted files are harder to bring back. Slow, and it asks first.</span><span data-id>Menjalankan cipher /w bawaan Windows, supaya file yang dihapus lebih sulit dikembalikan. Lambat, dan bertanya dulu.</span></p></div>
     </div>
+
+    <!-- v0.9: Care page -->
+    <div class="head" id="care" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span data-en>Care. <em>Space back, with a list first.</em></span><span data-id>Perawatan. <em>Ruang kembali, lihat daftarnya dulu.</em></span></h2>
+      <p class="lead"><span data-en>Amnesia already wipes most of your user folder at every sign out, so Care is for what stays: your Keep folder, the apps you kept and big files from this session. Every action scans first and shows a list, and nothing risky is ticked for you.</span><span data-id>Amnesia sudah menghapus sebagian besar folder user di setiap sign out, jadi Perawatan untuk yang tetap ada: folder Keep, app yang kamu simpan dan file besar dari sesi ini. Setiap tindakan memindai dulu dan menampilkan daftar, dan tidak ada yang berisiko dicentang untukmu.</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span data-en>Disk overview</span><span data-id>Ringkasan disk</span></h3><p><span data-en>See what takes space: Keep folder, vault, Recycle Bin, Temp, the biggest folders and files, old downloads. Read only, nothing is deleted here.</span><span data-id>Lihat apa yang memakan ruang: folder Keep, vault, Recycle Bin, Temp, folder dan file terbesar, unduhan lama. Hanya dibaca, tidak ada yang dihapus di sini.</span></p></div>
+      <div><h3><span data-en>Clean now</span><span data-id>Bersihkan sekarang</span></h3><p><span data-en>Empties Temp, crash dumps, app caches and Amnesia's trash. Files Windows still has open are skipped. The Recycle Bin is listed, but never ticked for you.</span><span data-id>Mengosongkan Temp, crash dump, cache app dan tempat sampah Amnesia. File yang masih dibuka Windows dilewati. Recycle Bin ada di daftar, tapi tidak pernah dicentang untukmu.</span></p></div>
+      <div><h3><span data-en>Uninstall apps</span><span data-id>Hapus app</span></h3><p><span data-en>Programs installed just for you run their own uninstaller. Programs for everyone open Windows Settings. Leftover caches go to the Recycle Bin, personal data stays unless you tick it.</span><span data-id>Program yang dipasang khusus untukmu menjalankan uninstaller-nya sendiri. Program untuk semua pengguna membuka Pengaturan Windows. Sisa cache dipindah ke Recycle Bin, data pribadi tetap ada kecuali kamu centang.</span></p></div>
+      <div><h3><span data-en>Project build folders</span><span data-id>Folder build project</span></h3><p><span data-en>node_modules, target, build, dist, and bin and obj of .NET projects can go to the Recycle Bin. Folders used in the last 7 days or tracked by git are left alone.</span><span data-id>node_modules, target, build, dist, juga bin dan obj dari project .NET bisa dipindah ke Recycle Bin. Folder yang dipakai 7 hari terakhir atau dilacak git tidak disentuh.</span></p></div>
+      <div><h3><span data-en>Old installers</span><span data-id>Installer lama</span></h3><p><span data-en>Old .msi and .msix files go to the Recycle Bin. Setup .exe files are listed, but never picked for you, and neither are disk images or virtual machines.</span><span data-id>File .msi dan .msix lama dipindah ke Recycle Bin. File setup .exe ditampilkan, tapi tidak pernah dipilihkan, begitu juga image disk dan mesin virtual.</span></p></div>
+      <div><h3><span data-en>Safe tune-ups</span><span data-id>Perawatan ringan</span></h3><p><span data-en>Restart Explorer, or open Startup apps and Storage settings. No admin needed.</span><span data-id>Mulai ulang Explorer, atau buka Startup apps dan pengaturan Storage. Tanpa admin.</span></p></div>
+      <div><h3><span data-en>Stops when unsure</span><span data-id>Berhenti kalau ragu</span></h3><p><span data-en>If the Keep List can't be read or has gone missing, the cleanup deletes nothing and says so in History. When a check can't tell, the item is kept.</span><span data-id>Kalau Keep List tidak bisa dibaca atau hilang, pembersihan tidak menghapus apa pun dan dicatat di Riwayat. Kalau pengecekan tidak yakin, item disimpan.</span></p></div>
+      <div><h3><span data-en>Every run in History</span><span data-id>Setiap kali tercatat di Riwayat</span></h3><p><span data-en>Every Care run is in History with the space freed. The Health check also shows free disk space, memory and battery.</span><span data-id>Setiap Perawatan tercatat di Riwayat beserta ruang yang dikosongkan. Cek kesehatan juga menampilkan sisa ruang disk, memori dan baterai.</span></p></div>
+    </div>
+
+    <!-- v0.10: Amnesia modes, vault profiles, Ask an AI -->
+    <div class="head" id="modes" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span data-en>Modes and profiles. <em>You choose how much is forgotten.</em></span><span data-id>Mode dan profil. <em>Kamu yang memilih seberapa banyak yang dilupakan.</em></span></h2>
+      <p class="lead"><span data-en>Pick one mode for every sign out, restore only the apps you need, and ask an AI for advice without sharing your files. Every change shows a preview first and takes effect at the next sign out.</span><span data-id>Pilih satu mode untuk setiap sign out, restore hanya app yang kamu perlukan, dan minta saran AI tanpa membagikan file kamu. Setiap perubahan ada pratinjaunya dulu dan berlaku mulai sign out berikutnya.</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span data-en>Retrograde Amnesia</span><span data-id>Retrograde Amnesia</span></h3><p><span data-en>Like a brand-new account at every sign in. Only your Keep folder and what Amnesia needs to work stay. The vault's auto snapshot at sign out is turned off, and you can still restore a snapshot by hand.</span><span data-id>Seperti akun baru setiap sign in. Hanya folder Keep kamu dan yang dibutuhkan Amnesia yang tetap ada. Snapshot otomatis vault saat sign out dimatikan, dan snapshot masih bisa di-restore manual.</span></p></div>
+      <div><h3><span data-en>Selective Amnesia <small>(recommended)</small></span><span data-id>Selective Amnesia <small>(disarankan)</small></span></h3><p><span data-en>Your Keep folder stays and app logins come back from the vault. The same as before.</span><span data-id>Folder Keep tetap ada dan login app kembali dari vault. Sama seperti sebelumnya.</span></p></div>
+      <div><h3><span data-en>Partial Amnesia</span><span data-id>Partial Amnesia</span></h3><p><span data-en>Everything in AppData stays, so apps keep their settings and logins, and their caches too. Your files, Downloads and Desktop are wiped. Browsing history and cookies inside a browser's own folder stay too, because that folder is kept.</span><span data-id>Semua isi AppData tetap ada, jadi app tetap menyimpan pengaturan dan loginnya, juga cache-nya. File kamu, Downloads dan Desktop dihapus. Riwayat dan cookie browser di dalam folder browser itu sendiri juga tetap ada, karena foldernya disimpan.</span></p></div>
+      <div><h3><span data-en>Custom Amnesia</span><span data-id>Custom Amnesia</span></h3><p><span data-en>Your own Keep List. Picked for you when you change the lines a mode added. A mode only changes its own marked section, so your own lines always stay.</span><span data-id>Keep List buatan kamu sendiri. Dipilih otomatis saat kamu mengubah baris dari sebuah mode. Mode hanya mengubah bagiannya sendiri yang ditandai, jadi baris kamu sendiri selalu tetap ada.</span></p></div>
+      <div><h3><span data-en>A preview before every switch</span><span data-id>Pratinjau sebelum ganti mode</span></h3><p><span data-en>See what will now be wiped and what will now be kept, with a warning when more is wiped. Nothing is deleted when you switch. A missing or damaged mode list never empties your Keep List.</span><span data-id>Lihat apa yang mulai dihapus dan apa yang mulai disimpan, dengan peringatan kalau yang dihapus lebih banyak. Tidak ada yang dihapus saat kamu ganti mode. Daftar mode yang hilang atau rusak tidak pernah mengosongkan Keep List.</span></p></div>
+      <div><h3><span data-en>Vault profiles</span><span data-id>Profil vault</span></h3><p><span data-en>Restore only what you need, like Work or Personal, or everything. Rename, add and remove profiles. One browser holds one set of logins, so a second browser keeps personal use apart.</span><span data-id>Restore hanya yang kamu perlukan, misalnya Kerja atau Santai, atau semuanya. Profil bisa diganti nama, ditambah dan dihapus. Satu browser menyimpan satu kumpulan login, jadi browser kedua membuat pemakaian pribadi tetap terpisah.</span></p></div>
+      <div><h3><span data-en>Ask an AI</span><span data-id>Tanya AI</span></h3><p><span data-en>Amnesia makes a report with no file contents and no names of your files, plus a ready prompt. Paste it into the AI you choose, paste the answer back and tick the changes you want. Amnesia itself sends nothing.</span><span data-id>Amnesia membuat laporan tanpa isi file dan tanpa nama file kamu, plus prompt siap pakai. Tempel ke AI pilihanmu, tempel jawabannya kembali dan centang perubahan yang kamu mau. Amnesia sendiri tidak mengirim apa pun.</span></p></div>
+    </div>
   </div>
 </section>
 
@@ -658,7 +689,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="aw-bar"><img src="../logo.png" alt="" width="14" height="14"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
         <div class="aw-head">
           <img src="../logo.png" alt="" width="36" height="36">
-          <div><b>Amnesia <span class="ver">v0.8.1</span></b><small><span data-en>Your PC forgets everything, except what you choose.</span><span data-id>PC kamu lupa semuanya, kecuali yang kamu pilih.</span></small></div>
+          <div><b>Amnesia <span class="ver">v0.10.0</span></b><small><span data-en>Your PC forgets everything, except what you choose.</span><span data-id>PC kamu lupa semuanya, kecuali yang kamu pilih.</span></small></div>
           <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span data-en>Settings</span><span data-id>Pengaturan</span></span>
         </div>
         <div class="aw-hero pc" data-p="home">
@@ -976,7 +1007,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <p class="label"><span class="n">15</span> · <span data-en>Install</span><span data-id>Pasang</span></p>
       <h2><span data-en>One Setup, <em>no admin.</em></span><span data-id>Satu Setup, <em>tanpa admin.</em></span></h2>
       <div class="badges">
-        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.8.1</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.10.0</b></a>
         <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
         <span class="bdg"><svg><use href="#i-laptop"/></svg><span>Windows</span><b>10 · 11</b></span>
       </div>
@@ -1013,7 +1044,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><div><h3><span data-en>Check the file</span><span data-id>Cek file-nya</span></h3><p class="small"><span data-en>Optional</span><span data-id>Opsional</span></p></div></div>
         <div class="shell">
           <div class="sh-bar"><i></i><i></i><i></i><span>PowerShell</span></div>
-          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.8.1-x64.exe</code><button class="copy" type="button">Copy</button></div>
+          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.10.0-x64.exe</code><button class="copy" type="button">Copy</button></div>
           <pre class="sh-out"><span>Algorithm  Hash</span>
 <span>---------  ----</span>
 <span>SHA256     3F9A…C21E</span>
@@ -1025,7 +1056,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><div><h3>navi-crwn/amnesia</h3><p class="small"><span data-en>Open source on GitHub</span><span data-id>Open source di GitHub</span></p></div></div>
         <dl class="ghstats">
           <div><dt><span data-en>License</span><span data-id>Lisensi</span></dt><dd>MIT</dd></div>
-          <div><dt>Windows</dt><dd>v0.8.1</dd></div>
+          <div><dt>Windows</dt><dd>v0.10.0</dd></div>
           <div><dt><span data-en>Tests</span><span data-id>Tes</span></dt><dd>294</dd></div>
           <div><dt><span data-en>Chips</span><span data-id>Chip</span></dt><dd>x64 · arm64</dd></div>
         </dl>
@@ -1074,7 +1105,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
                 <p class="wsm-h">Windows protected your PC</p>
                 <p class="wsm-t">Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p>
                 <p class="wsm-more" data-a="1" data-on=".wsm-app,.wsm-run">More info</p>
-                <p class="wsm-app">App: Amnesia-Setup-0.8.1-x64.exe</p>
+                <p class="wsm-app">App: Amnesia-Setup-0.10.0-x64.exe</p>
                 <div class="wsm-btns"><span class="wsm-run" data-a="2" data-on=".pop0">Run anyway</span><span>Don't run</span></div>
               </div>
               <div class="pop tw-pop pop0">
@@ -1335,7 +1366,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="ft-tag"><span data-en>Your PC forgets everything at sign out, except what you choose to keep. Free, open source, and nothing ever leaves your PC.</span><span data-id>PC kamu melupakan segalanya setiap sign out, kecuali yang kamu pilih untuk disimpan. Gratis, open source, dan tidak ada data yang keluar dari PC kamu.</span></p>
         <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
           <svg><use href="#i-github"/></svg>
-          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.8.1</small></span>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.10.0</small></span>
         </a>
       </div>
       <nav class="ft-cols" aria-label="Footer">

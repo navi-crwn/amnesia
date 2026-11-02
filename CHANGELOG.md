@@ -7,6 +7,131 @@ Quick backstory: on October 6, 2026 Amnesia was a handful of scripts. Two days a
 
 Your version number is next to the Amnesia title and at the bottom of the menu bar panel.
 
+## v5.25.0 · Amnesia modes, vault profiles and Ask an AI (Oct 26, 2026)
+
+This release also contains everything from v5.24.0 below, which was never released on its own.
+
+**Turn Off** Amnesia before installing, then turn it on again.
+
+### New
+- **Amnesia modes: pick how much is forgotten at every logout.** Retrograde Amnesia, Selective Amnesia (recommended), Partial Amnesia or Custom Amnesia.
+  - **Retrograde Amnesia** is like a brand-new account at every login. Only your Keep folder and what Amnesia needs to work stay. Auto snapshot at logout is turned off; your snapshots stay and you can still restore by hand.
+  - **Selective Amnesia** is the basic list for a new install: your Keep folder, app logins from the vault, SSH keys, Git and shell settings. The default list no longer contains the developer's own apps (VPN apps, terminal tools); you add your own apps on the Keep List. Your existing Keep List is not changed.
+  - **Partial Amnesia** lets apps keep their settings and logins in place. Your files, Downloads, Desktop, caches, logs, the Trash and shell history are wiped. Honest note: browsing history and cookies inside a browser's own folder stay too, because that folder is kept.
+  - **Custom Amnesia** is your own Keep List. It is picked for you when you change the lines a mode added.
+- **Every mode switch shows a preview first**: what will now be wiped and what will now be kept, with a warning when more is wiped. It takes effect at the next logout.
+- **Your own Keep List lines stay**: a mode only changes its own marked section.
+- **Vault profiles: restore only what you need**, like Work or Personal, or everything. You can rename, add and remove profiles. When one app is in two profiles, Amnesia says so: one browser holds one set of logins, so a second browser (or a separate browser profile) keeps personal use apart.
+- **Ask an AI: advice without sharing your files.** Amnesia makes a report with no file contents and no names of your files, plus a ready prompt. You paste it into the AI you choose, then paste the answer back and tick the changes you want. You can also hide folder names, and save the report to your Keep folder.
+- **Terminal command `amnesia`**: status, preview, report, keep, history. Read only, it never deletes anything. Switch it on in Settings.
+
+### Safer
+- **Amnesia makes no network calls for Ask an AI**: nothing leaves the computer unless you paste it somewhere.
+- **A missing or damaged mode file never empties your Keep List**; the mode is just not changed.
+- **Nothing an AI suggests is applied without your tick and confirm**; Amnesia's own lines can't be removed this way.
+
+### Simpler and fixed after testing
+- **Virtual machines and Photos are no longer added to your Keep List by themselves.** When Amnesia finds virtual machines (UTM, Parallels, VirtualBox, VMware Fusion) or a Photos library that is not kept, the Keep List and What Gets Deleted pages show a warning with the size and two buttons: **Keep** or **Don't Keep**. Lines you already have stay as they are.
+- **Settings are grouped**: Logout, Keep, App, and Safety & checks. Rarely used things (Terminal command, Brankas, auto logout, removing new apps, panic word, moving to a new Mac) are under **Show advanced settings**, closed until you open it. Searching still finds everything.
+- **Settings search shows the first hit at the top**, not above the window.
+- **Opening the Keep List page no longer writes the mode to settings.conf**; it is only written when you really switch mode. Picking **Everything** in Memory Recall no longer creates `profiles.json`.
+- **The mode preview no longer says `.zshrc`, `.zprofile` or `.gitconfig` will be wiped.** Amnesia never wipes those files in your home folder; lines that leave the Keep List but wipe nothing are listed apart.
+- **Small snapshots show their real size** (GitHub CLI showed "0 KB").
+- **Health Check no longer lists apps in the Profile Vault (like Chrome) as big files that get deleted**: they come back with Restore Profiles.
+- **Sizes use the same units everywhere** (1 MB = 1000 KB, like Finder): the app, the Terminal command and the Ask an AI report.
+- **Ask an AI: "Don't show this again"** on the Copied message.
+- **Accessibility**: every switch, picker and icon-only button has a name for VoiceOver, and a test checks it.
+
+### Website and README
+- **Both websites and the README** have a section for modes, vault profiles and Ask an AI, and list Mac v5.25.0 and Windows v0.10.0.
+- **`SECURITY.md`** says what the Ask an AI report contains and that it stays on your computer unless you paste it.
+- **`llms.txt`** tells AI assistants how to use `amnesia report` and the suggestion format.
+
+## Windows v0.10.0 · Amnesia modes, vault profiles and Ask an AI (Oct 26, 2026)
+
+Not released yet. It comes with the next Windows release.
+
+This release also contains everything from v0.9.0 below, which was never released on its own.
+
+### New
+- **Amnesia modes: pick how much is forgotten at every sign out.** Retrograde Amnesia, Selective Amnesia (recommended, same as before), Partial Amnesia or Custom Amnesia.
+  - **Retrograde Amnesia** is like a brand-new account at every sign in. Only your Keep folder and what Amnesia needs to work stay. The vault's auto snapshot at sign out is turned off; your snapshots stay and you can still restore by hand.
+  - **Selective Amnesia** keeps your Keep folder and brings app logins back from the vault, as before.
+  - **Partial Amnesia** lets apps keep their settings and logins in place: everything in AppData stays. Your files, Desktop, Documents and Downloads are wiped. Honest note: because all of AppData is kept, browsing history and cookies inside a browser's own folder (Edge too), Temp files, recent file lists and PowerShell history stay as well. Thumbnail and icon caches, notification history, the Recycle Bin, the clipboard and the registry's recent lists are still wiped.
+  - **Custom Amnesia** is your own Keep List. It is picked for you when you change the lines a mode added.
+- **Every mode switch shows a preview first**: what will now be wiped and what will now be kept, with a warning when more is wiped. It takes effect at the next sign out.
+- **Your own Keep List lines stay**: a mode only changes its own marked section.
+- **Vault profiles: restore only what you need**, like Work or Personal, or everything. You can rename, add and remove profiles. When one app is in two profiles, Amnesia says so: one browser holds one set of logins, so a second browser (or a separate browser profile) keeps personal use apart.
+- **Ask an AI: advice without sharing your files.** Amnesia makes a report with no file contents and no names of your files, plus a ready prompt. You paste it into the AI you choose, then paste the answer back and tick the changes you want. You can also hide folder names, and save the report to your Keep folder.
+
+### Safer
+- **Amnesia makes no network calls for Ask an AI**: nothing leaves the computer unless you paste it somewhere.
+- **A missing or damaged mode list never empties your Keep List**; the mode is just not changed.
+- **Nothing an AI suggests is applied without your tick and confirm.**
+
+### Simpler and fixed after testing
+- **Settings are grouped**: Keep (shortcuts and Keep lock), What stays safe, and App. Advanced settings are closed until you open them; searching still finds everything and shows the first hit at the top.
+- **Opening the Keep List page no longer writes the mode to the settings**; it is only written when you really switch mode. Picking **Everything** for a restore no longer creates `profiles.json`.
+- **The mode preview lists lines that leave the Keep List but wipe nothing apart**, instead of under "will now be wiped".
+- **Sizes in the Ask an AI report use the same units as the app** (1 MB = 1000 KB).
+- **Accessibility**: Remove, Keep, Delete and Uninstall buttons in lists, and checkboxes and pickers without a visible title, now tell a screen reader which item they are for.
+
+## v5.24.0 · Care page, and a cleanup that stops when it is unsure (Oct 26, 2026)
+
+**Turn Off** Amnesia before installing, then turn it on again.
+
+Amnesia already wipes most of your home folder at every logout, so Care mostly matters for your Keep folder, the apps you kept and big files made during this session.
+
+### New
+- **Care: a new page to free up space on demand, always with a list to check first.** Nothing risky is ticked for you, and you confirm the count, the size and where things go before anything moves.
+- **Disk overview** shows what takes space: Keep folder, vault, trash, caches, biggest folders and files, old downloads. Read only.
+- **Clean now** empties caches, logs and Amnesia's trash; caches of apps that are open are skipped. Emptying the macOS Trash is listed too, but never ticked for you, because that one is permanent.
+- **Uninstall apps** moves an app you installed and its caches to the Trash; its personal data stays unless you tick it.
+- **Project build folders** (node_modules, target, build, dist and more) can go to the Trash; folders used in the last 7 days or tracked by git are left alone.
+- **Old installers** (.dmg, .pkg) go to the Trash; disk images and virtual machines are never picked for you.
+- **Safe tune-ups** without an admin password: refresh Quick Look thumbnails, restart the Dock.
+- **Health check** shows free disk space, memory and battery condition.
+- **Every Care run is in History** with the space freed.
+
+### Fixed
+- **The search field in Settings stays at the top** while you scroll the settings.
+
+### Safer
+- **The cleanup stops and deletes nothing when the Keep List cannot be read or has gone missing**, and says so in History.
+- **A copy of your last good Keep List is kept** and used to restore it.
+- **Every delete goes through one check** that refuses the home folder, the Keep folder, `~/.amnesia` and anything outside your home folder (except new apps you asked Amnesia to remove).
+- **When a check cannot tell** (cloud, iCloud, links, owner), the item is kept.
+- **At login and on Clean Now, folders that an open app is still using are skipped** and wiped next time.
+
+### Website and README
+- **Both websites and the README** have a Care section and list Mac v5.24.0 and Windows v0.9.0.
+- **New `SECURITY.md`**: how to report a security problem privately, and an honest list of what Amnesia protects and what it can't.
+- **New `llms.txt`**: a short guide for AI assistants that help someone install Amnesia, so they check What Gets Deleted and the Keep folder first.
+- **Where to get Amnesia**: the README now says it only comes from github.com/navi-crwn/amnesia, its website on GitHub Pages and the Homebrew tap `navi-crwn/tap`.
+
+## Windows v0.9.0 · Care page, and a cleanup that stops when it is unsure (Oct 26, 2026)
+
+Not released yet. It comes with the next Windows release.
+
+Amnesia already wipes most of your user folder at every sign out, so Care mostly matters for your Keep folder, the apps you kept and big files made during this session.
+
+### New
+- **Care: a new page to free up space on demand, always with a list to check first.** Nothing risky is ticked for you, and you confirm the count, the size and where things go before anything moves.
+- **Disk overview** shows what takes space: Keep folder, vault, Recycle Bin, Temp, biggest folders and files, old downloads. Read only.
+- **Clean now** empties Temp, crash dumps, app caches and Amnesia's trash. The Recycle Bin is listed too, but never ticked for you, because emptying it is permanent. Files Windows still has open are skipped and counted, not shown as errors.
+- **Uninstall apps**: programs installed just for you run their own uninstaller, programs installed for everyone open Windows Settings. Leftover caches go to the Recycle Bin; personal data stays unless you tick it.
+- **Project build folders** (node_modules, target, build, dist, and bin and obj of .NET projects, and more) can go to the Recycle Bin; folders used in the last 7 days or tracked by git are left alone.
+- **Old installers** (.msi, .msix) go to the Recycle Bin; setup .exe files are listed but never picked for you, and disk images and virtual machines are never picked for you.
+- **Safe tune-ups** without admin: restart Explorer, open Startup apps and Storage settings.
+- **Health check** shows free disk space, memory and battery charge.
+- **Every Care run is in History** with the space freed.
+
+### Safer
+- **The cleanup stops and deletes nothing when the Keep List cannot be read or has gone missing**, and says so in History.
+- **A copy of your last good Keep List is kept** and used to restore it.
+- **Every delete goes through one check** that refuses the user folder, the Keep folder, `.amnesia` and anything outside your user folder.
+- **When a check cannot tell** (cloud folders, links, owner), the item is kept.
+
 ## v5.23.1 · Long popups scroll, websites and README catch up (Oct 18, 2026)
 
 **Turn Off** Amnesia before installing, then turn it on again.

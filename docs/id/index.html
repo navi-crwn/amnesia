@@ -122,7 +122,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
   <div class="wrap two">
     <div class="hero-copy">
-      <a class="hbadge" href="https://github.com/navi-crwn/amnesia"><span class="hb-ver" data-gh="version">v5.23.1</span><svg><use href="#i-github"/></svg><span>Open source di GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia"><span class="hb-ver" data-gh="version">v5.25.0</span><svg><use href="#i-github"/></svg><span>Open source di GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
       <h1 id="hero-title">
         <span><span class="split">Mac kamu lupa</span> <em class="word">segalanya.</em><span class="after split">Kecuali yang kamu simpan.</span></span>
       </h1>
@@ -152,7 +152,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
     <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
       <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
       <span class="rc-desc"><span>Mac kamu lupa segalanya setiap logout, kecuali yang kamu pilih untuk disimpan.</span></span>
-      <span class="rc-meta"><span>MIT</span><span data-gh="version">v5.23.1</span><span class="rc-langs" data-gh="langs-mini"><span><i style="--c:var(--orange)"></i>Swift</span><span><i style="--c:var(--green)"></i>Shell</span></span></span>
+      <span class="rc-meta"><span>MIT</span><span data-gh="version">v5.25.0</span><span class="rc-langs" data-gh="langs-mini"><span><i style="--c:var(--orange)"></i>Swift</span><span><i style="--c:var(--green)"></i>Shell</span></span></span>
     </a>
   </div>
 </section>
@@ -191,7 +191,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <span class="rc-legend" data-gh="langs" hidden></span>
         <span class="rc-stats">
           <span><small><span>Lisensi</span></small><b>MIT</b></span>
-          <span><small><span>Rilis terbaru</span></small><b data-gh="version">v5.23.1</b></span>
+          <span><small><span>Rilis terbaru</span></small><b data-gh="version">v5.25.0</b></span>
           <span><small>Commits</small><b data-gh="commits">–</b></span>
           <span><small>Releases</small><b data-gh="releases">–</b></span>
           <span><small><span>Kontributor</span></small><b data-gh="contributors">–</b></span>
@@ -283,7 +283,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <li><span>Semua isi folder Keep (di mana pun letaknya, apa pun namanya)</span></li>
         <li><span>Login yang tersimpan di Profile Vault (kembali lewat Restore)</span></li>
         <li><span>App di Keep List (VPN, kunci SSH, akun Apple…)</span></li>
-        <li><span>Virtual machine (UTM, Parallels, VirtualBox, VMware Fusion), otomatis disimpan</span></li>
+        <li><span>Virtual machine (UTM, Parallels, VirtualBox, VMware Fusion), setelah kamu menekan Keep</span></li>
         <li><span>App yang sudah terpasang</span></li></ul></div>
     </div>
   </div>
@@ -463,7 +463,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div><h3><span>Snapshot browser ringan</span></h3><p><span>Chrome, Brave, Edge, Arc, Vivaldi, dan Opera bisa disimpan tanpa cache: dari sekitar 1 GB jadi 150 MB. Satu sakelar untuk tiap browser.</span></p></div>
       <div><h3><span>Simpan & Logout</span></h3><p><span>Sekali klik, login disimpan lalu kamu logout. Kalau gagal menyimpan, logout dibatalkan.</span></p></div>
       <div><h3><span>Snapshot otomatis</span></h3><p><span>Lupa menekan Simpan & Logout? Logout biasa tetap menyimpan app yang berubah lebih dulu.</span></p></div>
-      <div><h3><span>Pilih apa yang tetap ada</span></h3><p><span>Folder Keep untuk file kamu, dan Keep List untuk app seperti VPN dan kunci SSH. Virtual machine otomatis masuk ke sana.</span></p></div>
+      <div><h3><span>Pilih apa yang tetap ada</span></h3><p><span>Folder Keep untuk file kamu, dan Keep List untuk app seperti VPN dan kunci SSH. Ada virtual machine? Amnesia bertanya dulu sebelum menyimpannya.</span></p></div>
       <div><h3><span>Lihat dulu</span></h3><p><span>"Yang Akan Dihapus" menampilkan semuanya sebelum ada yang dihapus, lengkap dengan pencarian dan Terbesar dulu. File 1 GB ke atas diberi peringatan. Logout juga bisa menunggu persetujuanmu dulu.</span></p></div>
       <div><h3><span>Jeda 1 Sesi</span></h3><p><span>Lewati satu kali logout dan login berikutnya, tanpa perlu mematikan Amnesia.</span></p></div>
       <div><h3><span>Backup ke mana saja</span></h3><p><span>Ke flashdisk, server sendiri lewat SSH, Google Drive, Dropbox, OneDrive, Box, atau pCloud. Bisa harian atau mingguan, dan file backup-nya bisa dicek.</span></p></div>
@@ -473,11 +473,41 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div><h3><span>Alat developer</span></h3><p><span>Simpan pengaturan SSH, GitHub CLI, shell, editor, Docker, cloud, dan AI CLI. Pilih App hanya menampilkan yang ada di Mac kamu.</span></p></div>
       <div><h3><span>Cari pengaturan apa pun</span></h3><p><span>Ketik di kotak pencarian di atas Pengaturan, dalam bahasa Inggris atau Indonesia. Jendelanya juga bisa diubah ukurannya.</span></p></div>
       <div><h3><span>Kunci Keep</span></h3><p><span>Finder dan app lain tidak bisa membuka folder Keep sampai kamu mengetik password Keep di Amnesia. Terkunci lagi dengan sendirinya. Ini memakai izin macOS, bukan enkripsi, jadi nama file langsung di dalam Keep tetap terlihat.</span></p></div>
-      <div><h3><span>Cek kesehatan</span></h3><p><span>Satu halaman yang memberi tahu kalau ada yang perlu kamu urus: Akses Disk Penuh, iCloud Desktop & Documents, folder symlink, mesin virtual, file besar, backup terakhir, dan FileVault. Kebanyakan baris punya tombol perbaikan.</span></p></div>
+      <div><h3><span>Cek kesehatan</span></h3><p><span>Satu halaman yang memberi tahu kalau ada yang perlu kamu urus: Akses Disk Penuh, iCloud Desktop & Documents, folder symlink, mesin virtual, file besar, backup terakhir, FileVault, sisa ruang disk, memori, dan baterai. Kebanyakan baris punya tombol perbaikan.</span></p></div>
       <div><h3><span>Brankas <small>(eksperimen)</small></span></h3><p><span>Disk terenkripsi (AES-256) di dalam folder Keep untuk file yang benar-benar rahasia. Amnesia menutupnya sebelum setiap pembersihan, dan memberi tahu kalau gagal. Lupa password-nya, file di dalamnya hilang.</span></p></div>
       <div><h3><span>Update bertanda tangan</span></h3><p><span>Update dari dalam app hanya dipasang kalau SHA256SUMS.txt di rilisnya punya tanda tangan yang sah. Kalau tidak, kamu diarahkan ke halaman rilis.</span></p></div>
       <div><h3><span>Aman untuk iCloud</span></h3><p><span>Kalau iCloud Desktop & Documents nyala, kedua folder itu dilewati, jadi tidak ada yang terhapus dari iCloud atau perangkat lain. Folder yang berupa symlink tidak pernah dikosongkan lewat link-nya.</span></p></div>
       <div><h3><span>Claude dan Claude Code</span></h3><p><span>Masukkan Claude ke Keep List, dan chat Claude Code kamu (~/.claude) ikut tersimpan. Sebelum logout, app yang dicentang di vault dibuat snapshot baru, jadi restore tidak pernah ketinggalan.</span></p></div>
+    </div>
+
+    <div class="head" id="care" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>Perawatan. <em>Ruang kembali, lihat daftarnya dulu.</em></span></h2>
+      <p class="lead"><span>Amnesia sudah menghapus sebagian besar folder home di setiap logout, jadi Perawatan untuk yang tetap ada: folder Keep, app yang kamu simpan dan file besar dari sesi ini. Setiap tindakan memindai dulu dan menampilkan daftar, dan tidak ada yang berisiko dicentang untukmu.</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>Ringkasan disk</span></h3><p><span>Lihat apa yang memakan ruang: folder Keep, vault, tempat sampah, cache, folder dan file terbesar, unduhan lama. Hanya dibaca, tidak ada yang dihapus di sini.</span></p></div>
+      <div><h3><span>Bersihkan sekarang</span></h3><p><span>Mengosongkan cache, log dan tempat sampah Amnesia. Cache app yang sedang terbuka dilewati. Mengosongkan Trash ada di daftar, tapi tidak pernah dicentang untukmu.</span></p></div>
+      <div><h3><span>Hapus app</span></h3><p><span>Memindahkan app yang kamu pasang beserta cachenya ke Trash. Data pribadinya tetap ada kecuali kamu centang.</span></p></div>
+      <div><h3><span>Folder build project</span></h3><p><span>node_modules, target, build, dist dan lainnya bisa dipindah ke Trash. Folder yang dipakai 7 hari terakhir atau dilacak git tidak disentuh.</span></p></div>
+      <div><h3><span>Installer lama</span></h3><p><span>File .dmg dan .pkg lama dipindah ke Trash. Image disk dan mesin virtual tidak pernah dipilihkan.</span></p></div>
+      <div><h3><span>Perawatan ringan</span></h3><p><span>Segarkan thumbnail Quick Look atau mulai ulang Dock, tanpa password admin.</span></p></div>
+      <div><h3><span>Berhenti kalau ragu</span></h3><p><span>Kalau Keep List tidak bisa dibaca atau hilang, pembersihan tidak menghapus apa pun dan dicatat di Riwayat. Kalau pengecekan tidak yakin, item disimpan.</span></p></div>
+      <div><h3><span>Setiap kali tercatat di Riwayat</span></h3><p><span>Setiap Perawatan tercatat di Riwayat beserta ruang yang dikosongkan. Cek kesehatan juga menampilkan sisa ruang disk, memori dan kondisi baterai.</span></p></div>
+    </div>
+
+    <div class="head" id="modes" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>Mode dan profil. <em>Kamu yang memilih seberapa banyak yang dilupakan.</em></span></h2>
+      <p class="lead"><span>Pilih satu mode untuk setiap logout, restore hanya app yang kamu perlukan, dan minta saran AI tanpa membagikan file kamu. Setiap perubahan ada pratinjaunya dulu dan berlaku mulai logout berikutnya.</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>Retrograde Amnesia</span></h3><p><span>Seperti akun baru setiap login. Hanya folder Keep kamu dan yang dibutuhkan Amnesia yang tetap ada. Snapshot otomatis saat logout dimatikan, dan snapshot masih bisa di-restore manual.</span></p></div>
+      <div><h3><span>Selective Amnesia <small>(disarankan)</small></span></h3><p><span>Daftar dasar untuk instalasi baru: folder Keep, login app dari vault, kunci SSH, pengaturan Git dan shell. Tambahkan app kamu sendiri di Keep List.</span></p></div>
+      <div><h3><span>Partial Amnesia</span></h3><p><span>App tetap menyimpan pengaturan dan loginnya. File kamu, Downloads, Desktop, cache, log, Trash dan riwayat terminal dihapus. Riwayat dan cookie browser di dalam folder browser itu sendiri juga tetap ada, karena foldernya disimpan.</span></p></div>
+      <div><h3><span>Custom Amnesia</span></h3><p><span>Keep List buatan kamu sendiri. Dipilih otomatis saat kamu mengubah baris dari sebuah mode. Mode hanya mengubah bagiannya sendiri yang ditandai, jadi baris kamu sendiri selalu tetap ada.</span></p></div>
+      <div><h3><span>Pratinjau sebelum ganti mode</span></h3><p><span>Lihat apa yang mulai dihapus dan apa yang mulai disimpan, dengan peringatan kalau yang dihapus lebih banyak. Tidak ada yang dihapus saat kamu ganti mode. File mode yang hilang atau rusak tidak pernah mengosongkan Keep List.</span></p></div>
+      <div><h3><span>Profil vault</span></h3><p><span>Restore hanya yang kamu perlukan, misalnya Kerja atau Santai, atau semuanya. Profil bisa diganti nama, ditambah dan dihapus. Satu browser menyimpan satu kumpulan login, jadi browser kedua membuat pemakaian pribadi tetap terpisah.</span></p></div>
+      <div><h3><span>Tanya AI</span></h3><p><span>Amnesia membuat laporan tanpa isi file dan tanpa nama file kamu, plus prompt siap pakai. Tempel ke AI pilihanmu, tempel jawabannya kembali dan centang perubahan yang kamu mau. Amnesia sendiri tidak mengirim apa pun.</span></p></div>
+      <div><h3><span>Perintah Terminal</span></h3><p><span>Nyalakan di Pengaturan untuk perintah <code>amnesia</code> yang hanya membaca: status, preview, report, keep dan history. Tidak pernah menghapus atau mengubah apa pun.</span></p></div>
     </div>
   </div>
 </section>
@@ -527,7 +557,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="aw-bar"><i></i><i></i><i></i></div>
         <div class="aw-head">
           <img src="../logo.png" alt="" width="36" height="36">
-          <div><b>Amnesia <span class="ver" data-gh="version">v5.23.1</span></b><small><span>Mac kamu lupa semuanya, kecuali yang kamu pilih.</span></small></div>
+          <div><b>Amnesia <span class="ver" data-gh="version">v5.25.0</span></b><small><span>Mac kamu lupa semuanya, kecuali yang kamu pilih.</span></small></div>
           <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span>Pengaturan</span></span>
         </div>
         <div class="aw-hero pc" data-p="home">
@@ -587,7 +617,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
           <ul>
             <li><b><span>Pilih App</span></b> <span>menemukan lebih banyak data tiap app, misalnya login web.</span></li>
             <li><b><span>Alat developer & terminal</span></b>: <span>SSH, GitHub CLI, zsh, Vim, Docker, AWS, Claude Code, dan lainnya.</span></li>
-            <li><span>Virtual machine (UTM, Parallels, VirtualBox, VMware Fusion) otomatis disimpan.</span></li>
+            <li><span>Virtual machine (UTM, Parallels, VirtualBox, VMware Fusion) dan library Foto diberi peringatan dan tombol Keep. Tidak ada yang ditambahkan tanpa kamu.</span></li>
             <li><span>Menyimpan Claude ikut menyimpan chat Claude Code.</span></li>
           </ul>
         </article>
@@ -709,7 +739,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <p class="label"><span class="n">10</span> · <span>Pasang</span></p>
       <h2><span>Pasang dengan <em>satu baris.</em></span></h2>
       <div class="badges">
-        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg><use href="#i-tag"/></svg><span>Release</span><b data-gh="version">v5.23.1</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg><use href="#i-tag"/></svg><span>Release</span><b data-gh="version">v5.25.0</b></a>
         <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
         <span class="bdg"><svg><use href="#i-laptop"/></svg><span>macOS</span><b>15+</b></span>
       </div>
@@ -753,7 +783,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <dl class="ghstats">
           <div><dt><span>Lisensi</span></dt><dd>MIT</dd></div>
           <div><dt>Releases</dt><dd data-gh="releases">–</dd></div>
-          <div><dt><span>Terbaru</span></dt><dd data-gh="version">v5.23.1</dd></div>
+          <div><dt><span>Terbaru</span></dt><dd data-gh="version">v5.25.0</dd></div>
         </dl>
         <div class="cta">
           <a class="btn main" href="https://github.com/navi-crwn/amnesia"><svg><use href="#i-github"/></svg><span>Kasih star repo ini</span></a>
@@ -1027,7 +1057,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div class="cell fq f-safe">
         <h3 class="fq-h"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><span>Keamanan</span></h3>
         <details><summary><span>Apakah data saya dikirim ke suatu tempat?</span></summary><p><span>Tidak. Amnesia tidak punya server, tidak butuh akun, tidak melacak, dan tidak mengumpulkan data. Semuanya berjalan di Mac kamu. File .7z terkunci hanya keluar dari Mac kalau kamu mengatur backup ke server atau cloud, langsung ke tempat yang kamu pilih, dan tidak ada yang bisa membacanya tanpa password kamu. Cek update hanya menanyakan nomor versi terbaru ke GitHub, bawaannya seminggu sekali. Di Pengaturan bisa diganti jadi 2 minggu, sebulan sekali, atau Mati.</span></p></details>
-    <details><summary><span>Ada versi Windows?</span></summary><p><span>Ada, Amnesia untuk Windows v0.8.1, sudah rilis resmi. Ia membersihkan saat sign out, restart dan shutdown, lengkap dengan vault, backup, Kunci Keep, brankas, Cek kesehatan, dan Setup.exe dengan update bertanda tangan dari dalam app. Lihat <a href="win/">halaman Windows</a>.</span></p></details>
+    <details><summary><span>Ada versi Windows?</span></summary><p><span>Ada, Amnesia untuk Windows v0.10.0, sudah rilis resmi. Ia membersihkan saat sign out, restart dan shutdown, lengkap dengan vault, backup, Kunci Keep, brankas, Cek kesehatan, dan Setup.exe dengan update bertanda tangan dari dalam app. Lihat <a href="win/">halaman Windows</a>.</span></p></details>
     <details><summary><span>Bisa dicoba tanpa menghapus apa-apa?</span></summary><p><span>Bisa. Amnesia tetap mati sampai kamu menekan Aktifkan. Halaman Yang Akan Dihapus (atau Pengaturan → "Lihat yang akan dihapus sekarang") menampilkan daftarnya lebih dulu.</span></p></details>
     <details><summary><span>File yang dihapus pindah ke mana? Bisa dikembalikan?</span></summary><p><span>Saat logout, semuanya dipindah ke folder khusus Amnesia (~/.amnesia-trash), lalu dikosongkan di background setelah login berikutnya. Tidak masuk Trash macOS dan tidak bisa dikembalikan. Yang masih kamu butuhkan, simpan di folder Keep, Keep List, atau vault.</span></p></details>
     <details><summary><span>Apakah folder Keep dienkripsi?</span></summary><p><span>Tidak oleh Amnesia. Kunci Keep membuat Finder dan app lain tidak bisa membukanya sampai kamu mengetik password Keep, tapi itu izin macOS, bukan enkripsi. Nyalakan FileVault supaya seluruh disk terenkripsi, dan simpan file yang benar-benar rahasia di Brankas.</span></p></details>
@@ -1113,7 +1143,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="ft-tag"><span>Mac kamu melupakan segalanya setiap logout, kecuali yang kamu pilih untuk disimpan. Gratis, open source, dan tidak ada data yang keluar dari Mac kamu.</span></p>
         <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
           <svg><use href="#i-github"/></svg>
-          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · <span data-gh="version">v5.23.1</span></small></span>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · <span data-gh="version">v5.25.0</span></small></span>
         </a>
       </div>
       <nav class="ft-cols" aria-label="Kaki halaman">

@@ -19,7 +19,7 @@
   <a href="TERMS.id.md">Ketentuan</a>
 </p>
 
-<p align="center"><sub>Terbaru: <b>Mac v5.23.1</b> · <b>Windows v0.8.1</b> · gratis dan open source (MIT)</sub></p>
+<p align="center"><sub>Terbaru: <b>Mac v5.25.0</b> · <b>Windows v0.10.0</b> · gratis dan open source (MIT)</sub></p>
 
 > [!WARNING]
 > **Amnesia benar-benar menghapus data.** Setelah aktif, semua yang ada di luar folder Keep dan Keep List dihapus setiap logout, restart dan shutdown. Tidak masuk Trash dan tidak bisa dibatalkan. Baca dulu [ketentuan & peringatan](TERMS.id.md) yang singkat ini sebelum memasang.
@@ -61,8 +61,8 @@ Masalahnya, kalau semua hilang, kamu harus login ulang Gmail, WhatsApp, Telegram
 | Isi Desktop, Downloads, Documents, Pictures | Login yang disimpan di **Profile Vault** |
 | Cache, log, riwayat Terminal | Semua yang ada di **Keep List** (VPN, kunci SSH, setting Terminal, dll.) |
 | Data app yang tidak kamu pilih | App yang terpasang di `/Applications` dan Homebrew (kecuali kamu menyalakan *Hapus app yang dipasang belakangan* di Lanjutan) |
-| Isi Trash | Akun Apple, Foto, Notes, Mail, Messages dan lainnya (kartu **Akun & data Apple**, menyala secara default) |
-| | Mesin virtual (UTM, Parallels, VirtualBox, VMware Fusion), otomatis disimpan |
+| Isi Trash | Akun Apple, Notes, Mail, Messages dan lainnya (kartu **Akun & data Apple**, menyala secara default). Foto: peringatan dan tombol Keep |
+| | Mesin virtual (UTM, Parallels, VirtualBox, VMware Fusion), setelah kamu menekan Keep di peringatan |
 | | Desktop dan Documents kalau **iCloud Desktop & Documents** nyala (menghapusnya berarti ikut menghapus dari iCloud) |
 
 Mau tahu persis apa yang akan dihapus **tanpa menghapus apa pun**? Di app, tekan **Yang Akan Dihapus** di halaman utama. Atau jalankan:
@@ -82,7 +82,13 @@ bash ~/.amnesia/clean.sh logout --dry-run
 - **📌 Keep List.** Pilih folder atau app yang tidak boleh ikut dihapus, langsung dari app. Nyalakan sebuah app dan kamu lihat persis apa yang disimpan (data app, setting, ukurannya). Menyimpan **Claude** ikut menyimpan chat Claude Code (`~/.claude`, `~/.claude.json`).
 - **🔏 Kunci Keep.** Finder dan app lain tidak bisa membuka atau mengubah folder Keep sampai kamu mengetik password Keep di Amnesia. Terkunci lagi setelah 5–60 menit, saat layar terkunci, dan setiap logout. Catatan jujur: ini memakai izin macOS, bukan enkripsi, dan nama file langsung di dalam Keep tetap terlihat. Mati secara default.
 - **🗄️ Brankas (eksperimen).** Disk terenkripsi (APFS, AES-256) di dalam folder Keep untuk file yang benar-benar rahasia. Amnesia menutupnya sebelum setiap pembersihan, dan memberi tahu kalau gagal. Lupa password-nya, file di dalamnya hilang.
-- **🩺 Cek kesehatan.** Satu halaman di Pengaturan: Amnesia nyala atau tidak, Akses Disk Penuh, iCloud Desktop & Documents, folder symlink, mesin virtual, file besar yang akan dihapus, backup terakhir, Kunci Keep, Brankas, dan FileVault. Kebanyakan baris punya tombol perbaikan. Di sebelahnya, **Batasan** menjelaskan apa yang tidak bisa dihapus Amnesia (Time Machine, Spotlight, iCloud, swap, log sistem, akun lain).
+- **🩺 Cek kesehatan.** Satu halaman di Pengaturan: Amnesia nyala atau tidak, Akses Disk Penuh, iCloud Desktop & Documents, folder symlink, mesin virtual, file besar yang akan dihapus, backup terakhir, Kunci Keep, Brankas, FileVault, sisa ruang disk, memori dan kondisi baterai. Kebanyakan baris punya tombol perbaikan. Di sebelahnya, **Batasan** menjelaskan apa yang tidak bisa dihapus Amnesia (Time Machine, Spotlight, iCloud, swap, log sistem, akun lain).
+- **🧹 Perawatan.** Halaman untuk mengosongkan ruang kapan saja, selalu dengan daftar untuk dicek dulu: **Ringkasan disk** (hanya dibaca), **Bersihkan sekarang** (cache, log, tempat sampah Amnesia; cache app yang sedang terbuka dilewati), **Hapus app** (ke Trash, data pribadi tetap ada kecuali kamu centang), **Folder build project** (node_modules, target, build, dist dan lainnya; folder yang dipakai 7 hari terakhir atau dilacak git tidak disentuh), **Installer lama** (.dmg, .pkg; image disk dan mesin virtual tidak pernah dipilihkan) dan **Perawatan ringan** tanpa password admin. Tidak ada yang berisiko dicentang untukmu, dan setiap Perawatan tercatat di Riwayat beserta ruang yang dikosongkan. Amnesia sudah menghapus sebagian besar folder home saat logout, jadi Perawatan terutama membantu untuk folder Keep, app yang disimpan dan file besar dari sesi ini.
+- **🛑 Berhenti kalau ragu.** Kalau Keep List tidak bisa dibaca atau hilang, pembersihan tidak menghapus apa pun dan dicatat di Riwayat. Salinan Keep List terakhir yang baik disimpan untuk memulihkannya. Kalau pengecekan tidak yakin (cloud, iCloud, link, pemilik), item disimpan.
+- **🎚️ Mode Amnesia.** Pilih seberapa banyak yang dilupakan setiap logout. **Retrograde Amnesia** seperti akun baru setiap login: hanya folder Keep kamu dan yang dibutuhkan Amnesia yang tetap ada. **Selective Amnesia** (disarankan) adalah daftar dasar untuk instalasi baru: folder Keep, login app dari vault, kunci SSH, pengaturan Git dan shell. App kamu sendiri kamu tambahkan sendiri. **Partial Amnesia** membiarkan app tetap menyimpan pengaturan dan loginnya, sedangkan file kamu, Downloads, Desktop, cache, log, Trash dan riwayat terminal dihapus (catatan jujur: riwayat dan cookie browser di dalam folder browser itu sendiri juga tetap ada, karena foldernya disimpan). **Custom Amnesia** adalah Keep List buatan kamu sendiri. Setiap ganti mode ada pratinjau dulu (apa yang mulai dihapus, apa yang mulai disimpan), ada peringatan kalau yang dihapus lebih banyak, dan berlaku mulai logout berikutnya. Mode hanya mengubah bagiannya sendiri yang ditandai di Keep List, jadi baris kamu sendiri tetap ada. File mode yang hilang atau rusak tidak pernah mengosongkan Keep List.
+- **👥 Profil vault.** Restore hanya yang kamu perlukan, misalnya **Kerja** atau **Santai**, atau semuanya. Profil bisa diganti nama, ditambah dan dihapus. Kalau satu app ada di dua profil, Amnesia memberi tahu: satu browser menyimpan satu kumpulan login, jadi browser kedua (atau profil browser terpisah) membuat pemakaian pribadi tetap terpisah.
+- **🤖 Tanya AI.** Minta saran tanpa membagikan file kamu. Amnesia membuat laporan tanpa isi file dan tanpa nama file kamu (nama folder juga bisa disembunyikan), plus prompt siap pakai. Salin atau simpan ke folder Keep, tempel ke AI pilihanmu, lalu tempel jawabannya kembali. Setiap perubahan yang disarankan punya kotak centang dan pratinjau yang sama seperti ganti mode; tidak ada yang diterapkan sebelum kamu konfirmasi, dan baris milik Amnesia tidak bisa dihapus lewat cara ini. Amnesia tidak memakai internet untuk ini.
+- **⌨️ Perintah Terminal.** Nyalakan di Pengaturan dan kamu dapat perintah `amnesia` yang hanya membaca: `amnesia status`, `amnesia preview`, `amnesia report` (`--json`, `--hide-names`), `amnesia keep`, `amnesia history`. Tidak pernah menghapus atau mengubah apa pun.
 - **🗂️ Folder Keep milikmu.** File di dalamnya tidak pernah dihapus. Taruh di mana saja (bahkan di drive eksternal) dan beri nama apa saja.
 - **💾 Backup ke mana saja.** Folder pilihan dikunci jadi 1 file `.7z` (AES-256), lalu dikirim ke:
   - **Flashdisk / SSD** yang tercolok,
@@ -110,12 +116,14 @@ bash ~/.amnesia/clean.sh logout --dry-run
 
 ## Amnesia untuk Windows
 
-Amnesia juga jalan di **Windows 10 dan 11** (x64 dan ARM). Sekarang sudah rilis resmi, **v0.8.1**, dari folder `windows/`. Idenya sama, dibuat khusus untuk Windows:
+Amnesia juga jalan di **Windows 10 dan 11** (x64 dan ARM). Sekarang sudah rilis resmi, **v0.10.0**, dari folder `windows/`. Idenya sama, dibuat khusus untuk Windows:
 
 - membersihkan folder user dan jejak Windows (file terakhir, jump list, riwayat Explorer dan pencarian, riwayat clipboard, dan lainnya) saat **sign out, restart dan shutdown**, lalu dicek lagi saat sign in
 - folder Keep dan Keep List dengan ikon app, **Simpan app** sekali klik, dan tempat sampah 3 hari untuk app yang dihapus
 - Profile Vault, backup, Cek kesehatan, Kunci Keep, brankas (eksperimen), hotkey panik, kunci USB, sign out saat ditinggal
 - folder cloud (OneDrive, Dropbox, Google Drive, iCloud Drive, dan lainnya) dan mesin virtual tidak pernah dihapus
+- **Perawatan**: kosongkan ruang dengan daftar untuk dicek dulu (Temp, cache app, folder build, installer lama ke Recycle Bin, hapus program yang dipasang khusus untukmu)
+- **Mode Amnesia** (Retrograde Amnesia, Selective Amnesia, Partial Amnesia, Custom Amnesia) dengan pratinjau sebelum setiap ganti mode, **profil vault** untuk restore hanya yang kamu perlukan, dan **Tanya AI** untuk minta saran tanpa membagikan file kamu
 - dipasang khusus untuk akunmu (tanpa admin), update bertanda tangan dari dalam app
 
 Ambil `Amnesia-Setup-<versi>-x64.exe` (atau `-arm64.exe`) dari rilis **Windows** (tag-nya diawali `win-v`) di halaman [Releases](../../releases), lalu cocokkan dengan `SHA256SUMS.txt`. Belum ada sertifikat code signing berbayar, jadi SmartScreen memberi peringatan pertama kali: **More info → Run anyway**.
@@ -125,6 +133,8 @@ Selengkapnya: [website Windows](https://navi-crwn.github.io/amnesia/win/) dan [w
 ## Cara pasang
 
 **Yang dibutuhkan:** macOS 15 atau lebih baru. Sisanya sudah ada di dalam app (termasuk 7-Zip). Kalau Command Line Tools Apple (gratis) belum ada, tur perkenalan bantu memasangnya, dan minta **Akses Disk Penuh** sekali saja (supaya macOS tidak tanya per folder).
+
+**Ambil Amnesia hanya dari** [github.com/navi-crwn/amnesia](https://github.com/navi-crwn/amnesia), websitenya [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/) (GitHub Pages) atau Homebrew tap `navi-crwn/tap`. Salinan di tempat lain bukan dari kami. Menemukan masalah keamanan? Lihat [SECURITY.md](SECURITY.md).
 
 **Sebelum apa pun:** baca [ketentuan & peringatan](TERMS.id.md). App juga meminta kamu mencentang bahwa kamu sudah membacanya.
 
@@ -272,9 +282,12 @@ Script ini mematikan agent login lebih dulu (supaya waktu dihentikan tidak ada y
 | `keep.example.conf` | Contoh Keep List. `build.sh` menyalinnya jadi `keep.conf` saat pertama dipasang. |
 | `app/` | Kode app SwiftUI, ikon, dan script build/rilis. `app/screenshots.sh` memotret app asli dengan data contoh (opsional). |
 | `docs/` | Website (GitHub Pages). `docs/readme/` berisi gambar README yang diambil dari website. |
+| `presets/` | Mode Amnesia: `full.conf`, `balanced.conf`, `light.conf`. Sebuah mode menyalin salah satunya ke bagian bertanda di atas `keep.conf`. |
+| `report.py`, `bin/amnesia` | Laporan Tanya AI (tanpa isi file, tanpa nama file) dan perintah Terminal `amnesia` yang hanya membaca. |
 | `keeplock.sh` | Kunci Keep dan Brankas (disk terenkripsi di dalam Keep). |
-| `windows/` | Versi Windows (**v0.8.1**): app tray C# .NET 8 + halaman HTML, vault, backup, Cek kesehatan dan Setup.exe dengan update bertanda tangan dari dalam app. Benar-benar menghapus setelah diaktifkan, jadi cek dulu Yang akan dihapus. Di-build dan dites oleh GitHub Actions (`.github/workflows/windows.yml`); tag `win-v*` membuat release Windows. |
-| `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Tes otomatis di "home palsu", aman dijalankan kapan saja. |
+| `windows/` | Versi Windows (**v0.10.0**): app tray C# .NET 8 + halaman HTML, vault, backup, Cek kesehatan dan Setup.exe dengan update bertanda tangan dari dalam app. Benar-benar menghapus setelah diaktifkan, jadi cek dulu Yang akan dihapus. Di-build dan dites oleh GitHub Actions (`.github/workflows/windows.yml`); tag `win-v*` membuat release Windows. |
+| `SECURITY.md`, `llms.txt` | Cara melaporkan masalah keamanan, dan panduan singkat untuk asisten AI yang membantu orang memasang Amnesia. |
+| `test_clean.sh`, `test_vault.py`, `test_backup.sh`, `test_report.py` | Tes otomatis di "home palsu", aman dijalankan kapan saja. |
 
 ---
 

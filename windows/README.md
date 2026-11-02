@@ -2,13 +2,15 @@
 
 # Amnesia for Windows
 
-**v0.8.1**, an official release for Windows 10 and 11 (x64 and ARM). Once you press **Turn On**, Amnesia **really deletes** what's in your user folder at sign out, restart and shutdown (and checks again at sign in), except your Keep folder and Keep List. Look at **What gets wiped** before you turn it on. Website: [navi-crwn.github.io/amnesia/win](https://navi-crwn.github.io/amnesia/win/).
+**v0.10.0**, an official release for Windows 10 and 11 (x64 and ARM). Once you press **Turn On**, Amnesia **really deletes** what's in your user folder at sign out, restart and shutdown (and checks again at sign in), except your Keep folder and Keep List. Look at **What gets wiped** before you turn it on. Website: [navi-crwn.github.io/amnesia/win](https://navi-crwn.github.io/amnesia/win/).
 
 ## Install
 - **Setup.exe** (`Amnesia-Setup-<version>-x64.exe` for normal PCs, `-arm64.exe` for Windows on ARM) from the Windows release on [Releases](../../../releases) (tags start with `win-v`). It installs just for you, no admin, into `%LOCALAPPDATA%\Programs\Amnesia`, with a Start menu entry and an Apps & features entry. Amnesia stays off until you turn it on.
 - **Portable zip**: unzip, run `Amnesia.exe`. Turn On copies it to the same install folder.
 - Check your download against `SHA256SUMS.txt` (PowerShell: `Get-FileHash .\Amnesia-Setup-*.exe`). There's no paid code signing certificate, so SmartScreen warns the first time: **More info → Run anyway**.
 - Updating over an older version: **Turn Off**, install, **Turn On**. Updates from inside the app only install when `SHA256SUMS.txt` has a valid developer signature (`SHA256SUMS.txt.sig`); otherwise the release page opens instead.
+
+- Only get Amnesia from [github.com/navi-crwn/amnesia](https://github.com/navi-crwn/amnesia), its website on GitHub Pages or (Mac) the Homebrew tap `navi-crwn/tap`. Found a security problem? See [SECURITY.md](../SECURITY.md).
 
 ## What it does
 - **Turn On** starts Amnesia at every sign in. If Task Manager switches that off, the home page warns you and has a **Switch it back on** button.
@@ -18,22 +20,26 @@
 - **Keep List** with app icons and names. **Keep an app** lists installed apps (Microsoft Store apps too) and keeps all of an app's folders in one click. **Keep** in the new apps list also keeps the app's program folder.
 - **Profile Vault** (AES-256): Chrome, Edge, Firefox, Telegram, WhatsApp, Claude, Signal, Bitwarden, Obsidian, Antigravity, Gemini CLI and more, with a spare snapshot. Panic word and Doomsday delete it.
 - **Backup** to a folder, USB drive, cloud folder or your own SSH server, plus **Move to a new PC**.
-- **Health check** on the home page (is it on, does it start with Windows, last cleanup, files left behind, cloud folders, vault, backup, Keep lock) and **What Amnesia can't do**, the honest limits.
+- **Health check** on the home page (is it on, does it start with Windows, last cleanup, files left behind, cloud folders, vault, backup, Keep lock, free disk space, memory and battery) and **What Amnesia can't do**, the honest limits.
+- **Care**: free up space when you want, always with a list to check first. A read-only disk overview; **Clean now** (Temp, crash dumps, app caches, Amnesia's trash; the Recycle Bin is listed but never ticked for you); **Uninstall apps** (programs installed just for you run their own uninstaller, programs for everyone open Windows Settings); **Project build folders** (node_modules, target, build, dist, bin and obj of .NET projects; folders used in the last 7 days or tracked by git are left alone); **Old installers** (.msi, .msix; setup .exe files are listed but never picked for you); restart Explorer, open Startup apps and Storage settings. Things go to the Recycle Bin, nothing risky is ticked for you, and every run is in History.
+- **Amnesia modes**: pick how much is forgotten at every sign out. **Retrograde Amnesia** is like a brand-new account at every sign in (only your Keep folder and what Amnesia needs stay, and the vault's auto snapshot at sign out is turned off). **Selective Amnesia** (recommended, same as before) keeps your Keep folder and brings app logins back from the vault. **Partial Amnesia** keeps everything in AppData, so apps keep their settings and logins (and their caches, Temp and browsing history too), while your files, Downloads and Desktop are wiped. **Custom Amnesia** is your own Keep List. Every switch shows a preview first, warns when more is wiped, and takes effect at the next sign out. A mode only changes its own marked section of the Keep List, so your own lines stay.
+- **Vault profiles**: restore only what you need, like Work or Personal, or everything. Rename, add and remove profiles. One browser holds one set of logins, so when an app is in two profiles Amnesia says so and suggests a second browser for personal use.
+- **Ask an AI**: a report with no file contents and no names of your files (folder names can be hidden), plus a ready prompt. Paste it into the AI you choose, paste the answer back, and tick the changes you want. Nothing is applied until you confirm, and Amnesia makes no network calls for this.
 - **Keep lock**: Keep can't be opened or changed until you type the Keep password. It uses Windows permissions, not encryption, so file names stay visible.
 - **Safe box (experimental)**: a locked folder inside Keep, one encrypted file while closed. Amnesia closes it at every sign out.
 - **Quick exits**: panic hotkey, USB key (sign out or shut down when it's pulled), sign out when idle. **Lab lock** for shared PCs.
 - **Advanced**: Stop Windows remembering, remove new apps (3-day trash, never anything on the Keep List), Find leftovers, Extra cleaning list ([Winapp2.ini](https://github.com/MoscaDotTo/Winapp2), downloaded only when you ask), Throwaway Windows (Windows Sandbox), wipe free space, Windows protections.
-- **Safety**: nothing is deleted unless Amnesia is on, the installed app still exists and no pause is set. An installer closing Amnesia is never treated as a sign out. Uninstalling asks for the Keep password and opens Keep first.
+- **Safety**: if the Keep List can't be read or has gone missing, the cleanup deletes nothing and says so in History (a copy of the last good Keep List is kept). When a check can't tell (cloud folders, links, owner), the item is kept. Nothing is deleted unless Amnesia is on, the installed app still exists and no pause is set. An installer closing Amnesia is never treated as a sign out. Uninstalling asks for the Keep password and opens Keep first.
 
 ## Code
-- `src/Amnesia.Core/`: the real work, plain .NET 8 (`CleanEngine`, `Vault`, `Backup`, `Crypto`, `KeepList`, `Safe`, `UpdateSig`, `AppMatch`, `NewApps`, `Winapp2`, `Leftovers`, `Tweaks`). Runs on any OS, so the tests do too.
+- `src/Amnesia.Core/`: the real work, plain .NET 8 (`CleanEngine`, `Vault`, `Backup`, `Crypto`, `KeepList`, `Safe`, `UpdateSig`, `AppMatch`, `NewApps`, `Winapp2`, `Leftovers`, `Tweaks`, `Care`, `Modes`, `VaultProfiles`, `AiReport`). Runs on any OS, so the tests do too.
 - `src/Amnesia/`: the tray app (C# .NET 8, WinForms + WebView2): the Windows-only parts (sign out watcher, registry traces, new apps, quick exits, Keep lock, admin switches, updater, SSH).
 - `ui/`: the pages (HTML/CSS/JS, same look as the website), English and Indonesian. Buttons talk to C# through `Bridge.cs`.
 - `installer/Amnesia.iss`: Setup.exe (Inno Setup 6).
-- `tests/Amnesia.Tests/`: 294 tests on a fake user folder: `dotnet run --project windows/tests/Amnesia.Tests`.
+- `tests/Amnesia.Tests/`: 413 tests on a fake user folder: `dotnet run --project windows/tests/Amnesia.Tests`.
 - `scripts/Collect log.cmd` (runs `collect-log.ps1`): saves a troubleshooting log to `C:\Users\Public\Documents\amnesia-log.txt` and opens it. Nothing is sent; no file names from your folders.
 
 Every push that changes `windows/` is built and tested on GitHub's Windows servers (`.github/workflows/windows.yml`): repo → **Actions** → latest **Windows** run → **Artifacts**. A `win-v*` tag also makes a GitHub release (used by the in-app update).
 
 ## Learned from
-Ideas (and, where the license allows, a little data) came from BleachBit, Winapp2, Bulk Crap Uninstaller, privacy.sexy, Win11Debloat, Pearcleaner, Sandboxie and Tails. What came from where: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Ideas (and, where the license allows, a little data) came from BleachBit, Winapp2, Bulk Crap Uninstaller, privacy.sexy, Win11Debloat, Pearcleaner, Sandboxie and Tails. The Care page took ideas (not code) from Mole. What came from where: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

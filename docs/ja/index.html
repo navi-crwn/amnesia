@@ -122,7 +122,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
   <div class="wrap two">
     <div class="hero-copy">
-      <a class="hbadge" href="https://github.com/navi-crwn/amnesia"><span class="hb-ver" data-gh="version">v5.23.1</span><svg><use href="#i-github"/></svg><span>GitHub でオープンソース</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia"><span class="hb-ver" data-gh="version">v5.25.0</span><svg><use href="#i-github"/></svg><span>GitHub でオープンソース</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
       <h1 id="hero-title">
         <span><span class="split">あなたの Mac は</span> <em class="word">すべて忘れます。</em><span class="after split">残すと決めたもの以外は。</span></span>
       </h1>
@@ -152,7 +152,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
     <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
       <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
       <span class="rc-desc"><span>ログアウトすると、Mac は残すと決めたもの以外をすべて忘れます。</span></span>
-      <span class="rc-meta"><span>MIT</span><span data-gh="version">v5.23.1</span><span class="rc-langs" data-gh="langs-mini"><span><i style="--c:var(--orange)"></i>Swift</span><span><i style="--c:var(--green)"></i>Shell</span></span></span>
+      <span class="rc-meta"><span>MIT</span><span data-gh="version">v5.25.0</span><span class="rc-langs" data-gh="langs-mini"><span><i style="--c:var(--orange)"></i>Swift</span><span><i style="--c:var(--green)"></i>Shell</span></span></span>
     </a>
   </div>
 </section>
@@ -191,7 +191,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <span class="rc-legend" data-gh="langs" hidden></span>
         <span class="rc-stats">
           <span><small><span>ライセンス</span></small><b>MIT</b></span>
-          <span><small><span>最新リリース</span></small><b data-gh="version">v5.23.1</b></span>
+          <span><small><span>最新リリース</span></small><b data-gh="version">v5.25.0</b></span>
           <span><small>Commits</small><b data-gh="commits">–</b></span>
           <span><small>Releases</small><b data-gh="releases">–</b></span>
           <span><small><span>コントリビューター</span></small><b data-gh="contributors">–</b></span>
@@ -283,7 +283,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <li><span>Keep フォルダーの中身すべて（場所も名前も自由）</span></li>
         <li><span>Profile Vault に保存したログイン情報（Restore で戻ります）</span></li>
         <li><span>Keep List のアプリ（VPN、SSH キー、Apple アカウント…）</span></li>
-        <li><span>仮想マシン（UTM、Parallels、VirtualBox、VMware Fusion）。標準で残ります</span></li>
+        <li><span>仮想マシン（UTM、Parallels、VirtualBox、VMware Fusion）。Keep を押した後</span></li>
         <li><span>インストール済みのアプリ本体</span></li></ul></div>
     </div>
   </div>
@@ -463,7 +463,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div><h3><span>ブラウザの軽量スナップショット</span></h3><p><span>Chrome、Brave、Edge、Arc、Vivaldi、Opera はキャッシュなしで保存できます。約 1 GB が 150 MB になります。ブラウザごとにスイッチひとつで切り替えられます。</span></p></div>
       <div><h3><span>Save & Log Out</span></h3><p><span>ワンクリックでログイン情報を保存してからログアウトします。保存に失敗した場合、ログアウトは中止されます。</span></p></div>
       <div><h3><span>自動スナップショット</span></h3><p><span>Save & Log Out を忘れても大丈夫。普通にログアウトしても、変更のあったアプリを先に保存します。</span></p></div>
-      <div><h3><span>残すものを選ぶ</span></h3><p><span>ファイル用の Keep フォルダーと、VPN や SSH キーなどのアプリ用の Keep List があります。仮想マシンは最初から Keep List に入っています。</span></p></div>
+      <div><h3><span>残すものを選ぶ</span></h3><p><span>ファイル用の Keep フォルダと、VPN や SSH 鍵などのアプリ用の Keep リスト。仮想マシンが見つかったら、残す前に Amnesia が確認します。</span></p></div>
       <div><h3><span>先に確認</span></h3><p><span>「What Gets Deleted」では、何かを削除する前にすべてを一覧表示します。検索や Biggest first での並べ替えもできます。1 GB 以上のファイルには警告が付きます。ログアウトをあなたの OK まで待たせることもできます。</span></p></div>
       <div><h3><span>Pause 1 Session</span></h3><p><span>Amnesia をオフにせずに、次のログアウトとログインを 1 回だけスキップします。</span></p></div>
       <div><h3><span>どこにでもバックアップ</span></h3><p><span>USB ドライブ、SSH 経由の自分のサーバー、Google Drive、Dropbox、OneDrive、Box、pCloud に保存できます。毎日または毎週で、バックアップファイルの確認もできます。</span></p></div>
@@ -473,11 +473,41 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div><h3><span>開発者ツール</span></h3><p><span>SSH、GitHub CLI、シェル、エディター、Docker、クラウド、AI CLI の設定を残せます。Pick Apps には、この Mac にあるものだけが表示されます。</span></p></div>
       <div><h3><span>どの設定もすぐ見つかる</span></h3><p><span>設定画面の上にある検索ボックスに、英語またはインドネシア語で入力します。ウインドウのサイズも変えられます。</span></p></div>
       <div><h3><span>Keep ロック</span></h3><p><span>Amnesia で Keep のパスワードを入力するまで、Finder やほかのアプリは Keep フォルダーを開けません。しばらくすると自動でまたロックされます。暗号化ではなく macOS のアクセス権を使うので、Keep の直下にあるファイルの名前は見えたままです。</span></p></div>
-      <div><h3><span>ヘルスチェック</span></h3><p><span>対応が必要なことを 1 ページで知らせます。フルディスクアクセス、iCloud のデスクトップと書類、シンボリックリンクのフォルダー、仮想マシン、大きなファイル、最後のバックアップ、FileVault。ほとんどの項目に修正ボタンがあります。</span></p></div>
+      <div><h3><span>ヘルスチェック</span></h3><p><span>対応が必要なことを 1 ページで知らせます。フルディスクアクセス、iCloud のデスクトップと書類、シンボリックリンクのフォルダー、仮想マシン、大きなファイル、最後のバックアップ、FileVault、ディスクの空き容量、メモリ、バッテリー。ほとんどの項目に修正ボタンがあります。</span></p></div>
       <div><h3><span>Brankas <small>（実験的）</small></span></h3><p><span>Keep フォルダーの中に作る暗号化ディスク（AES-256）で、絶対に秘密にしたいファイル用です。Amnesia は毎回の消去の前にこれを閉じ、閉じられなかったときは知らせます。パスワードを忘れると、ファイルは失われます。</span></p></div>
       <div><h3><span>署名付きアップデート</span></h3><p><span>アプリ内からのアップデートは、リリースの SHA256SUMS.txt に有効な署名がある場合にだけインストールされます。署名がなければ、代わりにリリースページが開きます。</span></p></div>
       <div><h3><span>iCloud でも安全</span></h3><p><span>iCloud の「デスクトップと書類」がオンの場合、この 2 つのフォルダーはスキップされるので、iCloud やほかのデバイスから何かが削除されることはありません。シンボリックリンクのフォルダーは、リンク越しに中身が消されることはありません。</span></p></div>
       <div><h3><span>Claude と Claude Code</span></h3><p><span>Claude を Keep List に入れると、Claude Code のチャット（~/.claude）も残ります。ログアウトの前には、保管庫でチェックを入れたアプリの新しいスナップショットを取るので、復元したデータが古いということはありません。</span></p></div>
+    </div>
+
+    <div class="head" id="care" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>メンテナンス。<em>まずリストを見てから、空きを増やす。</em></span></h2>
+      <p class="lead"><span>Amnesia はログアウトのたびにホームフォルダーのほとんどをもう消しています。だからメンテナンスは残るもののためにあります。Keep フォルダー、残したアプリ、このセッションでできた大きなファイルです。どの操作も先にスキャンしてリストを見せ、危ないものにはチェックを入れません。</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>ディスクの概要</span></h3><p><span>何が容量を使っているかを表示します。Keep フォルダー、保管庫、ゴミ箱、キャッシュ、いちばん大きいフォルダーとファイル、古いダウンロード。見るだけで、ここでは何も消しません。</span></p></div>
+      <div><h3><span>今すぐ消去</span></h3><p><span>キャッシュ、ログ、Amnesia のゴミ箱を空にします。開いているアプリのキャッシュは飛ばします。ゴミ箱を空にする項目もリストにありますが、チェックは入れません。</span></p></div>
+      <div><h3><span>アプリを削除</span></h3><p><span>自分で入れたアプリとそのキャッシュをゴミ箱に移します。個人データは、チェックを入れない限り残ります。</span></p></div>
+      <div><h3><span>プロジェクトのビルドフォルダー</span></h3><p><span>node_modules、target、build、dist などをゴミ箱に移せます。この 7 日間に使ったフォルダーや git で管理されているものには触れません。</span></p></div>
+      <div><h3><span>古いインストーラー</span></h3><p><span>古い .dmg と .pkg はゴミ箱へ。ディスクイメージと仮想マシンは勝手に選びません。</span></p></div>
+      <div><h3><span>安全なお手入れ</span></h3><p><span>Quick Look のサムネイルを更新したり、Dock を再起動したりします。管理者パスワードは不要です。</span></p></div>
+      <div><h3><span>迷ったら止まる</span></h3><p><span>Keep List が読めないか見つからないときは、消去は何も消さずに止まり、そのことを履歴に残します。確認できないときは、その項目を残します。</span></p></div>
+      <div><h3><span>毎回履歴に残る</span></h3><p><span>メンテナンスのたびに、空いた容量と一緒に履歴に残ります。ヘルスチェックにはディスクの空き容量、メモリ、バッテリーの状態も出ます。</span></p></div>
+    </div>
+
+    <div class="head" id="modes" style="margin-top:clamp(96px,12vw,140px)">
+      <h2><span>モードとプロファイル。<em>どれだけ忘れるかは、あなたが決める。</em></span></h2>
+      <p class="lead"><span>ログアウトごとのモードを1つ選び、必要なアプリだけを復元し、ファイルを共有せずにAIに相談できます。どの変更もまずプレビューが表示され、次のログアウトから有効になります。</span></p>
+    </div>
+    <div class="feats bento">
+      <div><h3><span>Retrograde Amnesia</span></h3><p><span>ログインのたびに新品のアカウントのよう。残るのはKeepフォルダとAmnesiaの動作に必要なものだけ。ログアウト時の自動スナップショットはオフになりますが、スナップショットは手動で復元できます。</span></p></div>
+      <div><h3><span>Selective Amnesia <small>(おすすめ)</small></span></h3><p><span>新しくインストールしたときの基本リスト：Keepフォルダ、保管庫からのアプリのログイン、SSHキー、Gitとシェルの設定。自分のアプリはKeep Listで追加します。</span></p></div>
+      <div><h3><span>Partial Amnesia</span></h3><p><span>アプリは設定とログインをそのまま保ちます。あなたのファイル、ダウンロード、デスクトップ、キャッシュ、ログ、ゴミ箱、シェル履歴は消去されます。ブラウザ自身のフォルダ内の閲覧履歴とCookieも残ります。そのフォルダが保持されるためです。</span></p></div>
+      <div><h3><span>Custom Amnesia</span></h3><p><span>あなた自身のKeep List。モードが追加した行を変更すると自動で選ばれます。モードは自分のマーク付きセクションだけを変更するので、あなた自身の行は常に残ります。</span></p></div>
+      <div><h3><span>切り替えの前に必ずプレビュー</span></h3><p><span>これから消去されるものと、これから残るものを確認でき、消去が増えるときは警告が出ます。切り替えた時点では何も削除されません。モードファイルが見つからない・壊れている場合でも、Keep Listが空になることはありません。</span></p></div>
+      <div><h3><span>保管庫のプロファイル</span></h3><p><span>仕事用やプライベート用など、必要なものだけ、またはすべてを復元できます。プロファイルの名前変更、追加、削除も可能。1つのブラウザは1組のログインを持つので、2つ目のブラウザを使えば個人用を分けておけます。</span></p></div>
+      <div><h3><span>AIに相談</span></h3><p><span>Amnesiaはファイルの中身もファイル名も含まないレポートと、すぐ使えるプロンプトを作ります。好きなAIに貼り付け、回答を貼り戻して、必要な変更にチェックを入れるだけ。Amnesia自身は何も送信しません。</span></p></div>
+      <div><h3><span>ターミナルコマンド</span></h3><p><span>設定でオンにすると、読み取り専用の<code>amnesia</code>コマンドが使えます:status、preview、report、keep、history。何かを削除・変更することはありません。</span></p></div>
     </div>
   </div>
 </section>
@@ -527,7 +557,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="aw-bar"><i></i><i></i><i></i></div>
         <div class="aw-head">
           <img src="../logo.png" alt="" width="36" height="36">
-          <div><b>Amnesia <span class="ver" data-gh="version">v5.23.1</span></b><small><span>残すと決めたもの以外、Mac はすべて忘れます。</span></small></div>
+          <div><b>Amnesia <span class="ver" data-gh="version">v5.25.0</span></b><small><span>残すと決めたもの以外、Mac はすべて忘れます。</span></small></div>
           <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span>設定</span></span>
         </div>
         <div class="aw-hero pc" data-p="home">
@@ -587,7 +617,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
           <ul>
             <li><b><span>Pick Apps</span></b> <span>は各アプリのデータ（Web のログイン情報など）をさらに見つけます。</span></li>
             <li><b><span>開発者ツールとターミナル</span></b>: <span>SSH、GitHub CLI、zsh、Vim、Docker、AWS、Claude Code など。</span></li>
-            <li><span>仮想マシン（UTM、Parallels、VirtualBox、VMware Fusion）は標準で残ります。</span></li>
+            <li><span>仮想マシン（UTM、Parallels、VirtualBox、VMware Fusion）と写真ライブラリには警告と Keep ボタンが表示されます。あなたの操作なしに追加されることはありません。</span></li>
             <li><span>Claude を残すと、Claude Code のチャットも残ります。</span></li>
           </ul>
         </article>
@@ -709,7 +739,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <p class="label"><span class="n">10</span> · <span>インストール</span></p>
       <h2><span><em>1 行で</em>インストール。</span></h2>
       <div class="badges">
-        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg><use href="#i-tag"/></svg><span>Release</span><b data-gh="version">v5.23.1</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases/latest"><svg><use href="#i-tag"/></svg><span>Release</span><b data-gh="version">v5.25.0</b></a>
         <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
         <span class="bdg"><svg><use href="#i-laptop"/></svg><span>macOS</span><b>15+</b></span>
       </div>
@@ -753,7 +783,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <dl class="ghstats">
           <div><dt><span>ライセンス</span></dt><dd>MIT</dd></div>
           <div><dt>Releases</dt><dd data-gh="releases">–</dd></div>
-          <div><dt><span>最新</span></dt><dd data-gh="version">v5.23.1</dd></div>
+          <div><dt><span>最新</span></dt><dd data-gh="version">v5.25.0</dd></div>
         </dl>
         <div class="cta">
           <a class="btn main" href="https://github.com/navi-crwn/amnesia"><svg><use href="#i-github"/></svg><span>このリポジトリにスターを付ける</span></a>
@@ -1027,7 +1057,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <div class="cell fq f-safe">
         <h3 class="fq-h"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><span>安全性</span></h3>
         <details><summary><span>データはどこかに送信されますか？</span></summary><p><span>いいえ。Amnesia にはサーバーもアカウントもなく、トラッキングもアナリティクスもありません。すべて Mac の中で動きます。Mac から出ていくのは、サーバーやクラウドへのバックアップを設定した場合のロックされた .7z ファイルだけで、選んだ保存先にそのまま送られ、パスワードがなければ誰も読めません。アップデートの確認では、最新のバージョン番号を GitHub に問い合わせるだけで、標準では週に 1 回です。設定で 2 週間ごと、毎月、オフにも変えられます。</span></p></details>
-    <details><summary><span>Windows 版はありますか？</span></summary><p><span>はい。正式リリースの Amnesia for Windows v0.8.1 があります。サインアウト、再起動、システム終了時に消去し、保管庫、バックアップ、Keep ロック、セーフボックス、ヘルスチェック、アプリ内からの署名付きアップデートに対応した Setup.exe があります。<a href="win/">Windows のページ</a>をご覧ください。</span></p></details>
+    <details><summary><span>Windows 版はありますか？</span></summary><p><span>はい。正式リリースの Amnesia for Windows v0.10.0 があります。サインアウト、再起動、システム終了時に消去し、保管庫、バックアップ、Keep ロック、セーフボックス、ヘルスチェック、アプリ内からの署名付きアップデートに対応した Setup.exe があります。<a href="win/">Windows のページ</a>をご覧ください。</span></p></details>
     <details><summary><span>何も削除せずに試せますか？</span></summary><p><span>はい。Turn On を押すまで、Amnesia はオフのままです。What Gets Deleted（または「設定」→「See what would be deleted now」）で、先に完全なリストを確認できます。</span></p></details>
     <details><summary><span>消去されたファイルはどこへ行きますか？ 取り戻せますか？</span></summary><p><span>ログアウト時に Amnesia 専用のフォルダー（~/.amnesia-trash）に移され、次のログイン後にバックグラウンドで空にされます。macOS のゴミ箱には入らず、取り戻すことはできません。必要なものは Keep フォルダー、Keep List、保管庫に入れておいてください。</span></p></details>
     <details><summary><span>Keep フォルダーは暗号化されますか？</span></summary><p><span>Amnesia では暗号化しません。Keep ロックは、Keep のパスワードを入力するまで Finder やほかのアプリが開けないようにしますが、これは macOS のアクセス権で、暗号化ではありません。ディスク全体を暗号化するには FileVault をオンにし、絶対に秘密にしたいファイルは Brankas に入れてください。</span></p></details>
@@ -1113,7 +1143,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="ft-tag"><span>ログアウトすると、Mac は残すと決めたもの以外をすべて忘れます。無料、オープンソース、そして Mac から何も出ていきません。</span></p>
         <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
           <svg><use href="#i-github"/></svg>
-          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · <span data-gh="version">v5.23.1</span></small></span>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · <span data-gh="version">v5.25.0</span></small></span>
         </a>
       </div>
       <nav class="ft-cols" aria-label="フッター">

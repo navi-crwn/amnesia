@@ -1,0 +1,287 @@
+#!/bin/bash
+# ============================================
+# AMNESIA TERMINAL COMMAND (v5.25), hanya membaca.
+#
+#   amnesia status            on/off, mode, pembersihan terakhir, Keep List, folder Keep, vault
+#   amnesia preview [--all]   yang akan dihapus saat logout berikutnya (clean.sh logout --dry-run)
+#   amnesia report [--json] [--hide-names] [--prompt] [--lang en|id]   laporan untuk AI (report.py)
+#   amnesia keep              Keep List (bagian mode ditandai)
+#   amnesia history [N]       N baris terakhir dari riwayat (default 20)
+#   amnesia help | version
+#
+# Perintah ini TIDAK PERNAH menghapus atau mengubah apa pun dan tidak memakai internet.
+# clean.sh hanya dijalankan dengan "logout --dry-run". Tidak menulis file (juga tidak file sementara).
+# Dipasang dari app (Pengaturan > Perintah Terminal) sebagai symlink ke ~/.amnesia/amnesia.
+# (Kompatibel bash 3.2 bawaan macOS.)
+# ============================================
+H="${AMNESIA_HOME:-$HOME}"
+A="$H/.amnesia"
+E="${AMNESIA_ENGINE:-$A}"          # tempat clean.sh & report.py (AMNESIA_ENGINE hanya untuk tes)
+S="$A/settings.conf"
+
+setting() { grep "^$1=" "$S" 2>/dev/null | tail -1 | cut -d= -f2-; }
+LANGX="$(setting LANG)"
+t() { if [ "$LANGX" = id ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }
+
+# Python 3: Homebrew, atau dari Command Line Tools (tanpa CLT, /usr/bin/python3 memunculkan dialog pemasangan)
+find_py() {
+    local p
+    for p in /opt/homebrew/bin/python3 /usr/local/bin/python3; do
+        [ -x "$p" ] && { echo "$p"; return 0; }
+    done
+    if [ "$(uname)" = Darwin ]; then
+        /usr/bin/xcode-select -p >/dev/null 2>&1 && [ -x /usr/bin/python3 ] && { echo /usr/bin/python3; return 0; }
+        return 1
+    fi
+    command -v python3 2>/dev/null
+}
+
+version() { local v; v="$(head -1 "$A/.engine_version" 2>/dev/null)"; printf "%s" "${v:-?}"; }
+
+kb_text() {   # KB (dari du -sk, 1024 byte) -> teks ukuran. v5.25 (194): desimal seperti app dan Finder (1 MB = 1000 KB)
+    awk -v k="$1" 'BEGIN { b = (k + 0) * 1024; if (b >= 1e9) printf "%.1f GB", b / 1e9;
+                           else if (b >= 1e6) printf "%.1f MB", b / 1e6; else printf "%d KB", b / 1e3 }'
+}
+
+mode_title() {
+    case "$1" in
+        full) t "Retrograde Amnesia" "Retrograde Amnesia" ;;
+        balanced) t "Selective Amnesia (recommended)" "Selective Amnesia (disarankan)" ;;
+        light) t "Partial Amnesia" "Partial Amnesia" ;;
+        custom) t "Custom Amnesia" "Custom Amnesia" ;;
+        *) printf '%s' "$1" ;;
+    esac
+}
+
+# Keep List: sama dengan clean.sh. Hasil: "ok <n>" | "keeplist-missing" | "keeplist-unreadable"
+keep_state() {
+    local kc="$A/keep.conf" f=""
+    if [ -e "$kc" ] || [ -L "$kc" ]; then f="$kc"
+    elif [ -e "$A/keep.conf.last" ] || [ -L "$A/keep.conf.last" ]; then echo keeplist-missing; return
+    elif [ -e "$A/keep.example.conf" ]; then f="$A/keep.example.conf"
+    else echo "ok 0"; return
+    fi
+    if [ -f "$f" ] && cat "$f" >/dev/null 2>&1; then
+        echo "ok $(awk '{ sub(/^[ \t]+/, ""); sub(/[ \t\r]+$/, "") } $0 != "" && substr($0, 1, 1) != "#" { n++ } END { print n + 0 }' "$f")"
+    else
+        echo keeplist-unreadable
+    fi
+}
+
+cmd_status() {
+    local st mode py ks n last kd snap
+    echo "Amnesia $(version)"
+    if [ -f "$H/Library/LaunchAgents/com.amnesia.agent.plist" ]; then
+        if [ -f "$A/pause_once" ]; then st="$(t "paused (the next cleanup is skipped)" "dijeda (pembersihan berikutnya dilewati)")"
+        else st="$(t "on" "aktif")"; fi
+    else
+        st="$(t "off" "mati")"
+    fi
+    echo "$(t "State" "Status"): $st"
+    py="$(find_py)"
+    mode=""
+    [ -n "$py" ] && [ -f "$E/report.py" ] && mode="$("$py" "$E/report.py" --mode 2>/dev/null </dev/null)"
+    [ -z "$mode" ] && mode="$(setting AMNESIA_MODE)"
+    [ -z "$mode" ] && mode=balanced
+    echo "Mode: $(mode_title "$mode")"
+    last="$(awk -F'\t' '$2 == "clean" { l = $0 } END { print l }' "$A/history.log" 2>/dev/null)"
+    if [ -n "$last" ]; then
+        # "YYYY-MM-DD HH:MM:SS<tab>clean<tab>logout 120 20480 0"
+        set -- $(printf '%s' "$last" | cut -f3)
+        echo "$(t "Last cleanup" "Pembersihan terakhir"): $(printf '%s' "$last" | cut -c1-16), ${1:-?}, ${2:-0} $(t "items" "item"), $(kb_text "${3:-0}")"
+    else
+        echo "$(t "Last cleanup: none yet" "Pembersihan terakhir: belum ada")"
+    fi
+    ks="$(keep_state)"
+    case "$ks" in
+        ok\ *) n="${ks#ok }"; echo "Keep List: ok ($n $(t "lines" "baris"))" ;;
+        *) echo "Keep List: $(t "STOPPED" "BERHENTI") ($ks), $(t "nothing is deleted until it is fixed" "tidak ada yang dihapus sampai diperbaiki")" ;;
+    esac
+    kd="$(setting KEEP_DIR)"; [ -z "$kd" ] && kd="~/Keep"
+    echo "$(t "Keep folder" "Folder Keep"): $kd"
+    if [ -f "$A/vault/private.7z" ] && [ -f "$A/vault/public.pem" ]; then
+        snap="$(sed -n 's/^  "time": "\(.*\)",\{0,1\}$/\1/p' "$A/vault/manifest.json" 2>/dev/null | head -1)"
+        if [ -n "$snap" ]; then echo "Vault: $(t "set up, last snapshot" "sudah dibuat, snapshot terakhir") $snap"
+        else echo "Vault: $(t "set up, no snapshot yet" "sudah dibuat, belum ada snapshot")"; fi
+    else
+        echo "Vault: $(t "not set up" "belum dibuat")"
+    fi
+}
+
+# clean.sh logout --dry-run, paling lama 300 detik (macOS tidak punya perintah timeout)
+run_dry() {
+    /bin/bash "$E/clean.sh" logout --dry-run </dev/null 2>/dev/null &
+    local pid=$! w rc
+    ( trap 'kill $s 2>/dev/null; exit 0' TERM; sleep 300 & s=$!; wait $s; kill $pid 2>/dev/null ) >/dev/null 2>&1 &
+    w=$!
+    wait $pid; rc=$?
+    kill $w 2>/dev/null; wait $w 2>/dev/null
+    return $rc
+}
+
+cmd_preview() {
+    local all=0
+    for x in "$@"; do
+        case "$x" in --all) all=1 ;; *) usage >&2; exit 2 ;; esac
+    done
+    [ -f "$E/clean.sh" ] || { echo "$(t "clean.sh not found in" "clean.sh tidak ada di") $E" >&2; exit 1; }
+    echo "$(t "Checking what the next logout would delete (nothing is deleted)..." "Mengecek yang akan dihapus saat logout berikutnya (tidak ada yang dihapus)...")" >&2
+    run_dry | awk -v all="$all" -v L="$LANGX" '
+        function t(en, id) { return (L == "id") ? id : en }
+        {
+            line = $0; kind = $1
+            sub(/^[^ \t]+[ \t]+/, "", line)
+            if (kind == "HAPUS") {
+                rel = line; sub(/^~\//, "", rel); top = rel; sub(/\/.*/, "", top)
+                if (top == "Desktop" || top == "Documents" || top == "Downloads" || top == "Library") a[top]++
+                else if (substr(top, 1, 1) == ".") a["dot"]++
+                else a["other"]++
+                p[n++] = line
+            } else if (kind == "KEYCHAIN" || kind == "KEYCHAIN-WEB") { kc++; p[n++] = "Keychain: " line }
+            else if (kind == "APP") { ap++; p[n++] = line }
+            else if (kind == "STOP") { stop = line }
+            else if (kind == "---") { summ = $0 }
+        }
+        END {
+            if (stop != "") {
+                print t("STOPPED (" stop "): the Keep List is missing or cannot be read, so the next cleanup deletes nothing until it is fixed.",
+                        "BERHENTI (" stop "): Keep List hilang atau tidak bisa dibaca, jadi pembersihan berikutnya tidak menghapus apa pun sampai diperbaiki.")
+                print t("Open Amnesia > Keep List to check it.", "Buka Amnesia > Keep List untuk mengeceknya.")
+                exit 0
+            }
+            if (summ == "") { print t("The check did not finish (it took too long or failed). Nothing was deleted.", "Pengecekan tidak selesai (terlalu lama atau gagal). Tidak ada yang dihapus."); exit 1 }
+            print "Desktop:      " a["Desktop"] + 0
+            print "Documents:    " a["Documents"] + 0
+            print "Downloads:    " a["Downloads"] + 0
+            print "Library:      " a["Library"] + 0
+            print t("Dot folders:  ", "Folder titik: ") a["dot"] + 0
+            print t("Other:        ", "Lainnya:      ") a["other"] + 0
+            print "Keychain:     " kc + 0
+            print t("Apps:         ", "App:          ") ap + 0
+            print ""
+            lim = (all == 1) ? n : 30
+            for (i = 0; i < n && i < lim; i++) print "  " p[i]
+            if (n > lim) print "  " t("... and " (n - lim) " more (amnesia preview --all shows every one)", "... dan " (n - lim) " lainnya (amnesia preview --all menampilkan semuanya)")
+            print ""
+            print summ
+        }'
+}
+
+cmd_report() {
+    local x prev=""
+    for x in "$@"; do
+        if [ "$prev" = "--lang" ]; then
+            case "$x" in en|id) ;; *) usage >&2; exit 2 ;; esac
+            prev=""; continue
+        fi
+        case "$x" in
+            --json|--hide-names|--prompt|--no-dryrun) ;;
+            --lang) prev="--lang" ;;
+            *) usage >&2; exit 2 ;;
+        esac
+    done
+    [ -n "$prev" ] && { usage >&2; exit 2; }
+    local py; py="$(find_py)"
+    [ -n "$py" ] || { echo "$(t "Python 3 is needed. Install the Command Line Tools: xcode-select --install" "Butuh Python 3. Pasang Command Line Tools: xcode-select --install")" >&2; exit 1; }
+    [ -f "$E/report.py" ] || { echo "$(t "report.py not found in" "report.py tidak ada di") $E" >&2; exit 1; }
+    "$py" "$E/report.py" "$@" </dev/null
+}
+
+cmd_keep() {
+    local kc="$A/keep.conf" ks
+    ks="$(keep_state)"
+    case "$ks" in
+        ok\ *) ;;
+        *) echo "Keep List: $(t "STOPPED" "BERHENTI") ($ks), $(t "nothing is deleted until it is fixed" "tidak ada yang dihapus sampai diperbaiki")"; exit 1 ;;
+    esac
+    [ -f "$kc" ] || kc="$A/keep.example.conf"
+    [ -f "$kc" ] || { echo "$(t "No Keep List yet." "Belum ada Keep List.")"; return 0; }
+    awk -v L="$LANGX" '
+        function t(en, id) { return (L == "id") ? id : en }
+        /^[ \t]*#[ \t]*amnesia-mode:[ \t]*[a-z]+[ \t]+begin/ {
+            m = $0; sub(/^[ \t]*#[ \t]*amnesia-mode:[ \t]*/, "", m); sub(/[ \t]+begin.*$/, "", m)
+            print "=== " t("Mode section (" m "), written by Amnesia when you pick a mode", "Bagian mode (" m "), ditulis Amnesia saat kamu memilih mode") " ==="
+            inb = 1; next
+        }
+        /^[ \t]*#[ \t]*amnesia-mode[ \t]+end/ { print "=== " t("End of the mode section. Your own lines:", "Akhir bagian mode. Baris kamu sendiri:") " ==="; inb = 0; next }
+        { print (inb ? "  | " : "") $0 }' "$kc"
+}
+
+cmd_history() {
+    local n="${1:-20}"
+    case "$n" in ''|*[!0-9]*) usage >&2; exit 2 ;; esac
+    [ "$n" -gt 0 ] && [ "$n" -le 1000 ] || n=20
+    [ -f "$A/history.log" ] || { echo "$(t "No history yet." "Belum ada riwayat.")"; return 0; }
+    tail -n "$n" "$A/history.log" | awk -F'\t' -v L="$LANGX" '
+        function t(en, id) { return (L == "id") ? id : en }
+        {
+            k = $2; d = $3
+            if (k == "clean") { split(d, w, " "); title = (w[1] == "login") ? t("Checked at login", "Dicek saat login") : t("Wiped at logout", "Dibersihkan saat logout")
+                d = w[2] " " t("items", "item") ((w[4] + 0 > 0) ? ", " w[4] " " t("could not be deleted", "gagal dihapus") : "") }
+            else if (k == "stopped") title = t("Cleanup stopped, nothing deleted", "Pembersihan dihentikan, tidak ada yang dihapus")
+            else if (k == "paused") title = t("Not wiped (paused)", "Tidak dibersihkan (dijeda)")
+            else if (k == "snapshot") title = t("Snapshot", "Snapshot")
+            else if (k == "restore") title = t("Profiles restored", "Profil dikembalikan")
+            else if (k == "undo") title = t("Restore undone", "Restore dibatalkan")
+            else if (k == "backup") { title = t("Backup", "Backup"); d = "" }
+            else if (k == "backupfail") { title = t("Backup failed", "Backup gagal"); d = "" }
+            else if (k == "restorefiles") title = t("Files restored from a backup", "File dipulihkan dari backup")
+            else if (k == "doomsday") title = t("Vault deleted", "Vault dihapus")
+            else if (k == "update") title = t("Updated", "Diperbarui")
+            else if (k == "autologout") title = t("Logged out automatically", "Logout otomatis")
+            else if (k == "appskip") title = t("New apps not removed", "App baru tidak dihapus")
+            else if (k == "care") title = t("Care", "Perawatan")
+            else if (k == "mode") title = t("Mode changed", "Mode diganti")
+            else title = k
+            print substr($1, 1, 16) "  " title ((d != "") ? "  (" d ")" : "")
+        }'
+}
+
+usage() {
+    if [ "$LANGX" = id ]; then cat <<'EOF'
+amnesia: melihat Amnesia dari Terminal. Hanya membaca, tidak pernah menghapus atau mengubah apa pun.
+
+  amnesia status            aktif/mati, mode, pembersihan terakhir, Keep List, folder Keep, vault
+  amnesia preview [--all]   yang akan dihapus saat logout berikutnya (30 pertama, --all: semua)
+  amnesia report            laporan untuk AI tanpa isi file dan tanpa nama file (Markdown)
+      --json                  sebagai JSON
+      --hide-names            sembunyikan nama folder
+      --prompt                dengan prompt siap pakai (--lang en|id)
+  amnesia keep              Keep List (bagian mode ditandai)
+  amnesia history [N]       N kejadian terakhir (default 20)
+  amnesia version           versi Amnesia
+  amnesia help              bantuan ini
+
+Perubahan (mode, Keep List, profil) dilakukan di app Amnesia.
+EOF
+    else cat <<'EOF'
+amnesia: look at Amnesia from the Terminal. Read only, it never deletes or changes anything.
+
+  amnesia status            on/off, mode, last cleanup, Keep List, Keep folder, vault
+  amnesia preview [--all]   what the next logout would delete (first 30, --all: every one)
+  amnesia report            report for an AI with no file contents and no file names (Markdown)
+      --json                  as JSON
+      --hide-names            hide folder names
+      --prompt                with a ready-made prompt (--lang en|id)
+  amnesia keep              the Keep List (mode section marked)
+  amnesia history [N]       the last N events (default 20)
+  amnesia version           Amnesia's version
+  amnesia help              this help
+
+Changes (mode, Keep List, profiles) are made in the Amnesia app.
+EOF
+    fi
+}
+
+c="${1:-help}"
+[ $# -gt 0 ] && shift
+case "$c" in
+    status) [ $# = 0 ] || { usage >&2; exit 2; }; cmd_status ;;
+    preview) cmd_preview "$@" ;;
+    report) cmd_report "$@" ;;
+    keep) [ $# = 0 ] || { usage >&2; exit 2; }; cmd_keep ;;
+    history) [ $# -le 1 ] || { usage >&2; exit 2; }; cmd_history "$@" ;;
+    version|--version|-v) echo "Amnesia $(version)" ;;
+    help|-h|--help) usage ;;
+    *) usage >&2; exit 2 ;;
+esac

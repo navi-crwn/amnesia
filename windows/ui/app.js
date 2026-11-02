@@ -27,7 +27,8 @@
     tVaultSub: 'Your app logins, locked', tOut: 'Review & sign out', tOutSub: 'See what goes, then sign out',
     tPauseSub: 'Skip the next cleanup once', tPauseOff: 'Turn on Amnesia first', tKeepSub: 'Never wiped',
     tBackupSub: 'To a USB drive or server', tHistSub: 'Cleanups, snapshots, backups', tPrevSub: 'A dry run of the next sign out',
-    searchPh: 'Search settings (also Advanced)', searchNone: 'Nothing found. Try another word.', gGeneral: 'General',
+    searchPh: 'Search settings (also Advanced)', searchNone: 'Nothing found. Try another word.', gGeneral: 'App', gKeep: 'Keep', gProtect: 'What stays safe', oalSwitch: 'Show Amnesia after you sign in',
+    advShow: 'Show advanced settings (sign out, privacy, programs, lab lock)', advHide: 'Hide advanced settings',
     advNote: 'For when you want more. All of these are off until you turn them on.',
     tabHome: 'Home', tabKeep: 'Keep List', tabVault: 'Vault', tabBackup: 'Backup', tabAdvanced: 'Advanced', tabSettings: 'Settings',
     agree: 'I understand: at every sign out, restart and shut down, everything outside my Keep folder and Keep List is deleted. I tried "Show preview" first.',
@@ -46,7 +47,7 @@
     sum: function (n) { return n + ' item' + (n === 1 ? '' : 's') + ' would be deleted. This is only a preview, nothing was touched.'; },
     more: function (n) { return '...and ' + n + ' more'; },
     file: 'file', folder: 'folder', trace: 'trace', kept: 'stays', app: 'app',
-    fqPh: 'Search by name or path', fqAll: 'All folders', fqName: 'A to Z', fqSize: 'Biggest first', fqTop: 'User folder', fqSys: 'Windows history (registry, Recycle Bin...)',
+    fqPh: 'Search by name or path', fqFolderTip: 'Show one folder', fqSortTip: 'Sort', unWordTip: 'Type the word to confirm', fqAll: 'All folders', fqName: 'A to Z', fqSize: 'Biggest first', fqTop: 'User folder', fqSys: 'Windows history (registry, Recycle Bin...)',
     fqShown: function (n, t) { return n + ' of ' + t + ' shown'; }, fqNone: 'Nothing matches.',
     gHelp: 'Updates and help', gExit: 'Leaving the PC', gPrivacy: 'Privacy and Windows', gApps: 'Programs', gLocks: 'Locks',
     yes: 'Yes', no: 'No',
@@ -141,6 +142,18 @@
     save: 'Save', saved: 'Saved.', working: 'Working...', done: 'Done.',
     vSaved: function (t) { return 'Saved ' + t; },
     vRestorePrev: 'Use the snapshot before the newest one (if the newest looks wrong)',
+    // v0.10 vault profiles
+    vpLabel: 'Memory Recall: profile', vpEdit: 'Edit', vpNew: 'New profile', vpNewTitle: 'New profile', vpEditTitle: 'Edit profile', vpName: 'Name',
+    vpAppsText: 'Tick the apps this profile brings back. Snapshots stay one per app, so an app can be in more than one profile.',
+    vpDelete: 'Delete profile', vpDeleteAsk: function (n) { return 'Delete the profile "' + n + '"? The snapshots stay in the vault.'; },
+    vpRestores: function (a) { return 'Restores: ' + a.join(', ') + '.'; }, vpEmpty: 'This profile has no apps yet. Click Edit to add some.',
+    vpNoSnap: function (a) { return 'No snapshot yet: ' + a.join(', ') + '.'; }, vpNotHere: function (a) { return 'Not on this PC: ' + a.join(', ') + '.'; },
+    vpShared: function (app, a, b) { return app + ' is in ' + a + ' and ' + b + '. One browser holds one set of logins, so restoring either profile brings back all of them. For personal use, a second browser (or a separate browser profile) keeps things apart.'; },
+    vpFull: 'Retrograde Amnesia: logins are not saved at sign out. You can still restore a snapshot by hand.',
+    vpIgnored: function (a) { return 'Skipped, not in the vault: ' + a.join(', ') + '.'; }, vpNoApps: 'No vault apps on this PC yet.',
+    vpErr: { 'no-snapshot-profile': 'None of these apps has a snapshot yet.', 'profile-name': 'Give the profile a name of 1 to 40 characters.',
+      'profile-name-reserved': 'That name is used for "Everything". Pick another one.', 'profile-name-taken': 'There is already a profile with that name.',
+      'profile-too-many': 'You have 20 profiles, the most there can be. Delete one first.' },
     vPrev: function (t) { return 'previous: ' + t; }, vShrunk: 'much smaller than the previous one, check it', vSetup: 'browser setup was not finished in this snapshot',
     bTitle: 'Backup', bNeedVault: 'Backups are locked with your vault password, so create the vault first.',
     bText: 'Your Keep folder, Keep List and vault in one locked file. No password needed here: it is locked with your vault. To put a backup back, use "Move to a new PC" below. Old backups are never deleted by Amnesia.',
@@ -256,7 +269,122 @@
       'offline': 'Could not reach GitHub. Check the internet connection.', 'list-bad': 'The downloaded list did not look right and was not used.', 'sandbox-missing': 'Windows Sandbox is not switched on.', 'no-safe': 'Create the safe box first.', 'safe-exists': 'There already is a safe box.',
       'keeplock-uninstall': 'Keep is locked. Type the Keep password above first: Amnesia unlocks Keep before it is removed.', 'pause-not-saved': 'The pause could not be saved. Try again.', 'backup-in-keep': 'Not inside Keep: every backup would then hold all the older ones. Pick a USB drive, another drive or a cloud folder.', 'keep-not-saved': 'That line did not get saved in the Keep List. Try again, or add the folder with Choose folder.', 'unsigned': 'This release has no developer signature, so it is not installed from the app. Open the release page instead.', 'bad-signature': 'The release signature does not match. Nothing was installed. Tell the developer (GitHub issue).'
     },
-    wrong: function (left) { return left < 0 ? 'Wrong password.' : left === 1 ? 'Wrong password. LAST TRY: one more wrong password DELETES the vault for good. Stop and check your password notes first.' : 'Wrong password. Tries left: ' + left; }
+    wrong: function (left) { return left < 0 ? 'Wrong password.' : left === 1 ? 'Wrong password. LAST TRY: one more wrong password DELETES the vault for good. Stop and check your password notes first.' : 'Wrong password. Tries left: ' + left; },
+    // v0.9 Care
+    careTitle: 'Care', tCareSub: 'Free up space safely, with a preview first',
+    careIntro: 'Free up space when you want, always with a list to check first. Amnesia already wipes most of your user folder at sign out, so Care mostly helps with your Keep folder, the apps you kept and big files from this session. Nothing risky is ticked for you, and links are never followed.',
+    // v0.10 Amnesia modes
+    mdTitle: 'Amnesia mode', mdText: 'How much your PC forgets at every sign out. You always see a preview first, and a new mode takes effect at the next sign out.',
+    mdNames: { full: 'Retrograde Amnesia', balanced: 'Selective Amnesia (recommended)', light: 'Partial Amnesia', custom: 'Custom Amnesia' },
+    mdSubs: {
+      full: 'Like a brand-new account every time you sign in. Only your Keep folder and what Amnesia needs to work stay.',
+      balanced: 'Your Keep folder stays, app logins come back from the vault, and your own Keep List lines stay.',
+      light: 'Apps keep their settings and logins in place. Your files, Desktop, Documents and Downloads are wiped.',
+      custom: 'Your own Keep List. Picked for you when you change the lines a mode added.'
+    },
+    mdLightNote: 'Partial Amnesia keeps all of AppData. Browsing history and cookies inside a browser\'s own folder stay too (Edge as well), and so do Temp files, recent file lists and PowerShell history, because they live inside AppData. Thumbnail and icon caches, notification history, the Recycle Bin, the clipboard and the registry\'s recent lists are still wiped.',
+    mdNow: 'Now', mdFullVault: 'Retrograde Amnesia: logins are not saved at sign out. You can still restore a snapshot by hand.',
+    msTitle: function (m) { return 'Switch to ' + m + '?'; }, msBusy: 'Looking at what the next sign out would do...',
+    msWiped: 'Will now be wiped at sign out', msKept: 'Will now be kept', msIdle: 'Leaves the Keep List, nothing is wiped there', msOwn: 'Your own lines (not changed)', msStop: 'Also stop keeping this line',
+    msCount: function (a, b) { return 'Next sign out: ' + a + ' items wiped (now ' + b + ').'; },
+    msWarn: 'This mode wipes more than your current one. Move anything you still need into your Keep folder first.',
+    msAutoOff: 'Auto snapshot at sign out is turned off. Your snapshots stay and you can still restore by hand.',
+    msAutoOn: 'Auto snapshot at sign out is turned on again.',
+    msWhen: 'It takes effect at the next sign out. Nothing is deleted now.',
+    msToCustom: 'A line you ticked is part of this mode, so your Keep List becomes Custom Amnesia.',
+    msSame: 'What gets wiped stays the same.', msLineK: 'line', msItemK: 'item',
+    msPreset: function (m) { return 'The ' + m + ' preset could not be read, so your Keep List was not changed.'; },
+    msSwitch: 'Switch mode', msDone: function (m) { return 'Mode is now ' + m + '. It takes effect at the next sign out.'; },
+    mdErr: {
+      'mode-broken': 'Your Keep List has a damaged mode section, so the mode was not changed. Fix or remove the lines that start with "# amnesia-mode".',
+      'mode-stopped': 'Your Keep List could not be read, so the mode was not changed. Check the Keep List first.',
+      'mode-lab': 'The lab lock is on, so only an administrator can change the Keep List.',
+      'mode-changed': 'The Keep List changed since the preview. Look at the preview again.',
+      'mode-rescan': 'The Keep List changed since the preview. Look at the preview again.',
+      'mode-write': 'The Keep List could not be saved. Nothing was changed. Try again.', 'mode-unknown': 'Unknown mode.'
+    },
+    hMode: function (d) { var p = (d || '').split(' '); return 'Mode changed: ' + (EN.mdNames[p[1]] || p[1] || ''); },
+    // v0.10 Ask an AI
+    aiTitle: 'Ask an AI', tAiSub: 'Get advice without sharing your files',
+    aiIntro: 'Amnesia makes a report about this PC with no file contents and no names of your files, plus a ready-made question. Paste both into the AI you choose. Then paste its answer below and tick the changes you want.',
+    aiNever: 'Amnesia never sends anything. You choose where to paste it.',
+    aiHide: 'Hide folder names', aiMake: 'Make the report again', aiCopy: 'Copy report and prompt', aiSave: 'Save to Keep folder',
+    aiBusy: 'Making the report (this can take a minute)...', aiReady: 'Report ready. Look at what will be shared before you paste it.',
+    aiCopied: 'Copied. Paste it into the AI you choose.', aiCopyFail: 'Could not copy. Open "Show what will be shared", select the text and copy it by hand.',
+    aiSaved: function (p) { return 'Saved: ' + p; }, aiShow: 'Show what will be shared',
+    aiPasteTitle: 'Paste the AI\'s answer', aiPasteText: 'Paste the whole answer. Amnesia only reads the amnesia-suggestion block and checks every line. Nothing changes until you confirm.',
+    aiPastePh: 'Paste the AI\'s answer here', aiRead: 'Read the answer',
+    aiErr: {
+      'no-block': 'No amnesia-suggestion block found. Ask the AI to end its answer with the block from the prompt.',
+      'bad-json': 'The block is not valid JSON. Ask the AI to write it again.',
+      'not-object': 'The block should be one { ... } object. Ask the AI to write it again.',
+      'too-big': 'That answer is too long (64 KB at most).'
+    },
+    aiNone: 'The answer suggests no changes.',
+    aiMode: function (m) { return 'Switch mode to ' + m; }, aiAdd: function (p) { return 'Keep: ' + p; }, aiRemove: function (p) { return 'Stop keeping: ' + p; },
+    aiProf: function (n, apps, upd) { return (upd ? 'Update vault profile ' : 'New vault profile ') + n + ': ' + (apps.length ? apps.join(', ') : '(no apps)'); },
+    aiNotes: 'The AI\'s notes', aiNotUsed: 'Not used', aiIgnored: function (a) { return 'Apps that are not in the vault, ignored: ' + a.join(', '); },
+    aiWhy: {
+      'absolute': 'not inside your user folder', 'dots': 'has a .. or . part', 'amnesia': 'Amnesia\'s own folder', 'in-keep': 'already inside your Keep folder',
+      'too-wide': 'too wide (only wildcards)', 'tag': 'not a path', 'control': 'odd characters', 'too-long': 'too long', 'empty': 'empty', 'not-text': 'not text',
+      'already-kept': 'already kept', 'not-on-list': 'not on your Keep List', 'required': 'Amnesia needs it', 'unknown-mode': 'unknown mode',
+      'reserved-name': 'that name is taken by "Everything"', 'bad-name': 'name is empty or too long', 'too-many': 'more than 10 profiles', 'duplicate': 'listed twice',
+      'not-a-list': 'not a list', 'not-an-object': 'not a list of profiles'
+    },
+    aiApply: 'Review changes', aiNoTick: 'Tick at least one change first.',
+    aiProfAsk: function (n) { return 'Save ' + n + ' vault profile(s)? Your Keep List does not change.'; },
+    aiProfDone: function (n) { return n + ' vault profile(s) saved.'; }, aiProfFail: 'The vault profiles could not be saved.',
+    aiApplied: 'Done. Keep List changes take effect at the next sign out.',
+    cOvTitle: 'Disk overview', cOvText: 'What takes space on this PC. It only looks, nothing is deleted.', cLook: 'Look',
+    cScan: 'Scan', cAgain: 'Scan again', cBusy: 'Looking... (30 seconds at most)', cWorking: 'Working on it...',
+    cDisk: function (f, t) { return size(f) + ' free of ' + size(t); },
+    cSizes: { keep: 'Keep folder', vault: 'Vault', atrash: 'Amnesia trash', bin: 'Recycle Bin', temp: 'Temp files', downloads: 'Downloads' },
+    cFolders: 'Biggest folders', cFiles: 'Big files (200 MB and more)', cNoFiles: 'No files of 200 MB or more in Keep, Downloads or Desktop.',
+    cOld: function (n, b) { return n + ' file(s) in Downloads not changed for 30 days (' + size(b) + '). They are wiped at the next sign out anyway, unless they are on the Keep List.'; },
+    cShow: 'Show', cAtLeast: 'at least ',
+    cQuickTitle: 'Clean now', cQuickText: 'Temp files older than a day, crash dumps, app caches and Amnesia\'s trash. Apps make their caches again when they need them. The Recycle Bin is listed, but never ticked for you.',
+    cAppsTitle: 'Uninstall apps', cAppsText: 'Programs installed just for you run their own uninstaller, no admin password needed. Programs for everyone and Store apps open Windows Settings. Leftovers go to the Recycle Bin; your data in them only goes when you tick it.',
+    cAppsBtn: 'Show programs', cAppsPh: 'Search programs', cKind: { user: 'just for you', machine: 'for everyone', store: 'Microsoft Store' },
+    cUninstall: 'Uninstall', cOpenApps: 'Open Windows Settings', cNoPrograms: 'No programs found.',
+    cUnConfirm: function (n) { return 'Run the uninstaller of ' + n + '? It may ask its own questions. Afterwards Amnesia looks for what it left behind.'; },
+    cUnGone: function (n) { return n + ' was uninstalled.'; }, cUnStill: function (n) { return n + ' is still installed, so Amnesia did not look for leftovers.'; },
+    cUnNoLeft: 'No leftovers found.', cUnLeft: 'It left these behind. Tick what should go:', cSkip: 'Keep them',
+    cProjTitle: 'Project build folders', cProjText: 'node_modules, target, build, dist, bin, obj and more, in your project folders and Keep. They can be built again. Folders used in the last 7 days are not ticked; folders tracked by git or holding keys are left alone. They go to the Recycle Bin.',
+    cInsTitle: 'Old installers', cInsText: '.msi and .msix files older than 14 days in Downloads, Desktop and Keep. Setup .exe and .zip files and disc images are listed but never ticked for you. Virtual machines and disk images are never listed. They go to the Recycle Bin.',
+    cTuneTitle: 'Safe tune-ups', cTuneText: 'Small fixes that need no admin password.',
+    cTuneExplorer: 'Restart Explorer', cTuneExplorerSub: 'Helps when the taskbar or Desktop is stuck. Open folder windows close.',
+    cTuneRun: 'Run', cTuneNone: 'Tick a tune-up first.', cTuneAsk: 'Restart Explorer now? The taskbar disappears for a few seconds and open folder windows close.',
+    cTuneRes: function (ok) { return 'Restart Explorer: ' + (ok ? 'done.' : 'skipped, it did not work.'); },
+    cOpenStartup: 'Open Startup apps', cOpenStorage: 'Open Storage settings',
+    cCat: { temp: 'Temp files', crash: 'Crash dumps', cache: 'App caches', atrash: 'Amnesia trash', bin: 'Recycle Bin', leftover: 'Leftovers', build: 'Build folders', installer: 'Installers' },
+    cWhy: {
+      'old-temp': 'not changed for a day', crash: 'crash report', cache: 'made again when needed', atrash: 'already wiped, waiting to be emptied',
+      bin: 'emptied for good, can\'t be undone', keeplist: 'On your Keep List', 'leftover-data': 'settings and data, tick only if you are sure',
+      'leftover-cache': 'cache', 'build-old': 'not used for 7 days or more', 'build-recent': 'used in the last 7 days', git: 'tracked by git',
+      'nested-git': 'holds a git repo', secret: 'holds keys or certificates', unchecked: 'Could not check', cloud: 'in a cloud folder',
+      'installer-old': 'older than 14 days', 'installer-new': 'newer than 14 days', 'setup-exe': 'a setup program, check it yourself',
+      'setup-zip': 'looks like a setup, check it yourself', 'disc-image': 'a disc image, check it yourself', system: 'Windows needs it',
+      amnesia: 'Amnesia\'s own', 'keep-root': 'protected', link: 'a link, never followed', gone: 'not there any more', outside: 'outside your user folder'
+    },
+    cTop: 'Other', cNothing: 'Nothing to clean here.', cSel: function (n, b) { return n + ' selected, ' + size(b); },
+    cGo: { quick: 'Clean selected', apps: 'Move to Recycle Bin', projects: 'Move to Recycle Bin', installers: 'Move to Recycle Bin' },
+    cWhere: { 'delete': 'Caches, Temp files and trash are deleted for good.', recycle: 'They go to the Recycle Bin.', bin: 'The Recycle Bin is emptied for good. That can\'t be undone.' },
+    cConfirm: function (n, b) { return 'Go ahead with ' + n + ' item(s), ' + size(b) + '?'; },
+    cFreed: function (b) { return 'Space freed +' + size(b); },
+    cRes: function (c, d, f) { return c + ': ' + d + ' done' + (f ? ', ' + f + ' skipped (in use or changed)' : '') + '.'; },
+    cChanged: function (n) { return n + ' item(s) changed since the scan and were left alone.'; },
+    cCut: 'The scan stopped at its limit (30 seconds or 300 000 files). What it found so far is listed.',
+    cErr: { 'care-rescan': 'The list is old. Scan again first.', 'care-gone': 'It is not there any more.', 'care-not-found': 'That program is not installed any more.', 'care-not-user': 'Only programs installed just for you can be uninstalled here.', 'keeplist-missing': 'The Keep List is missing, so Care stopped and deleted nothing. Open Keep List to check it.', 'keeplist-unreadable': 'The Keep List could not be read, so Care stopped and deleted nothing. Open Keep List to check it.' },
+    cFeat: { quick: 'Clean now', apps: 'Uninstall apps', projects: 'Project build folders', installers: 'Old installers', tune: 'Safe tune-ups' },
+    hCare: function (d) { var p = d.split(' '); return 'Care: ' + (L.cFeat[p[0]] || p[0]) + ': ' + (p[1] || 0) + ' items' + (+p[2] > 0 ? ', ' + size(+p[2] * 1024) + ' freed' : '') + (+p[3] > 0 ? ', ' + p[3] + ' failed' : ''); },
+    hStopped: function () { return 'Cleanup stopped: the Keep List could not be read. Nothing was deleted.'; },
+    hlDisk: {
+      ok: function (d) { var p = d.split(' '); return 'Free space: ' + size(+p[0]) + ' of ' + size(+p[1]) + '.'; },
+      warn: function (d) { var p = d.split(' '); return 'Little free space: ' + size(+p[0]) + ' of ' + size(+p[1]) + '. Care can help.'; },
+      info: 'Couldn\'t check the free space.'
+    },
+    hlMemory: { ok: function (d) { return 'Memory: ' + d + '% in use.'; }, warn: function (d) { return 'Memory is almost full (' + d + '% in use). Closing apps helps.'; }, info: 'Couldn\'t check the memory.' },
+    hlBattery: { info: function (d) { if (!d) return 'Couldn\'t check the battery.'; var p = d.split(' '); return 'Battery: ' + p[0] + '%' + (p[1] === '1' ? ', charging' : '') + '.'; } }
   };
 
   var ID = {
@@ -264,7 +392,8 @@
     tVaultSub: 'Login app kamu, terkunci', tOut: 'Cek & sign out', tOutSub: 'Lihat yang dihapus, lalu sign out',
     tPauseSub: 'Lewati 1 kali pembersihan', tPauseOff: 'Nyalakan Amnesia dulu', tKeepSub: 'Tidak pernah dihapus',
     tBackupSub: 'Ke flashdisk atau server', tHistSub: 'Pembersihan, snapshot, backup', tPrevSub: 'Simulasi sign out berikutnya',
-    searchPh: 'Cari pengaturan (termasuk Lanjutan)', searchNone: 'Tidak ketemu. Coba kata lain.', gGeneral: 'Umum',
+    searchPh: 'Cari pengaturan (termasuk Lanjutan)', searchNone: 'Tidak ketemu. Coba kata lain.', gGeneral: 'App', gKeep: 'Keep', gProtect: 'Yang tetap aman', oalSwitch: 'Tampilkan Amnesia setelah login',
+    advShow: 'Tampilkan pengaturan lanjutan (sign out, privasi, program, kunci lab)', advHide: 'Sembunyikan pengaturan lanjutan',
     advNote: 'Untuk yang mau lebih. Semua ini mati sampai kamu nyalakan.',
     tabHome: 'Beranda', tabKeep: 'Keep List', tabVault: 'Vault', tabBackup: 'Backup', tabAdvanced: 'Lanjutan', tabSettings: 'Pengaturan',
     agree: 'Saya paham: setiap sign out, restart dan shut down, semua di luar folder Keep dan Keep List dihapus. Saya sudah coba "Lihat simulasi".',
@@ -283,7 +412,7 @@
     sum: function (n) { return n + ' item akan dihapus. Ini cuma simulasi, tidak ada yang disentuh.'; },
     more: function (n) { return '...dan ' + n + ' lainnya'; },
     file: 'file', folder: 'folder', trace: 'jejak', kept: 'aman', app: 'app',
-    fqPh: 'Cari nama atau path', fqAll: 'Semua folder', fqName: 'A sampai Z', fqSize: 'Terbesar dulu', fqTop: 'Folder user', fqSys: 'Riwayat Windows (registry, Recycle Bin...)',
+    fqPh: 'Cari nama atau path', fqFolderTip: 'Tampilkan satu folder', fqSortTip: 'Urutkan', unWordTip: 'Ketik katanya untuk konfirmasi', fqAll: 'Semua folder', fqName: 'A sampai Z', fqSize: 'Terbesar dulu', fqTop: 'Folder user', fqSys: 'Riwayat Windows (registry, Recycle Bin...)',
     fqShown: function (n, t) { return n + ' dari ' + t + ' ditampilkan'; }, fqNone: 'Tidak ada yang cocok.',
     gHelp: 'Update dan bantuan', gExit: 'Saat meninggalkan PC', gPrivacy: 'Privasi dan Windows', gApps: 'Program', gLocks: 'Kunci',
     yes: 'Ya', no: 'Tidak',
@@ -378,6 +507,18 @@
     save: 'Simpan', saved: 'Tersimpan.', working: 'Sedang dikerjakan...', done: 'Selesai.',
     vSaved: function (t) { return 'Disimpan ' + t; },
     vRestorePrev: 'Pakai snapshot sebelum yang terbaru (kalau yang terbaru terlihat salah)',
+    // v0.10 profil vault
+    vpLabel: 'Memory Recall: profil', vpEdit: 'Ubah', vpNew: 'Profil baru', vpNewTitle: 'Profil baru', vpEditTitle: 'Ubah profil', vpName: 'Nama',
+    vpAppsText: 'Centang app yang dikembalikan profil ini. Snapshot tetap satu per app, jadi satu app bisa ada di lebih dari satu profil.',
+    vpDelete: 'Hapus profil', vpDeleteAsk: function (n) { return 'Hapus profil "' + n + '"? Snapshot-nya tetap ada di vault.'; },
+    vpRestores: function (a) { return 'Dikembalikan: ' + a.join(', ') + '.'; }, vpEmpty: 'Profil ini belum punya app. Klik Ubah untuk menambahkan.',
+    vpNoSnap: function (a) { return 'Belum ada snapshot: ' + a.join(', ') + '.'; }, vpNotHere: function (a) { return 'Tidak ada di PC ini: ' + a.join(', ') + '.'; },
+    vpShared: function (app, a, b) { return app + ' ada di ' + a + ' dan ' + b + '. Satu browser menyimpan satu kumpulan login, jadi restore profil mana pun mengembalikan semuanya. Untuk pemakaian pribadi, browser kedua (atau profil browser terpisah) membuatnya terpisah.'; },
+    vpFull: 'Retrograde Amnesia: login tidak disimpan saat sign out. Snapshot masih bisa di-restore manual.',
+    vpIgnored: function (a) { return 'Dilewati, tidak ada di vault: ' + a.join(', ') + '.'; }, vpNoApps: 'Belum ada app vault di PC ini.',
+    vpErr: { 'no-snapshot-profile': 'Belum ada snapshot untuk app-app ini.', 'profile-name': 'Beri profil nama 1 sampai 40 karakter.',
+      'profile-name-reserved': 'Nama itu dipakai untuk "Semua". Pilih nama lain.', 'profile-name-taken': 'Sudah ada profil dengan nama itu.',
+      'profile-too-many': 'Kamu sudah punya 20 profil, jumlah paling banyak. Hapus satu dulu.' },
     vPrev: function (t) { return 'sebelumnya: ' + t; }, vShrunk: 'jauh lebih kecil dari sebelumnya, coba cek', vSetup: 'setup browser belum selesai di snapshot ini',
     bTitle: 'Backup', bNeedVault: 'Backup dikunci dengan password vault, jadi buat vault dulu.',
     bText: 'Folder Keep, Keep List dan vault dalam satu file terkunci. Tidak perlu password di sini: dikunci dengan vault kamu. Untuk mengembalikan backup, pakai "Pindah ke PC baru" di bawah. Backup lama tidak pernah dihapus Amnesia.',
@@ -493,7 +634,122 @@
       'offline': 'Tidak bisa terhubung ke GitHub. Cek koneksi internet.', 'list-bad': 'Daftar yang diunduh tidak terlihat benar dan tidak dipakai.', 'sandbox-missing': 'Windows Sandbox belum aktif.', 'no-safe': 'Buat brankas dulu.', 'safe-exists': 'Brankas sudah ada.',
       'keeplock-uninstall': 'Keep sedang dikunci. Isi password Keep di atas dulu: Amnesia membuka kunci Keep sebelum dihapus.', 'pause-not-saved': 'Jeda gagal disimpan. Coba lagi.', 'backup-in-keep': 'Jangan di dalam Keep: setiap backup nanti ikut berisi semua backup lama. Pilih flashdisk, drive lain atau folder cloud.', 'keep-not-saved': 'Baris itu tidak tersimpan di Keep List. Coba lagi, atau tambahkan foldernya lewat Pilih folder.', 'unsigned': 'Rilis ini belum punya tanda tangan developer, jadi tidak dipasang dari app. Buka halaman rilis saja.', 'bad-signature': 'Tanda tangan rilis tidak cocok. Tidak ada yang dipasang. Kabari developer (GitHub issue).'
     },
-    wrong: function (left) { return left < 0 ? 'Password salah.' : left === 1 ? 'Password salah. PERCOBAAN TERAKHIR: salah sekali lagi = vault DIHAPUS PERMANEN. Berhenti dulu dan cek catatan password kamu.' : 'Password salah. Sisa percobaan: ' + left; }
+    wrong: function (left) { return left < 0 ? 'Password salah.' : left === 1 ? 'Password salah. PERCOBAAN TERAKHIR: salah sekali lagi = vault DIHAPUS PERMANEN. Berhenti dulu dan cek catatan password kamu.' : 'Password salah. Sisa percobaan: ' + left; },
+    // v0.9 Perawatan
+    careTitle: 'Perawatan', tCareSub: 'Kosongkan ruang dengan aman, lihat daftarnya dulu',
+    careIntro: 'Kosongkan ruang kapan saja, selalu dengan daftar untuk dicek dulu. Amnesia sudah menghapus sebagian besar folder user kamu saat sign out, jadi Perawatan paling berguna untuk folder Keep, app yang kamu simpan dan file besar dari sesi ini. Tidak ada yang berisiko dicentang untukmu, dan link tidak pernah diikuti.',
+    // v0.10 Mode Amnesia
+    mdTitle: 'Mode Amnesia', mdText: 'Seberapa banyak yang dilupakan PC kamu setiap sign out. Selalu ada pratinjau dulu, dan mode baru berlaku mulai sign out berikutnya.',
+    mdNames: { full: 'Retrograde Amnesia', balanced: 'Selective Amnesia (disarankan)', light: 'Partial Amnesia', custom: 'Custom Amnesia' },
+    mdSubs: {
+      full: 'Seperti akun baru setiap sign in. Hanya folder Keep kamu dan yang dibutuhkan Amnesia yang tetap ada.',
+      balanced: 'Folder Keep tetap ada, login app kembali dari vault, dan baris Keep List kamu sendiri tetap ada.',
+      light: 'App tetap menyimpan pengaturan dan loginnya. File kamu, Desktop, Documents dan Downloads dihapus.',
+      custom: 'Keep List buatan kamu sendiri. Dipilih otomatis saat kamu mengubah baris dari sebuah mode.'
+    },
+    mdLightNote: 'Partial Amnesia menyimpan seluruh AppData. Riwayat dan cookie browser di dalam folder browser itu sendiri juga tetap ada (Edge juga), begitu juga file Temp, daftar file terakhir dan riwayat PowerShell, karena semuanya ada di dalam AppData. Cache thumbnail dan ikon, riwayat notifikasi, Recycle Bin, clipboard dan daftar terakhir di registry tetap dihapus.',
+    mdNow: 'Sekarang', mdFullVault: 'Retrograde Amnesia: login tidak disimpan saat sign out. Snapshot masih bisa di-restore manual.',
+    msTitle: function (m) { return 'Ganti ke ' + m + '?'; }, msBusy: 'Sedang melihat apa yang dilakukan sign out berikutnya...',
+    msWiped: 'Mulai sekarang dihapus saat sign out', msKept: 'Mulai sekarang disimpan', msIdle: 'Keluar dari Keep List, tidak ada yang dihapus di sana', msOwn: 'Baris kamu sendiri (tidak diubah)', msStop: 'Berhenti menyimpan baris ini juga',
+    msCount: function (a, b) { return 'Sign out berikutnya: ' + a + ' item dihapus (sekarang ' + b + ').'; },
+    msWarn: 'Mode ini menghapus lebih banyak dari mode sekarang. Pindahkan dulu yang masih kamu perlukan ke folder Keep.',
+    msAutoOff: 'Snapshot otomatis saat sign out dimatikan. Snapshot kamu tetap ada dan masih bisa di-restore manual.',
+    msAutoOn: 'Snapshot otomatis saat sign out dinyalakan lagi.',
+    msWhen: 'Berlaku mulai sign out berikutnya. Sekarang tidak ada yang dihapus.',
+    msToCustom: 'Baris yang kamu centang adalah bagian dari mode ini, jadi Keep List kamu menjadi Custom Amnesia.',
+    msSame: 'Yang dihapus tetap sama.', msLineK: 'baris', msItemK: 'item',
+    msPreset: function (m) { return 'Preset ' + m + ' tidak bisa dibaca, jadi Keep List kamu tidak diubah.'; },
+    msSwitch: 'Ganti mode', msDone: function (m) { return 'Mode sekarang ' + m + '. Berlaku mulai sign out berikutnya.'; },
+    mdErr: {
+      'mode-broken': 'Bagian mode di Keep List kamu rusak, jadi mode tidak diganti. Perbaiki atau hapus baris yang diawali "# amnesia-mode".',
+      'mode-stopped': 'Keep List kamu tidak bisa dibaca, jadi mode tidak diganti. Cek Keep List dulu.',
+      'mode-lab': 'Kunci lab sedang aktif, jadi hanya administrator yang bisa mengubah Keep List.',
+      'mode-changed': 'Keep List berubah sejak pratinjau. Lihat pratinjaunya lagi.',
+      'mode-rescan': 'Keep List berubah sejak pratinjau. Lihat pratinjaunya lagi.',
+      'mode-write': 'Keep List tidak bisa disimpan. Tidak ada yang diubah. Coba lagi.', 'mode-unknown': 'Mode tidak dikenal.'
+    },
+    hMode: function (d) { var p = (d || '').split(' '); return 'Mode diganti: ' + (ID.mdNames[p[1]] || p[1] || ''); },
+    // v0.10 Tanya AI
+    aiTitle: 'Tanya AI', tAiSub: 'Minta saran tanpa membagikan file kamu',
+    aiIntro: 'Amnesia membuat laporan tentang PC ini tanpa isi file dan tanpa nama file kamu, plus pertanyaan siap pakai. Tempel keduanya ke AI pilihanmu. Lalu tempel jawabannya di bawah dan centang perubahan yang kamu mau.',
+    aiNever: 'Amnesia tidak pernah mengirim apa pun. Kamu yang memilih mau ditempel ke mana.',
+    aiHide: 'Sembunyikan nama folder', aiMake: 'Buat laporan lagi', aiCopy: 'Salin laporan dan prompt', aiSave: 'Simpan ke folder Keep',
+    aiBusy: 'Sedang membuat laporan (bisa sampai semenit)...', aiReady: 'Laporan siap. Lihat dulu apa yang akan dibagikan sebelum kamu tempel.',
+    aiCopied: 'Tersalin. Tempel ke AI pilihanmu.', aiCopyFail: 'Tidak bisa menyalin. Buka "Lihat apa yang akan dibagikan", pilih teksnya lalu salin manual.',
+    aiSaved: function (p) { return 'Tersimpan: ' + p; }, aiShow: 'Lihat apa yang akan dibagikan',
+    aiPasteTitle: 'Tempel jawaban AI', aiPasteText: 'Tempel seluruh jawabannya. Amnesia hanya membaca blok amnesia-suggestion dan mengecek setiap baris. Tidak ada yang berubah sampai kamu konfirmasi.',
+    aiPastePh: 'Tempel jawaban AI di sini', aiRead: 'Baca jawabannya',
+    aiErr: {
+      'no-block': 'Blok amnesia-suggestion tidak ditemukan. Minta AI menutup jawabannya dengan blok dari prompt.',
+      'bad-json': 'Bloknya bukan JSON yang benar. Minta AI menulisnya lagi.',
+      'not-object': 'Bloknya harus satu objek { ... }. Minta AI menulisnya lagi.',
+      'too-big': 'Jawabannya terlalu panjang (maksimal 64 KB).'
+    },
+    aiNone: 'Jawabannya tidak menyarankan perubahan apa pun.',
+    aiMode: function (m) { return 'Ganti mode ke ' + m; }, aiAdd: function (p) { return 'Simpan: ' + p; }, aiRemove: function (p) { return 'Berhenti menyimpan: ' + p; },
+    aiProf: function (n, apps, upd) { return (upd ? 'Ubah profil vault ' : 'Profil vault baru ') + n + ': ' + (apps.length ? apps.join(', ') : '(tanpa app)'); },
+    aiNotes: 'Catatan dari AI', aiNotUsed: 'Tidak dipakai', aiIgnored: function (a) { return 'App yang tidak ada di vault, diabaikan: ' + a.join(', '); },
+    aiWhy: {
+      'absolute': 'tidak di dalam folder user kamu', 'dots': 'ada bagian .. atau .', 'amnesia': 'folder milik Amnesia', 'in-keep': 'sudah di dalam folder Keep',
+      'too-wide': 'terlalu luas (hanya wildcard)', 'tag': 'bukan path', 'control': 'karakter aneh', 'too-long': 'terlalu panjang', 'empty': 'kosong', 'not-text': 'bukan teks',
+      'already-kept': 'sudah disimpan', 'not-on-list': 'tidak ada di Keep List', 'required': 'dibutuhkan Amnesia', 'unknown-mode': 'mode tidak dikenal',
+      'reserved-name': 'nama itu dipakai "Semua"', 'bad-name': 'nama kosong atau terlalu panjang', 'too-many': 'lebih dari 10 profil', 'duplicate': 'tertulis dua kali',
+      'not-a-list': 'bukan daftar', 'not-an-object': 'bukan daftar profil'
+    },
+    aiApply: 'Tinjau perubahan', aiNoTick: 'Centang minimal satu perubahan dulu.',
+    aiProfAsk: function (n) { return 'Simpan ' + n + ' profil vault? Keep List kamu tidak berubah.'; },
+    aiProfDone: function (n) { return n + ' profil vault tersimpan.'; }, aiProfFail: 'Profil vault tidak bisa disimpan.',
+    aiApplied: 'Selesai. Perubahan Keep List berlaku mulai sign out berikutnya.',
+    cOvTitle: 'Ringkasan disk', cOvText: 'Apa yang memakan ruang di PC ini. Hanya dilihat, tidak ada yang dihapus.', cLook: 'Lihat',
+    cScan: 'Pindai', cAgain: 'Pindai lagi', cBusy: 'Sedang mencari... (paling lama 30 detik)', cWorking: 'Sedang dikerjakan...',
+    cDisk: function (f, t) { return size(f) + ' kosong dari ' + size(t); },
+    cSizes: { keep: 'Folder Keep', vault: 'Vault', atrash: 'Tempat sampah Amnesia', bin: 'Recycle Bin', temp: 'File Temp', downloads: 'Downloads' },
+    cFolders: 'Folder terbesar', cFiles: 'File besar (200 MB ke atas)', cNoFiles: 'Tidak ada file 200 MB ke atas di Keep, Downloads atau Desktop.',
+    cOld: function (n, b) { return n + ' file di Downloads tidak berubah selama 30 hari (' + size(b) + '). File ini tetap terhapus saat sign out berikutnya, kecuali ada di Keep List.'; },
+    cShow: 'Tampilkan', cAtLeast: 'minimal ',
+    cQuickTitle: 'Bersihkan sekarang', cQuickText: 'File Temp yang lebih lama dari sehari, crash dump, cache app dan tempat sampah Amnesia. App membuat cache-nya lagi saat perlu. Recycle Bin ikut ditampilkan, tapi tidak pernah dicentang untukmu.',
+    cAppsTitle: 'Hapus app', cAppsText: 'Program yang dipasang khusus untukmu menjalankan uninstaller-nya sendiri, tanpa password admin. Program untuk semua user dan app Store membuka Pengaturan Windows. Sisa app dipindah ke Recycle Bin; data kamu di dalamnya hanya ikut kalau kamu centang.',
+    cAppsBtn: 'Tampilkan program', cAppsPh: 'Cari program', cKind: { user: 'khusus untukmu', machine: 'untuk semua user', store: 'Microsoft Store' },
+    cUninstall: 'Uninstall', cOpenApps: 'Buka Pengaturan Windows', cNoPrograms: 'Tidak ada program.',
+    cUnConfirm: function (n) { return 'Jalankan uninstaller ' + n + '? Mungkin ada pertanyaan dari uninstaller-nya. Setelah itu Amnesia mencari sisa yang ditinggalkan.'; },
+    cUnGone: function (n) { return n + ' sudah di-uninstall.'; }, cUnStill: function (n) { return n + ' masih terpasang, jadi Amnesia tidak mencari sisanya.'; },
+    cUnNoLeft: 'Tidak ada sisa yang ditemukan.', cUnLeft: 'Ini sisa yang ditinggalkan. Centang yang mau dibuang:', cSkip: 'Biarkan saja',
+    cProjTitle: 'Folder build project', cProjText: 'node_modules, target, build, dist, bin, obj dan lainnya, di folder project dan Keep. Semuanya bisa dibuat ulang. Folder yang dipakai 7 hari terakhir tidak dicentang; folder yang dilacak git atau berisi kunci tidak disentuh. Dipindah ke Recycle Bin.',
+    cInsTitle: 'Installer lama', cInsText: 'File .msi dan .msix yang lebih lama dari 14 hari di Downloads, Desktop dan Keep. File setup .exe dan .zip serta image disk ditampilkan tapi tidak pernah dicentang untukmu. Mesin virtual dan image disk tidak pernah ditampilkan. Dipindah ke Recycle Bin.',
+    cTuneTitle: 'Perawatan ringan', cTuneText: 'Perbaikan kecil tanpa password admin.',
+    cTuneExplorer: 'Mulai ulang Explorer', cTuneExplorerSub: 'Membantu kalau taskbar atau Desktop macet. Jendela folder yang terbuka ikut tertutup.',
+    cTuneRun: 'Jalankan', cTuneNone: 'Centang salah satu dulu.', cTuneAsk: 'Mulai ulang Explorer sekarang? Taskbar hilang beberapa detik dan jendela folder yang terbuka tertutup.',
+    cTuneRes: function (ok) { return 'Mulai ulang Explorer: ' + (ok ? 'selesai.' : 'dilewati, tidak berhasil.'); },
+    cOpenStartup: 'Buka Startup apps', cOpenStorage: 'Buka pengaturan Storage',
+    cCat: { temp: 'File Temp', crash: 'Crash dump', cache: 'Cache app', atrash: 'Tempat sampah Amnesia', bin: 'Recycle Bin', leftover: 'Sisa app', build: 'Folder build', installer: 'Installer' },
+    cWhy: {
+      'old-temp': 'tidak berubah selama sehari', crash: 'laporan crash', cache: 'dibuat lagi saat perlu', atrash: 'sudah dihapus, menunggu dikosongkan',
+      bin: 'dikosongkan permanen, tidak bisa dibatalkan', keeplist: 'Ada di Keep List', 'leftover-data': 'pengaturan dan data, centang hanya kalau yakin',
+      'leftover-cache': 'cache', 'build-old': 'tidak dipakai 7 hari atau lebih', 'build-recent': 'dipakai 7 hari terakhir', git: 'dilacak git',
+      'nested-git': 'berisi repo git', secret: 'berisi kunci atau sertifikat', unchecked: 'Tidak bisa dicek', cloud: 'di folder cloud',
+      'installer-old': 'lebih lama dari 14 hari', 'installer-new': 'lebih baru dari 14 hari', 'setup-exe': 'program setup, cek sendiri dulu',
+      'setup-zip': 'sepertinya setup, cek sendiri dulu', 'disc-image': 'image disk, cek sendiri dulu', system: 'dibutuhkan Windows',
+      amnesia: 'milik Amnesia', 'keep-root': 'dilindungi', link: 'link, tidak diikuti', gone: 'sudah tidak ada', outside: 'di luar folder user kamu'
+    },
+    cTop: 'Lainnya', cNothing: 'Tidak ada yang perlu dibersihkan di sini.', cSel: function (n, b) { return n + ' dipilih, ' + size(b); },
+    cGo: { quick: 'Bersihkan yang dipilih', apps: 'Pindah ke Recycle Bin', projects: 'Pindah ke Recycle Bin', installers: 'Pindah ke Recycle Bin' },
+    cWhere: { 'delete': 'Cache, file Temp dan tempat sampah dihapus permanen.', recycle: 'Semuanya dipindah ke Recycle Bin.', bin: 'Recycle Bin dikosongkan permanen. Tidak bisa dibatalkan.' },
+    cConfirm: function (n, b) { return 'Lanjutkan dengan ' + n + ' item, ' + size(b) + '?'; },
+    cFreed: function (b) { return 'Ruang kosong +' + size(b); },
+    cRes: function (c, d, f) { return c + ': ' + d + ' selesai' + (f ? ', ' + f + ' dilewati (sedang dipakai atau berubah)' : '') + '.'; },
+    cChanged: function (n) { return n + ' item berubah sejak dipindai, jadi tidak disentuh.'; },
+    cCut: 'Pemindaian berhenti di batasnya (30 detik atau 300.000 file). Yang sudah ketemu ditampilkan.',
+    cErr: { 'care-rescan': 'Daftarnya sudah lama. Pindai lagi dulu.', 'care-gone': 'Sudah tidak ada.', 'care-not-found': 'Program itu sudah tidak terpasang.', 'care-not-user': 'Hanya program yang dipasang khusus untukmu yang bisa di-uninstall di sini.', 'keeplist-missing': 'Keep List hilang, jadi Perawatan berhenti dan tidak menghapus apa pun. Buka Keep List untuk mengeceknya.', 'keeplist-unreadable': 'Keep List tidak bisa dibaca, jadi Perawatan berhenti dan tidak menghapus apa pun. Buka Keep List untuk mengeceknya.' },
+    cFeat: { quick: 'Bersihkan sekarang', apps: 'Hapus app', projects: 'Folder build project', installers: 'Installer lama', tune: 'Perawatan ringan' },
+    hCare: function (d) { var p = d.split(' '); return 'Perawatan: ' + (L.cFeat[p[0]] || p[0]) + ': ' + (p[1] || 0) + ' item' + (+p[2] > 0 ? ', ' + size(+p[2] * 1024) + ' dikosongkan' : '') + (+p[3] > 0 ? ', ' + p[3] + ' gagal' : ''); },
+    hStopped: function () { return 'Pembersihan dihentikan: Keep List tidak bisa dibaca. Tidak ada yang dihapus.'; },
+    hlDisk: {
+      ok: function (d) { var p = d.split(' '); return 'Ruang kosong: ' + size(+p[0]) + ' dari ' + size(+p[1]) + '.'; },
+      warn: function (d) { var p = d.split(' '); return 'Ruang kosong tinggal sedikit: ' + size(+p[0]) + ' dari ' + size(+p[1]) + '. Perawatan bisa membantu.'; },
+      info: 'Tidak bisa mengecek ruang kosong.'
+    },
+    hlMemory: { ok: function (d) { return 'Memori: ' + d + '% terpakai.'; }, warn: function (d) { return 'Memori hampir penuh (' + d + '% terpakai). Menutup app membantu.'; }, info: 'Tidak bisa mengecek memori.' },
+    hlBattery: { info: function (d) { if (!d) return 'Tidak bisa mengecek baterai.'; var p = d.split(' '); return 'Baterai: ' + p[0] + '%' + (p[1] === '1' ? ', sedang diisi' : '') + '.'; } }
   };
 
   var L = EN, info = {};
@@ -504,6 +760,7 @@
     document.querySelectorAll('[data-ph]').forEach(function (el) { var v = L[el.dataset.ph]; if (typeof v === 'string') el.placeholder = v; });
     document.querySelectorAll('[data-tip]').forEach(function (el) { var v = L[el.dataset.tip]; if (typeof v === 'string') { el.title = v; el.setAttribute('aria-label', v); } });
     $('unWord').placeholder = L.unWord;
+    advOpen(!!advIsOpen);
     if (current) title(current);
     if (info && 'enabled' in info) show(info);
   }
@@ -521,6 +778,8 @@
   }
 
   var $ = function (id) { return document.getElementById(id); };
+  // v0.10 (item 197): a button that says only "Remove" or "Keep" in a list also tells a screen reader which row it is for
+  function named(b, action, what) { b.setAttribute('aria-label', action + ': ' + what); return b; }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
   function fill(ul, rows, cap) {
     ul.textContent = '';
@@ -553,13 +812,13 @@
 
   // ---------- pages ----------
   // v0.6: like the Mac app: Home has tiles, every other page has a back button. Advanced lives inside Settings.
-  var views = ['home', 'review', 'keep', 'vault', 'backup', 'settings', 'preview', 'history', 'health'];
-  var titles = { review: 'tOut', keep: 'tabKeep', vault: 'tabVault', backup: 'tabBackup', settings: 'tabSettings', preview: 'previewTitle', history: 'histTitle', health: 'healthTitle' };
+  var views = ['home', 'review', 'keep', 'vault', 'backup', 'settings', 'preview', 'history', 'health', 'care', 'ai'];
+  var titles = { review: 'tOut', keep: 'tabKeep', vault: 'tabVault', backup: 'tabBackup', settings: 'tabSettings', preview: 'previewTitle', history: 'histTitle', health: 'healthTitle', care: 'careTitle', ai: 'aiTitle' };
   var loaders = {}, current = null;
   function title(name) { $('pageTitle').textContent = L[titles[name]] || ''; }
   function go(name) {
     var sub = null;
-    if (name === 'advanced') { name = 'settings'; sub = 'advGroup'; }
+    if (name === 'advanced') { name = 'settings'; sub = 'advGroup'; advOpen(true); }
     if (views.indexOf(name) < 0) name = 'home';
     current = name;
     views.forEach(function (v) { $(v).hidden = v !== name; });
@@ -584,7 +843,20 @@
     }
     return card._hay;
   }
+  // v0.10 (item 195): Advanced is closed until you open it (or search, or come from an "Advanced" link)
+  var advIsOpen = false;
+  function advOpen(on) {
+    advIsOpen = on;
+    var searching = !!$('setSearch').value.trim();
+    $('advWrap').hidden = !(on || searching);
+    $('advToggle').hidden = searching;
+    $('advToggle').textContent = on ? L.advHide : L.advShow;
+    $('advToggle').setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  $('advToggle').addEventListener('click', function () { advOpen(!advIsOpen); });
   $('setSearch').addEventListener('input', function () {
+    advOpen(advIsOpen);
+    window.scrollTo(0, 0); // v0.10 (item 191): the first hit is at the top, not above the window
     var words = this.value.toLowerCase().split(/\s+/).filter(Boolean), any = false;
     document.querySelectorAll('#settings .sgroup').forEach(function (g) {
       var shown = 0;
@@ -688,7 +960,7 @@
       h = [].concat(h || []);
       $('histEmpty').hidden = h.length > 0;
       $('hist').hidden = h.length === 0;
-      var f = { clean: L.hClean, paused: L.hPaused, snapshot: L.hSnapshot, restore: L.hRestore, backup: L.hBackup, doomsday: L.hDoom, quick: L.hQuick, apps: L.hApps, appkeep: L.hAppKeep, blocked: L.hBlocked, vault: L.hVault, leftovers: L.hLeft, sysclean: L.hSys, wipe: L.hWipe, pause: L.hPause, resume: L.hResume };
+      var f = { clean: L.hClean, paused: L.hPaused, snapshot: L.hSnapshot, restore: L.hRestore, backup: L.hBackup, doomsday: L.hDoom, quick: L.hQuick, apps: L.hApps, appkeep: L.hAppKeep, blocked: L.hBlocked, vault: L.hVault, leftovers: L.hLeft, sysclean: L.hSys, wipe: L.hWipe, pause: L.hPause, resume: L.hResume, care: L.hCare, stopped: L.hStopped, mode: L.hMode };
       fill($('hist'), h.map(function (x) { return { kind: x.time.slice(5, 16), path: f[x.kind] ? f[x.kind](x.data) : x.kind + ' ' + x.data }; }), 50);
     }).catch(function () { });
   }
@@ -708,6 +980,7 @@
     say(msg, L.busy); $(res).hidden = true;
     return ask('preview').then(function (r) {
       say(msg, '');
+      if (/^keeplist-/.test(r.skipped || '')) say(msg, L.hStopped(), 'warn'); // v0.9: say why the list is empty
       $(sum).textContent = L.sum(r.count);
       if (list === 'items') { pv = { items: [].concat(r.items || []), kept: [].concat(r.kept || []) }; pvFolders(); showPv(); }
       else fill($(list), [].concat(r.items || []).map(function (x) { return { kind: L[x.kind] || x.kind, path: x.path }; }), 500);
@@ -770,6 +1043,7 @@
       else g.append(el('span', '', p.path.replace(/\//g, '\\')));
       if (!p.exists) g.append(el('span', 'meta', L.klMissing));
       var b = el('button', 'btn ghost small', L.remove);
+      named(b, L.remove, p.app || p.path.replace(/\//g, '\\')); // v0.10 (197)
       b.addEventListener('click', function () { ask('keepRemove', { path: p.path }).then(showKeep); });
       li.append(g, b); ul.append(li);
     });
@@ -803,6 +1077,7 @@
       var li = el('li'), g = el('span', 'grow');
       g.append(el('span', '', a.name), el('span', 'meta', (a.store ? L.kaStore + ' · ' : '') + a.paths.map(function (p) { return p.replace(/\//g, '\\'); }).join(', ')));
       var b = el('button', 'btn ghost small', a.kept ? L.kaKept : L.kaKeep);
+      named(b, a.kept ? L.kaKept : L.kaKeep, a.name); // v0.10 (197)
       b.disabled = a.kept;
       b.addEventListener('click', function () {
         b.disabled = true;
@@ -861,11 +1136,12 @@
     v.apps.forEach(function (a) {
       var li = el('li'), cb = el('input'), g = el('span', 'grow');
       cb.type = 'checkbox'; cb.checked = a.chosen; cb.disabled = a.folder || !a.present && !a.chosen;
+      cb.setAttribute('aria-label', a.name); // v0.10 (197)
       cb.addEventListener('change', function () { ask('vaultChoose', { name: a.name, on: cb.checked }).then(showVault); });
       g.append(el('span', '', a.name), el('span', 'meta', (a.time ? L.vSaved(a.time) + (a.size ? ', ' + size(a.size) : '') : L.vNever) + (a.prevTime ? ' · ' + L.vPrev(a.prevTime) : '') + (a.shrunk ? ' · ' + L.vShrunk : '') + (a.setup === 'unfinished' ? ' · ' + L.vSetup : '') + (a.present ? '' : ' · ' + L.vNotHere)));
       li.append(cb, g);
-      if (a.time) { var d = el('button', 'btn ghost small', L.vDelete); d.addEventListener('click', function () { ask('vaultDelete', { name: a.name }).then(showVault); }); li.append(d); }
-      if (a.folder) { var r = el('button', 'btn ghost small', L.remove); r.addEventListener('click', function () { ask('vaultRemoveFolder', { name: a.name }).then(showVault); }); li.append(r); }
+      if (a.time) { var d = el('button', 'btn ghost small', L.vDelete); named(d, L.vDelete, a.name); d.addEventListener('click', function () { ask('vaultDelete', { name: a.name }).then(showVault); }); li.append(d); }
+      if (a.folder) { var r = el('button', 'btn ghost small', L.remove); named(r, L.remove, a.name); r.addEventListener('click', function () { ask('vaultRemoveFolder', { name: a.name }).then(showVault); }); li.append(r); }
       ul.append(li);
     });
     // v0.8: apps found on this PC that the vault does not know yet
@@ -880,6 +1156,86 @@
     $('vSuggBox').hidden = !sg.childElementCount;
   }
   loaders.vault = function () { ask('vaultInfo').then(showVault); };
+  // ---------- v0.10 vault profiles ----------
+  // The Restore card gets a profile picker: Everything, or only the apps of one profile (Work, Personal...).
+  var vp = { profiles: [], shared: {}, apps: [], editing: null };
+  var showVaultBase = showVault;
+  showVault = function (v) { showVaultBase(v); if (v.exists) loadProfiles(); else $('vpEditor').hidden = true; };
+  function vpErr(e) { var m = (e && e.message) || '', k = m.indexOf('vault:') === 0 ? m.split(':')[1] : m; return L.vpErr[k] || errText(e); }
+  function vpName(id) { var p = vp.profiles.filter(function (x) { return x.id === id; })[0]; return p ? p.name : id; }
+  function vpSharedText(apps) {
+    return Object.keys(vp.shared).filter(function (a) { return !apps || apps.indexOf(a) >= 0; }).map(function (a) {
+      var ids = vp.shared[a]; return L.vpShared(a, ids.slice(0, -1).map(vpName).join(', '), vpName(ids[ids.length - 1]));
+    }).join('\n');
+  }
+  function vpChoice() { return $('vpPick').hidden ? '' : $('vProfile').value; }
+  function loadProfiles(keep) {
+    return ask('profiles').then(function (r) {
+      vp.profiles = r.profiles || []; vp.shared = r.shared || {}; vp.apps = r.apps || [];
+      var sel = $('vProfile'), want = keep || sel.value || r.last || 'all';
+      sel.textContent = '';
+      vp.profiles.forEach(function (p) { var o = el('option', '', p.name); o.value = p.id; sel.append(o); });
+      sel.value = vp.profiles.some(function (p) { return p.id === want; }) ? want : 'all';
+      $('vpPick').hidden = false;
+      $('vpFull').hidden = r.mode !== 'full';
+      vpShow();
+    }).catch(function () { $('vpPick').hidden = true; $('vpApps').hidden = true; $('vpShared').hidden = true; }); // older or locked: restore everything as before
+  }
+  function vpShow() {
+    var id = $('vProfile').value, p = vp.profiles.filter(function (x) { return x.id === id; })[0];
+    $('vpEdit').disabled = !p || id === 'all';
+    if (!p) { $('vpApps').hidden = true; $('vpShared').hidden = true; return; }
+    var parts = [], noSnap = p.apps.filter(function (a) { return p.snapshots.indexOf(a) < 0 && p.missing.indexOf(a) < 0; });
+    if (!p.apps.length) parts.push(id === 'all' ? L.vpNoApps : L.vpEmpty);
+    else parts.push(L.vpRestores(p.apps));
+    if (noSnap.length) parts.push(L.vpNoSnap(noSnap));
+    if (p.missing.length) parts.push(L.vpNotHere(p.missing));
+    $('vpApps').textContent = parts.join(' '); $('vpApps').hidden = false;
+    var sh = id === 'all' ? '' : vpSharedText(p.apps);
+    $('vpShared').textContent = sh; $('vpShared').hidden = !sh;
+  }
+  $('vProfile').addEventListener('change', vpShow);
+  function vpOpen(p) {
+    vp.editing = p ? p.id : null;
+    $('vpEdTitle').textContent = p ? L.vpEditTitle : L.vpNewTitle;
+    $('vpName').value = p ? p.name : '';
+    $('vpDelete').hidden = !p;
+    var box = $('vpAppList'); box.textContent = '';
+    var names = vp.apps.map(function (a) { return a.name; });
+    (p ? p.apps : []).forEach(function (a) { if (names.indexOf(a) < 0) names.push(a); }); // an app that is not here any more can still be unticked
+    names.forEach(function (n) {
+      var a = vp.apps.filter(function (x) { return x.name === n; })[0], lab = el('label', 'check'), cb = el('input'), t = el('span', '', n);
+      cb.type = 'checkbox'; cb.value = n; cb.checked = !!p && p.apps.indexOf(n) >= 0;
+      if (!a || !a.present) t.append(el('span', 'meta', ' · ' + L.vNotHere)); else if (!a.snapshot) t.append(el('span', 'meta', ' · ' + L.vNever));
+      lab.append(cb, t); box.append(lab);
+    });
+    if (!names.length) box.append(el('p', 'muted small', L.vpNoApps));
+    $('vpEdShared').hidden = true; say('vpMsg', '');
+    $('vpEditor').hidden = false; $('vpName').focus();
+    $('vpEditor').scrollIntoView({ block: 'nearest' });
+  }
+  $('vpEdit').addEventListener('click', function () { var id = $('vProfile').value; vpOpen(vp.profiles.filter(function (x) { return x.id === id; })[0] || null); });
+  $('vpNew').addEventListener('click', function () { vpOpen(null); });
+  $('vpCancel').addEventListener('click', function () { $('vpEditor').hidden = true; });
+  $('vpSave').addEventListener('click', function () {
+    var apps = [].map.call($('vpAppList').querySelectorAll('input:checked'), function (c) { return c.value; });
+    ask('profileSave', { id: vp.editing || '', name: $('vpName').value, apps: apps }).then(function (r) {
+      return loadProfiles(r.saved).then(function () {
+        var p = vp.profiles.filter(function (x) { return x.id === r.saved; })[0], sh = p ? vpSharedText(p.apps) : '';
+        vp.editing = r.saved; $('vpEdTitle').textContent = L.vpEditTitle; $('vpDelete').hidden = false;
+        $('vpEdShared').textContent = sh; $('vpEdShared').hidden = !sh;
+        say('vpMsg', L.saved, 'good');
+      });
+    }).catch(function (e) { say('vpMsg', vpErr(e), 'bad'); });
+  });
+  $('vpDelete').addEventListener('click', function () {
+    if (!vp.editing) return;
+    var id = vp.editing;
+    confirmBox(L.vpDeleteAsk(vpName(id))).then(function (yes) {
+      if (!yes) return;
+      ask('profileDelete', { id: id }).then(function () { $('vpEditor').hidden = true; return loadProfiles('all'); }).catch(function (e) { say('vpMsg', vpErr(e), 'bad'); });
+    });
+  });
   // v0.8: how hard the password is to guess (a rough guide, nothing is sent anywhere)
   function strength(p) {
     if (p.length < 12) return 0;
@@ -910,8 +1266,9 @@
   });
   $('vRestore').addEventListener('click', function () {
     var b = this, stop = progress('vProg', 'vault'); b.disabled = true; say('vRestoreMsg', L.working);
-    ask('vaultRestore', { password: $('vRestorePw').value, previous: $('vRestorePrev').checked }).then(function (v) { $('vRestorePw').value = ''; showVault(v); var pr = v.problems || {}, extra = Object.keys(pr).map(function (k) { return L.vRestoreIssue(k, pr[k]); }); say('vRestoreMsg', [L.vRestored(v.restored || [])].concat(extra).join(' '), extra.length ? 'warn' : 'good'); })
-      .catch(function (e) { say('vRestoreMsg', errText(e), 'bad'); if (/doomsday/.test(e.message)) loaders.vault(); })
+    // v0.10: profile = only the apps of the chosen profile ('' or 'all' = everything, as before)
+    ask('vaultRestore', { password: $('vRestorePw').value, previous: $('vRestorePrev').checked, profile: vpChoice() }).then(function (v) { $('vRestorePw').value = ''; showVault(v); var pr = v.problems || {}, extra = Object.keys(pr).map(function (k) { return L.vRestoreIssue(k, pr[k]); }); if (v.ignored && v.ignored.length) extra.push(L.vpIgnored(v.ignored)); say('vRestoreMsg', [L.vRestored(v.restored || [])].concat(extra).join(' '), extra.length ? 'warn' : 'good'); })
+      .catch(function (e) { say('vRestoreMsg', vpErr(e), 'bad'); if (/doomsday/.test(e.message)) loaders.vault(); })
       .then(function () { stop(); b.disabled = false; });
   });
   $('vPwBtn').addEventListener('click', function () {
@@ -980,6 +1337,7 @@
       li.append(g);
       if (x.canUninstall) {
         var u = el('button', 'btn ghost small', L.uninstall);
+        named(u, L.uninstall, x.name); // v0.10 (197)
         // v0.7.1: Amnesia waits for the uninstaller, then the list is loaded again
         u.addEventListener('click', function () {
           u.disabled = true; say('aAppsMsg', L.aUninstalling);
@@ -987,7 +1345,7 @@
         });
         li.append(u);
       }
-      var k = el('button', 'btn ghost small', L.keep); k.addEventListener('click', function () { k.disabled = true; ask('appsKeep', { id: x.id, ids: x.ids || [x.id] }).then(function (a) { say('aAppsMsg', L.aKept, 'good'); showAdv(a); }).catch(function (e) { say('aAppsMsg', errText(e), 'bad'); k.disabled = false; }); }); li.append(k);
+      var k = el('button', 'btn ghost small', L.keep); named(k, L.keep, x.name); k.addEventListener('click', function () { k.disabled = true; ask('appsKeep', { id: x.id, ids: x.ids || [x.id] }).then(function (a) { say('aAppsMsg', L.aKept, 'good'); showAdv(a); }).catch(function (e) { say('aAppsMsg', errText(e), 'bad'); k.disabled = false; }); }); li.append(k);
       ul.append(li);
     });
     $('aAppsEmpty').hidden = a.apps.length > 0;
@@ -1069,13 +1427,13 @@
     var ul = $('loList'); ul.textContent = '';
     r.folders.forEach(function (f) {
       var li = el('li'), cb = el('input'), g = el('span', 'grow');
-      cb.type = 'checkbox'; cb.dataset.folder = f.path; cb.checked = f.level === 'likely';
+      cb.type = 'checkbox'; cb.dataset.folder = f.path; cb.checked = f.level === 'likely'; cb.setAttribute('aria-label', f.path);
       g.append(el('span', '', f.path), el('span', 'meta', (f.empty ? L.loEmpty : size(f.size)) + ' · ' + (f.level === 'likely' ? L.loLikely : L.loCareful)));
       li.append(cb, g); ul.append(li);
     });
     r.keys.forEach(function (k) {
       var li = el('li'), cb = el('input'), g = el('span', 'grow');
-      cb.type = 'checkbox'; cb.dataset.key = k;
+      cb.type = 'checkbox'; cb.dataset.key = k; cb.setAttribute('aria-label', 'HKCU\\Software\\' + k);
       g.append(el('span', '', 'HKCU\\Software\\' + k), el('span', 'meta', L.loKey));
       li.append(cb, g); ul.append(li);
     });
@@ -1167,6 +1525,510 @@
   function tourEnd() { $('tour').hidden = true; ask('set', { key: 'welcomeDone', value: true }); }
   $('tourNext').addEventListener('click', function () { if (step < L.tour.length - 1) tour(step + 1); else tourEnd(); });
   $('tourSkip').addEventListener('click', tourEnd);
+
+  // ---------- Care (v0.9) ----------
+  // scan -> list with sizes and checkboxes -> asked once more -> act -> result per category + space freed.
+  // The page only sends back ids of the last scan; C# keeps the paths and checks every item again before acting.
+  [EN, ID].forEach(function (D) {
+    D.hl.disk = D.hlDisk; D.hl.memory = D.hlMemory; D.hl.battery = D.hlBattery;
+    Object.keys(D.cErr).forEach(function (k) { D.err[k] = D.cErr[k]; });
+  });
+  // ---------- v0.10 Amnesia modes ----------
+  // One choice for how much is forgotten at every sign out. A switch is always: preview (two dry runs in C#), then the
+  // sheet below, then "Switch mode". C# keeps the previewed list and refuses when the Keep List changed meanwhile.
+  [EN, ID].forEach(function (D) { Object.keys(D.mdErr).forEach(function (k) { D.err[k] = D.mdErr[k]; }); });
+  var mdInfo = null, ms = null;
+  var MODES = ['full', 'balanced', 'light', 'custom'];
+  function mdName(id) { return L.mdNames[id] || id; }
+  function mdKey(x) { return String(x).trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase(); }
+  function loadMode() {
+    return ask('modeInfo').then(function (m) { mdInfo = m; showModes(); return m; }).catch(function (e) { say('mdMsg', errText(e), 'bad'); });
+  }
+  function showModes() {
+    var box = $('mdList'); box.textContent = '';
+    if (!mdInfo) return;
+    MODES.forEach(function (id) {
+      var on = mdInfo.mode === id, b = el('button', 'mode' + (on ? ' on' : ''));
+      b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', on ? 'true' : 'false');
+      var t = el('span', 'mt'); t.append(el('b', '', mdName(id)));
+      if (on) t.append(el('span', 'pill', L.mdNow));
+      b.append(t, el('small', '', L.mdSubs[id]));
+      b.disabled = !!mdInfo.lab;
+      b.addEventListener('click', function () {
+        if (mdInfo.mode === id) return;
+        say('mdMsg', '');
+        modeSheet(id, [], []).then(function (to) {
+          if (!to) return;
+          say('mdMsg', L.msDone(mdName(to)), 'good');
+          ask('keepList').then(showKeep);
+          ask('info').then(show);
+        });
+      });
+      box.append(b);
+    });
+    var note = mdInfo.mode === 'light' ? L.mdLightNote : mdInfo.mode === 'full' ? L.mdFullVault : '';
+    $('mdLight').textContent = note; $('mdLight').hidden = !note;
+    if (mdInfo.lab) say('mdMsg', L.err['mode-lab']);
+    else if (!mdInfo.blockOk) say('mdMsg', L.err['mode-broken'], 'warn');
+  }
+  // the mode card follows every change of the Keep List (removing a line of the mode makes it Custom)
+  showKeep = (function (orig) { return function (k) { orig(k); loadMode(); }; })(showKeep);
+
+  // the preview sheet. Resolves with the new mode after "Switch mode", or false.
+  function modeSheet(mode, add, remove) {
+    return new Promise(function (done) {
+      ms = { mode: mode, add: [].concat(add || []), remove: [].concat(remove || []), done: done, p: null };
+      $('msTitle').textContent = L.msTitle(mdName(mode));
+      $('msOwn').textContent = ''; $('msOwnBox').hidden = true;
+      $('modeSheet').hidden = false;
+      $('msNo').focus();
+      msLoad();
+    });
+  }
+  function msEnd(v) { $('modeSheet').hidden = true; var d = ms && ms.done; ms = null; if (d) d(v); }
+  function msFill(ul, rows, total) {
+    ul.textContent = '';
+    var shown = rows.slice(0, 200);
+    shown.forEach(function (r) { var li = el('li'); li.append(el('span', 'k', r.kind), el('span', 'p', r.path)); ul.append(li); });
+    if (total > shown.length) ul.append(el('li', '', L.more(total - shown.length)));
+  }
+  function msLoad() {
+    var my = ms;
+    if (!my) return;
+    my.p = null;
+    // v0.10: only the newest preview may be shown (and committed); the own-line boxes wait while one is being made
+    var seq = my.seq = (my.seq || 0) + 1;
+    function own(on) { [].forEach.call($('msOwn').querySelectorAll('input'), function (c) { c.disabled = !on; }); }
+    own(false);
+    $('msYes').disabled = true; $('msYes').className = 'btn';
+    $('msBusy').hidden = false;
+    ['msProblem', 'msWarn', 'msNote', 'msCount', 'msSettings', 'msWipedBox', 'msKeptBox'].forEach(function (id) { $(id).hidden = true; });
+    ask('modePreview', { mode: my.mode, add: my.add, remove: my.remove }).then(function (p) {
+      if (ms === my && my.seq === seq) msShow(my, p);
+    }).catch(function (e) {
+      if (ms !== my || my.seq !== seq) return;
+      $('msBusy').hidden = true; $('msProblem').textContent = errText(e); $('msProblem').hidden = false;
+      own(true);
+    });
+  }
+  function msShow(my, p) {
+    $('msBusy').hidden = true;
+    $('msTitle').textContent = L.msTitle(mdName(p.mode));
+    if (p.problem) {
+      $('msProblem').textContent = p.problem === 'mode-preset' ? L.msPreset(mdName(p.asked)) : (L.err[p.problem] || p.problem);
+      $('msProblem').hidden = false;
+      $('msOwnBox').hidden = true;
+      return; // nothing to switch to: "Switch mode" stays off
+    }
+    $('msWarn').hidden = !p.wipesMore;
+    $('msNote').hidden = p.note !== 'to-custom';
+    if (p.wipeAfter >= 0) {
+      var same = !p.newlyWipedCount && !p.newlyKeptCount && !(p.added || []).length && !(p.removed || []).length;
+      $('msCount').textContent = L.msCount(p.wipeAfter, p.wipeBefore) + (same ? ' ' + L.msSame : '');
+      $('msCount').hidden = false;
+    }
+    var s = p.settings || {};
+    var st = s.VAULT_AUTO === '0' ? L.msAutoOff : s.VAULT_AUTO === '1' ? L.msAutoOn : '';
+    $('msSettings').textContent = st; $('msSettings').hidden = !st;
+    function line(x) { return { kind: L.msLineK, path: String(x).replace(/\//g, '\\') }; }
+    function item(x) { return { kind: L.msItemK, path: x }; }
+    // v0.10 (item 190): a removed line where nothing is wiped is listed apart, not under "will now be wiped"
+    var idle = [].concat(p.removedIdle || []);
+    var removed = [].concat(p.removed || []).filter(function (x) { return idle.indexOf(x) < 0; }), added = [].concat(p.added || []);
+    var wiped = removed.map(line).concat([].concat(p.newlyWiped || []).map(item));
+    var kept = added.map(line).concat([].concat(p.newlyKept || []).map(item));
+    msFill($('msWiped'), wiped, removed.length + (p.newlyWipedCount || 0));
+    msFill($('msKept'), kept, added.length + (p.newlyKeptCount || 0));
+    msFill($('msIdle'), idle.map(line), idle.length);
+    $('msWipedBox').hidden = wiped.length === 0;
+    $('msKeptBox').hidden = kept.length === 0;
+    $('msIdleBox').hidden = idle.length === 0;
+    // your own lines: they stay unless you tick them (unticked by default)
+    var ul = $('msOwn'), own = [].concat(p.outside || []);
+    ul.textContent = '';
+    own.forEach(function (ln) {
+      var li = el('li'), lab = el('label', 'check'), cb = el('input');
+      cb.type = 'checkbox';
+      cb.checked = my.remove.some(function (r) { return mdKey(r) === mdKey(ln); });
+      var g = el('span', 'grow'); g.append(el('span', '', ln.replace(/\//g, '\\')), el('span', 'meta', L.msStop));
+      cb.addEventListener('change', function () {
+        my.remove = my.remove.filter(function (r) { return mdKey(r) !== mdKey(ln); });
+        if (cb.checked) my.remove.push(ln);
+        msLoad();
+      });
+      lab.append(cb, g); li.append(lab); ul.append(li);
+    });
+    $('msOwnBox').hidden = own.length === 0;
+    my.p = p;
+    $('msYes').className = 'btn' + (p.wipesMore ? ' mdanger' : '');
+    $('msYes').disabled = false;
+  }
+  $('msYes').addEventListener('click', function () {
+    var my = ms;
+    if (!my || !my.p) return;
+    this.disabled = true;
+    ask('modeCommit', { mode: my.mode }).then(function (m) { mdInfo = m; showModes(); if (ms === my) msEnd(my.p.mode); })
+      .catch(function (e) { if (ms !== my) return; $('msProblem').textContent = errText(e); $('msProblem').hidden = false; });
+  });
+  $('msNo').addEventListener('click', function () { msEnd(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('modeSheet').hidden && $('confirm').hidden) { e.stopImmediatePropagation(); msEnd(false); }
+  }, true);
+
+  // ---------- v0.10 Ask an AI ----------
+  // The report and the prompt are made in C# (no file contents, no file names). The page only copies or saves them;
+  // Amnesia sends nothing. The answer is pasted back, read by C#, and every change gets a checkbox.
+  var aiRep = null, aiBusy = false, aiSug = null;
+  function aiLang() { return L === ID ? 'id' : 'en'; }
+  function aiWant() { return ($('aiHide').checked ? '1' : '0') + aiLang(); }
+  function aiMakeReport() {
+    if (aiBusy) return;
+    aiBusy = true;
+    var want = { hideNames: $('aiHide').checked, lang: aiLang() }, key = aiWant();
+    $('aiCopy').disabled = $('aiSave').disabled = $('aiMake').disabled = true;
+    say('aiMsg', L.aiBusy);
+    ask('aiReport', want).then(function (r) {
+      aiRep = { key: key, full: r.full };
+      $('aiText').textContent = r.full; $('aiShowBox').hidden = false;
+      say('aiMsg', L.aiReady);
+      $('aiCopy').disabled = $('aiSave').disabled = false;
+    }).catch(function (e) { say('aiMsg', errText(e), 'bad'); }).then(function () {
+      aiBusy = false; $('aiMake').disabled = false;
+      if (aiRep && aiRep.key !== aiWant()) aiMakeReport(); // the switch changed while it was busy
+    });
+  }
+  loaders.ai = function () { if (!aiRep || aiRep.key !== aiWant()) aiMakeReport(); };
+  $('aiHide').addEventListener('change', aiMakeReport);
+  $('aiMake').addEventListener('click', aiMakeReport);
+  function copyText(t) {
+    function old() {
+      var ta = el('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.append(ta); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (x) { ok = false; }
+      ta.remove();
+      return ok ? Promise.resolve() : Promise.reject(new Error('copy'));
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t).catch(old);
+    return old();
+  }
+  $('aiCopy').addEventListener('click', function () {
+    if (!aiRep) return;
+    copyText(aiRep.full).then(function () { say('aiMsg', L.aiCopied, 'good'); }, function () { say('aiMsg', L.aiCopyFail, 'warn'); $('aiShowBox').open = true; });
+  });
+  $('aiSave').addEventListener('click', function () {
+    var b = this; b.disabled = true;
+    ask('aiSave', { hideNames: $('aiHide').checked, lang: aiLang() }).then(function (r) { say('aiMsg', L.aiSaved(r.path), 'good'); })
+      .catch(function (e) { say('aiMsg', errText(e), 'bad'); }).then(function () { b.disabled = false; });
+  });
+  $('aiRead').addEventListener('click', function () {
+    var t = $('aiAnswer').value, b = this;
+    $('aiSugg').hidden = true; aiSug = null;
+    if (!t.trim()) { say('aiPMsg', L.aiErr['no-block'], 'warn'); return; }
+    b.disabled = true;
+    ask('aiParse', { text: t }).then(function (r) {
+      if (!r.ok) { say('aiPMsg', L.aiErr[r.error] || r.error, 'bad'); return; }
+      // the vault profiles you have, so a profile with the same name is updated instead of made twice
+      return ask('profiles').catch(function () { return null; }).then(function (pr) { aiShow(r, pr); });
+    }).catch(function (e) { say('aiPMsg', errText(e), 'bad'); }).then(function () { b.disabled = false; });
+  });
+  function aiShow(r, pr) {
+    var have = pr && pr.profiles ? [].concat(pr.profiles) : [];
+    var ul = $('aiChanges'), items = [];
+    ul.textContent = '';
+    function row(kind, value, text, on) {
+      var li = el('li'), lab = el('label', 'check'), cb = el('input');
+      cb.type = 'checkbox'; cb.checked = on;
+      lab.append(cb, el('span', 'grow', text)); li.append(lab); ul.append(li);
+      items.push({ kind: kind, value: value, cb: cb });
+    }
+    // ticked for you: new lines and profiles. Not ticked: a mode switch and lines to stop keeping.
+    if (r.mode) row('mode', r.mode, L.aiMode(mdName(r.mode)), false);
+    [].concat(r.keep_add || []).forEach(function (p) { row('add', p, L.aiAdd(p.replace(/\//g, '\\')), true); });
+    [].concat(r.keep_remove || []).forEach(function (p) { row('remove', p, L.aiRemove(p.replace(/\//g, '\\')), false); });
+    Object.keys(r.profiles || {}).forEach(function (n) {
+      var ex = have.filter(function (x) { return x.id !== 'all' && String(x.name).toLowerCase() === n.toLowerCase(); })[0];
+      var apps = [].concat(r.profiles[n] || []);
+      row('profile', { name: n, apps: apps, id: ex ? ex.id : '' }, L.aiProf(n, apps, !!ex), true);
+    });
+    if (!items.length) ul.append(el('li', 'muted', L.aiNone));
+    $('aiNotes').textContent = r.notes || ''; // plain text, never HTML
+    $('aiNotesBox').hidden = !r.notes;
+    var un = $('aiUnused'); un.textContent = '';
+    [].concat(r.rejected || [], r.skipped || []).forEach(function (x) { un.append(el('li', '', L.aiNotUsed + ': ' + x.item + ' (' + (L.aiWhy[x.why] || x.why) + ')')); });
+    if ((r.ignored_apps || []).length) un.append(el('li', '', L.aiIgnored(r.ignored_apps)));
+    un.hidden = !un.childNodes.length;
+    $('aiApply').disabled = !items.length;
+    aiSug = items;
+    $('aiSugg').hidden = false;
+    say('aiPMsg', '');
+  }
+  function aiSaveProfiles(list) {
+    var p = Promise.resolve();
+    list.forEach(function (x) {
+      p = p.then(function () { var a = { name: x.name, apps: x.apps }; if (x.id) a.id = x.id; return ask('profileSave', a); });
+    });
+    return p.catch(function (e) { throw new Error(L.aiProfFail + ' ' + errText(e)); });
+  }
+  $('aiApply').addEventListener('click', function () {
+    if (!aiSug) return;
+    var mode = null, add = [], rem = [], prof = [];
+    aiSug.filter(function (x) { return x.cb.checked; }).forEach(function (x) {
+      if (x.kind === 'mode') mode = x.value; else if (x.kind === 'add') add.push(x.value); else if (x.kind === 'remove') rem.push(x.value); else prof.push(x.value);
+    });
+    if (!mode && !add.length && !rem.length && !prof.length) { say('aiPMsg', L.aiNoTick, 'warn'); return; }
+    var keep = !!(mode || add.length || rem.length);
+    // Keep List changes go through the same preview and confirm as a mode switch
+    var first = keep ? (mode ? Promise.resolve(mode) : ask('modeInfo').then(function (m) { return m.mode; })).then(function (m) { return modeSheet(m, add, rem); })
+      : confirmBox(L.aiProfAsk(prof.length));
+    first.then(function (ok) {
+      if (!ok) return;
+      return aiSaveProfiles(prof).then(function () {
+        say('aiPMsg', keep ? L.aiApplied : L.aiProfDone(prof.length), 'good');
+        aiSug = null; $('aiSugg').hidden = true; aiRep = null;
+      });
+    }).catch(function (e) { say('aiPMsg', errText(e), 'bad'); });
+  });
+
+  var careData = {}, careBusyOn = false;
+  function careCard(f) { return document.querySelector('#care .care-f[data-feature="' + f + '"]'); }
+  function careSay(card, t, cls) { var m = card.querySelector('.cMsg'); m.textContent = t || ''; m.className = (cls || 'muted') + ' cMsg'; }
+  function careSize(b, cut) { return b < 0 ? '?' : (cut ? L.cAtLeast : '') + size(b); }
+  function carePath(rel) { return (rel || '').replace(/\//g, '\\'); }
+  // one job at a time: the shared progress line moves into the card that works
+  function careRun(card, cmd, arg, working) {
+    if (careBusyOn) return Promise.reject(new Error('busy'));
+    careBusyOn = true;
+    var prog = $('careProg');
+    card.querySelector('.care-slot').append(prog);
+    prog.querySelector('span').textContent = working ? L.cWorking : L.cBusy;
+    prog.hidden = false;
+    document.querySelectorAll('#care .cbtn').forEach(function (b) { b.disabled = true; });
+    function end() { careBusyOn = false; prog.hidden = true; document.querySelectorAll('#care .cbtn').forEach(function (b) { b.disabled = false; }); }
+    return ask(cmd, arg).then(function (r) { end(); return r; }, function (e) { end(); throw e; });
+  }
+  function careMeta(x) {
+    var why = L.cWhy[x.reason] || x.reason;
+    var parts = [];
+    if (x.rel) parts.push(carePath(x.rel));
+    parts.push(why);
+    if (x.newest && x.cat === 'build') parts.push(x.newest);
+    return parts.join(' · ');
+  }
+  function careSel(f) {
+    var n = 0, b = 0;
+    (careData[f] || []).forEach(function (x) { if (x.selected && !x.disabled) { n++; b += Math.max(0, x.bytes || 0); } });
+    return { n: n, b: b };
+  }
+  function careGroup(f, x) { return f === 'quick' ? (L.cCat[x.cat] || x.cat) : x.group ? carePath(x.group) : L.cTop; }
+
+  // the list of one scan, grouped (quick: by kind, apps: by app, projects: by project, installers: by folder)
+  function careShow(card, f, items, cut, intro) {
+    var out = card.querySelector('.cOut');
+    out.textContent = ''; out.hidden = false;
+    careData[f] = items;
+    if (intro) out.append(el('p', '', intro));
+    if (cut) out.append(el('p', 'warn small', L.cCut));
+    if (!items.length) { out.append(el('p', 'muted', L.cNothing)); return; }
+    var groups = {}, order = [];
+    items.forEach(function (x) { var k = careGroup(f, x); if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(x); });
+    var sum = el('p', 'sum'), go = el('button', 'btn cbtn', L.cGo[f]);
+    function update() { var s = careSel(f); sum.textContent = L.cSel(s.n, s.b); go.disabled = s.n === 0; }
+    order.forEach(function (k) {
+      var g = groups[k], on = g.filter(function (x) { return !x.disabled; });
+      var box = el('div', 'care-group'), head = el('label', 'care-ghead'), all = el('input');
+      all.type = 'checkbox'; all.disabled = on.length === 0;
+      var total = 0, cut2 = false;
+      g.forEach(function (x) { total += Math.max(0, x.bytes || 0); cut2 = cut2 || x.cut; });
+      head.append(all, el('b', '', k), el('span', 'sz', careSize(total, cut2)));
+      var ul = el('ul', 'list rows care-items');
+      function sync() {
+        var c = on.filter(function (x) { return x.selected; }).length;
+        all.checked = c > 0 && c === on.length; all.indeterminate = c > 0 && c < on.length;
+      }
+      g.forEach(function (x) {
+        var li = el('li', x.disabled ? 'off' : ''), cb = el('input');
+        cb.type = 'checkbox'; cb.checked = !!x.selected && !x.disabled; cb.disabled = !!x.disabled;
+        cb.setAttribute('aria-label', x.name);
+        cb.addEventListener('change', function () { x.selected = cb.checked; sync(); update(); });
+        var txt = el('span', 'grow');
+        txt.append(el('span', '', x.cat === 'bin' ? L.cCat.bin : x.name), el('span', 'meta', careMeta(x)));
+        li.append(cb, txt, el('span', 'sz', careSize(x.bytes, x.cut)));
+        ul.append(li);
+        x._cb = cb;
+      });
+      all.addEventListener('change', function () { on.forEach(function (x) { x.selected = all.checked; x._cb.checked = all.checked; }); update(); });
+      sync();
+      box.append(head, ul);
+      out.append(box);
+    });
+    var row = el('div', 'row');
+    row.append(go);
+    if (f === 'apps') {
+      var skip = el('button', 'btn ghost cbtn', L.cSkip);
+      skip.addEventListener('click', function () { careAct(card, f, true); });
+      row.append(skip);
+    }
+    go.addEventListener('click', function () { careAct(card, f, false); });
+    out.append(sum, row);
+    update();
+  }
+
+  function careAct(card, f, skip) {
+    var sel = skip ? [] : (careData[f] || []).filter(function (x) { return x.selected && !x.disabled; });
+    var s = careSel(f), where = {};
+    sel.forEach(function (x) { where[x.where] = true; });
+    var text = L.cConfirm(s.n, s.b) + ' ' + ['delete', 'recycle', 'bin'].filter(function (w) { return where[w]; }).map(function (w) { return L.cWhere[w]; }).join(' ');
+    (skip ? Promise.resolve(true) : confirmBox(text)).then(function (ok) {
+      if (!ok) return;
+      careSay(card, '');
+      careRun(card, 'careAct', { feature: f, ids: sel.map(function (x) { return x.id; }) }, true)
+        .then(function (r) { careResult(card, f, r); if (f === 'apps') loadPrograms(); })
+        .catch(function (e) { careSay(card, errText(e), 'bad'); });
+    });
+  }
+
+  function careResult(card, f, r) {
+    var out = card.querySelector('.cOut');
+    out.textContent = ''; out.hidden = false;
+    delete careData[f];
+    var ul = el('ul', 'list rows care-res');
+    [].concat(r.cats || []).forEach(function (c) { ul.append(el('li', c.failed ? 'warn' : '', L.cRes(L.cCat[c.cat] || c.cat, c.done, c.failed))); });
+    if (ul.children.length) out.append(ul);
+    if (r.changed) out.append(el('p', 'warn small', L.cChanged(r.changed)));
+    out.append(el('p', 'sum good', L.cFreed(Math.max(0, r.bytes || 0))));
+  }
+
+  function careScan(card) {
+    var f = card.dataset.feature;
+    careSay(card, '');
+    card.querySelector('.cOut').hidden = true;
+    careRun(card, 'careScan', { feature: f }).then(function (r) {
+      careShow(card, f, [].concat(r.items || []), r.cut);
+      card.querySelector('.care-scan').textContent = L.cAgain;
+    }).catch(function (e) { careSay(card, errText(e), 'bad'); });
+  }
+  ['quick', 'projects', 'installers'].forEach(function (f) {
+    var card = careCard(f);
+    card.querySelector('.care-scan').addEventListener('click', function () { careScan(card); });
+  });
+
+  // disk overview: read only, the buttons only show things in Explorer
+  function careReveal(rel) {
+    var b = el('button', 'btn ghost small', L.cShow);
+    b.addEventListener('click', function () { ask('careReveal', { path: rel }).catch(function (e) { careSay(careCard('overview'), errText(e), 'bad'); }); });
+    return b;
+  }
+  function careRow(ul, label, bytes, cut, rel) {
+    var li = el('li'), t = el('span', 'grow');
+    t.append(el('span', '', label));
+    li.append(t, el('span', 'sz', careSize(bytes, cut)));
+    if (rel && bytes !== 0) li.append(careReveal(rel));
+    ul.append(li);
+  }
+  (function () {
+    var card = careCard('overview');
+    card.querySelector('.care-scan').addEventListener('click', function () {
+      careSay(card, '');
+      careRun(card, 'careOverview').then(function (o) {
+        var out = card.querySelector('.cOut');
+        out.textContent = ''; out.hidden = false;
+        if (o.total > 0) {
+          out.append(el('p', 'sum', L.cDisk(o.free, o.total)));
+          var bar = el('div', 'care-disk'), used = el('i');
+          used.style.width = Math.round((1 - o.free / o.total) * 100) + '%';
+          bar.append(used); out.append(bar);
+        }
+        if (o.cut) out.append(el('p', 'warn small', L.cCut));
+        var ul = el('ul', 'list rows care-ov');
+        ['keep', 'vault', 'atrash', 'bin', 'temp', 'downloads'].forEach(function (k) {
+          var e = o.sizes && o.sizes[k];
+          if (e) careRow(ul, L.cSizes[k], e.bytes, e.cut, k === 'bin' || k === 'vault' ? null : e.rel);
+        });
+        out.append(ul);
+        out.append(el('h3', '', L.cFolders));
+        var fl = el('ul', 'list rows care-ov');
+        [].concat(o.folders || []).forEach(function (e) { careRow(fl, carePath(e.rel), e.bytes, e.cut, e.rel); });
+        out.append(fl);
+        out.append(el('h3', '', L.cFiles));
+        var files = [].concat(o.files || []);
+        if (!files.length) out.append(el('p', 'muted small', L.cNoFiles));
+        else {
+          var bl = el('ul', 'list rows care-ov');
+          files.forEach(function (e) { careRow(bl, carePath(e.rel), e.bytes, false, e.rel); });
+          out.append(bl);
+        }
+        if (o.oldCount > 0) out.append(el('p', 'muted', L.cOld(o.oldCount, o.oldBytes)));
+        card.querySelector('.care-scan').textContent = L.cAgain;
+      }).catch(function (e) { careSay(card, errText(e), 'bad'); });
+    });
+  })();
+
+  // uninstall apps: just-for-you programs run their own uninstaller, the rest open Windows Settings
+  var programs = [];
+  function showPrograms() {
+    var q = $('cAppsQ').value.trim().toLowerCase(), ul = $('cAppsList');
+    ul.textContent = '';
+    var list = programs.filter(function (p) { return !q || p.name.toLowerCase().indexOf(q) >= 0 || (p.publisher || '').toLowerCase().indexOf(q) >= 0; });
+    if (!list.length) { ul.append(el('li', 'muted', L.cNoPrograms)); return; }
+    list.forEach(function (p) {
+      var li = el('li'), t = el('span', 'grow');
+      t.append(el('span', '', p.name), el('span', 'meta', [p.publisher, p.version, L.cKind[p.kind] || p.kind].filter(Boolean).join(' · ')));
+      li.append(t);
+      if (p.bytes > 0) li.append(el('span', 'sz', size(p.bytes)));
+      var b;
+      if (p.canUninstall) {
+        b = el('button', 'btn ghost small cbtn', L.cUninstall);
+        b.addEventListener('click', function () { careUninstall(p); });
+      } else {
+        b = el('button', 'btn ghost small', L.cOpenApps);
+        b.addEventListener('click', function () { ask('careOpen', { target: 'appsfeatures' }); });
+      }
+      li.append(b);
+      ul.append(li);
+    });
+  }
+  function loadPrograms() {
+    var card = careCard('apps');
+    return ask('carePrograms').then(function (list) {
+      programs = [].concat(list || []);
+      $('cAppsBox').hidden = false;
+      showPrograms();
+    }).catch(function (e) { careSay(card, errText(e), 'bad'); });
+  }
+  function careUninstall(p) {
+    var card = careCard('apps');
+    confirmBox(L.cUnConfirm(p.name)).then(function (ok) {
+      if (!ok) return;
+      careSay(card, '');
+      card.querySelector('.cOut').hidden = true;
+      careRun(card, 'careUninstall', { id: p.id }, true).then(function (r) {
+        if (!r.gone) { careSay(card, L.cUnStill(r.name), 'warn'); loadPrograms(); return; }
+        var items = [].concat(r.items || []);
+        if (!items.length) {
+          careResult(card, 'apps', { cats: [], bytes: r.bytes || 0 });
+          careSay(card, L.cUnGone(r.name) + ' ' + L.cUnNoLeft, 'good');
+        } else careShow(card, 'apps', items, false, L.cUnGone(r.name) + ' ' + L.cUnLeft);
+        loadPrograms();
+      }).catch(function (e) { careSay(card, errText(e), 'bad'); loadPrograms(); });
+    });
+  }
+  $('cAppsBtn').addEventListener('click', function () { careSay(careCard('apps'), L.cBusy); loadPrograms().then(function () { careSay(careCard('apps'), ''); }); });
+  $('cAppsQ').addEventListener('input', showPrograms);
+
+  // safe tune-ups
+  $('cTuneRun').addEventListener('click', function () {
+    var card = careCard('tune'), tasks = [];
+    if ($('cTuneExplorer').checked) tasks.push('explorer');
+    if (!tasks.length) { careSay(card, L.cTuneNone); return; }
+    confirmBox(L.cTuneAsk).then(function (ok) {
+      if (!ok) return;
+      careRun(card, 'careTune', { tasks: tasks }, true).then(function (r) {
+        careSay(card, [].concat(r.results || []).map(function (x) { return L.cTuneRes(x.ok); }).join(' '), r.failed ? 'warn' : 'good');
+        $('cTuneExplorer').checked = false;
+      }).catch(function (e) { careSay(card, errText(e), 'bad'); });
+    });
+  });
+  document.querySelectorAll('[data-care-open]').forEach(function (b) { b.addEventListener('click', function () { ask('careOpen', { target: b.dataset.careOpen }); }); });
 
   // ---------- start ----------
   setLang('en');

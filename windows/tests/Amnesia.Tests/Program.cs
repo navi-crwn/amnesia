@@ -447,6 +447,16 @@ try
     var liveYes = new CleanEngine { ExplorerLiveOk = true }.Run("logout", true).Items.Select(i => i.Path).ToList();
     Check(liveYes.Contains("AppData\\Local\\Microsoft\\Windows\\Explorer\\iconcache_48.db"), "at the real end of the session it goes");
     Check(CleanEngine.TouchesShell(new[] { new CleanItem("Desktop\\notes.txt", "file") }) && !CleanEngine.TouchesShell(new[] { new CleanItem("Downloads\\a.zip", "file") }), "Explorer is told when Desktop items went");
+    // v0.9 audit: the panic deletes Explorer's caches before the cleanup itself checks the Keep List
+    var kcSaved = File.Exists(Conf2) ? File.ReadAllText(Conf2) : null;
+    File.WriteAllText(Conf2, "AppData/Local/Microsoft/Windows/Explorer/iconcache_48.db\n");
+    Check(CleanEngine.DeleteExplorerCaches() == 0 && There("AppData/Local/Microsoft/Windows/Explorer/iconcache_48.db"), "panic: an Explorer cache on the Keep List stays");
+    File.WriteAllText(Conf2, "Keep\0\0");
+    Check(CleanEngine.DeleteExplorerCaches() == 0 && There("AppData/Local/Microsoft/Windows/Explorer/iconcache_48.db"), "panic: a Keep List that can't be read stops it too");
+    File.WriteAllText(Conf2, "");
+    Check(CleanEngine.DeleteExplorerCaches() >= 1 && !There("AppData/Local/Microsoft/Windows/Explorer/iconcache_48.db"), "panic: otherwise the Explorer caches go");
+    if (kcSaved != null) File.WriteAllText(Conf2, kcSaved); else File.Delete(Conf2);
+    Make("AppData/Local/Microsoft/Windows/Explorer/iconcache_48.db");
 
     Console.WriteLine("v0.8 cloud folders and virtual machines:");
     Settings("ENABLED=1", $"APP_PATH={exe}");
@@ -630,15 +640,163 @@ try
     Check(NewApps.KeepPaths("Tool", null, new[] { H81("AppData/Local") }, Array.Empty<string>(), home81).Count == 0, "...never a whole AppData folder");
     Check(AppMatch.Technical("Sentry") && AppMatch.Technical("AMD_Common") && AppMatch.Technical("CrashDumps") && !AppMatch.Technical("Surfshark") && !AppMatch.Technical("discord"), "Keep List chips: technical folders are not suggested as apps");
 
+    // ---------- v0.9 safety (winsafe): Keep List stop + last good copy, one check before every delete, could not tell = keep, delete catalog ----------
+    Console.WriteLine("v0.9 safety:");
+    {
+        var setFile9 = Path.Combine(fake, ".amnesia/settings.conf");
+        var setOld9 = File.ReadAllText(setFile9);
+        var keepOld9 = File.Exists(Conf2) ? File.ReadAllText(Conf2) : null;
+        var last9 = Conf2 + ".last";
+        var hist9 = Path.Combine(fake, ".amnesia/history.log");
+        string Hist9() => File.Exists(hist9) ? File.ReadAllText(hist9) : "";
+        string Trace9() => File.ReadAllText(Path.Combine(fake, ".amnesia/trace.log"));
+        Settings("ENABLED=1", $"APP_PATH={exe}");
+        Make("AppData/Local/Programs/Amnesia/Amnesia.exe");
+        File.WriteAllLines(Conf2, new[] { "# v0.9", ".ssh", "Documents/Taxes" });
+        if (File.Exists(last9)) File.Delete(last9);
+
+        // 158: the last good copy
+        Check(Dry().Skipped == null, "158: no keep.conf.last yet: a dry run runs as before");
+        Make("Downloads/a9.txt");
+        var run9 = Real("now");
+        Check(run9.Skipped == null && !There("Downloads/a9.txt"), "158: a normal real run still cleans");
+        Check(File.Exists(last9) && File.ReadAllText(last9) == File.ReadAllText(Conf2), "158: after a real run keep.conf.last is a copy of keep.conf");
+        Check(!File.Exists(last9 + ".tmp"), "158: no half written copy is left");
+
+        // missing
+        var good9 = File.ReadAllText(Conf2);
+        File.Delete(Conf2);
+        Make("Downloads/b9.txt");
+        var dry9 = Dry();
+        Check(dry9.Skipped == "keeplist-missing" && dry9.Items.Count == 0 && !File.Exists(Conf2), "158: keep.conf gone: the dry run says keeplist-missing and changes nothing");
+        var stop9 = Real("logout");
+        Check(stop9.Skipped == "keeplist-missing" && There("Downloads/b9.txt"), "158: keep.conf gone: the real run stops and deletes nothing");
+        Check(Hist9().Contains("\tstopped\tlogout keeplist-missing"), "158: History: stopped logout keeplist-missing");
+        Check(Trace9().Contains("stop: keep list missing") && !Trace9().Contains("b9.txt"), "158: trace.log says why, without file names");
+        Check(File.Exists(Conf2) && File.ReadAllText(Conf2) == good9, "158: keep.conf comes back from the last good copy");
+        Check(Real("login").Skipped == null && !There("Downloads/b9.txt"), "158: the next run cleans again with the restored list");
+        Check(There(".ssh/id_ed25519") || !There(".ssh"), "158: the restored list still protects .ssh");
+
+        // unreadable (broken: zero bytes inside, like after a power cut)
+        File.WriteAllBytes(Conf2, new byte[] { 0, 0, 0, 0 });
+        Make("Downloads/c9.txt");
+        Check(Dry().Skipped == "keeplist-unreadable", "158: a broken keep.conf: the dry run says keeplist-unreadable");
+        var stopU9 = Real("now");
+        Check(stopU9.Skipped == "keeplist-unreadable" && There("Downloads/c9.txt"), "158: a broken keep.conf: the real run stops and deletes nothing");
+        Check(Hist9().Contains("\tstopped\tnow keeplist-unreadable"), "158: History: stopped now keeplist-unreadable");
+        Check(File.ReadAllText(last9) == good9, "158: a stopped run never overwrites the last good copy");
+        File.WriteAllText(Conf2, good9);
+
+        // KeepList.Add on a lost keep.conf puts the old list back first
+        File.Delete(Conf2);
+        KeepList.Add("Pictures/Mine");
+        var lines9 = File.ReadAllLines(Conf2);
+        Check(lines9.Contains(".ssh") && lines9.Contains("Pictures/Mine"), "158: adding to a lost Keep List brings the old lines back first");
+        File.WriteAllText(Conf2, good9);
+
+        // 159: one check before every move or delete
+        string F9(string rel) => Path.Combine(fake, rel.Replace('/', Path.DirectorySeparatorChar));
+        Make("Keep/k9.txt"); Make(".amnesia-trash/old9/x.txt"); Make("Documents/d9.txt");
+        Check(CleanEngine.Refuse(fake) == "home" && CleanEngine.Refuse(fake + Path.DirectorySeparatorChar) == "home", "159: never the user folder itself");
+        Check(CleanEngine.Refuse(Path.GetTempPath()) == "outside" && CleanEngine.Refuse(fake + "-other" + Path.DirectorySeparatorChar + "x") == "outside", "159: never outside the user folder (a look-alike name too)");
+        Check(CleanEngine.Refuse("Downloads/x") == "outside", "159: a path that is not full is refused");
+        Check(CleanEngine.Refuse(F9(".amnesia")) == "amnesia" && CleanEngine.Refuse(F9(".amnesia/settings.conf")) == "amnesia", "159: never .amnesia or what is in it");
+        Check(CleanEngine.Refuse(F9(".amnesia-trash")) == "trash" && CleanEngine.Refuse(F9(".amnesia-trash/old9")) == null, "159: never the trash folder itself, what is inside it may go");
+        Check(CleanEngine.Refuse(F9("Keep")) == "keep" && CleanEngine.Refuse(F9("Keep/k9.txt")) == "keep", "159: never the Keep folder or what is in it");
+        Check(CleanEngine.Refuse(F9("Keep/k9.txt"), insideKeep: true) == null && CleanEngine.Refuse(F9("Keep"), insideKeep: true) == "keep", "159: inside Keep only when asked (Care), never Keep itself");
+        Check(CleanEngine.Refuse(F9("Documents/../Keep")) == "dots" && CleanEngine.Refuse(F9("Downloads") + Path.DirectorySeparatorChar + ".." + Path.DirectorySeparatorChar + "Downloads") == "dots", "159: a path with .. is refused");
+        Check(CleanEngine.Refuse(F9("Documents/d9.txt")) == null && CleanEngine.Refuse(F9("Documents/nothing9.txt")) == "gone", "159: a normal file may go, a missing one is 'gone'");
+        Check(!CleanEngine.SafeDelete(F9("Keep")) && There("Keep/k9.txt") && !CleanEngine.SafeDelete(fake) && There("Documents/d9.txt"), "159: SafeDelete refuses Keep and the user folder");
+        Check(!CleanEngine.ToTrash(F9("Keep/k9.txt")) && There("Keep/k9.txt"), "159: ToTrash refuses Keep");
+        Settings("ENABLED=1", $"APP_PATH={exe}", "KEEP_DIR=~/Documents/Safe9");
+        Make("Documents/Safe9/s.txt");
+        Check(CleanEngine.Refuse(F9("Documents")) == "keep" && CleanEngine.Refuse(F9("Documents/Safe9")) == "keep" && CleanEngine.Refuse(F9("Documents/d9.txt")) == null, "159: never a folder that holds the Keep folder");
+        Settings("ENABLED=1", $"APP_PATH={exe}");
+        // links (symbolic links on Linux are reparse points to .NET, like junctions on Windows)
+        var outside9 = Path.Combine(Path.GetTempPath(), "amnesia-out-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(outside9); File.WriteAllText(Path.Combine(outside9, "precious.txt"), "x");
+        bool links9 = true;
+        try { Directory.CreateSymbolicLink(F9("Documents/link9"), outside9); } catch { links9 = false; }
+        if (links9)
+        {
+            Check(CleanEngine.Refuse(F9("Documents/link9")) == "link" && CleanEngine.Refuse(F9("Documents/link9/precious.txt")) == "link", "159: a link and anything reached through it are refused");
+            Check(!CleanEngine.SafeDelete(F9("Documents/link9/precious.txt")) && File.Exists(Path.Combine(outside9, "precious.txt")), "159: nothing is deleted through a link");
+            Directory.Delete(F9("Documents/link9"));
+            // a .amnesia-trash that is a link is never emptied
+            var trashOld9 = F9(".amnesia-trash");
+            CleanEngine.Delete(trashOld9);
+            Directory.CreateSymbolicLink(trashOld9, outside9);
+            typeof(CleanEngine).GetMethod("Purge", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.Invoke(null, null);
+            Check(File.Exists(Path.Combine(outside9, "precious.txt")), "159: a .amnesia-trash that is a link is never emptied");
+            Directory.Delete(trashOld9);
+        }
+        else Check(true, "159: links can't be made here (skipped)");
+        try { Directory.Delete(outside9, true); } catch { }
+
+        // 160: could not tell = it stays
+        Make("Projects9/main.c"); Make("Downloads/e9.txt");
+        var cloud9 = new CleanEngine { CloudRoots = () => throw new IOException("registry denied") }.Run("now", true);
+        var cd9 = cloud9.Items.Select(i => i.Path).ToList();
+        Check(!cd9.Contains("Projects9") && cloud9.Kept.Contains("Projects9") && cd9.Contains("Downloads\\e9.txt"), "160: cloud folders unknown: your own top level folders stay, the rest is wiped as usual");
+        Check(new CleanEngine().Run("now", true).Items.Any(i => i.Path == "Projects9"), "160: with the cloud check working that folder goes as before");
+        Make("AppData/Roaming/Tool9/data.bin");
+        var apps9 = new CleanEngine { NewAppFolders = () => throw new UnauthorizedAccessException() }.Run("now", false);
+        var waiting9 = Directory.GetDirectories(F9(".amnesia-trash")).Where(d => d.EndsWith("-apps")).Any(d => File.Exists(Path.Combine(d, "AppData", "Roaming", "Tool9", "data.bin")));
+        Check(apps9.Skipped == null && waiting9, "160: new app list failed: AppData folders wait 3 days in the trash instead of going for good");
+        Check(Trace9().Contains("new app list failed") && !Trace9().Contains("Tool9"), "160: trace.log says so, without names");
+        Make("AppData/Roaming/Tool9b/x.bin");
+        var rules9 = new CleanEngine();
+        Check(rules9.MayRemoveAppFolder(F9("AppData/Roaming/Tool9b")), "160: Remove new apps may take a normal program folder");
+        File.WriteAllBytes(Conf2, new byte[] { 0, 0 });
+        Check(!new CleanEngine().MayRemoveAppFolder(F9("AppData/Roaming/Tool9b")), "160: Keep List unreadable: Remove new apps takes nothing");
+        File.WriteAllText(Conf2, good9);
+        Check(!new CleanEngine { CloudRoots = () => throw new IOException() }.MayRemoveAppFolder(F9("AppData/Roaming/Tool9b")), "160: cloud folders unknown: Remove new apps takes nothing");
+
+        // 163: catalog. Only the approved helpers may delete for good (CleanEngine.Delete, and the pause file).
+        string? src9 = null;
+        foreach (var start in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
+            for (var d = new DirectoryInfo(start); d != null && src9 == null; d = d.Parent)
+                if (File.Exists(Path.Combine(d.FullName, "src", "Amnesia.Core", "CleanEngine.cs"))) src9 = Path.Combine(d.FullName, "src", "Amnesia.Core");
+                else if (File.Exists(Path.Combine(d.FullName, "windows", "src", "Amnesia.Core", "CleanEngine.cs"))) src9 = Path.Combine(d.FullName, "windows", "src", "Amnesia.Core");
+        Check(src9 != null, "163: the Core source files are found");
+        if (src9 != null)
+        {
+            var bad9 = new List<string>();
+            foreach (var name in new[] { "CleanEngine.cs", "Care.cs" })
+            {
+                var file = Path.Combine(src9, name);
+                if (!File.Exists(file)) continue;
+                bad9.AddRange(DeleteCatalog.Find(File.ReadAllLines(file), name == "CleanEngine.cs" ? new[] { "Delete" } : Array.Empty<string>()).Select(x => $"{name}: {x}"));
+            }
+            foreach (var b in bad9) Console.WriteLine("        " + b);
+            Check(bad9.Count == 0, "163: no File.Delete or recursive Directory.Delete outside CleanEngine.Delete (and the pause file)");
+            var probe9 = new[]
+            {
+                "    public static bool Delete(string p)", "    {", "        File.Delete(p);", "    }",
+                "    static void Other()", "    {", "        Directory.Delete(x, true); // gone", "        new DirectoryInfo(x).Delete(true);",
+                "        File.Delete(y);", "        Directory.Delete(z);", "        // File.Delete(comment)", "        try { File.Delete(Conf.PauseFile); } catch { }", "    }",
+            };
+            Check(DeleteCatalog.Find(probe9, new[] { "Delete" }).Count == 3, "163: the catalog check itself finds a bad delete (and lets the allowed ones be)");
+        }
+
+        // back to how it was
+        File.WriteAllText(setFile9, setOld9);
+        if (keepOld9 != null) File.WriteAllText(Conf2, keepOld9); else File.Delete(Conf2);
+        if (File.Exists(last9)) File.Delete(last9);
+    }
+
     Console.WriteLine("Doomsday:");
     try { Vault.Restore("wrong password 1"); } catch (VaultError) { }
     try { Vault.Restore("wrong password 2"); Check(false, "last try warning"); } catch (VaultError e) { Check(e.Code == "wrong" && e.Left == 1, "one try left"); }
     try { Vault.Restore("wrong password 3"); Check(false, "third wrong password"); } catch (VaultError e) { Check(e.Code == "doomsday", "third wrong password: vault deleted"); }
     Check(!Vault.Exists && There("Keep/important.txt"), "vault gone, Keep stays");
     Check(Vault.Chosen().Count == 0, "v0.6: a new vault starts with no apps ticked");
+    ProfilesTests.Run(fake, Check, Make, There);
     Vault.Create("correct horse battery", "red balloon", panicFull: true);
     try { Vault.CheckPassword("red balloon"); Check(false, "panic word"); } catch (VaultError e) { Check(e.Code == "doomsday", "panic word deletes the vault"); }
     Check(!Vault.Exists && !There("Keep/important.txt") && There("Keep"), "panic word with \"Keep too\" empties Keep");
+    CareTests.Run(fake, Check, Make, There);
+    ModesTests.Run(fake, Check, Make, There); // v0.10
 }
 finally
 {
@@ -656,4 +814,29 @@ sealed class FakeReg : IRegStore
     public int? Get(string key, string name) => d.TryGetValue(key + "|" + name, out var v) ? v : null;
     public void Set(string key, string name, int value) => d[key + "|" + name] = value;
     public void Delete(string key, string name) => d.Remove(key + "|" + name);
+}
+
+/// <summary>v0.9 (163): finds deletes for good (File.Delete, recursive Directory.Delete, DirectoryInfo.Delete(true))
+/// outside the approved methods. A line that deletes the pause file is allowed too. Comments are left out.</summary>
+static class DeleteCatalog
+{
+    static readonly System.Text.RegularExpressions.Regex Member = new(@"^    (?=[A-Za-z])(?:(?:public|private|internal|protected|static|async|override|readonly|unsafe)\s+)*[\w<>\[\]?,.() ]+?\s+(\w+)\s*(?:<[^>]*>)?\(");
+    static readonly System.Text.RegularExpressions.Regex Bad = new(@"\bFile\.Delete\s*\(|\bDirectory\.Delete\s*\([^;]*,\s*true\s*\)|\.Delete\s*\(\s*true\s*\)|FileSystem\.Delete(?:File|Directory)\s*\(");
+    public static List<string> Find(string[] lines, string[] allowed)
+    {
+        var found = new List<string>();
+        string member = "";
+        for (int i = 0; i < lines.Length; i++)
+        {
+            var m = Member.Match(lines[i]);
+            if (m.Success) member = m.Groups[1].Value;
+            var code = lines[i];
+            var c = code.IndexOf("//", StringComparison.Ordinal);
+            if (c >= 0) code = code[..c];
+            if (!Bad.IsMatch(code)) continue;
+            if (allowed.Contains(member) || code.Contains("Conf.PauseFile")) continue;
+            found.Add($"line {i + 1} in {member}");
+        }
+        return found;
+    }
 }

@@ -90,6 +90,11 @@ if [ $KEEPAPP = 0 ]; then
     fi
     rm -rf /Applications/Amnesia.app "$HOME/Applications/Amnesia.app"
 fi
+# v5.25: perintah Terminal `amnesia`: hanya symlink kita sendiri (yang menunjuk ke ~/.amnesia/amnesia)
+for l in /opt/homebrew/bin/amnesia /usr/local/bin/amnesia; do
+    [ -L "$l" ] || continue
+    case "$(readlink "$l")" in "$A/amnesia"|"$A/bin/amnesia") rm -f "$l" ;; esac
+done
 # tempat sampah Amnesia (sisa pembersihan yang belum selesai dihapus di background)
 rm -rf "$HOME/.amnesia-trash"
 if [ $ALL = 1 ]; then

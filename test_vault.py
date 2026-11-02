@@ -133,6 +133,9 @@ try:
     mk(".config/gh/hosts.yml", "gh-1")
     v.create(PW); v.snapshot()
     t1 = v.manifest()["per_app"]["GitHub CLI"]
+    # v5.25 (item 192): snapshot kecil (beberapa KB) tidak dibulatkan jadi 0 MB ("0 KB" di app)
+    assert 0 < t1["size_mb"] < 0.05, t1
+    assert v.manifest()["size_mb"] > 0 and 0 < v.sizes()["GitHub CLI"] < 0.05, v.sizes()
     mk("Library/Application Support/Claude/x.json", "claude-2")
     mk(".config/gh/hosts.yml", "gh-2")
     assert v.snapshot(["Claude"]) == ["Claude"]
@@ -376,6 +379,123 @@ try:
         assert v.snapshot(["Claude"], changed=True) == ["Claude"] and opened == ["Claude"], "auto snapshot must not reopen apps"
     finally:
         v.quit_apps, v.reopen_apps = real_quit, real_reopen
+    # ===== v5.25: profil vault (Work / Personal / buatan sendiri) + restore sebagian =====
+    import io, json as _json, stat as _stat
+    def cli(*args, stdin=""):
+        return v._cli(["vault.py"] + list(args), io.StringIO(stdin))
+    open(os.path.join(v.AMNESIA, "settings.conf"), "w").close()      # bahasa Inggris
+    shutil.rmtree(v.VAULT, ignore_errors=True)
+    for d in ("Library", ".config", ".claude", ".local"):          # hanya app dari tes ini
+        shutil.rmtree(os.path.join(T, d), ignore_errors=True)
+    for f in (v.F_PROFILES, os.path.join(v.AMNESIA, "keep.conf")):
+        if os.path.exists(f): os.remove(f)
+    mk("Library/Application Support/Claude/config.json", "p-claude-snap")
+    mk(".config/gh/hosts.yml", "p-gh-snap")
+    mk("Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite", "p-wa-snap")
+    v.create(PW)
+    assert v.snapshot(["Claude", "GitHub CLI", "WhatsApp"]) == ["Claude", "GitHub CLI", "WhatsApp"]
+    mk("Library/Application Support/BraveSoftware/Brave-Browser/Default/Cookies", "brave-now")   # ada, belum ada snapshot
+    # file belum ada: profil bawaan, hanya app yang ada di Mac ini, tidak ada yang ditulis
+    r = cli("profiles")
+    ids = [p["id"] for p in r["profiles"]]
+    assert ids == ["work", "personal"], r
+    work, pers = r["profiles"]
+    assert work["name"] == "Work" and work["builtin"] and "Claude" in work["apps"] and "GitHub CLI" in work["apps"], work
+    assert set(work["apps"]) <= set(r["apps"]) and "Zoom" not in work["apps"], work
+    assert pers["apps"] == ["WhatsApp", "Brave Browser"] and pers["missing"] == ["Brave Browser"], pers
+    assert r["last"] == "all" and r["shared"] == {} and not os.path.exists(v.F_PROFILES)
+    # setelah logout data app hilang, tapi app yang punya snapshot tetap bisa dipilih
+    shutil.rmtree(os.path.join(T, ".config/gh"))
+    assert "GitHub CLI" in cli("profiles")["apps"] and "GitHub CLI" in cli("profiles")["profiles"][0]["apps"]
+    mk(".config/gh/hosts.yml", "p-gh-now")
+    # v5.25 (item 189): pilih profil bawaan lalu kembali ke Semua = tidak ada file yang tertinggal
+    cli("profile-last", "work")
+    assert os.path.exists(v.F_PROFILES) and cli("profiles")["last"] == "work"
+    cli("profile-last", "all")
+    assert not os.path.exists(v.F_PROFILES) and cli("profiles")["last"] == "all"
+    # profil bawaan tanpa app di Mac ini disembunyikan
+    old_b = v.BUILTIN_PROFILES
+    v.BUILTIN_PROFILES = old_b + [("empty", ("Empty", "Kosong"), ["Zoom", "Bitwarden"])]
+    assert "empty" not in [p["id"] for p in cli("profiles")["profiles"]]
+    v.BUILTIN_PROFILES = old_b
+    # bahasa Indonesia: nama bawaan ikut bahasa
+    open(os.path.join(v.AMNESIA, "settings.conf"), "w").write("LANG=id\n")
+    assert [p["name"] for p in cli("profiles")["profiles"]] == ["Kerja", "Santai"]
+    open(os.path.join(v.AMNESIA, "settings.conf"), "w").close()
+    # buat profil: app tidak dikenal dibuang, duplikat dibuang, file lengkap ditulis (600)
+    r = cli("profile-set", stdin=_json.dumps({"name": " Streaming ", "apps": ["Brave Browser", "Nope", "Claude", "Claude"]}) + "\n")
+    assert r["profile"] == {"id": "streaming", "name": "Streaming", "apps": ["Brave Browser", "Claude"], "builtin": False}, r
+    assert r["ignored"] == ["Nope"] and r["shared"] == {"Claude": ["work", "streaming"], "Brave Browser": ["personal", "streaming"]}, r
+    assert _stat.S_IMODE(os.stat(v.F_PROFILES).st_mode) == 0o600
+    saved = _json.load(open(v.F_PROFILES))
+    assert saved["version"] == 1 and [p["id"] for p in saved["profiles"]] == ["work", "personal", "streaming"], saved
+    assert "builtin" not in saved["profiles"][0] and not cli("profiles")["profiles"][0]["builtin"]
+    # ubah lewat id (ganti nama + app), dan tanpa id: nama sama = profil itu yang diubah
+    r = cli("profile-set", stdin=_json.dumps({"id": "streaming", "name": "Fun", "apps": ["Brave Browser"]}))
+    assert r["profile"]["id"] == "streaming" and r["profile"]["name"] == "Fun" and "Claude" not in r["shared"], r
+    r = cli("profile-set", stdin=_json.dumps({"name": "fun", "apps": ["Brave Browser", "WhatsApp"]}))
+    assert r["profile"]["id"] == "streaming" and r["profile"]["name"] == "fun", r
+    assert len(cli("profiles")["profiles"]) == 3
+    # nama yang tidak boleh / sudah dipakai profil lain
+    expect_error(lambda: cli("profile-set", stdin=_json.dumps({"id": "streaming", "name": "Work", "apps": []})), "already a profile")
+    expect_error(lambda: cli("profile-set", stdin=_json.dumps({"name": "Everything", "apps": []})), "1 to 40")
+    expect_error(lambda: cli("profile-set", stdin=_json.dumps({"name": "", "apps": []})), "1 to 40")
+    expect_error(lambda: cli("profile-set", stdin=_json.dumps({"name": "x" * 41, "apps": []})), "1 to 40")
+    expect_error(lambda: cli("profile-set", stdin=_json.dumps({"name": "a\nb", "apps": []})), "1 to 40")
+    expect_error(lambda: cli("profile-set", stdin="{bukan json"), "Bad profile data")
+    # id dibuat dari nama, unik, "all" tidak pernah dipakai
+    assert cli("profile-set", stdin=_json.dumps({"name": "Kerja Ü!", "apps": []}))["profile"]["id"] == "kerja-u"
+    assert cli("profile-set", stdin=_json.dumps({"name": "Kerja-U", "apps": []}))["profile"]["id"] == "kerja-u-2"
+    assert cli("profile-set", stdin=_json.dumps({"name": "All!", "apps": []}))["profile"]["id"] == "all-2"
+    # hapus: profil bawaan yang dihapus tetap hilang
+    assert cli("profile-delete", "work") == {} and cli("profile-delete", "kerja-u", "kerja-u-2", "all-2") == {}
+    assert [p["id"] for p in cli("profiles")["profiles"]] == ["personal", "streaming"]
+    expect_error(lambda: cli("profile-delete", "all"), "can't be deleted")
+    # pilihan terakhir
+    cli("profile-last", "streaming")
+    assert cli("profiles")["last"] == "streaming"
+    expect_error(lambda: cli("profile-last", "ghost"), "no longer exists")
+    cli("profile-delete", "streaming")
+    assert cli("profiles")["last"] == "all", "deleted profile is no longer the last one"
+    # restore sebagian: hanya app yang dipilih, nama tidak dikenal diabaikan
+    mk("Library/Application Support/Claude/config.json", "p-claude-now")
+    mk("Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite", "p-wa-now")
+    r = cli("restore", "Claude", "Nope", stdin=PW + "\n")
+    assert r["apps"] == ["Claude"] and r["ignored"] == ["Nope"], r
+    assert open(os.path.join(T, "Library/Application Support/Claude/config.json")).read() == "p-claude-snap"
+    assert open(os.path.join(T, ".config/gh/hosts.yml")).read() == "p-gh-now", "other apps are not touched"
+    assert open(os.path.join(T, "Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite")).read() == "p-wa-now"
+    assert v.undo_info()["apps"] == ["Claude"]
+    # restore lewat profil: app profil saja, juga jadi pilihan terakhir; app tanpa snapshot dilaporkan
+    r = cli("restore", "--profile", "personal", stdin=PW + "\n")
+    assert r["apps"] == ["WhatsApp"] and r["ignored"] == ["Brave Browser"], r
+    assert open(os.path.join(T, "Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite")).read() == "p-wa-snap"
+    assert open(os.path.join(T, ".config/gh/hosts.yml")).read() == "p-gh-now"
+    assert open(os.path.join(T, "Library/Application Support/BraveSoftware/Brave-Browser/Default/Cookies")).read() == "brave-now"
+    assert cli("profiles")["last"] == "personal"
+    # profil + nama app digabung
+    r = cli("restore", "--profile", "personal", "GitHub CLI", stdin=PW + "\n")
+    assert r["apps"] == ["GitHub CLI", "WhatsApp"], r
+    # tidak ada yang punya snapshot / profil tidak ada: berhenti sebelum password dipakai
+    before = v.attempts()
+    expect_error(lambda: cli("restore", "Brave Browser", "Nope", stdin="salah-salah-salah\n"), "None of these apps has a snapshot yet.")
+    expect_error(lambda: cli("restore", "--profile", "ghost", stdin=PW + "\n"), "no longer exists")
+    assert v.attempts() == before
+    # tanpa argumen: semua, seperti dulu
+    mk(".config/gh/hosts.yml", "p-gh-now2")
+    r = cli("restore", stdin=PW + "\n")
+    assert r["apps"] == ["Claude", "GitHub CLI", "WhatsApp"] and r["ignored"] == [], r
+    assert open(os.path.join(T, ".config/gh/hosts.yml")).read() == "p-gh-snap"
+    assert cli("restore", "--profile", "all", stdin=PW + "\n")["apps"] == ["Claude", "GitHub CLI", "WhatsApp"]
+    # profiles.json belum ada: memilih profil bawaan menyimpan "last" saja, profil bawaan tetap mengikuti Mac ini
+    os.remove(v.F_PROFILES)
+    cli("profile-last", "work")
+    assert _json.load(open(v.F_PROFILES)) == {"version": 1, "last": "work"}
+    r = cli("profiles")
+    assert r["last"] == "work" and r["profiles"][0]["builtin"], r
+    # file rusak: tidak crash, isinya diabaikan
+    open(v.F_PROFILES, "w").write('{"profiles": [{"id": "BAD ID", "name": "x", "apps": []}, "x", {"id": "ok", "name": "Ok", "apps": ["Claude", 5]}]}')
+    assert [(p["id"], p["apps"]) for p in cli("profiles")["profiles"]] == [("ok", ["Claude"])]
     print("OK: all vault tests passed")
 finally:
     shutil.rmtree(T)

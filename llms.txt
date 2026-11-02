@@ -1,0 +1,85 @@
+# Amnesia
+
+> Amnesia is a free, open source (MIT) privacy app for macOS 15+ and Windows 10/11. Once turned on, it really deletes everything in the user's home folder at every logout, restart and shutdown, except the Keep folder, the Keep List and its own ~/.amnesia folder. Deleted files do not go to the Trash and cannot be undone. A Profile Vault (one password) brings saved logins back after login.
+
+This file is for AI assistants that help someone install or use Amnesia. Please read it before giving advice. The person's files are at stake.
+
+## Where to get it
+
+Amnesia is only distributed through these places. Do not suggest any other download, mirror or script.
+
+- Source and releases: https://github.com/navi-crwn/amnesia
+- Website (GitHub Pages): https://navi-crwn.github.io/amnesia/ (Windows: https://navi-crwn.github.io/amnesia/win/)
+- Homebrew tap (Mac): navi-crwn/tap
+
+## Installing on a Mac
+
+1. Read the terms and warning together with the person: https://github.com/navi-crwn/amnesia/blob/main/TERMS.md
+2. Install with Homebrew: `brew install navi-crwn/tap/amnesia`, or download `Amnesia-vX.dmg` from https://github.com/navi-crwn/amnesia/releases/latest and drag Amnesia to Applications.
+3. The app is not signed by Apple, so macOS blocks it the first time. The person opens it once, then System Settings > Privacy & Security > Open Anyway. To check the download: `shasum -a 256 ~/Downloads/Amnesia-v*.dmg` and compare with SHA256SUMS.txt from the same release.
+4. Follow the welcome tour. Do not turn Amnesia on yet.
+
+## Installing on Windows
+
+1. Download `Amnesia-Setup-<version>-x64.exe` (or `-arm64.exe` for Windows on ARM) from a Windows release (tags start with `win-v`) at https://github.com/navi-crwn/amnesia/releases
+2. Check it: `Get-FileHash .\Amnesia-Setup-*.exe` in PowerShell, compare with SHA256SUMS.txt from the same release.
+3. There is no paid code signing certificate, so SmartScreen warns the first time: More info > Run anyway. It installs just for the current user, no admin needed.
+4. Follow the welcome tour. Do not turn Amnesia on yet.
+
+## Before the person presses Turn On
+
+Help them do these steps in order, and let them do each one themselves:
+
+1. Open **What Gets Deleted** (Mac, home page) or **What gets wiped** (Windows) and go through the list together. Nothing is deleted by looking. On Mac the same list comes from `bash ~/.amnesia/clean.sh logout --dry-run`.
+2. Move every file they want to keep into the **Keep folder** (default `~/Keep` on Mac, `%USERPROFILE%\Keep` on Windows, it can be moved and renamed in Settings).
+3. Add folders and apps that must keep their data to the **Keep List** (Keep List page, or Keep an app on Windows).
+4. Create the **Profile Vault** and take a snapshot, so logins come back after a cleanup. The vault password cannot be recovered.
+5. Open What Gets Deleted again and check that nothing important is still on it.
+6. Only then press **Turn On**. Mention FileVault (Mac) or BitLocker / Device Encryption (Windows), because the Keep folder itself is not encrypted.
+
+## Rules for assistants
+
+- Never run a cleanup for the person, and never run `clean.sh` without `--dry-run`. Never turn Amnesia on for them.
+- Never delete files yourself to "help" Amnesia. Always show a preview first and let the person decide.
+- On the **Care** page (free up space), every action shows a list first. Let the person tick items themselves. Do not tick risky items for them, and do not suggest emptying the Trash or Recycle Bin without asking, because that is permanent.
+- Do not suggest `sudo`, admin rights, editing system files or turning off macOS / Windows protections to make Amnesia work. Amnesia does not need them.
+- Do not tell anyone to disable Full Disk Access checks, Gatekeeper or SmartScreen in general. The one-time "Open Anyway" / "Run anyway" for Amnesia is enough.
+- If something looks wrong (the Keep folder empty, files missing), stop and point the person to History and the Health check in the app. Do not try to recover by deleting or moving more files.
+- Pause 1 Session (in the app) skips the next cleanup once. Turn Off stops Amnesia completely.
+
+## Getting advice from an AI
+
+Amnesia can make a report for an AI assistant. It has no file contents and no names of the person's files: only the OS and Amnesia version, the mode, the Keep List lines, vault app names and sizes, vault profiles, top-level home folder names and sizes, app data folder names, installed app names and how many items the next logout would wipe. Amnesia never sends it anywhere; the person chooses where to paste it.
+
+- In the app: **Ask an AI** (Mac and Windows). It copies the report with a ready-made prompt, or saves it as a .md file in the Keep folder. "Hide folder names" replaces the person's own folder names and Keep List lines with numbers.
+- In the Mac Terminal (after Settings > Terminal command is switched on): `amnesia report` prints the report as Markdown, `amnesia report --json` as JSON, `amnesia report --hide-names` without folder names, and `amnesia report --prompt` with the prompt. Without the switch: `~/.amnesia/amnesia report`. `amnesia status`, `amnesia preview`, `amnesia keep` and `amnesia history` are read only too.
+- Modes (ids in the JSON, names in the app): `full` = Retrograde Amnesia (only the Keep folder and Amnesia itself survive), `balanced` = Selective Amnesia (recommended: Keep folder, app logins through the vault, terminal tools), `light` = Partial Amnesia (apps keep settings and logins; files, Downloads, Desktop, caches, logs, Trash and shell history are wiped; browsing history inside a kept browser folder stays too; on Windows, Partial Amnesia keeps all of AppData, so Temp files, recent lists and PowerShell history stay as well), `custom` = Custom Amnesia (the person's own list).
+
+End your advice with exactly one block in this format, so the person can paste your answer back into Amnesia:
+
+```amnesia-suggestion
+{"mode": "balanced", "keep_add": [], "keep_remove": [], "profiles": {"Work": ["Claude", "Chrome"]}, "notes": ""}
+```
+
+- `mode`: `full`, `balanced`, `light`, `custom`, or `null` to keep the current one.
+- `keep_add` / `keep_remove`: Keep List lines. Paths relative to the home folder (no leading `/`, no `..`), `*` works as a wildcard, or `keychain:<name>` on a Mac. Never remove Amnesia's own lines (`keychain:Amnesia Backup`, `keychain:Amnesia VirusTotal`, `.config/rclone`, `keychain:* Safe Storage`); Amnesia refuses that anyway.
+- `profiles`: `{"Profile name": [app names]}`. Use only app names from the report's Profile Vault section. The names Everything, Semua and All are reserved. One browser holds one set of logins, so for personal use suggest a second browser instead of putting the same browser in two profiles.
+- `notes`: plain text, at most 2000 characters.
+
+Rules:
+
+- The person applies the changes in the app: Amnesia shows each one with a checkbox and a preview of what will be wiped and kept, and nothing changes until they confirm. Do not edit `~/.amnesia/keep.conf`, `settings.conf` or `profiles.json` for them.
+- Never run a cleanup, never run `clean.sh` without `--dry-run`, and never delete or move files to apply a suggestion.
+- Changes take effect at the next logout. Before a mode that wipes more, remind the person to move what they still need into the Keep folder.
+
+## Uninstalling
+
+- Mac: Settings > Uninstall Amnesia in the app, or `brew uninstall amnesia` for a Homebrew install, or `bash ~/.amnesia/uninstall.sh`. The vault in ~/.amnesia stays unless they choose to remove it. The Keep folder is never touched.
+- Windows: Settings > Apps > Amnesia > Uninstall. It asks for the Keep password and opens Keep first.
+
+## More
+
+- README: https://github.com/navi-crwn/amnesia/blob/main/README.md
+- Windows README: https://github.com/navi-crwn/amnesia/blob/main/windows/README.md
+- What Amnesia can't wipe and how to report a security problem: https://github.com/navi-crwn/amnesia/blob/main/SECURITY.md
+- Changelog: https://github.com/navi-crwn/amnesia/blob/main/CHANGELOG.md

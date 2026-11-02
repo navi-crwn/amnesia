@@ -99,6 +99,8 @@ sealed class TrayApp : ApplicationContext
                 // v0.7.1: Desktop or Start items went while Explorer already ran: tell it once (no more flicker)
                 if (r.Skipped == null && r.Count > 0 && CleanEngine.TouchesShell(r.Items)) Cleaner.NotifyShell();
                 if (r.Blocked > 0) Balloon("Amnesia", Text2.Blocked(r.Blocked), ToolTipIcon.Warning, "home");
+                // v0.9: the cleanup stopped because the Keep List could not be read (or was gone): nothing was deleted
+                if (r.Skipped is "keeplist-missing" or "keeplist-unreadable") Balloon(Text2.StoppedTitle, Text2.Stopped(r.Skipped, File.Exists(KeepList.File)), ToolTipIcon.Warning, "keep");
             }
             catch (Exception e) { AppInfo.Trace($"sign in check failed after {t.Elapsed.TotalSeconds:0.0} s: {e.GetType().Name}"); }
             KeepLinks.Sync(); // the Desktop shortcut and the side bar pin were wiped with everything else

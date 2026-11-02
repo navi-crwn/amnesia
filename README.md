@@ -19,7 +19,7 @@
   <a href="TERMS.md">Terms</a>
 </p>
 
-<p align="center"><sub>Latest: <b>Mac v5.23.1</b> · <b>Windows v0.8.1</b> · free and open source (MIT)</sub></p>
+<p align="center"><sub>Latest: <b>Mac v5.25.0</b> · <b>Windows v0.10.0</b> · free and open source (MIT)</sub></p>
 
 > [!WARNING]
 > **Amnesia really deletes data.** Once you turn it on, everything outside your Keep folder and Keep List is deleted at every logout, restart and shutdown. It doesn't go to the Trash and can't be undone. Please read the short [terms & warning](TERMS.md) before you install.
@@ -61,8 +61,8 @@ The catch: if everything is gone, you'd have to log back in to Gmail, WhatsApp, 
 | Desktop, Downloads, Documents, Pictures | Logins saved in the **Profile Vault** |
 | Caches, logs, Terminal history | Everything on the **Keep List** (VPN, SSH keys, Terminal settings, etc.) |
 | Data from apps you didn't pick | Apps in `/Applications` and Homebrew (unless you switch on *Remove apps installed later* under Advanced) |
-| The Trash | Your Apple account, Photos, Notes, Mail, Messages and more (the **Apple accounts & data** card, on by default) |
-| | Virtual machines (UTM, Parallels, VirtualBox, VMware Fusion), kept by default |
+| The Trash | Your Apple account, Notes, Mail, Messages and more (the **Apple accounts & data** card, on by default). Photos: a warning and a Keep button |
+| | Virtual machines (UTM, Parallels, VirtualBox, VMware Fusion), after you press Keep on the warning |
 | | Desktop and Documents when **iCloud Desktop & Documents** is on (wiping them would delete them from iCloud too) |
 
 Want to see exactly what would go, **without deleting anything**? In the app, press **What Gets Deleted** on the home page. Or in Terminal:
@@ -82,7 +82,13 @@ bash ~/.amnesia/clean.sh logout --dry-run
 - **📌 Keep List.** Pick the folders and apps that should never be wiped, right from the app. Switch an app on and you see exactly what's kept (app data, settings, sizes). Keeping **Claude** also keeps your Claude Code chats (`~/.claude`, `~/.claude.json`).
 - **🔏 Keep lock.** Finder and other apps can't open or change your Keep folder until you type the Keep password in Amnesia. It locks again after 5–60 minutes, when the screen locks and at every logout. Honest note: this uses macOS permissions, not encryption, and file names right inside Keep stay visible. Off by default.
 - **🗄️ Brankas (experimental).** An encrypted disk (APFS, AES-256) inside your Keep folder for files that must stay secret. Amnesia closes it before every cleanup and tells you if it couldn't. Forget its password and the files are gone.
-- **🩺 Health check.** One page in Settings: is Amnesia on, Full Disk Access, iCloud Desktop & Documents, symlinked folders, virtual machines, big files about to go, your last backup, Keep lock, the Brankas and FileVault. Most rows have a fix button. Next to it, **Limitations** lists what Amnesia can't wipe (Time Machine, Spotlight, iCloud, swap, system logs, other accounts).
+- **🩺 Health check.** One page in Settings: is Amnesia on, Full Disk Access, iCloud Desktop & Documents, symlinked folders, virtual machines, big files about to go, your last backup, Keep lock, the Brankas, FileVault, free disk space, memory and battery condition. Most rows have a fix button. Next to it, **Limitations** lists what Amnesia can't wipe (Time Machine, Spotlight, iCloud, swap, system logs, other accounts).
+- **🧹 Care.** A page to free up space when you want, always with a list to check first: a read-only **Disk overview**, **Clean now** (caches, logs, Amnesia's trash; caches of open apps are skipped), **Uninstall apps** (to the Trash, personal data stays unless you tick it), **Project build folders** (node_modules, target, build, dist and more; folders used in the last 7 days or tracked by git are left alone), **Old installers** (.dmg, .pkg; disk images and virtual machines are never picked for you) and **Safe tune-ups** without an admin password. Nothing risky is ticked for you, and every run is in History with the space freed. Amnesia already wipes most of your home folder at logout, so Care mostly helps with your Keep folder, kept apps and big files from this session.
+- **🛑 Stops when unsure.** If the Keep List can't be read or has gone missing, the cleanup deletes nothing and says so in History. A copy of your last good Keep List is kept to restore it. When a check can't tell (cloud, iCloud, links, owner), the item is kept.
+- **🎚️ Amnesia modes.** Pick how much is forgotten at every logout. **Retrograde Amnesia** is like a brand-new account at every login: only your Keep folder and what Amnesia needs to work stay. **Selective Amnesia** (recommended) is the basic list for a new install: your Keep folder, app logins from the vault, SSH keys, Git and shell settings. You add your own apps. **Partial Amnesia** lets apps keep their settings and logins in place, while your files, Downloads, Desktop, caches, logs, the Trash and shell history are wiped (honest note: browsing history and cookies inside a browser's own folder stay too, because that folder is kept). **Custom Amnesia** is your own Keep List. Every switch shows a preview first (what will now be wiped, what will now be kept), warns you when more is wiped, and takes effect at the next logout. A mode only changes its own marked section of the Keep List, so your own lines stay. A missing or damaged mode file never empties your Keep List.
+- **👥 Vault profiles.** Restore only what you need, like **Work** or **Personal**, or everything. Rename, add and remove profiles. When one app is in two profiles, Amnesia says so: one browser holds one set of logins, so a second browser (or a separate browser profile) keeps personal use apart.
+- **🤖 Ask an AI.** Get advice without sharing your files. Amnesia makes a report with no file contents and no names of your files (folder names can be hidden too), plus a ready prompt. Copy it or save it to your Keep folder, paste it into the AI you choose, then paste the answer back. Every suggested change gets a checkbox and the same preview as a mode switch; nothing is applied until you confirm, and Amnesia's own lines can't be removed this way. Amnesia makes no network calls for this.
+- **⌨️ Terminal command.** Switch it on in Settings and get a read-only `amnesia` command: `amnesia status`, `amnesia preview`, `amnesia report` (`--json`, `--hide-names`), `amnesia keep`, `amnesia history`. It never deletes or changes anything.
 - **🗂️ Your own Keep folder.** Files in it are never wiped. Put it anywhere (even on an external drive) and give it any name.
 - **💾 Backup anywhere.** Your chosen folders get locked into one `.7z` file (AES-256) and sent to:
   - a **USB drive / SSD** that's plugged in,
@@ -110,12 +116,14 @@ bash ~/.amnesia/clean.sh logout --dry-run
 
 ## Amnesia for Windows
 
-Amnesia also runs on **Windows 10 and 11** (x64 and ARM). It's an official release now, **v0.8.1**, built from the `windows/` folder. Same idea, made for Windows:
+Amnesia also runs on **Windows 10 and 11** (x64 and ARM). It's an official release now, **v0.10.0**, built from the `windows/` folder. Same idea, made for Windows:
 
 - wipes your user folder and Windows traces (recent files, jump lists, Explorer and search history, clipboard history and more) at **sign out, restart and shutdown**, and checks again at sign in
 - Keep folder and Keep List with app icons, one-click **Keep an app**, and a 3-day trash for apps you remove
 - Profile Vault, backups, Health check, Keep lock, an experimental Safe box, panic hotkey, USB key, sign out when idle
 - cloud folders (OneDrive, Dropbox, Google Drive, iCloud Drive and more) and virtual machines are never wiped
+- **Care**: free up space with a list to check first (Temp, app caches, build folders, old installers to the Recycle Bin, uninstall programs installed just for you)
+- **Amnesia modes** (Retrograde Amnesia, Selective Amnesia, Partial Amnesia, Custom Amnesia) with a preview before every switch, **vault profiles** to restore only what you need, and **Ask an AI** for advice without sharing your files
 - installs just for you (no admin), signed in-app updates
 
 Get `Amnesia-Setup-<version>-x64.exe` (or `-arm64.exe`) from the **Windows** release (tags start with `win-v`) on the [Releases](../../releases) page, and check it against `SHA256SUMS.txt`. There's no paid code signing certificate, so SmartScreen warns the first time: **More info → Run anyway**.
@@ -125,6 +133,8 @@ More: the [Windows website](https://navi-crwn.github.io/amnesia/win/) and [windo
 ## Install
 
 **You need:** macOS 15 or newer. Everything else is inside the app (7-Zip included). The welcome tour helps you install Apple's free Command Line Tools if they're missing, and asks once for **Full Disk Access** (so macOS doesn't ask about every folder).
+
+**Only get Amnesia from** [github.com/navi-crwn/amnesia](https://github.com/navi-crwn/amnesia), its website [navi-crwn.github.io/amnesia](https://navi-crwn.github.io/amnesia/) (GitHub Pages) or the Homebrew tap `navi-crwn/tap`. Copies anywhere else are not from us. Found a security problem? See [SECURITY.md](SECURITY.md).
 
 **Before anything else:** read the [terms & warning](TERMS.md). The app also asks you to tick that you've read it.
 
@@ -272,9 +282,12 @@ It turns off the login agent first (so stopping it can't wipe anything), stops A
 | `keep.example.conf` | Example Keep List. `build.sh` copies it to `keep.conf` on first install. |
 | `app/` | The SwiftUI app, the icon, and the build/release scripts. `app/screenshots.sh` takes screenshots of the real app with demo data (optional). |
 | `docs/` | The website (GitHub Pages). `docs/readme/` holds the README images, drawn from the website. |
+| `presets/` | The Amnesia modes: `full.conf`, `balanced.conf`, `light.conf`. A mode copies one of them into a marked section at the top of `keep.conf`. |
+| `report.py`, `bin/amnesia` | The Ask an AI report (no file contents, no file names) and the read-only `amnesia` Terminal command. |
 | `keeplock.sh` | Keep lock and the Brankas (encrypted disk inside Keep). |
-| `windows/` | The Windows version (**v0.8.1**): C# .NET 8 tray app + HTML pages, vault, backup, Health check and a Setup.exe with signed in-app updates. It really wipes once turned on, so check What gets wiped first. Built and tested by GitHub Actions (`.github/workflows/windows.yml`); a `win-v*` tag makes the Windows release. |
-| `test_clean.sh`, `test_vault.py`, `test_backup.sh` | Automatic tests in a fake home folder, safe to run anytime. |
+| `windows/` | The Windows version (**v0.10.0**): C# .NET 8 tray app + HTML pages, vault, backup, Health check and a Setup.exe with signed in-app updates. It really wipes once turned on, so check What gets wiped first. Built and tested by GitHub Actions (`.github/workflows/windows.yml`); a `win-v*` tag makes the Windows release. |
+| `SECURITY.md`, `llms.txt` | How to report a security problem, and a short guide for AI assistants that help someone install Amnesia. |
+| `test_clean.sh`, `test_vault.py`, `test_backup.sh`, `test_report.py` | Automatic tests in a fake home folder, safe to run anytime. |
 
 ---
 

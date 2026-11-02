@@ -83,6 +83,10 @@
       <button class="tile" data-go="keep"><i class="ib c-keep"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M15 3l6 6-2 1-3 3 .5 5-1.5 1.5-4-4L6 20l-2 0 0-2 4.5-5-4-4L6 7.5l5 .5 3-3z"/></svg></i><span><b>Keep List</b><small data-t="tKeepSub"></small></span></button>
       <button class="tile" data-go="backup"><i class="ib c-backup"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M4 13h16v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zm2.5 3a1 1 0 1 0 0 2 1 1 0 0 0 0-2zM5.2 5.6A1 1 0 0 1 6.1 5h11.8a1 1 0 0 1 .9.6L20 11H4z"/></svg></i><span><b>Backup</b><small data-t="tBackupSub"></small></span></button>
       <button class="tile wide" data-go="history"><i class="ib c-gray"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm-1 4v6l5 3 1-1.6-4-2.4V7z"/></svg></i><span><b data-t="histTitle"></b><small data-t="tHistSub"></small></span></button>
+    <!-- v0.9 Care -->
+    <button class="rowlink wide" data-go="care"><i class="ib c-keep"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M20.6 17.8 13 10.2a5 5 0 0 0-6.3-6.4l3.1 3.1-.6 2.3-2.3.6-3.1-3.1A5 5 0 0 0 10.2 13l7.6 7.6a2 2 0 0 0 2.8-2.8z"/></svg></i><span><b data-t="careTitle"></b><small data-t="tCareSub"></small></span><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <!-- v0.10 Ask an AI -->
+    <button class="rowlink wide" data-go="ai"><i class="ib c-preview"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-4.3 3.4A.5.5 0 0 1 4 20V5a1 1 0 0 1 1-1zm4 6.5a1.3 1.3 0 1 0 0 .01zm4 0a1.3 1.3 0 1 0 0 .01zm4 0a1.3 1.3 0 1 0 0 .01z"/></svg></i><span><b data-t="aiTitle"></b><small data-t="tAiSub"></small></span><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <button class="rowlink wide" data-go="health"><i class="ib c-keep"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.3-9.4C1.4 8 3.6 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.7 1.2-1.6 2.8-2.7 4.8-2.7 3.6 0 5.8 3.5 4.5 7.1C19.5 16.4 12 21 12 21z"/></svg></i><span><b data-t="healthTitle"></b><small id="healthSub"></small></span><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <button class="rowlink wide" data-go="preview"><i class="ib c-preview"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 5c5 0 9 4.5 10 7-1 2.5-5 7-10 7S3 14.5 2 12c1-2.5 5-7 10-7zm0 3.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></svg></i><span><b data-t="previewTitle"></b><small data-t="tPrevSub"></small></span><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
@@ -107,6 +111,90 @@
     </section>
   </div>
 
+  <!-- ================= Care (v0.9) ================= -->
+  <div class="view" id="care" hidden>
+    <section class="card">
+      <p class="muted" data-t="careIntro"></p>
+      <div class="progress care-prog" id="careProg" hidden><div class="bar"><i></i></div><span></span><button class="btn ghost small" data-cancel data-t="cancel"></button></div>
+    </section>
+    <section class="card care-f" data-feature="overview">
+      <div class="card-head">
+        <div>
+          <h2 data-t="cOvTitle"></h2>
+          <p class="muted" data-t="cOvText"></p>
+        </div>
+        <button class="btn ghost cbtn care-scan" data-t="cLook"></button>
+      </div>
+      <div class="care-slot"></div>
+      <p class="muted cMsg" role="status"></p>
+      <div class="cOut" hidden></div>
+    </section>
+    <section class="card care-f" data-feature="quick">
+      <div class="card-head">
+        <div>
+          <h2 data-t="cQuickTitle"></h2>
+          <p class="muted" data-t="cQuickText"></p>
+        </div>
+        <button class="btn ghost cbtn care-scan" data-t="cScan"></button>
+      </div>
+      <div class="care-slot"></div>
+      <p class="muted cMsg" role="status"></p>
+      <div class="cOut" hidden></div>
+    </section>
+    <section class="card care-f" data-feature="apps">
+      <div class="card-head">
+        <div>
+          <h2 data-t="cAppsTitle"></h2>
+          <p class="muted" data-t="cAppsText"></p>
+        </div>
+        <button class="btn ghost cbtn" id="cAppsBtn" data-t="cAppsBtn"></button>
+      </div>
+      <div id="cAppsBox" hidden>
+        <input class="input" id="cAppsQ" type="search" data-ph="cAppsPh" autocomplete="off" spellcheck="false">
+        <ul class="list rows care-apps" id="cAppsList"></ul>
+      </div>
+      <div class="care-slot"></div>
+      <p class="muted cMsg" role="status"></p>
+      <div class="cOut" hidden></div>
+    </section>
+    <section class="card care-f" data-feature="projects">
+      <div class="card-head">
+        <div>
+          <h2 data-t="cProjTitle"></h2>
+          <p class="muted" data-t="cProjText"></p>
+        </div>
+        <button class="btn ghost cbtn care-scan" data-t="cScan"></button>
+      </div>
+      <div class="care-slot"></div>
+      <p class="muted cMsg" role="status"></p>
+      <div class="cOut" hidden></div>
+    </section>
+    <section class="card care-f" data-feature="installers">
+      <div class="card-head">
+        <div>
+          <h2 data-t="cInsTitle"></h2>
+          <p class="muted" data-t="cInsText"></p>
+        </div>
+        <button class="btn ghost cbtn care-scan" data-t="cScan"></button>
+      </div>
+      <div class="care-slot"></div>
+      <p class="muted cMsg" role="status"></p>
+      <div class="cOut" hidden></div>
+    </section>
+    <section class="card care-f" data-feature="tune">
+      <h2 data-t="cTuneTitle"></h2>
+      <p class="muted" data-t="cTuneText"></p>
+      <label class="switch"><input type="checkbox" id="cTuneExplorer"><span><b data-t="cTuneExplorer"></b><span class="muted" data-t="cTuneExplorerSub"></span></span></label>
+      <div class="row">
+        <button class="btn cbtn" id="cTuneRun" data-t="cTuneRun"></button>
+        <button class="btn ghost" data-care-open="startupapps" data-t="cOpenStartup"></button>
+        <button class="btn ghost" data-care-open="storagesense" data-t="cOpenStorage"></button>
+      </div>
+      <div class="care-slot"></div>
+      <p class="muted cMsg" role="status"></p>
+    </section>
+  </div>
+
   <!-- ================= What gets wiped (v0.6: own page) ================= -->
   <div class="view" id="preview" hidden>
     <section class="card">
@@ -123,8 +211,8 @@
         <!-- v0.7.1: search, one folder, biggest first -->
         <div class="filters">
           <input class="input" id="fqQ" type="search" data-ph="fqPh" autocomplete="off" spellcheck="false">
-          <select class="input" id="fqFolder"></select>
-          <select class="input" id="fqSort"><option value="name" data-t="fqName"></option><option value="size" data-t="fqSize"></option></select>
+          <select class="input" id="fqFolder" data-tip="fqFolderTip"></select>
+          <select class="input" id="fqSort" data-tip="fqSortTip"><option value="name" data-t="fqName"></option><option value="size" data-t="fqSize"></option></select>
         </div>
         <p class="muted small" id="fqShown" role="status"></p>
         <ul class="list sized" id="items"></ul>
@@ -168,7 +256,68 @@
   </div>
 
   <!-- ================= Keep List ================= -->
+  <!-- ================= Ask an AI (v0.10) ================= -->
+  <!-- Amnesia makes the report and the prompt; the user copies or saves them and pastes them wherever they like.
+       Nothing here talks to the internet. The answer comes back by paste and every change has a checkbox. -->
+  <div class="view" id="ai" hidden>
+    <section class="card">
+      <p class="muted" data-t="aiIntro"></p>
+      <p class="good small" data-t="aiNever"></p>
+      <label class="check"><input type="checkbox" id="aiHide"> <span data-t="aiHide"></span></label>
+      <div class="row">
+        <button class="btn" id="aiCopy" data-t="aiCopy" disabled></button>
+        <button class="btn ghost" id="aiSave" data-t="aiSave" disabled></button>
+        <button class="btn ghost" id="aiMake" data-t="aiMake"></button>
+      </div>
+      <p class="muted" id="aiMsg" role="status"></p>
+      <details id="aiShowBox" hidden><summary data-t="aiShow"></summary><pre class="aipre" id="aiText"></pre></details>
+    </section>
+    <section class="card">
+      <h2 data-t="aiPasteTitle"></h2>
+      <p class="muted" data-t="aiPasteText"></p>
+      <textarea class="input aiin" id="aiAnswer" rows="6" spellcheck="false" autocomplete="off" data-ph="aiPastePh"></textarea>
+      <div class="row"><button class="btn" id="aiRead" data-t="aiRead"></button></div>
+      <p class="muted" id="aiPMsg" role="status"></p>
+      <div id="aiSugg" class="aisugg" hidden>
+        <ul class="list rows" id="aiChanges"></ul>
+        <div id="aiNotesBox" hidden><p class="muted small" data-t="aiNotes"></p><p class="ainotes" id="aiNotes"></p></div>
+        <ul class="list" id="aiUnused" hidden></ul>
+        <div class="row"><button class="btn" id="aiApply" data-t="aiApply"></button></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- v0.10: the mode preview (Keep List mode card and Ask an AI). Nothing is written before "Switch mode". -->
+  <div class="overlay" id="modeSheet" hidden>
+    <div class="card ask msheet" role="dialog" aria-modal="true" aria-labelledby="msTitle">
+      <h2 id="msTitle"></h2>
+      <p class="muted" id="msBusy" data-t="msBusy"></p>
+      <p class="bad" id="msProblem" hidden></p>
+      <p class="warn" id="msWarn" data-t="msWarn" hidden></p>
+      <p class="muted" id="msNote" data-t="msToCustom" hidden></p>
+      <p id="msCount" hidden></p>
+      <p class="muted" id="msSettings" hidden></p>
+      <div id="msWipedBox" hidden><h3 data-t="msWiped"></h3><ul class="list" id="msWiped"></ul></div>
+      <div id="msKeptBox" hidden><h3 data-t="msKept"></h3><ul class="list kept" id="msKept"></ul></div>
+      <div id="msIdleBox" hidden><h3 data-t="msIdle"></h3><ul class="list" id="msIdle"></ul></div>
+      <div id="msOwnBox" hidden><h3 data-t="msOwn"></h3><ul class="list rows" id="msOwn"></ul></div>
+      <p class="muted small" data-t="msWhen"></p>
+      <div class="row">
+        <button class="btn ghost" id="msNo" data-t="cancel"></button>
+        <button class="btn" id="msYes" data-t="msSwitch"></button>
+      </div>
+    </div>
+  </div>
+
   <div class="view" id="keep" hidden>
+    <!-- v0.10 Amnesia mode: how much is forgotten at every sign out -->
+    <section class="card" id="mdCard">
+      <h2 data-t="mdTitle"></h2>
+      <p class="muted" data-t="mdText"></p>
+      <div class="modes" id="mdList" role="radiogroup"></div>
+      <p class="muted small" id="mdLight" hidden></p>
+      <p class="muted" id="mdMsg" role="status"></p>
+    </section>
     <section class="card">
       <div class="card-head">
         <div>
@@ -264,6 +413,16 @@
       <section class="card">
         <h2 data-t="vRestoreTitle"></h2>
         <p class="muted" data-t="vRestoreText"></p>
+        <!-- v0.10 vault profiles: restore only the apps of one profile -->
+        <div class="row vp-pick" id="vpPick" hidden>
+          <label class="vp-label" for="vProfile" data-t="vpLabel"></label>
+          <select class="input" id="vProfile"></select>
+          <button class="btn ghost small" id="vpEdit" data-t="vpEdit"></button>
+          <button class="btn ghost small" id="vpNew" data-t="vpNew"></button>
+        </div>
+        <p class="muted small" id="vpApps" hidden></p>
+        <p class="warn small vp-shared" id="vpShared" hidden></p>
+        <p class="muted small" id="vpFull" data-t="vpFull" hidden></p>
         <div class="row">
           <input class="input" type="password" id="vRestorePw" data-ph="vPwPh" autocomplete="current-password">
           <button class="btn" id="vRestore" data-t="vRestore"></button>
@@ -296,6 +455,21 @@
         <p class="muted" id="vOptMsg" role="status"></p>
       </section>
     </div>
+
+    <!-- v0.10 vault profiles: editor (opened from the Restore card) -->
+    <section class="card" id="vpEditor" hidden>
+      <h2 id="vpEdTitle"></h2>
+      <label class="field"><span data-t="vpName"></span><input class="input" id="vpName" maxlength="40" autocomplete="off"></label>
+      <p class="muted small" data-t="vpAppsText"></p>
+      <div class="vp-apps" id="vpAppList"></div>
+      <p class="warn small vp-shared" id="vpEdShared" hidden></p>
+      <div class="row">
+        <button class="btn" id="vpSave" data-t="save"></button>
+        <button class="btn ghost" id="vpCancel" data-t="cancel"></button>
+        <button class="btn ghost danger" id="vpDelete" data-t="vpDelete"></button>
+      </div>
+      <p class="muted" id="vpMsg" role="status"></p>
+    </section>
   </div>
 
   <!-- ================= Backup ================= -->
@@ -309,7 +483,7 @@
       <section class="card">
         <h2 data-t="bTitle"></h2>
         <p class="muted" data-t="bText"></p>
-        <div class="seg" role="radiogroup">
+        <div class="seg" role="radiogroup" aria-labelledby="langHead">
           <label><input type="radio" name="bKind" value="folder"> <span data-t="bFolder"></span></label>
           <label><input type="radio" name="bKind" value="ssh"> <span data-t="bSsh"></span></label>
         </div>
@@ -359,21 +533,9 @@
     <!-- v0.6: one page for everything you can set; Advanced lives here too, and the search box filters both -->
     <div class="search"><input class="input" id="setSearch" type="search" data-ph="searchPh" autocomplete="off" spellcheck="false"></div>
     <p class="muted" id="searchNone" data-t="searchNone" hidden></p>
-    <div class="sgroup" id="gGeneral">
-    <h2 class="gtitle" data-t="gGeneral"></h2>
-    <section class="card">
-      <h2 data-t="encTitle"></h2>
-      <p id="enc" class="muted">…</p>
-    </section>
-    <section class="card">
-      <h2 data-t="langTitle"></h2>
-      <div class="seg" role="radiogroup">
-        <label><input type="radio" name="lang" value="auto"> <span data-t="langAuto"></span></label>
-        <label><input type="radio" name="lang" value="en"> <span>English</span></label>
-        <label><input type="radio" name="lang" value="id"> <span>Bahasa Indonesia</span></label>
-      </div>
-    </section>
-
+    <!-- v0.10 (item 195): grouped like the Mac: Keep, Protection, App. Rare things stay in Advanced (closed until opened) -->
+    <div class="sgroup" id="gKeep">
+    <h2 class="gtitle" data-t="gKeep"></h2>
     <section class="card">
       <h2 data-t="linksTitle"></h2>
       <label class="switch"><input type="checkbox" data-set="keepShortcut"><span><b data-t="shortcutTitle"></b><span class="muted" data-t="shortcutText"></span></span></label>
@@ -381,20 +543,68 @@
       <p class="muted small" data-t="linksNote"></p>
       <p class="warn small" id="linksOff" data-t="linksOff" hidden></p>
     </section>
-
+    <section class="card" id="cKeepLock">
+      <h2 data-t="klkTitle"></h2>
+      <p class="muted" data-t="klkText"></p>
+      <p class="muted small" data-t="klkHonest"></p>
+      <div id="klkOffBox">
+        <div class="row">
+          <input class="input" type="password" id="klkPw" data-ph="klkPwPh" autocomplete="new-password">
+          <input class="input" type="password" id="klkPw2" data-ph="klkPw2Ph" autocomplete="new-password">
+        </div>
+        <label class="field inline"><span data-t="klkAfter"></span>
+          <select class="input klkMin" id="klkMinNew">
+            <option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option>
+          </select>
+        </label>
+        <div class="row"><button class="btn" id="klkOn" data-t="klkOn"></button></div>
+      </div>
+      <div id="klkOnBox" hidden>
+        <p id="klkState"></p>
+        <label class="field inline"><span data-t="klkAfter"></span>
+          <select class="input klkMin" id="klkMin">
+            <option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option>
+          </select>
+        </label>
+        <div class="row">
+          <button class="btn ghost" id="klkNow" data-t="klkNow"></button>
+          <input class="input" type="password" id="klkOffPw" data-ph="klkPwPh" autocomplete="current-password">
+          <button class="btn ghost" id="klkOff" data-t="klkOff"></button>
+        </div>
+      </div>
+      <p class="muted" id="klkMsg" role="status"></p>
+    </section>
+    </div>
+    <div class="sgroup" id="gProtect">
+    <h2 class="gtitle" data-t="gProtect"></h2>
     <!-- v0.8 -->
     <section class="card">
       <h2 data-t="protTitle"></h2>
-      <label class="switch"><input type="checkbox" data-set="openAtLogin"><span><b data-t="oalTitle"></b><span class="muted" data-t="oalText"></span></span></label>
       <label class="switch"><input type="checkbox" data-set="keepVm"><span><b data-t="vmTitle"></b><span class="muted" data-t="vmText"></span></span></label>
       <label class="switch"><input type="checkbox" data-set="wipeStore"><span><b data-t="wsTitle"></b><span class="muted" data-t="wsText"></span></span></label>
       <label class="switch"><input type="checkbox" data-set="wipeCreds"><span><b data-t="wcTitle"></b><span class="muted" data-t="wcText"></span></span></label>
       <p class="muted small" data-t="cloudNote"></p>
     </section>
+    <section class="card">
+      <h2 data-t="encTitle"></h2>
+      <p id="enc" class="muted">…</p>
+    </section>
     </div>
+    <div class="sgroup" id="gGeneral">
+    <h2 class="gtitle" data-t="gGeneral"></h2>
+    <section class="card">
+      <h2 id="langHead" data-t="langTitle"></h2>
+      <div class="seg" role="radiogroup">
+        <label><input type="radio" name="lang" value="auto"> <span data-t="langAuto"></span></label>
+        <label><input type="radio" name="lang" value="en"> <span>English</span></label>
+        <label><input type="radio" name="lang" value="id"> <span>Bahasa Indonesia</span></label>
+      </div>
+    </section>
+    <section class="card">
+      <h2 data-t="oalTitle"></h2>
+      <label class="switch"><input type="checkbox" data-set="openAtLogin"><span><b data-t="oalSwitch"></b><span class="muted" data-t="oalText"></span></span></label>
+    </section>
 
-    <div class="sgroup" id="gHelp">
-    <h2 class="gtitle" data-t="gHelp"></h2>
     <section class="card">
       <div class="card-head">
         <div>
@@ -436,6 +646,8 @@
     </section>
 
     </div>
+    <button class="btn ghost advtoggle" id="advToggle" aria-expanded="false" aria-controls="advWrap"></button>
+    <div id="advWrap" hidden>
     <div class="sgroup" id="advGroup">
     <h2 class="gtitle" data-t="tabAdvanced"></h2>
     <p class="muted small" data-t="advNote"></p>
@@ -577,37 +789,6 @@
     </div>
     <div class="sgroup" id="gAdvLocks">
     <h3 class="gsub" data-t="gLocks"></h3>
-    <section class="card" id="cKeepLock">
-      <h2 data-t="klkTitle"></h2>
-      <p class="muted" data-t="klkText"></p>
-      <p class="muted small" data-t="klkHonest"></p>
-      <div id="klkOffBox">
-        <div class="row">
-          <input class="input" type="password" id="klkPw" data-ph="klkPwPh" autocomplete="new-password">
-          <input class="input" type="password" id="klkPw2" data-ph="klkPw2Ph" autocomplete="new-password">
-        </div>
-        <label class="field inline"><span data-t="klkAfter"></span>
-          <select class="input klkMin" id="klkMinNew">
-            <option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option>
-          </select>
-        </label>
-        <div class="row"><button class="btn" id="klkOn" data-t="klkOn"></button></div>
-      </div>
-      <div id="klkOnBox" hidden>
-        <p id="klkState"></p>
-        <label class="field inline"><span data-t="klkAfter"></span>
-          <select class="input klkMin" id="klkMin">
-            <option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option>
-          </select>
-        </label>
-        <div class="row">
-          <button class="btn ghost" id="klkNow" data-t="klkNow"></button>
-          <input class="input" type="password" id="klkOffPw" data-ph="klkPwPh" autocomplete="current-password">
-          <button class="btn ghost" id="klkOff" data-t="klkOff"></button>
-        </div>
-      </div>
-      <p class="muted" id="klkMsg" role="status"></p>
-    </section>
     <section class="card" id="cLab">
       <h2 data-t="labTitle"></h2>
       <p class="muted" data-t="labText"></p>
@@ -635,6 +816,7 @@
     </section>
     <p class="muted" id="aMsg" role="status"></p>
     </div>
+    </div>
     <div class="sgroup" id="gEnd">
     <section class="card">
       <h2 data-t="unTitle"></h2>
@@ -646,7 +828,7 @@
         <summary data-t="unAllTitle"></summary>
         <div class="stack">
           <p class="muted small" data-t="unAllText"></p>
-          <input class="input" id="unWord" autocomplete="off">
+          <input class="input" id="unWord" autocomplete="off" data-tip="unWordTip">
           <button class="btn ghost danger" id="unAll" data-t="unAll"></button>
         </div>
       </details>
