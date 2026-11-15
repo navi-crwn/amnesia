@@ -129,7 +129,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
   <div class="wrap two">
     <div class="hero-copy">
-      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.11.0</span><svg><use href="#i-github"/></svg><span>Código abierto en GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.11.1</span><svg><use href="#i-github"/></svg><span>Código abierto en GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
       <h1 id="hero-title">
         <span><span class="split">Tu PC lo olvida</span> <em class="word">todo.</em><span class="after split">Menos lo que guardas.</span></span>
       </h1>
@@ -158,7 +158,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
     <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
       <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
       <span class="rc-desc"><span>Tu PC lo olvida todo al cerrar sesión, menos lo que eliges guardar.</span></span>
-      <span class="rc-meta"><span>MIT</span><span>Windows v0.11.0</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
+      <span class="rc-meta"><span>MIT</span><span>Windows v0.11.1</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
     </a>
   </div>
 </section>
@@ -184,7 +184,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <span class="rc-legend" data-gh="langs" hidden></span>
         <span class="rc-stats">
           <span><small><span>Licencia</span></small><b>MIT</b></span>
-          <span><small>Windows</small><b>v0.11.0</b></span>
+          <span><small>Windows</small><b>v0.11.1</b></span>
           <span><small><span>Pruebas</span></small><b>294</b></span>
           <span><small>Commits</small><b data-gh="commits">–</b></span>
           <span><small><span>Colaboradores</span></small><b data-gh="contributors">–</b></span>
@@ -376,7 +376,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <li class="dstep"><span class="node">01</span><h3>Sign in</h3><p><span>Tu PC arranca limpio. Haz clic en el recordatorio, escribe la contraseña de tu bóveda y pulsa Restore.</span></p></li>
         <li class="dstep"><span class="node">02</span><h3><span>Trabajar</span></h3><p><span>Tus inicios de sesión están de vuelta. Los archivos que necesites mañana van a tu carpeta Keep.</span></p></li>
         <li class="dstep"><span class="node">03</span><h3><span>Cierra tus apps</span></h3><p><span>Cada app de la bóveda se guarda sola después de cerrarla.</span></p></li>
-        <li class="dstep"><span class="node">04</span><h3><span>Cerrar sesión</span></h3><p><span>Todo lo demás se borra. Sin dejar rastro.</span></p></li>
+        <li class="dstep"><span class="node">04</span><h3><span>Cerrar sesión</span></h3><p><span>Todo lo demás se mueve a la papelera, que se vacía en tu próximo inicio de sesión.</span></p></li>
       </ol>
     </div>
     <p class="pausenote"><b><span>Pausar una sesión</span></b> <span><span>Sáltate una vez el próximo cierre e inicio de sesión, sin desactivar Amnesia.</span></span></p>
@@ -531,6 +531,9 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="cap"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span>Lo que Amnesia no puede hacer, en la propia app</span></p>
         <ul>
           <li><span>Un borrado elimina archivos, no sobrescribe el disco. Activa el cifrado del dispositivo.</span></li>
+          <li><span>Al cerrar sesión, los archivos se mueven a una carpeta de papelera que se vacía en tu próximo inicio de sesión. Hasta entonces, cualquiera que tenga el disco de un PC apagado puede leerlos. BitLocker es lo que protege eso.</span></li>
+          <li><span>OneDrive y otras carpetas en la nube nunca se borran. Con la copia de carpetas de OneDrive activada, el Escritorio, Documentos e Imágenes se quedan.</span></li>
+          <li><span>El límite de 3 contraseñas incorrectas solo detiene a quien teclea en este PC. Una bóveda copiada se puede adivinar sin límite.</span></li>
           <li><span>Windows guarda algunos rastros fuera de tu carpeta de usuario.</span></li>
           <li><span>La bóveda y las copias de seguridad son tan fuertes como tu contraseña.</span></li>
           <li><span>Todavía no hay certificado de firma de código de pago, así que SmartScreen puede mostrar un aviso.</span></li>
@@ -675,7 +678,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="aw-bar"><img src="../../logo.png" alt="" width="14" height="14"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
         <div class="aw-head">
           <img src="../../logo.png" alt="" width="36" height="36">
-          <div><b>Amnesia <span class="ver">v0.11.0</span></b><small><span>Tu PC lo olvida todo, menos lo que eliges.</span></small></div>
+          <div><b>Amnesia <span class="ver">v0.11.1</span></b><small><span>Tu PC lo olvida todo, menos lo que eliges.</span></small></div>
           <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span>Settings</span></span>
         </div>
         <div class="aw-hero pc" data-p="home">
@@ -990,7 +993,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <p class="label"><span class="n">15</span> · <span>Instalar</span></p>
       <h2><span>Un solo Setup, <em>sin administrador.</em></span></h2>
       <div class="badges">
-        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.11.0</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.11.1</b></a>
         <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
         <span class="bdg"><svg><use href="#i-laptop"/></svg><span>Windows</span><b>10 · 11</b></span>
       </div>
@@ -1027,7 +1030,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><div><h3><span>Comprueba el archivo</span></h3><p class="small"><span>Opcional</span></p></div></div>
         <div class="shell">
           <div class="sh-bar"><i></i><i></i><i></i><span>PowerShell</span></div>
-          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.11.0-x64.exe</code><button class="copy" type="button">Copy</button></div>
+          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.11.1-x64.exe</code><button class="copy" type="button">Copy</button></div>
           <pre class="sh-out"><span>Algorithm  Hash</span>
 <span>---------  ----</span>
 <span>SHA256     3F9A…C21E</span>
@@ -1039,7 +1042,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><div><h3>navi-crwn/amnesia</h3><p class="small"><span>Código abierto en GitHub</span></p></div></div>
         <dl class="ghstats">
           <div><dt><span>Licencia</span></dt><dd>MIT</dd></div>
-          <div><dt>Windows</dt><dd>v0.11.0</dd></div>
+          <div><dt>Windows</dt><dd>v0.11.1</dd></div>
           <div><dt><span>Pruebas</span></dt><dd>294</dd></div>
           <div><dt><span>Chips</span></dt><dd>x64 · arm64</dd></div>
         </dl>
@@ -1086,7 +1089,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
                 <p class="wsm-h">Windows protected your PC</p>
                 <p class="wsm-t">Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p>
                 <p class="wsm-more" data-a="1" data-on=".wsm-app,.wsm-run">More info</p>
-                <p class="wsm-app">App: Amnesia-Setup-0.11.0-x64.exe</p>
+                <p class="wsm-app">App: Amnesia-Setup-0.11.1-x64.exe</p>
                 <div class="wsm-btns"><span class="wsm-run" data-a="2" data-on=".pop0">Run anyway</span><span>Don't run</span></div>
               </div>
               <div class="pop tw-pop pop0">
@@ -1339,7 +1342,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="ft-tag"><span>Tu PC lo olvida todo al cerrar sesión, menos lo que eliges guardar. Gratis, de código abierto, y nada sale nunca de tu PC.</span></p>
         <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
           <svg><use href="#i-github"/></svg>
-          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.11.0</small></span>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.11.1</small></span>
         </a>
       </div>
       <nav class="ft-cols" aria-label="Pie de página">

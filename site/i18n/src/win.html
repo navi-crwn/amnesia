@@ -125,7 +125,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
   <div class="wrap two">
     <div class="hero-copy">
-      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.11.0</span><svg><use href="#i-github"/></svg><span data-en>Open source on GitHub</span><span data-id>Open source di GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.11.1</span><svg><use href="#i-github"/></svg><span data-en>Open source on GitHub</span><span data-id>Open source di GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
       <h1 id="hero-title">
         <span data-en><span class="split">Your PC forgets</span> <em class="word">everything.</em><span class="after split">Except what you keep.</span></span>
         <span data-id><span class="split">PC kamu lupa</span> <em class="word">segalanya.</em><span class="after split">Kecuali yang kamu simpan.</span></span>
@@ -156,7 +156,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
     <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
       <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
       <span class="rc-desc"><span data-en>Your PC forgets everything at sign out, except what you choose to keep.</span><span data-id>PC kamu lupa segalanya setiap sign out, kecuali yang kamu pilih untuk disimpan.</span></span>
-      <span class="rc-meta"><span>MIT</span><span>Windows v0.11.0</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
+      <span class="rc-meta"><span>MIT</span><span>Windows v0.11.1</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
     </a>
   </div>
 </section>
@@ -183,7 +183,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <span class="rc-legend" data-gh="langs" hidden></span>
         <span class="rc-stats">
           <span><small><span data-en>License</span><span data-id>Lisensi</span></small><b>MIT</b></span>
-          <span><small>Windows</small><b>v0.11.0</b></span>
+          <span><small>Windows</small><b>v0.11.1</b></span>
           <span><small><span data-en>Tests</span><span data-id>Tes</span></small><b>294</b></span>
           <span><small>Commits</small><b data-gh="commits">–</b></span>
           <span><small><span data-en>Contributors</span><span data-id>Kontributor</span></small><b data-gh="contributors">–</b></span>
@@ -380,7 +380,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <li class="dstep"><span class="node">01</span><h3>Sign in</h3><p><span data-en>Your PC starts clean. Click the reminder, type your vault password, press Restore.</span><span data-id>PC mulai dalam keadaan bersih. Klik pengingatnya, ketik password vault, lalu tekan Pulihkan.</span></p></li>
         <li class="dstep"><span class="node">02</span><h3><span data-en>Work</span><span data-id>Kerja</span></h3><p><span data-en>Your logins are back. Files you need tomorrow go into your Keep folder.</span><span data-id>Login kamu sudah kembali. File yang masih perlu besok, simpan di folder Keep.</span></p></li>
         <li class="dstep"><span class="node">03</span><h3><span data-en>Close your apps</span><span data-id>Tutup app</span></h3><p><span data-en>Each vault app is saved by itself after you close it.</span><span data-id>Setiap app di vault tersimpan sendiri setelah kamu menutupnya.</span></p></li>
-        <li class="dstep"><span class="node">04</span><h3><span data-en>Sign out</span><span data-id>Sign out</span></h3><p><span data-en>Everything else is wiped. No traces left.</span><span data-id>Sisanya dihapus, tanpa jejak.</span></p></li>
+        <li class="dstep"><span class="node">04</span><h3><span data-en>Sign out</span><span data-id>Sign out</span></h3><p><span data-en>Everything else is moved to the trash, which is emptied at your next sign in.</span><span data-id>Sisanya dipindah ke folder sampah, yang dikosongkan saat login berikutnya.</span></p></li>
       </ol>
     </div>
     <p class="pausenote"><b><span data-en>Pause one session</span><span data-id>Jeda satu sesi</span></b> <span><span data-en>Skip the next sign out and sign in once, without turning Amnesia off.</span><span data-id>Lewati satu kali sign out dan sign in berikutnya, tanpa mematikan Amnesia.</span></span></p>
@@ -539,6 +539,9 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="cap"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span data-en>What Amnesia can't do, in the app itself</span><span data-id>Yang tidak bisa dilakukan Amnesia, tertulis di app-nya</span></p>
         <ul>
           <li><span data-en>A wipe deletes files, it doesn't overwrite the disk. Turn on device encryption.</span><span data-id>Menghapus berarti menghapus file, bukan menimpa disk. Nyalakan enkripsi perangkat.</span></li>
+          <li><span data-en>At sign out, files move to a trash folder that is emptied at your next sign in. Until then, anyone holding the disk of a switched-off PC can read them. BitLocker is what protects that.</span><span data-id>Saat sign out, file dipindah ke folder sampah yang dikosongkan saat login berikutnya. Sebelum itu, siapa pun yang memegang disk PC yang mati bisa membacanya. BitLocker yang melindungi hal itu.</span></li>
+          <li><span data-en>OneDrive and other cloud folders are never wiped. With OneDrive's folder backup on, Desktop, Documents and Pictures stay.</span><span data-id>OneDrive dan folder cloud lain tidak pernah dihapus. Kalau backup folder OneDrive menyala, Desktop, Documents dan Pictures tetap ada.</span></li>
+          <li><span data-en>The 3-wrong-passwords limit only stops someone typing at this PC. A copied vault can be guessed without limit.</span><span data-id>Batas 3 password salah hanya menahan orang yang mengetik di PC ini. Vault yang sudah disalin bisa ditebak tanpa batas.</span></li>
           <li><span data-en>Windows keeps a few traces outside your user folder.</span><span data-id>Windows menyimpan sedikit jejak di luar folder user kamu.</span></li>
           <li><span data-en>The vault and backups are as strong as your password.</span><span data-id>Vault dan backup sekuat password kamu.</span></li>
           <li><span data-en>No paid code signing certificate yet, so SmartScreen can warn.</span><span data-id>Belum ada sertifikat code signing berbayar, jadi SmartScreen bisa memberi peringatan.</span></li>
@@ -689,7 +692,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="aw-bar"><img src="../logo.png" alt="" width="14" height="14"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
         <div class="aw-head">
           <img src="../logo.png" alt="" width="36" height="36">
-          <div><b>Amnesia <span class="ver">v0.11.0</span></b><small><span data-en>Your PC forgets everything, except what you choose.</span><span data-id>PC kamu lupa semuanya, kecuali yang kamu pilih.</span></small></div>
+          <div><b>Amnesia <span class="ver">v0.11.1</span></b><small><span data-en>Your PC forgets everything, except what you choose.</span><span data-id>PC kamu lupa semuanya, kecuali yang kamu pilih.</span></small></div>
           <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span data-en>Settings</span><span data-id>Pengaturan</span></span>
         </div>
         <div class="aw-hero pc" data-p="home">
@@ -1007,7 +1010,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <p class="label"><span class="n">15</span> · <span data-en>Install</span><span data-id>Pasang</span></p>
       <h2><span data-en>One Setup, <em>no admin.</em></span><span data-id>Satu Setup, <em>tanpa admin.</em></span></h2>
       <div class="badges">
-        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.11.0</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.11.1</b></a>
         <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
         <span class="bdg"><svg><use href="#i-laptop"/></svg><span>Windows</span><b>10 · 11</b></span>
       </div>
@@ -1044,7 +1047,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><div><h3><span data-en>Check the file</span><span data-id>Cek file-nya</span></h3><p class="small"><span data-en>Optional</span><span data-id>Opsional</span></p></div></div>
         <div class="shell">
           <div class="sh-bar"><i></i><i></i><i></i><span>PowerShell</span></div>
-          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.11.0-x64.exe</code><button class="copy" type="button">Copy</button></div>
+          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.11.1-x64.exe</code><button class="copy" type="button">Copy</button></div>
           <pre class="sh-out"><span>Algorithm  Hash</span>
 <span>---------  ----</span>
 <span>SHA256     3F9A…C21E</span>
@@ -1056,7 +1059,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><div><h3>navi-crwn/amnesia</h3><p class="small"><span data-en>Open source on GitHub</span><span data-id>Open source di GitHub</span></p></div></div>
         <dl class="ghstats">
           <div><dt><span data-en>License</span><span data-id>Lisensi</span></dt><dd>MIT</dd></div>
-          <div><dt>Windows</dt><dd>v0.11.0</dd></div>
+          <div><dt>Windows</dt><dd>v0.11.1</dd></div>
           <div><dt><span data-en>Tests</span><span data-id>Tes</span></dt><dd>294</dd></div>
           <div><dt><span data-en>Chips</span><span data-id>Chip</span></dt><dd>x64 · arm64</dd></div>
         </dl>
@@ -1105,7 +1108,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
                 <p class="wsm-h">Windows protected your PC</p>
                 <p class="wsm-t">Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p>
                 <p class="wsm-more" data-a="1" data-on=".wsm-app,.wsm-run">More info</p>
-                <p class="wsm-app">App: Amnesia-Setup-0.11.0-x64.exe</p>
+                <p class="wsm-app">App: Amnesia-Setup-0.11.1-x64.exe</p>
                 <div class="wsm-btns"><span class="wsm-run" data-a="2" data-on=".pop0">Run anyway</span><span>Don't run</span></div>
               </div>
               <div class="pop tw-pop pop0">
@@ -1366,7 +1369,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="ft-tag"><span data-en>Your PC forgets everything at sign out, except what you choose to keep. Free, open source, and nothing ever leaves your PC.</span><span data-id>PC kamu melupakan segalanya setiap sign out, kecuali yang kamu pilih untuk disimpan. Gratis, open source, dan tidak ada data yang keluar dari PC kamu.</span></p>
         <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
           <svg><use href="#i-github"/></svg>
-          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.11.0</small></span>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.11.1</small></span>
         </a>
       </div>
       <nav class="ft-cols" aria-label="Footer">
