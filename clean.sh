@@ -226,7 +226,7 @@ APP_KEEP=()
 #   - keep.conf ada tapi tidak bisa dibaca (izin, folder, link rusak)       -> keeplist-unreadable
 #   - keep.conf hilang padahal salinan terakhir (keep.conf.last) ada        -> keeplist-missing
 # keep.example.conf hanya dipakai kalau belum pernah ada Keep List sama sekali (instalasi baru, tes).
-KC="$A/keep.conf"; KSTOP=""; KTXT=""; KEEPF=""
+KC="$A/keep.conf"; KSTOP=""; KTXT=""; KEEPF=""; KLINES=0
 if [ "$KFSET" = 1 ]; then
     KEEPF="$KFILE"          # v5.25: pratinjau mode (hanya dry-run, dicek di atas)
 elif [ -e "$KC" ] || [ -L "$KC" ]; then
@@ -247,9 +247,24 @@ if [ -n "$KEEPF" ]; then
                 ""|"#"*) ;;
                 keychain:*) KC_KEEP+=("${line#keychain:}") ;;
                 app:*) APP_KEEP+=("${line#app:}") ;;          # v5.19: app yang tidak ikut "Hapus app baru"
-                *) add_keep "${line#\~/}" ;;
+                *)
+                    # v5.26.1 (A2): "Documents/Work/" (garis miring di akhir) dan "Report [final]" (siku) melindungi apa yang
+                    # dimaksud: garis miring akhir dibuang, [ dan ] dibaca apa adanya (seperti nama folder Keep di atas)
+                    kl="${line#\~/}"
+                    while [[ "$kl" == */ ]]; do kl="${kl%/}"; done
+                    # ([ atau ] yang sudah diberi \ lebih dulu dikembalikan, supaya tidak pernah ganda; LC_ALL=C: baca byte, bukan locale)
+                    kl="$(printf '%s' "$kl" | LC_ALL=C sed -e 's/\\\([][]\)/\1/g' -e 's/[][]/\\&/g')"
+                    [ -n "$kl" ] && add_keep "$kl" ;;
             esac
+            [ -n "$line" ] && KLINES=$((KLINES + 1))     # baris apa pun yang tidak kosong, juga komentar
         done < <(printf '%s\n' "$KTXT")
+        # v5.26.1 (A3): keep.conf yang isinya KOSONG sama sekali (tidak ada satu baris pun, juga bukan komentar) padahal
+        # salinan terakhir ada daftarnya = tulisan yang terputus, bukan pilihan: berhenti seperti keep.conf yang hilang
+        # (keep.conf.last tidak disentuh). Yang hanya berisi komentar tetap dianggap pilihan: tidak ada yang disimpan.
+        if [ "$KEEPF" = "$KC" ] && [ "$KLINES" = 0 ] && [ -f "$A/keep.conf.last" ] \
+           && grep -Eqv '^[[:space:]]*(#|$)' "$A/keep.conf.last" 2>/dev/null; then
+            KSTOP="keeplist-unreadable"
+        fi
     else
         KSTOP="keeplist-unreadable"
     fi

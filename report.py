@@ -656,7 +656,12 @@ def check_line(raw):
     if not s:
         return None, "empty"
     if s.startswith("keychain:"):
-        return (s, None) if s[9:].strip() else (None, "empty")
+        if not s[9:].strip():
+            return None, "empty"
+        # v5.26.1: "keychain:*" or "keychain:?" would keep every Keychain item with one tick
+        if ("*" in s[9:] or "?" in s[9:]) and len(re.sub(r"[*? ]", "", s[9:])) < 3:
+            return None, "wildcard-top"
+        return s, None
     if TAG_RE.match(s):
         return None, "unknown-tag"
     if s.startswith("/") or s.startswith("\\") or s.startswith("~") or re.match(r"^[A-Za-z]:", s):
@@ -675,6 +680,12 @@ def check_line(raw):
     if kr and (s == kr or s.startswith(kr + "/")):
         return None, "in-keep-folder"
     if set(parts[0]) <= set("*?"):
+        return None, "wildcard-top"
+    # v5.26.1: a first part that is mostly wildcard (".*", ".*/*", "a*") would keep every dot file or a whole letter of
+    # folders with one tick. Its fixed part (apart from dots) must be at least 3 characters (".zsh*", ".config*" are fine).
+    if ("*" in parts[0] or "?" in parts[0]) and len(re.sub(r"[*?.]", "", parts[0])) < 3:
+        return None, "wildcard-top"
+    if parts[0].startswith("["):
         return None, "wildcard-top"
     return s, None
 

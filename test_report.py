@@ -189,13 +189,15 @@ check(parse({"mode": None})["mode"] is None, "parser: null mode")
 res = parse({"keep_add": ["../etc", "Documents/../..", "/etc/passwd", "~/Work/Notes", "~/.ssh", "./x", "a/./b",
                           "C:/Windows", "\\\\server\\share", ".amnesia/vault", ".amnesia-trash", ".Trash/x",
                           "Keep/sub", "*", "**/x", "?/y", "keychain:", "keychain:Work VPN", "app:/Applications/X.app",
-                          "foo\nbar", "x" * 301, "", 42, "Work/Notes", "~/Library/Application Support/Claude"]})
-check(res["keep_add"] == ["Work/Notes", "keychain:Work VPN", "Library/Application Support/Claude"], "parser: keep_add accepted items")
+                          "foo\nbar", "x" * 301, "", 42, "Work/Notes", "~/Library/Application Support/Claude",
+                          ".*", ".?", "a*", "keychain:*", "keychain:?? ", ".zsh*", ".*/*", "[a-z]*", "keychain:QQ"]})
+check(res["keep_add"] == ["Work/Notes", "keychain:Work VPN", "Library/Application Support/Claude", ".zsh*", "keychain:QQ"], "parser: keep_add accepted items")
 for item, w in (("../etc", "dots"), ("Documents/../..", "dots"), ("/etc/passwd", "absolute"), ("./x", "dots"),
                 ("a/./b", "dots"), ("C:/Windows", "unknown-tag"), ("\\\\server\\share", "absolute"),
                 (".amnesia/vault", "protected"), (".amnesia-trash", "protected"), (".Trash/x", "protected"),
                 ("Keep/sub", "in-keep-folder"), ("*", "wildcard-top"), ("**/x", "wildcard-top"), ("?/y", "wildcard-top"),
-                ("keychain:", "empty"), ("app:/Applications/X.app", "unknown-tag"), ("foo?bar", "control-character"),
+                ("keychain:", "empty"), (".*", "wildcard-top"), (".?", "wildcard-top"), ("a*", "wildcard-top"),
+                ("keychain:*", "wildcard-top"), ("keychain:?? ", "wildcard-top"), (".*/*", "wildcard-top"), ("[a-z]*", "wildcard-top"), ("app:/Applications/X.app", "unknown-tag"), ("foo?bar", "control-character"),
                 ("x" * 300, "too-long"), ("", "empty"), ("42", "not-text"), ("~/.ssh", None)):
     if w:
         check(w in why(res, item), f"parser: keep_add '{item[:30]}' -> {w}")

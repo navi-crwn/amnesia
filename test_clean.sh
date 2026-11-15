@@ -279,6 +279,25 @@ AMNESIA_HOME="$T" bash "$K/clean.sh" logout --dry-run >/dev/null 2>&1
 [ ! -e "$K/keep.conf.last" ] || bad "dry-run wrote keep.conf.last"
 AMNESIA_HOME="$T" bash "$K/clean.sh" logout >/dev/null 2>&1
 
+# v5.26.1 (A2): baris Keep dengan garis miring di akhir, atau nama berkurung siku, melindungi apa yang dimaksud
+cp "$K/keep.conf" "$T/keep.conf.save"
+printf '%s\n' 'Documents/Work/' 'Documents/Report [final]' >> "$K/keep.conf"
+mk "Documents/Work/a.txt"; mk "Documents/Report [final]/b.txt"; mk "Documents/Report f/c.txt"; mk "Documents/Other/d.txt"
+AMNESIA_HOME="$T" bash "$K/clean.sh" logout >/dev/null 2>&1
+here "Documents/Work/a.txt"; here "Documents/Report [final]/b.txt"; gone "Documents/Report f"; gone "Documents/Other"
+# v5.26.1 (A3): keep.conf kosong (0 byte) padahal salinan terakhir ada daftarnya: berhenti, tidak ada yang dihapus
+: > "$K/keep.conf"; mk "Downloads/zero.txt"
+AMNESIA_HOME="$T" bash "$K/clean.sh" logout >/dev/null 2>&1; rc=$?
+[ "$rc" = 3 ] || bad "v5.26.1 (A3): empty keep.conf: exit code $rc, expected 3"
+here "Downloads/zero.txt"
+# yang hanya berisi komentar adalah pilihan (tidak menyimpan apa pun): TIDAK berhenti selamanya
+printf '# nothing kept on purpose\n' > "$K/keep.conf"; mk "Downloads/comment.txt"
+AMNESIA_HOME="$T" bash "$K/clean.sh" logout >/dev/null 2>&1; rc=$?
+[ "$rc" != 3 ] || bad "v5.26.1 (A3): a keep.conf with only comments must not stop the cleanup for ever"
+gone "Downloads/comment.txt"
+cp "$T/keep.conf.save" "$K/keep.conf"; rm -f "$T/keep.conf.save"
+AMNESIA_HOME="$T" bash "$K/clean.sh" logout >/dev/null 2>&1
+
 # 158: keep.conf hilang padahal salinan terakhir ada -> BERHENTI, tidak ada yang dihapus
 rm -f "$K/keep.conf"; mk "Downloads/i.txt"
 AMNESIA_HOME="$T" bash "$K/clean.sh" logout >/dev/null 2>&1; rc=$?
@@ -706,6 +725,12 @@ grep -q 'b >= 1e6' "$DIR/bin/amnesia" || bad "194: bin/amnesia still uses 1024 f
 # v5.26: github_backup.sh menulis .gitignore yang SAMA dengan .gitignore di repo, dan data pribadi tidak ikut GitHub
 ign="$(sed -n "/^cat > .gitignore <<'IGN'$/,/^IGN$/p" "$DIR/app/github_backup.sh" | sed '1d;$d')"
 [ "$ign" = "$(cat "$DIR/.gitignore")" ] || bad "v5.26: github_backup.sh writes a different .gitignore than the repo has"
+# v5.26.1 (A1): file asli pengguna dari Restore Files, indeks backup dan tanda Brankas tidak boleh ikut ke GitHub
+for pat in 'before-restore/' 'backup-index.json' 'box.close_failed' 'vault_apps.json'; do
+    printf '%s
+' "$ign" | grep -qxF "$pat" || bad "v5.26.1 (A1): github_backup.sh does not ignore $pat"
+    grep -qxF "$pat" "$DIR/.gitignore" || bad "v5.26.1 (A1): .gitignore does not ignore $pat"
+done
 Y=$(mktemp -d); printf '%s\n' "$ign" > "$Y/.gitignore"; (cd "$Y" && git init -q . 2>/dev/null)
 for f in report.txt apps_baseline.txt profiles.json keep.conf keep.conf.last settings.conf history.log trash.failed; do
     (cd "$Y" && git check-ignore -q "$f") || bad "v5.26: $f is not ignored, github_backup.sh would send it to GitHub"
