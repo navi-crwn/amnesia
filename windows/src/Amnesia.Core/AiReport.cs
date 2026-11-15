@@ -278,10 +278,12 @@ public static class AiReport
         if (b == null || b < 0) return "unknown";
         double v = b.Value;
         // v0.10 (item 194): decimal units (1 MB = 1000 KB), the same as the app pages
-        if (v < 1000) return $"{v:0} B";
-        if (v < 1_000_000) return $"{v / 1000:0} KB";
-        if (v < 1_000_000_000) return $"{v / 1_000_000:0.#} MB";
-        return $"{v / 1_000_000_000:0.#} GB";
+        // v0.11.1: always a dot as the decimal mark, whatever the Windows region is (en-ID wrote "1,5 MB")
+        var c = System.Globalization.CultureInfo.InvariantCulture;
+        if (v < 1000) return string.Create(c, $"{v:0} B");
+        if (v < 1_000_000) return string.Create(c, $"{v / 1000:0} KB");
+        if (v < 1_000_000_000) return string.Create(c, $"{v / 1_000_000:0.#} MB");
+        return string.Create(c, $"{v / 1_000_000_000:0.#} GB");
     }
     static long? L(JsonNode? n) { try { return n?.GetValue<long>(); } catch { try { return (long?)n?.GetValue<int>(); } catch { return null; } } }
     static string Str(JsonNode? n) => n == null ? "" : n is JsonValue v && v.TryGetValue<string>(out var s) ? s : n.ToJsonString();
