@@ -7,6 +7,24 @@ Sedikit cerita: tanggal 6 Oktober 2026 Amnesia masih berupa beberapa skrip. Dua 
 
 Nomor versi kamu ada di samping judul Amnesia dan di bagian bawah panel menu bar.
 
+## v5.26.1 · Lebih sedikit file pribadi terkirim ke GitHub, baris Keep lebih aman (belum dirilis)
+
+Belum dijalankan di Mac. `bash test_clean.sh` dan `python3 test_report.py` punya pengecekan baru yang masih perlu dijalankan di Mac sebelum ini dirilis.
+
+### Diperbaiki
+- `before-restore/`, `backup-index.json`, `box.close_failed` dan `vault_apps.json` masuk `.gitignore` dan daftar yang ditulis script rilis, dan script rilis berhenti melacaknya kalau pernah ter-commit. Menjalankan `kirim` bisa mengirim file asli kamu yang dipindah Restore Files. File yang sudah terkirim tetap ada di riwayat GitHub sampai riwayatnya ditulis ulang.
+- Di `clean.sh`, baris Keep List dengan garis miring di akhir (`Documents/Work/`) atau nama berkurung siku (`Report [final]`) sekarang melindungi yang dimaksud. Dulu tidak cocok dengan apa pun dan foldernya terhapus tanpa peringatan. Kurung siku sekarang berarti hurufnya sendiri, jadi pola kurung seperti `Photos/[0-9]*` tidak lagi cocok dengan beberapa folder (tulis `Photos/*`). Restore vault dan pratinjau di app masih membaca kurung siku sebagai pola sampai keduanya diubah juga.
+- `keep.conf` yang kosong sama sekali (tanpa baris apa pun, juga tanpa komentar) padahal `keep.conf.last` berisi baris sekarang menghentikan pembersihan, seperti file yang hilang, bukan dianggap daftar yang tidak menyimpan apa pun. File yang hanya berisi komentar tetap dianggap daftar kosong yang disengaja. Halaman Care dan `vault.py` masih membaca file kosong sebagai "tidak menyimpan apa pun".
+- Pemeriksa saran AI menolak baris yang akan menyimpan semua file titik atau semua item Keychain dengan satu centang (`.*`, `a*`, `keychain:*`).
+- Cask Homebrew bilang "macOS Sequoia atau lebih baru", bukan "tepat Sequoia".
+
+### Berubah
+- SECURITY.md sekarang menyebut bahwa logout memindahkan file ke folder sampah yang dikosongkan saat login berikutnya, bahwa "3 password salah" hanya menahan orang di depan layar, dan bahwa semuanya berjalan sebagai kamu.
+
+### Belum selesai
+- Sinyal logout yang dikirim manual (`killall Amnesia`, Activity Monitor) masih bisa memulai pembersihan saat kamu login. Membedakan logout asli hanya bisa diuji di Mac.
+- Memindah folder Keep masih melewati file yang gagal tanpa pesan, dan arsip vault belum ditandatangani.
+
 ## v5.26.0 · Profile Vault yang bisa diikuti langkah demi langkah (2 Nov 2026)
 
 **Turn Off** Amnesia dulu sebelum memasang, lalu nyalakan lagi.

@@ -66,6 +66,12 @@ history.log
 backup.ok
 backup.vault.ok
 clean.done
+# v5.26.1: lebih banyak data pribadi: file asli pengguna yang disingkirkan Restore Files, indeks backup, tanda Brankas gagal ditutup
+before-restore/
+backup-index.json
+box.close_failed
+box.close_failed.told
+vault_apps.json
 crash/
 bin/
 # v5.25: perintah Terminal bin/amnesia ikut repo (isi bin/ lain, mis. 7zz, tetap diabaikan)
@@ -91,7 +97,7 @@ echo "2/7  Commit & push..."
 [ -d .git ] || git init -q -b main
 git config user.name >/dev/null || git config user.name "$(gh api user -q .login)"
 git config user.email >/dev/null || git config user.email "$(gh api user -q .id)+$(gh api user -q .login)@users.noreply.github.com"
-git rm -r -q --cached --ignore-unmatch keep.conf settings.conf backup.ok report.txt apps_baseline.txt profiles.json AMNESIA_SPEK.md PROFILE_VAULT_SPEK.md reset.sh clean_keychain.sh keep_apps.conf amnesia_app.py templates __pycache__ >/dev/null
+git rm -r -q --cached --ignore-unmatch keep.conf settings.conf backup.ok report.txt apps_baseline.txt profiles.json before-restore backup-index.json box.close_failed box.close_failed.told vault_apps.json AMNESIA_SPEK.md PROFILE_VAULT_SPEK.md reset.sh clean_keychain.sh keep_apps.conf amnesia_app.py templates __pycache__ >/dev/null
 git add -A
 git commit -q -m "Amnesia v$V - $(date '+%F %H:%M')" || echo "     nothing new to commit"
 if git remote get-url origin >/dev/null 2>&1; then git push -q -u origin main
@@ -217,7 +223,7 @@ cask "amnesia" do
   desc "Wipes your Mac at every logout, except what you choose to keep"
   homepage "$SITE"
 
-  depends_on macos: :sequoia
+  depends_on macos: ">= :sequoia"
 
   app "Amnesia.app"
 

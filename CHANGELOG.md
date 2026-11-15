@@ -7,6 +7,24 @@ Quick backstory: on October 6, 2026 Amnesia was a handful of scripts. Two days a
 
 Your version number is next to the Amnesia title and at the bottom of the menu bar panel.
 
+## v5.26.1 · Fewer private files sent to GitHub, safer Keep lines (not released yet)
+
+Not run on a Mac yet. `bash test_clean.sh` and `python3 test_report.py` have new checks that still need a run on a Mac before this is released.
+
+### Fixed
+- `before-restore/`, `backup-index.json`, `box.close_failed` and `vault_apps.json` are in `.gitignore` and in the list the release script writes, and the release script stops tracking them if they were ever committed. A `kirim` run could have sent your own files that Restore Files moved aside. Files that were already sent stay in the GitHub history until it is rewritten.
+- In `clean.sh`, a Keep List line with a slash at the end (`Documents/Work/`) or a name with square brackets (`Report [final]`) now protects what it names. Before, it matched nothing and the folder was wiped without a warning. Square brackets now mean the letters themselves, so a real bracket pattern such as `Photos/[0-9]*` no longer matches several folders (write `Photos/*` instead). The vault restore and the app's preview still read brackets as patterns until they are changed too.
+- An empty `keep.conf` (nothing in it at all, not even a comment) where `keep.conf.last` had lines now stops the cleanup, like a missing one, instead of counting as a list that keeps nothing. A file with only comments is still a deliberate empty list. The Care page and `vault.py` still read an empty file as "keep nothing".
+- The AI suggestion check refuses lines that would keep every dot file or every Keychain item with one tick (`.*`, `a*`, `keychain:*`).
+- The Homebrew cask says "macOS Sequoia or newer" instead of "exactly Sequoia".
+
+### Changed
+- SECURITY.md now says that logout moves files to a trash folder that is emptied at the next login, that "3 wrong passwords" only stops someone at the screen, and that everything runs as you.
+
+### Not done yet
+- A logout signal sent by hand (`killall Amnesia`, Activity Monitor) can still start a cleanup while you are signed in. Telling a real logout apart can only be tested on a Mac.
+- Moving the Keep folder still skips files that fail without a message, and the vault archive is still not signed.
+
 ## v5.26.0 · A Profile Vault you can follow step by step (Nov 2, 2026)
 
 **Turn Off** Amnesia before installing, then turn it on again.

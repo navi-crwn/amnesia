@@ -75,7 +75,10 @@ Amnesia cleans your own user folder at logout. It is not a full anti-forensics t
 
 - **Deleted files can sometimes be recovered** from the disk. Files are removed the normal way, not overwritten. Turn on FileVault (Mac) or BitLocker / Device Encryption (Windows).
 - **Time Machine, APFS snapshots, Windows restore points** and **Spotlight / Windows Search** can still hold old files or bits of them.
-- **Anything synced to a cloud** stays in the cloud and on your other devices.
+- **"Wiped at logout" means moved first.** At logout (Mac and Windows) files are moved into a hidden trash folder (`.amnesia-trash` in your home folder). They are deleted at your next login, and when Amnesia is turned off or uninstalled. Until then, anyone who takes the disk out of a switched-off computer can read them. Disk encryption (FileVault, BitLocker) protects them. A later release is planned to delete the most sensitive traces during logout itself.
+- **"3 wrong passwords" only stops someone at the screen.** The count is kept in a plain file, so anyone who copied the vault file can guess as often as they like. A long password is what protects the vault.
+- **Everything runs as you.** Someone signed in as you who knows Terminal or PowerShell can switch off the Keep lock, the wrong-password count and the Windows lab lock. A passcode that an ordinary account cannot remove is planned (Windows first).
+- **Anything synced to a cloud** stays in the cloud and on your other devices. On Windows, with OneDrive's "Back up folders" on, Desktop, Documents and Pictures live in OneDrive and are never wiped.
 - **Swap, sleep image, hibernation file and system logs** belong to the system and are not cleaned.
 - **Other accounts** on the same computer are not cleaned.
 - **The Keep folder is not encrypted.** The Keep lock uses macOS / Windows permissions, not encryption: anyone logged in as you can remove it, and file names right inside Keep stay visible. Use FileVault, or the Brankas / Safe box for secrets.

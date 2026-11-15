@@ -27,6 +27,12 @@ history.log
 backup.ok
 backup.vault.ok
 clean.done
+# v5.26.1: lebih banyak data pribadi: file asli pengguna yang disingkirkan Restore Files, indeks backup, tanda Brankas gagal ditutup
+before-restore/
+backup-index.json
+box.close_failed
+box.close_failed.told
+vault_apps.json
 crash/
 bin/
 # v5.25: perintah Terminal bin/amnesia ikut repo (isi bin/ lain, mis. 7zz, tetap diabaikan)
