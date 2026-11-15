@@ -87,6 +87,8 @@ static class Guard
             AppInfo.Trace("still signed in after 8 s: asking again");
             try { WTSLogoffSession(IntPtr.Zero, -1 /* this session */, false); } catch { }
             ExitWindowsEx(EWX_LOGOFF | EWX_FORCE, 0);
+            // v0.11.1: still here after both asks (Windows said no, or someone cancelled the sign out): the panic must work again
+            Interlocked.Exchange(ref busy, 0);
         }) { IsBackground = false };
         t.Start();
     }

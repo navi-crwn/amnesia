@@ -51,13 +51,18 @@ static class Updater
         return null;
     }
 
-    public static bool Newer(string version) =>
-        Version.TryParse(version, out var v) && Version.TryParse(AppInfo.Version, out var cur) && v > cur;
+    public static bool Newer(string version) => Core.UpdateSig.IsNewer(version, AppInfo.Version);
 
     /// <summary>Downloads and checks the setup, then starts it (it closes Amnesia, updates, and opens it again).</summary>
     public static async Task InstallAsync(Release r, IProgress<double>? progress = null)
     {
         if (r.Setup == null || r.Sums == null) throw new InvalidOperationException("no-setup");
+        // v0.11.1: the button is only shown for a newer release, but the call itself checks too (an old signed setup must
+        // not be installed over a newer Amnesia)
+        // v0.11.1: the setup's file name has to be the one this version has (the signed checksum list names the file, so this
+        // ties the version we compare to the file that was signed)
+        if (!Path.GetFileName(new Uri(r.Setup).LocalPath).Equals($"Amnesia-Setup-{r.Version}-{Arch}.exe", StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("no-setup");
+        if (!Newer(r.Version)) { AppInfo.Trace($"update {r.Version}: not newer than {AppInfo.Version}, not installed"); throw new InvalidOperationException("not-newer"); }
         // v0.8: the list of checksums must be signed by the developer, or a changed release could pass the check
         if (!Signed || r.Sig == null) throw new InvalidOperationException("unsigned");
         Directory.CreateDirectory(Dir);

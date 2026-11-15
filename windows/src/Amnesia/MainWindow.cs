@@ -64,6 +64,10 @@ sealed class MainWindow : Form
         s.IsStatusBarEnabled = false;
         s.IsZoomControlEnabled = false;
         s.AreBrowserAcceleratorKeysEnabled = false;
+        // v0.11.1: the page holds a Keep password, vault passwords and PINs: the page engine must not offer to save them or
+        // fill forms with what it remembers
+        s.IsPasswordAutosaveEnabled = false;
+        s.IsGeneralAutofillEnabled = false;
 
         core.SetVirtualHostNameToFolderMapping(Host, Path.Combine(AppInfo.BaseDir, "ui"), CoreWebView2HostResourceAccessKind.Deny);
         // links to websites open in the normal browser, never inside Amnesia

@@ -96,6 +96,8 @@
       'A wipe moves files away and deletes them, it does not overwrite the disk. Without BitLocker or device encryption, tools can bring deleted files back. Turn device encryption on.',
       'Saved passwords in Credential Manager stay unless you switch on "Also wipe saved app passwords". Your Microsoft account, OneDrive and Office sign in always stay.',
       'Microsoft Store apps keep their data in Packages. It stays unless you switch on "Also wipe Store app data".',
+      'At sign out, files are moved to a hidden trash folder (.amnesia-trash) in your user folder. They are deleted at your next sign in, and when you turn Amnesia off or uninstall it. Until then, anyone who takes the disk out of a switched-off PC can read them. Device encryption (BitLocker) protects them.',
+      'OneDrive and other cloud folders are never wiped. If OneDrive "Back up folders" is on, Desktop, Documents and Pictures live in OneDrive and stay as they are.',
       'Files Windows holds open at sign out are wiped at the next sign in instead.',
       'Explorer\'s thumbnail cache is cleaned at sign out and quick exit, not while you are signed in (that made the Desktop flicker).',
       'The vault and backups are as strong as your password. Doomsday deletes the vault on this PC, not a copy someone made before.',
@@ -124,6 +126,7 @@
     klTitle: 'Keep List', klText: 'Folders and files (from your user folder) that stay at sign out, besides the Keep folder. * works as a wildcard.',
     klEmpty: 'Nothing on the list yet.', klPick: 'Add a folder...', klPathPh: 'or type a path, e.g. .ssh or AppData\\Roaming\\Code\\User', add: 'Add', remove: 'Remove',
     klMissing: 'this folder does not exist yet', klSuggTitle: 'Apps on this PC', klSuggText: 'App data found on this PC. Click one to keep it (its logins and settings stay).',
+    klIgnored: 'These lines in keep.conf cannot protect anything (they point outside your user folder or use ..), so they are ignored:',
     klNone: 'Nothing else found.', outsideHome: 'Only things inside your user folder can go on the Keep List (other drives are never touched anyway).',
     vTitle: 'Vault', vIntro: 'The vault keeps locked snapshots of the apps you choose (browser logins, chat apps...). After a sign out you open it with your password and everything is back.',
     vLimit: 'Honest note: Windows locks saved logins to your Windows user. Snapshots come back on this PC and this Windows user, not on another PC.',
@@ -144,7 +147,7 @@
     vRestoreIssue: function (name, v) { return v === 'failed' ? name + ' could not be put back (its snapshot is still in the vault).' : name + ': ' + v.split(':')[1] + ' file(s) were in use and stayed as they were.'; },
     vOptions: 'Vault options', vAuto: 'Automatic snapshot', vAutoText: 'An app that changed is saved automatically after you close it, in the background (never while it runs). Sign out only cleans up, so it is quick.',
     vRemind: 'Remind me after sign in', vRemindText: 'A notification after each sign in: click it to restore.',
-    vDoom: 'Doomsday after 3 wrong passwords', vDoomText: 'Three wrong passwords in a row delete the vault on this PC for good. Off = no limit. It can\'t stop someone who copied the vault file before, so a long password is what really protects it.',
+    vDoom: 'Doomsday after 3 wrong passwords', vDoomText: 'Three wrong passwords in a row delete the vault on this PC for good. Off = no limit. This only stops someone typing at this PC: the count is kept in a plain file, and anyone who copied the vault file can guess as often as they like. It can\'t stop someone who copied the vault file before, so a long password is what really protects it.',
     vChangePw: 'Change password', vOldPh: 'Current password', vNewPh: 'New password (12+ characters)', vChangePanic: 'Change panic word', vPanicPh: 'New panic word (empty = none)',
     save: 'Save', saved: 'Saved.', working: 'Working...', done: 'Done.',
     vSaved: function (t) { return 'Saved ' + t; },
@@ -274,7 +277,7 @@
       'destination-missing': 'The backup folder is not there (USB drive unplugged?).', 'no-destination': 'Choose where backups go first.',
       'no-file': 'Choose a backup file first.', 'not-a-backup': 'That is not an Amnesia backup.', 'no-release': 'No Windows release on GitHub yet.',
       'offline': 'Could not reach GitHub. Check the internet connection.', 'list-bad': 'The downloaded list did not look right and was not used.', 'sandbox-missing': 'Windows Sandbox is not switched on.', 'no-safe': 'Create the safe box first.', 'safe-exists': 'There already is a safe box.',
-      'keeplock-uninstall': 'Keep is locked. Type the Keep password above first: Amnesia unlocks Keep before it is removed.', 'pause-not-saved': 'The pause could not be saved. Try again.', 'backup-in-keep': 'Not inside Keep: every backup would then hold all the older ones. Pick a USB drive, another drive or a cloud folder.', 'keep-not-saved': 'That line did not get saved in the Keep List. Try again, or add the folder with Choose folder.', 'unsigned': 'This release has no developer signature, so it is not installed from the app. Open the release page instead.', 'bad-signature': 'The release signature does not match. Nothing was installed. Tell the developer (GitHub issue).'
+      'keeplock-uninstall': 'Keep is locked. Type the Keep password above first: Amnesia unlocks Keep before it is removed.', 'pause-not-saved': 'The pause could not be saved. Try again.', 'not-newer': 'This release is not newer than the Amnesia you have, so it was not installed.', 'backup-in-keep': 'Not inside Keep: every backup would then hold all the older ones. Pick a USB drive, another drive or a cloud folder.', 'keep-not-saved': 'That line did not get saved in the Keep List. Try again, or add the folder with Choose folder.', 'unsigned': 'This release has no developer signature, so it is not installed from the app. Open the release page instead.', 'bad-signature': 'The release signature does not match. Nothing was installed. Tell the developer (GitHub issue).'
     },
     wrong: function (left) { return left < 0 ? 'Wrong password.' : left === 1 ? 'Wrong password. LAST TRY: one more wrong password DELETES the vault for good. Stop and check your password notes first.' : 'Wrong password. Tries left: ' + left; },
     // v0.9 Care
@@ -468,6 +471,8 @@
       'Menghapus berarti memindahkan lalu menghapus file, bukan menimpa disk. Tanpa BitLocker atau enkripsi perangkat, file yang dihapus bisa dikembalikan dengan tools. Nyalakan enkripsi perangkat.',
       'Password tersimpan di Credential Manager tetap ada, kecuali kamu nyalakan "Hapus juga password app". Login akun Microsoft, OneDrive dan Office selalu tetap ada.',
       'App Microsoft Store menyimpan datanya di Packages. Data itu tetap ada, kecuali kamu nyalakan "Hapus juga data app Store".',
+      'Saat sign out, file dipindahkan ke folder sampah tersembunyi (.amnesia-trash) di folder user kamu. File baru dihapus saat login berikutnya, dan saat Amnesia dimatikan atau dihapus. Sampai saat itu, siapa pun yang mengambil disk dari PC yang mati bisa membacanya. Enkripsi perangkat (BitLocker) yang melindunginya.',
+      'OneDrive dan folder cloud lain tidak pernah dihapus. Kalau "Back up folders" OneDrive menyala, Desktop, Documents dan Pictures ada di OneDrive dan tetap seperti semula.',
       'File yang sedang dipakai Windows saat sign out akan dihapus saat login berikutnya.',
       'Cache thumbnail Explorer dibersihkan saat sign out dan sign out cepat, bukan saat kamu sedang login (dulu bikin Desktop berkedip).',
       'Vault dan backup sekuat password kamu. Doomsday menghapus vault di PC ini, bukan salinan yang dibuat orang lain sebelumnya.',
@@ -496,6 +501,7 @@
     klTitle: 'Keep List', klText: 'Folder dan file (dari folder user kamu) yang tetap ada saat sign out, selain folder Keep. Tanda * bisa dipakai sebagai wildcard.',
     klEmpty: 'Daftarnya masih kosong.', klPick: 'Tambah folder...', klPathPh: 'atau ketik path, misal .ssh atau AppData\\Roaming\\Code\\User', add: 'Tambah', remove: 'Hapus',
     klMissing: 'folder ini belum ada', klSuggTitle: 'App di PC ini', klSuggText: 'Data app yang ditemukan di PC ini. Klik untuk menyimpannya (login dan pengaturannya tetap ada).',
+    klIgnored: 'Baris ini di keep.conf tidak bisa melindungi apa pun (menunjuk ke luar folder user atau memakai ..), jadi diabaikan:',
     klNone: 'Tidak ada yang lain.', outsideHome: 'Hanya isi folder user kamu yang bisa masuk Keep List (drive lain memang tidak pernah disentuh).',
     vTitle: 'Vault', vIntro: 'Vault menyimpan snapshot terkunci dari app pilihanmu (login browser, app chat...). Setelah sign out, buka dengan password dan semuanya kembali.',
     vLimit: 'Catatan jujur: Windows mengunci login tersimpan ke user Windows kamu. Snapshot hanya bisa dipulihkan di PC ini dan user Windows ini, bukan di PC lain.',
@@ -516,7 +522,7 @@
     vRestoreIssue: function (name, v) { return v === 'failed' ? name + ' tidak bisa dikembalikan (snapshot-nya tetap ada di vault).' : name + ': ' + v.split(':')[1] + ' file sedang dipakai dan dibiarkan seperti semula.'; },
     vOptions: 'Pilihan vault', vAuto: 'Snapshot otomatis', vAutoText: 'App yang berubah disimpan otomatis setelah kamu menutupnya, di latar belakang (tidak pernah saat app masih jalan). Sign out cuma membersihkan, jadi cepat.',
     vRemind: 'Ingatkan setelah login', vRemindText: 'Notifikasi setiap habis login: klik untuk memulihkan.',
-    vDoom: 'Doomsday setelah 3 password salah', vDoomText: 'Tiga password salah berturut-turut menghapus vault di PC ini selamanya. Mati = tanpa batas. Ini tidak bisa menghentikan orang yang sudah menyalin file vault sebelumnya, jadi password yang panjang adalah pelindung utamanya.',
+    vDoom: 'Doomsday setelah 3 password salah', vDoomText: 'Tiga password salah berturut-turut menghapus vault di PC ini selamanya. Mati = tanpa batas. Ini hanya menahan orang yang mengetik di PC ini: hitungannya disimpan di file biasa, dan siapa pun yang menyalin file vault bisa menebak sebanyak yang dia mau. Ini tidak bisa menghentikan orang yang sudah menyalin file vault sebelumnya, jadi password yang panjang adalah pelindung utamanya.',
     vChangePw: 'Ganti password', vOldPh: 'Password sekarang', vNewPh: 'Password baru (12+ karakter)', vChangePanic: 'Ganti kata panik', vPanicPh: 'Kata panik baru (kosong = tidak ada)',
     save: 'Simpan', saved: 'Tersimpan.', working: 'Sedang dikerjakan...', done: 'Selesai.',
     vSaved: function (t) { return 'Disimpan ' + t; },
@@ -646,7 +652,7 @@
       'destination-missing': 'Folder backup tidak ada (flashdisk dicabut?).', 'no-destination': 'Pilih tempat backup dulu.',
       'no-file': 'Pilih file backup dulu.', 'not-a-backup': 'Itu bukan file backup Amnesia.', 'no-release': 'Belum ada rilis Windows di GitHub.',
       'offline': 'Tidak bisa terhubung ke GitHub. Cek koneksi internet.', 'list-bad': 'Daftar yang diunduh tidak terlihat benar dan tidak dipakai.', 'sandbox-missing': 'Windows Sandbox belum aktif.', 'no-safe': 'Buat brankas dulu.', 'safe-exists': 'Brankas sudah ada.',
-      'keeplock-uninstall': 'Keep sedang dikunci. Isi password Keep di atas dulu: Amnesia membuka kunci Keep sebelum dihapus.', 'pause-not-saved': 'Jeda gagal disimpan. Coba lagi.', 'backup-in-keep': 'Jangan di dalam Keep: setiap backup nanti ikut berisi semua backup lama. Pilih flashdisk, drive lain atau folder cloud.', 'keep-not-saved': 'Baris itu tidak tersimpan di Keep List. Coba lagi, atau tambahkan foldernya lewat Pilih folder.', 'unsigned': 'Rilis ini belum punya tanda tangan developer, jadi tidak dipasang dari app. Buka halaman rilis saja.', 'bad-signature': 'Tanda tangan rilis tidak cocok. Tidak ada yang dipasang. Kabari developer (GitHub issue).'
+      'keeplock-uninstall': 'Keep sedang dikunci. Isi password Keep di atas dulu: Amnesia membuka kunci Keep sebelum dihapus.', 'pause-not-saved': 'Jeda gagal disimpan. Coba lagi.', 'not-newer': 'Rilis ini tidak lebih baru dari Amnesia yang kamu pakai, jadi tidak dipasang.', 'backup-in-keep': 'Jangan di dalam Keep: setiap backup nanti ikut berisi semua backup lama. Pilih flashdisk, drive lain atau folder cloud.', 'keep-not-saved': 'Baris itu tidak tersimpan di Keep List. Coba lagi, atau tambahkan foldernya lewat Pilih folder.', 'unsigned': 'Rilis ini belum punya tanda tangan developer, jadi tidak dipasang dari app. Buka halaman rilis saja.', 'bad-signature': 'Tanda tangan rilis tidak cocok. Tidak ada yang dipasang. Kabari developer (GitHub issue).'
     },
     wrong: function (left) { return left < 0 ? 'Password salah.' : left === 1 ? 'Password salah. PERCOBAAN TERAKHIR: salah sekali lagi = vault DIHAPUS PERMANEN. Berhenti dulu dan cek catatan password kamu.' : 'Password salah. Sisa percobaan: ' + left; },
     // v0.9 Perawatan
@@ -820,6 +826,19 @@
       function end(v) { $('confirm').hidden = true; $('cfYes').onclick = $('cfNo').onclick = null; done(v); }
       $('cfYes').onclick = function () { end(true); };
       $('cfNo').onclick = function () { end(false); };
+    });
+  }
+  // v0.11.1: a password or PIN asked in the page, hidden while typing (window.prompt showed it in plain letters)
+  function secretBox(text) {
+    return new Promise(function (done) {
+      var inp = $('cfSecret');
+      $('cfText').textContent = text; inp.value = ''; inp.hidden = false;
+      $('cfYes').textContent = L.ok || 'OK'; $('cfNo').textContent = L.cancel;
+      $('confirm').hidden = false; inp.focus();
+      function end(v) { inp.value = ''; inp.hidden = true; inp.onkeydown = null; $('confirm').hidden = true; $('cfYes').onclick = $('cfNo').onclick = null; done(v); }
+      inp.onkeydown = function (e) { if (e.key === 'Enter') $('cfYes').click(); };
+      $('cfYes').onclick = function () { end(inp.value || null); };
+      $('cfNo').onclick = function () { end(null); };
     });
   }
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('confirm').hidden) { e.stopImmediatePropagation(); $('cfNo').click(); } }, true);
@@ -1095,6 +1114,8 @@
       li.append(g, b); ul.append(li);
     });
     $('klEmpty').hidden = k.paths.length > 0;
+    var ign = $('klIgnored'); ign.hidden = !(k.ignored && k.ignored.length);
+    if (!ign.hidden) ign.textContent = L.klIgnored + ' ' + k.ignored.join(', ');
     var box = $('klSugg'); box.textContent = '';
     k.suggestions.forEach(function (s) {
       var c = el('button', 'chip', s.name);
@@ -1162,8 +1183,9 @@
   function openKeep() {
     ask('openKeep').catch(function (e) {
       if (e.message !== 'keeplock-ask') return;
-      var pw = window.prompt(L.klkAsk);
-      if (pw) ask('openKeep', { password: pw }).catch(function (e2) { window.alert(errText(e2)); });
+      secretBox(L.klkAsk).then(function (pw) {
+        if (pw) ask('openKeep', { password: pw }).catch(function (e2) { window.alert(errText(e2)); });
+      });
     });
   }
   $('openKeep').addEventListener('click', openKeep);
@@ -1454,9 +1476,9 @@
     lockAsk('labOn', { pin: $('labPin').value }, 'labMsg', ['labPin', 'labPin2']);
   });
   $('labUnlock').addEventListener('click', function () { lockAsk('labUnlock', { pin: $('labPinNow').value }, 'labMsg', ['labPinNow']); });
-  $('labSave').addEventListener('click', function () { var p = window.prompt(L.labPinPh); if (p) lockAsk('labOn', { pin: p }, 'labMsg', []); });
+  $('labSave').addEventListener('click', function () { secretBox(L.labPinPh).then(function (p) { if (p) lockAsk('labOn', { pin: p }, 'labMsg', []); }); });
   $('labClose').addEventListener('click', function () { lockAsk('labClose', {}, 'labMsg', []); });
-  $('labOff').addEventListener('click', function () { var p = window.prompt(L.labPinPh); if (p) lockAsk('labOff', { pin: p }, 'labMsg', []); });
+  $('labOff').addEventListener('click', function () { secretBox(L.labPinPh).then(function (p) { if (p) lockAsk('labOff', { pin: p }, 'labMsg', []); }); });
   loaders.advanced = function () { ask('advInfo').then(showAdv).catch(function (e) { say('aMsg', errText(e), 'bad'); }); };
   $('aIdleMin').addEventListener('change', function () { ask('set', { key: 'idleMin', value: this.value }).then(show); });
   $('upDays').addEventListener('change', function () { ask('set', { key: 'updateDays', value: this.value }).then(show); });

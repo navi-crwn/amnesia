@@ -67,7 +67,7 @@ static class Setup
         else k.DeleteValue("Amnesia", throwOnMissingValue: false);
     }
 
-    static void RemoveStartup()
+    public static void RemoveStartup()
     {
         using var k = Registry.CurrentUser.OpenSubKey(RunKey, writable: true);
         k?.DeleteValue("Amnesia", throwOnMissingValue: false);
@@ -113,6 +113,7 @@ static class Setup
             s?.DeleteValue("StartupDelayInMSec", throwOnMissingValue: false);
             Settings.Set("STARTUP_DELAY_SET", "0");
         }
+        try { Amnesia.Core.CleanEngine.PurgeTrash(false); } catch { } // v0.11.1: what past sign outs moved away does not stay behind
         AppInfo.Trace("turned off");
     }
 
@@ -151,6 +152,7 @@ static class Setup
         AppInfo.Trace($"uninstall (everything: {all})");
         var webData = Path.GetDirectoryName(AppInfo.WebViewData)!;
         var uninstaller = Path.Combine(InstallDir, "unins000.exe");
+        try { Amnesia.Core.CleanEngine.PurgeTrash(true); } catch { } // v0.11.1: nothing left in .amnesia-trash
         if (all) Amnesia.Core.CleanEngine.Delete(AppInfo.Home);
         if (File.Exists(uninstaller))
         {

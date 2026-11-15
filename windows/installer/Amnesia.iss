@@ -78,6 +78,10 @@ Source: "{#Src}\THIRD-PARTY-NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion 
 Type: files; Name: "{app}\scripts\clean.ps1"
 Type: files; Name: "{app}\scripts\standby.ps1"
 
+[UninstallDelete]
+; v0.11.1: what Amnesia keeps outside its own folder: the page engine's data (WebView2) and the downloaded update
+Type: filesandordirs; Name: "{localappdata}\Amnesia"
+
 [Icons]
 Name: "{autoprograms}\Amnesia"; Filename: "{app}\Amnesia.exe"
 
@@ -120,6 +124,16 @@ begin
       end;
       if Exec(ExpandConstant('{app}\Amnesia.exe'), '--keep-check', '', SW_SHOW, ewWaitUntilTerminated, Code) and (Code = 2) then
         KeepStillLocked := True;
+    end
+    else
+    begin
+      // v0.11.1: a silent uninstall cannot ask the Keep password. With Keep locked it stops instead of leaving Keep locked
+      // for good (the in-app Uninstall button opens Keep first, so it passes this check).
+      if Exec(ExpandConstant('{app}\Amnesia.exe'), '--keep-locked', '', SW_HIDE, ewWaitUntilTerminated, Code) and (Code = 2) then
+      begin
+        Result := False;
+        exit;
+      end;
     end;
   end;
 end;
