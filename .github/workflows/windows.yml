@@ -101,6 +101,22 @@ jobs:
           path: dist
           retention-days: 14
 
+  installer-test:
+    name: Installer and sign-in cleanup (throwaway machine)
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: Amnesia-windows-x64
+          path: dist
+      # Installs the Setup.exe from this run, wipes sample files in this machine's own profile, uninstalls and looks for
+      # leftovers. The machine is thrown away afterwards. The script refuses to run outside GitHub Actions.
+      - name: Install, clean at sign in, uninstall
+        shell: pwsh
+        run: ./windows/tests/installer-test.ps1 -SetupDir dist
+
   release:
     name: GitHub release (tag win-v*)
     if: startsWith(github.ref, 'refs/tags/win-v')
