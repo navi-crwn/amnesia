@@ -7,6 +7,31 @@ Quick backstory: on October 6, 2026 Amnesia was a handful of scripts. Two days a
 
 Your version number is next to the Amnesia title and at the bottom of the menu bar panel.
 
+## Windows v0.11.1 · No silent failures (Nov 15, 2026)
+
+Not released yet. **Turn Off** Amnesia before installing, then turn it on again. The Mac app is unchanged.
+
+### Fixed
+- Safe box: an empty `Keep\Safe` folder that appears by itself (Explorer, a sync tool) is no longer packed over the locked safe when it closes. A close that could not delete everything no longer packs the leftovers again; anything you put in that folder afterwards is moved to `Keep\Safe recovered ...`, never deleted.
+- A Keep line with `*` (like `*.kdbx`) protects matches in sub folders too. Before, the same file deeper down was wiped together with its folder. The preview lists what is kept, and browser folders (Edge) are searched as well.
+- `keep.conf` and `settings.conf` are written whole or not at all. Taking off the last Keep line no longer leaves an empty file, and an empty `keep.conf` where there was a list stops the cleanup, like a missing one, and its last good copy is put back. A mode switch never writes an empty file either.
+- Keep lines written as `~/Documents/X` or `C:\Users\you\Documents\X` now work (they were accepted but never matched). Lines that can never match are shown on the Keep page. A hand-written `KEEP_DIR` without `~/` keeps its protection.
+- A new app's folder that could not go to the 3-day trash (a file in use) stays where it is. Before, the files that were not in use were deleted.
+- One damaged vault archive no longer stops the restore of the other apps. It is named in the result.
+- The panic button (hotkey, USB key, idle) works again after a sign out that did not happen.
+- Updates from inside the app only install a release that is newer than the one you have.
+- After Uninstall with "delete everything", no `.amnesia` folder is made again, and nothing stays in `.amnesia-trash` or in `%LOCALAPPDATA%\Amnesia`. The trash is also emptied at Turn Off. A silent uninstall with Keep locked now stops instead of leaving Keep locked.
+- The Keep password and the lab PIN are typed in a masked box. The page engine no longer offers to save passwords or fill forms.
+- Sizes in the AI report always use a dot (1.5 MB), whatever the Windows region.
+
+### Changed
+- The app, the README and the website now say that files wiped at sign out wait in a trash folder until the next sign in, that OneDrive folder backup keeps Desktop, Documents and Pictures, that "3 wrong passwords" only stops someone at the screen, and that BitLocker is what protects deleted data.
+- The GitHub Actions in the workflow are pinned to exact commits.
+
+### Not done yet
+- Sign out still moves files to the trash, and they are only deleted at the next sign in (planned for v0.13.0).
+- A passcode that someone using your account cannot switch off (planned for v0.12.0).
+
 ## v5.26.0 · A Profile Vault you can follow step by step (Nov 2, 2026)
 
 **Turn Off** Amnesia before installing, then turn it on again.

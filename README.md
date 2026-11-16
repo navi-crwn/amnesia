@@ -19,7 +19,7 @@
   <a href="TERMS.md">Terms</a>
 </p>
 
-<p align="center"><sub>Latest: <b>Mac v5.26.0</b> · <b>Windows v0.11.0</b> · free and open source (MIT)</sub></p>
+<p align="center"><sub>Latest: <b>Mac v5.26.0</b> · <b>Windows v0.11.1</b> · free and open source (MIT)</sub></p>
 
 > [!WARNING]
 > **Amnesia really deletes data.** Once you turn it on, everything outside your Keep folder and Keep List is deleted at every logout, restart and shutdown. It doesn't go to the Trash and can't be undone. Please read the short [terms & warning](TERMS.md) before you install.
@@ -116,7 +116,7 @@ bash ~/.amnesia/clean.sh logout --dry-run
 
 ## Amnesia for Windows
 
-Amnesia also runs on **Windows 10 and 11** (x64 and ARM). It's an official release now, **v0.11.0**, built from the `windows/` folder. Same idea, made for Windows:
+Amnesia also runs on **Windows 10 and 11** (x64 and ARM). It's an official release now, **v0.11.1**, built from the `windows/` folder. Same idea, made for Windows:
 
 - wipes your user folder and Windows traces (recent files, jump lists, Explorer and search history, clipboard history and more) at **sign out, restart and shutdown**, and checks again at sign in
 - Keep folder and Keep List with app icons, one-click **Keep an app**, and a 3-day trash for apps you remove
@@ -285,7 +285,7 @@ It turns off the login agent first (so stopping it can't wipe anything), stops A
 | `presets/` | The Amnesia modes: `full.conf`, `balanced.conf`, `light.conf`. A mode copies one of them into a marked section at the top of `keep.conf`. |
 | `report.py`, `bin/amnesia` | The Ask an AI report (no file contents, no file names) and the read-only `amnesia` Terminal command. |
 | `keeplock.sh` | Keep lock and the Brankas (encrypted disk inside Keep). |
-| `windows/` | The Windows version (**v0.11.0**): C# .NET 8 tray app + HTML pages, vault, backup, Health check and a Setup.exe with signed in-app updates. It really wipes once turned on, so check What gets wiped first. Built and tested by GitHub Actions (`.github/workflows/windows.yml`); a `win-v*` tag makes the Windows release. |
+| `windows/` | The Windows version (**v0.11.1**): C# .NET 8 tray app + HTML pages, vault, backup, Health check and a Setup.exe with signed in-app updates. It really wipes once turned on, so check What gets wiped first. Built and tested by GitHub Actions (`.github/workflows/windows.yml`); a `win-v*` tag makes the Windows release. |
 | `SECURITY.md`, `llms.txt` | How to report a security problem, and a short guide for AI assistants that help someone install Amnesia. |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh`, `test_report.py` | Automatic tests in a fake home folder, safe to run anytime. |
 

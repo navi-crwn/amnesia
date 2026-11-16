@@ -381,7 +381,8 @@ sealed class Bridge(TrayApp tray, Action<JsonNode> post, Func<Func<IWin32Window,
         foreach (var dot in new[] { ".ssh", ".gitconfig", ".vscode", ".npmrc" })
             if ((File.Exists(Core.Home.Full(dot)) || Directory.Exists(Core.Home.Full(dot))) && !paths.Contains(dot, StringComparer.OrdinalIgnoreCase))
                 sugg.Insert(0, new JsonObject { ["name"] = dot, ["path"] = dot });
-        return new JsonObject { ["paths"] = list, ["suggestions"] = sugg, ["apps"] = apps, ["keepDir"] = Settings.KeepDir, ["home"] = Core.Home.User };
+        return new JsonObject { ["paths"] = list, ["suggestions"] = sugg, ["apps"] = apps, ["keepDir"] = Settings.KeepDir, ["home"] = Core.Home.User,
+            ["ignored"] = new JsonArray(KeepList.Ignored().Select(x => (JsonNode)x).ToArray()) }; // v0.11.1: lines that can never match
     }
 
     async Task<JsonNode> KeepAdd(string path)

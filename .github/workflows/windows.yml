@@ -22,8 +22,8 @@ jobs:
     name: Tests (fake user folder)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           dotnet-version: '8.0.x'
       - name: Cleanup, vault and backup tests
@@ -42,8 +42,8 @@ jobs:
       matrix:
         arch: [x64, arm64] # arm64 = Windows on ARM, e.g. a Windows 11 VM on a Mac
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           dotnet-version: '8.0.x'
       - name: Build Amnesia.exe
@@ -76,7 +76,7 @@ jobs:
           "### Amnesia for Windows (${{ matrix.arch }})`n`n``````" + "`n" + (Get-Content -Raw dist/SHA256SUMS-${{ matrix.arch }}.txt) + "``````" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
       - name: Build attestation
         if: github.event_name != 'pull_request'
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
         with:
           subject-path: 'dist/*.exe'
       - name: VirusTotal scan (only when the VT_API_KEY secret is set)
@@ -95,11 +95,28 @@ jobs:
               "`nVirusTotal ($($f.Name)): https://www.virustotal.com/gui/file/$sha" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
             } catch { "::warning::VirusTotal upload failed: $($_.Exception.Message)" }
           }
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: Amnesia-windows-${{ matrix.arch }}
           path: dist
           retention-days: 14
+
+  installer-test:
+    name: Installer and sign-in cleanup (throwaway machine)
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 20 # a hang must not hold the machine for hours
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: Amnesia-windows-x64
+          path: dist
+      # Installs the Setup.exe from this run, wipes sample files in this machine's own profile, uninstalls and looks for
+      # leftovers. The machine is thrown away afterwards. The script refuses to run outside GitHub Actions.
+      - name: Install, clean at sign in, uninstall
+        shell: pwsh
+        run: ./windows/tests/installer-test.ps1 -SetupDir dist
 
   release:
     name: GitHub release (tag win-v*)
@@ -109,7 +126,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           path: dist
           merge-multiple: true

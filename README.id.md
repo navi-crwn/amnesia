@@ -19,7 +19,7 @@
   <a href="TERMS.id.md">Ketentuan</a>
 </p>
 
-<p align="center"><sub>Terbaru: <b>Mac v5.26.0</b> · <b>Windows v0.11.0</b> · gratis dan open source (MIT)</sub></p>
+<p align="center"><sub>Terbaru: <b>Mac v5.26.0</b> · <b>Windows v0.11.1</b> · gratis dan open source (MIT)</sub></p>
 
 > [!WARNING]
 > **Amnesia benar-benar menghapus data.** Setelah aktif, semua yang ada di luar folder Keep dan Keep List dihapus setiap logout, restart dan shutdown. Tidak masuk Trash dan tidak bisa dibatalkan. Baca dulu [ketentuan & peringatan](TERMS.id.md) yang singkat ini sebelum memasang.
@@ -116,7 +116,7 @@ bash ~/.amnesia/clean.sh logout --dry-run
 
 ## Amnesia untuk Windows
 
-Amnesia juga jalan di **Windows 10 dan 11** (x64 dan ARM). Sekarang sudah rilis resmi, **v0.11.0**, dari folder `windows/`. Idenya sama, dibuat khusus untuk Windows:
+Amnesia juga jalan di **Windows 10 dan 11** (x64 dan ARM). Sekarang sudah rilis resmi, **v0.11.1**, dari folder `windows/`. Idenya sama, dibuat khusus untuk Windows:
 
 - membersihkan folder user dan jejak Windows (file terakhir, jump list, riwayat Explorer dan pencarian, riwayat clipboard, dan lainnya) saat **sign out, restart dan shutdown**, lalu dicek lagi saat sign in
 - folder Keep dan Keep List dengan ikon app, **Simpan app** sekali klik, dan tempat sampah 3 hari untuk app yang dihapus
@@ -285,7 +285,7 @@ Script ini mematikan agent login lebih dulu (supaya waktu dihentikan tidak ada y
 | `presets/` | Mode Amnesia: `full.conf`, `balanced.conf`, `light.conf`. Sebuah mode menyalin salah satunya ke bagian bertanda di atas `keep.conf`. |
 | `report.py`, `bin/amnesia` | Laporan Tanya AI (tanpa isi file, tanpa nama file) dan perintah Terminal `amnesia` yang hanya membaca. |
 | `keeplock.sh` | Kunci Keep dan Brankas (disk terenkripsi di dalam Keep). |
-| `windows/` | Versi Windows (**v0.11.0**): app tray C# .NET 8 + halaman HTML, vault, backup, Cek kesehatan dan Setup.exe dengan update bertanda tangan dari dalam app. Benar-benar menghapus setelah diaktifkan, jadi cek dulu Yang akan dihapus. Di-build dan dites oleh GitHub Actions (`.github/workflows/windows.yml`); tag `win-v*` membuat release Windows. |
+| `windows/` | Versi Windows (**v0.11.1**): app tray C# .NET 8 + halaman HTML, vault, backup, Cek kesehatan dan Setup.exe dengan update bertanda tangan dari dalam app. Benar-benar menghapus setelah diaktifkan, jadi cek dulu Yang akan dihapus. Di-build dan dites oleh GitHub Actions (`.github/workflows/windows.yml`); tag `win-v*` membuat release Windows. |
 | `SECURITY.md`, `llms.txt` | Cara melaporkan masalah keamanan, dan panduan singkat untuk asisten AI yang membantu orang memasang Amnesia. |
 | `test_clean.sh`, `test_vault.py`, `test_backup.sh`, `test_report.py` | Tes otomatis di "home palsu", aman dijalankan kapan saja. |
 

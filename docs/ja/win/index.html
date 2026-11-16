@@ -129,7 +129,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
   <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
   <div class="wrap two">
     <div class="hero-copy">
-      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.11.0</span><svg><use href="#i-github"/></svg><span>GitHub でオープンソース</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.11.1</span><svg><use href="#i-github"/></svg><span>GitHub でオープンソース</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
       <h1 id="hero-title">
         <span><span class="split">あなたの PC は</span> <em class="word">すべて忘れます。</em><span class="after split">残すと決めたもの以外は。</span></span>
       </h1>
@@ -158,7 +158,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
     <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
       <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
       <span class="rc-desc"><span>サインアウトすると、PC は残すと決めたもの以外をすべて忘れます。</span></span>
-      <span class="rc-meta"><span>MIT</span><span>Windows v0.11.0</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
+      <span class="rc-meta"><span>MIT</span><span>Windows v0.11.1</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
     </a>
   </div>
 </section>
@@ -184,7 +184,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <span class="rc-legend" data-gh="langs" hidden></span>
         <span class="rc-stats">
           <span><small><span>ライセンス</span></small><b>MIT</b></span>
-          <span><small>Windows</small><b>v0.11.0</b></span>
+          <span><small>Windows</small><b>v0.11.1</b></span>
           <span><small><span>テスト</span></small><b>294</b></span>
           <span><small>Commits</small><b data-gh="commits">–</b></span>
           <span><small><span>コントリビューター</span></small><b data-gh="contributors">–</b></span>
@@ -376,7 +376,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <li class="dstep"><span class="node">01</span><h3>Sign in</h3><p><span>PC はまっさらな状態で始まります。リマインダーをクリックし、保管庫のパスワードを入力して、Restore を押します。</span></p></li>
         <li class="dstep"><span class="node">02</span><h3><span>作業</span></h3><p><span>ログイン情報は戻っています。明日も必要なファイルは Keep フォルダーに入れてください。</span></p></li>
         <li class="dstep"><span class="node">03</span><h3><span>アプリを閉じる</span></h3><p><span>保管庫に入れたアプリは、閉じると個別に自動で保存されます。</span></p></li>
-        <li class="dstep"><span class="node">04</span><h3><span>サインアウト</span></h3><p><span>ほかはすべて消去されます。痕跡は残りません。</span></p></li>
+        <li class="dstep"><span class="node">04</span><h3><span>サインアウト</span></h3><p><span>ほかはすべてごみ箱に移動され、次回のサインイン時に空になります。</span></p></li>
       </ol>
     </div>
     <p class="pausenote"><b><span>1 セッションの一時停止</span></b> <span><span>Amnesia をオフにせずに、次のサインアウトとサインインを 1 回だけスキップします。</span></span></p>
@@ -531,6 +531,9 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="cap"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span>Amnesia にできないことを、アプリの中でも明記しています</span></p>
         <ul>
           <li><span>消去はファイルを削除するもので、ディスクを上書きするわけではありません。デバイスの暗号化をオンにしてください。</span></li>
+          <li><span>サインアウト時、ファイルはごみ箱フォルダーに移動され、次回のサインイン時に空になります。それまでは、電源が切れたPCのディスクを手にした人なら読み取れます。これを防ぐのはBitLockerです。</span></li>
+          <li><span>OneDriveなどのクラウドフォルダーは消去されません。OneDriveのフォルダーバックアップがオンの場合、デスクトップ、ドキュメント、ピクチャはそのまま残ります。</span></li>
+          <li><span>パスワードを3回間違えると削除される仕組みは、このPCで入力している人を止めるだけです。コピーされた保管庫は、何度でも試行できます。</span></li>
           <li><span>Windows はユーザーフォルダーの外にもいくつか痕跡を残します。</span></li>
           <li><span>保管庫とバックアップの強さは、パスワードの強さ次第です。</span></li>
           <li><span>まだ有料のコード署名証明書がないので、SmartScreen が警告することがあります。</span></li>
@@ -675,7 +678,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="aw-bar"><img src="../../logo.png" alt="" width="14" height="14"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
         <div class="aw-head">
           <img src="../../logo.png" alt="" width="36" height="36">
-          <div><b>Amnesia <span class="ver">v0.11.0</span></b><small><span>残すと決めたもの以外、PC はすべて忘れます。</span></small></div>
+          <div><b>Amnesia <span class="ver">v0.11.1</span></b><small><span>残すと決めたもの以外、PC はすべて忘れます。</span></small></div>
           <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span>設定</span></span>
         </div>
         <div class="aw-hero pc" data-p="home">
@@ -990,7 +993,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
       <p class="label"><span class="n">15</span> · <span>インストール</span></p>
       <h2><span>Setup ひとつで、<em>管理者権限は不要。</em></span></h2>
       <div class="badges">
-        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.11.0</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.11.1</b></a>
         <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
         <span class="bdg"><svg><use href="#i-laptop"/></svg><span>Windows</span><b>10 · 11</b></span>
       </div>
@@ -1027,7 +1030,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><div><h3><span>ファイルを確認する</span></h3><p class="small"><span>任意</span></p></div></div>
         <div class="shell">
           <div class="sh-bar"><i></i><i></i><i></i><span>PowerShell</span></div>
-          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.11.0-x64.exe</code><button class="copy" type="button">Copy</button></div>
+          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.11.1-x64.exe</code><button class="copy" type="button">Copy</button></div>
           <pre class="sh-out"><span>Algorithm  Hash</span>
 <span>---------  ----</span>
 <span>SHA256     3F9A…C21E</span>
@@ -1039,7 +1042,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <div class="i-top"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><div><h3>navi-crwn/amnesia</h3><p class="small"><span>GitHub でオープンソース</span></p></div></div>
         <dl class="ghstats">
           <div><dt><span>ライセンス</span></dt><dd>MIT</dd></div>
-          <div><dt>Windows</dt><dd>v0.11.0</dd></div>
+          <div><dt>Windows</dt><dd>v0.11.1</dd></div>
           <div><dt><span>テスト</span></dt><dd>294</dd></div>
           <div><dt><span>チップ</span></dt><dd>x64 · arm64</dd></div>
         </dl>
@@ -1086,7 +1089,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
                 <p class="wsm-h">Windows protected your PC</p>
                 <p class="wsm-t">Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p>
                 <p class="wsm-more" data-a="1" data-on=".wsm-app,.wsm-run">More info</p>
-                <p class="wsm-app">App: Amnesia-Setup-0.11.0-x64.exe</p>
+                <p class="wsm-app">App: Amnesia-Setup-0.11.1-x64.exe</p>
                 <div class="wsm-btns"><span class="wsm-run" data-a="2" data-on=".pop0">Run anyway</span><span>Don't run</span></div>
               </div>
               <div class="pop tw-pop pop0">
@@ -1339,7 +1342,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);})();
         <p class="ft-tag"><span>サインアウトすると、PC は残すと決めたもの以外をすべて忘れます。無料、オープンソース、そして PC から何も出ていきません。</span></p>
         <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
           <svg><use href="#i-github"/></svg>
-          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.11.0</small></span>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.11.1</small></span>
         </a>
       </div>
       <nav class="ft-cols" aria-label="フッター">

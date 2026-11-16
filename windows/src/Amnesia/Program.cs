@@ -9,6 +9,7 @@
 //   --keep-check   v0.8, used by the uninstaller: when Keep is locked, asks the Keep password and opens it for good.
 //                  No password: Amnesia is still removed, Keep stays locked and you are told how to open it later.
 //                  Exit 0 = Keep is open (or was never locked), 2 = Keep stays locked.
+//   --keep-locked  v0.11.1, used by the silent uninstaller: exit 2 = Keep is locked (it cannot ask the password), 0 = go on.
 //   --safe-check   v0.8.1, used by the uninstaller: the closed Safe box still holds files? Asks whether to go on.
 //                  Exit 0 = go on, 1 = stop (you want to open the safe and move the files first).
 namespace Amnesia;
@@ -57,11 +58,35 @@ static class Program
             AppInfo.Trace(go ? "uninstall with files in the safe box: going on" : "uninstall stopped: the safe box still has files");
             return go ? 0 : 1;
         }
+        if (args.Contains("--keep-locked"))
+        {
+            // v0.11.1: the silent uninstaller cannot ask for the Keep password, so it only asks whether Keep is locked
+            // (exit 2 = yes: it must not be removed, Keep would stay locked with nobody to open it)
+            return KeepLock.On ? 2 : 0;
+        }
         if (args.Contains("--off"))
         {
-            Setup.TurnOff(leaveStartup: false);
-            Settings.Set("KEEP_SHORTCUT", "0"); Settings.Set("KEEP_PIN", "0");
-            KeepLinks.SyncNow();
+            // v0.11.1: after "delete everything" there is no .amnesia folder any more: do not make a new one just to write
+            // "off" into it (settings.conf, trace.log came back that way)
+            // Each step stands on its own, so one that fails (the shortcut and pin step does on a machine without a full
+            // shell) cannot skip the ones after it. A failure is written to trace.log only when .amnesia still exists.
+            void Step(string name, Action work)
+            {
+                try { work(); }
+                catch (Exception e) { if (Directory.Exists(AppInfo.Home)) AppInfo.Trace($"--off: {name} failed ({e.GetType().Name})"); }
+            }
+            bool hasData = Directory.Exists(AppInfo.Home);
+            if (hasData) Step("turn off", () => Setup.TurnOff(leaveStartup: false)); else Step("remove startup", Setup.RemoveStartup);
+            Step("empty the trash", () =>
+            {
+                Amnesia.Core.CleanEngine.PurgeTrash(true); // the uninstaller leaves nothing in .amnesia-trash
+                if (hasData && Directory.Exists(Amnesia.Core.Home.Trash)) AppInfo.Trace("--off: the trash still has entries after emptying it");
+            });
+            if (hasData)
+            {
+                Step("settings", () => { Settings.Set("KEEP_SHORTCUT", "0"); Settings.Set("KEEP_PIN", "0"); });
+                Step("shortcut and pin", KeepLinks.SyncNow);
+            }
         }
         if (args.Contains("--quit") || args.Contains("--off"))
         {

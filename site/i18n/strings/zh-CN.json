@@ -362,7 +362,7 @@
  "Is my data sent anywhere?": "我的数据会被发送到别处吗？",
  "No. Amnesia has no servers, no accounts, no tracking and no analytics. Everything runs on your Mac. Only if you set up a server or cloud backup does a locked .7z file leave your Mac, straight to the place you picked, and nobody can read it without your password. The update check only asks GitHub for the newest version number, once a week by default. In Settings you can make it every 2 weeks, every month, or Off.": "不会。Amnesia 没有服务器、没有账户、没有跟踪、也没有统计分析。一切都在你的 Mac 上运行。只有当你设置了服务器或云端备份时，才会有一个加密的 .7z 文件离开你的 Mac，直接发到你选定的位置，没有你的密码谁也读不了。检查更新只会向 GitHub 查询最新版本号，默认每周一次。你可以在“设置”里改成每 2 周、每月，或者关闭。",
  "Is there a Windows version?": "有 Windows 版吗？",
- "Yes, Amnesia for Windows v0.11.0, an official release. It wipes at sign out, restart and shutdown, and has the vault, backups, Keep lock, a safe box, a Health check and a Setup.exe with signed updates from inside the app. See the <a href=\"win/\">Windows page</a>.": "有，Amnesia for Windows v0.11.0，正式版。它会在注销、重启和关机时清除数据，并且有保险库、备份、Keep 锁、保险箱、健康检查，以及支持 App 内签名更新的 Setup.exe。请看 <a href=\"win/\">Windows 页面</a>。",
+ "Yes, Amnesia for Windows v0.11.1, an official release. It wipes at sign out, restart and shutdown, and has the vault, backups, Keep lock, a safe box, a Health check and a Setup.exe with signed updates from inside the app. See the <a href=\"win/\">Windows page</a>.": "有，Amnesia for Windows v0.11.1，正式版。它会在注销、重启和关机时清除数据，并且有保险库、备份、Keep 锁、保险箱、健康检查，以及支持 App 内签名更新的 Setup.exe。请看 <a href=\"win/\">Windows 页面</a>。",
  "Can I try it without deleting anything?": "能在不删除任何东西的情况下试用吗？",
  "Yes. Amnesia stays off until you press Turn On. What Gets Deleted (or Settings → \"See what would be deleted now\") shows the full list first.": "可以。在你按下“Turn On”之前，Amnesia 一直是关闭的。What Gets Deleted（或 设置 →“See what would be deleted now”）会先显示完整列表。",
  "Where do wiped files go? Can I get them back?": "被清除的文件去哪了？还能找回来吗？",
@@ -865,5 +865,9 @@
  "Like a brand-new account at every sign in. Only your Keep folder and what Amnesia needs to work stay. The vault's auto snapshot at sign out is turned off, and you can still restore a snapshot by hand.": "每次登录都像一个全新的账户。只保留你的 Keep 文件夹和 Amnesia 运行所需的内容。注销时保险库的自动快照会关闭，你仍可以手动恢复快照。",
  "Your Keep folder stays and app logins come back from the vault. The same as before.": "Keep 文件夹保留，应用登录从保险库恢复。和以前一样。",
  "Everything in AppData stays, so apps keep their settings and logins, and their caches too. Your files, Downloads and Desktop are wiped. Browsing history and cookies inside a browser's own folder stay too, because that folder is kept.": "AppData 中的所有内容都会保留，所以应用会保留设置和登录，缓存也一样。你的文件、下载和桌面会被清除。浏览器自己文件夹里的浏览记录和 Cookie 也会保留，因为那个文件夹被保留了。",
- "See what will now be wiped and what will now be kept, with a warning when more is wiped. Nothing is deleted when you switch. A missing or damaged mode list never empties your Keep List.": "查看从现在起会被清除和会被保留的内容，清除更多时会有警告。切换时不会删除任何东西。模式列表缺失或损坏时，绝不会清空你的 Keep List。"
+ "See what will now be wiped and what will now be kept, with a warning when more is wiped. Nothing is deleted when you switch. A missing or damaged mode list never empties your Keep List.": "查看从现在起会被清除和会被保留的内容，清除更多时会有警告。切换时不会删除任何东西。模式列表缺失或损坏时，绝不会清空你的 Keep List。",
+ "At sign out, files move to a trash folder that is emptied at your next sign in. Until then, anyone holding the disk of a switched-off PC can read them. BitLocker is what protects that.": "注销时，文件会移到一个回收文件夹，下次登录时才清空。在此之前，任何拿到已关机电脑硬盘的人都能读取它们。要防住这一点，靠的是 BitLocker。",
+ "OneDrive and other cloud folders are never wiped. With OneDrive's folder backup on, Desktop, Documents and Pictures stay.": "OneDrive 和其他云端文件夹永远不会被清除。若开启了 OneDrive 的文件夹备份，桌面、文档和图片会保留。",
+ "The 3-wrong-passwords limit only stops someone typing at this PC. A copied vault can be guessed without limit.": "输错 3 次密码的限制只能拦住在这台电脑前输入的人。被复制走的保险库可以无限次猜测。",
+ "Everything else is moved to the trash, which is emptied at your next sign in.": "其他一切会移到回收文件夹，下次登录时清空。"
 }

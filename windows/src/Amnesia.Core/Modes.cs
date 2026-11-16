@@ -303,7 +303,8 @@ public static class Modes
         outLines.AddRange(outside.Where(l => IsComment(l) || !remove.Contains(Key(l))));
         var have = Lines(outLines).Select(Key).ToHashSet();
         foreach (var a in add) if (have.Add(Key(a))) outLines.Add(a);
-        r.NewText = outLines.Count == 0 ? "" : string.Join(nl, outLines) + nl;
+        // v0.11.1: never a zero byte file (that reads as a cut off write and stops every cleanup): an empty list keeps a comment
+        r.NewText = !outLines.Any(l => l.Trim().Length > 0) ? "# Keep List (empty)" + nl : string.Join(nl, outLines) + nl;
 
         var oldSet = Lines(SplitLines(text)).Select(KeepList.Norm).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         var newSet = Lines(outLines).Select(KeepList.Norm).Distinct(StringComparer.OrdinalIgnoreCase).ToList();

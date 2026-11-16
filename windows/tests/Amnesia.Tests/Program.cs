@@ -205,6 +205,34 @@ try
     catch (VaultError e) { Check(e.Code == "restore-failed", "nothing put back: clear error"); }
     Vault.TestBusy = null;
     Check(Vault.Manifest().ContainsKey("Claude Code"), "a failed restore keeps the snapshot");
+    // v0.11.1 W6: one damaged archive must not stop the restore of the other apps
+    {
+        var ccAmv = Path.Combine(fake, ".amnesia", "vault", "apps", "claude-code.amv");
+        var goodAmv = File.ReadAllBytes(ccAmv);
+        var badAmv = (byte[])goodAmv.Clone();
+        for (int k = badAmv.Length / 2; k < Math.Min(badAmv.Length, badAmv.Length / 2 + 16); k++) badAmv[k] ^= 0xFF;
+        File.WriteAllBytes(ccAmv, badAmv);
+        var edgeCookies = Path.Combine(fake, "AppData/Local/Microsoft/Edge/User Data/Default/Cookies");
+        File.WriteAllText(edgeCookies, "old2");
+        List<string>? mixed = null;
+        try { mixed = Vault.Restore("correct horse battery", new[] { "Claude Code", "Microsoft Edge" }); }
+        catch (Exception e) { Check(false, "v0.11.1: a damaged archive stops the whole restore (" + e.GetType().Name + ")"); }
+        Check(mixed != null && mixed.Contains("Microsoft Edge") && !mixed.Contains("Claude Code"), "v0.11.1: the other app is put back, the damaged one is not in the list");
+        Check(File.ReadAllText(edgeCookies) != "old2", "v0.11.1: ...and its data really is back");
+        Check(Vault.LastProblems.TryGetValue("Claude Code", out var dmg) && dmg == "failed", "v0.11.1: the damaged app is reported by name");
+        Check(!There(".amnesia/vault/.stage"), "v0.11.1: nothing unpacked is left behind");
+        File.WriteAllBytes(ccAmv, goodAmv);
+    }
+    // v0.11.1: the "3 wrong passwords" counter is a plain file. This test writes down what that means today (the app text says
+    // it only stops someone at the screen): anyone who can write the file gets as many tries as they want.
+    {
+        var attemptsF = Path.Combine(fake, ".amnesia", "vault", "attempts");
+        File.WriteAllText(attemptsF, "-1000");
+        for (int k = 0; k < 4; k++) { try { Vault.CheckPassword("wrong wrong wrong"); } catch (VaultError) { } }
+        Check(Vault.Exists && Vault.Attempts == -996, "v0.11.1 (known limit): with the counter set to -1000, four wrong passwords delete nothing");
+        File.WriteAllText(attemptsF, "0");
+        Check(Vault.Attempts == 0, "v0.11.1: ...and the counter can be put back");
+    }
     // v0.6: Claude from the Microsoft Store keeps its data in Packages\Claude_*\LocalCache
     Make("AppData/Local/Packages/Claude_pzs8sxrjxfjjc/LocalCache/Roaming/Claude/config.json");
     Check(Vault.Present(Vault.Apps.First(x => x.Name == "Claude")).Contains("AppData/Local/Packages/Claude_pzs8sxrjxfjjc/LocalCache/Roaming/Claude"), "Store Claude shows up in the vault");
@@ -549,9 +577,188 @@ try
         Check(Safe.Count == 3, "v0.8.1: an open safe counts what is in Keep\\Safe now");
         Check(Del(Dry()).All(d => !d.StartsWith("Keep")), "an open safe is never wiped (it is in Keep)");
         Safe.Close("test");
+        // v0.11.1 W1: an empty Keep\Safe that Open did not make must never be packed over a closed safe
+        {
+            var pw = "correct horse battery safe";
+            var packed = File.ReadAllBytes(Safe.File_);
+            Directory.CreateDirectory(Path.Combine(fake, "Keep", "Safe"));
+            Check(!Safe.IsOpen, "v0.11.1: an empty Keep\\Safe that Open did not make is not an open safe");
+            Check(Safe.Close("test") == -1, "v0.11.1: closing refuses to pack an empty stray Keep\\Safe");
+            Check(File.ReadAllBytes(Safe.File_).SequenceEqual(packed) && !File.Exists(Safe.File_ + ".prev") && Safe.Count == 3, "v0.11.1: the closed safe and its file count are untouched, no .prev dropped");
+            Directory.CreateDirectory(Path.Combine(fake, "Keep", "Safe"));
+            Check(Safe.Open(pw) == 3 && There("Keep/Safe/third.txt"), "v0.11.1: Open still works when an empty stray Keep\\Safe is in the way");
+            Check(Safe.IsOpen, "v0.11.1: ...and then it is open");
+            // the user may empty the open safe on purpose: that is a real (empty) close
+            foreach (var f in Directory.GetFileSystemEntries(Path.Combine(fake, "Keep", "Safe"))) { if (Directory.Exists(f)) Directory.Delete(f, true); else File.Delete(f); }
+            Check(Safe.Close("test") == 0 && Safe.Count == 0 && !There("Keep/Safe"), "v0.11.1: an emptied safe (opened by Open) closes as an empty safe");
+            Safe.Open(pw);
+            Make("Keep/Safe/third.txt");
+            Safe.Close("test");
+
+            // a stray folder with only Explorer junk or empty subfolders is still stray
+            packed = File.ReadAllBytes(Safe.File_);
+            File.WriteAllText(Safe.File_ + ".prev", "old");
+            Directory.CreateDirectory(Path.Combine(fake, "Keep", "Safe", "a", "b"));
+            File.WriteAllText(Path.Combine(fake, "Keep", "Safe", "desktop.ini"), "x");
+            File.WriteAllText(Path.Combine(fake, "Keep", "Safe", "Thumbs.db"), "x");
+            Check(!Safe.IsOpen && Safe.Close("test") == -1, "v0.11.1: a stray Keep\\Safe with only desktop.ini, Thumbs.db and empty folders is not an open safe either");
+            Check(File.ReadAllBytes(Safe.File_).SequenceEqual(packed) && Safe.Count == 1 && File.Exists(Safe.File_ + ".prev") && !There("Keep/Safe"), "v0.11.1: safe and an existing .prev untouched; the junk folder is gone");
+            File.Delete(Safe.File_ + ".prev");
+
+            // a marker left behind when Keep\Safe was removed by hand must not make a later empty folder count as open
+            Safe.Open(pw);
+            Directory.Delete(Path.Combine(fake, "Keep", "Safe"), true);
+            Check(Safe.Close("test") == -1, "v0.11.1: Keep\\Safe taken away by hand: nothing to close");
+            Directory.CreateDirectory(Path.Combine(fake, "Keep", "Safe"));
+            Check(Safe.Close("test") == -1 && File.ReadAllBytes(Safe.File_).SequenceEqual(packed) && Safe.Count == 1, "v0.11.1: ...and an empty folder that appears later is still not packed over the safe");
+
+            // a safe left open by v0.11.0 has no marker: it must still close with its files
+            Safe.Open(pw);
+            File.Delete(Path.Combine(fake, ".amnesia", "safe", "open.marker"));
+            Make("Keep/Safe/new.txt");
+            Check(Safe.IsOpen && Safe.Close("test") == 2 && Safe.Count == 2, "v0.11.1: an open safe from before the marker (files, no marker) still closes with its files");
+
+            // a close that packed fine but could not delete everything must not be packed again as if it were open
+            if (OperatingSystem.IsWindows())
+            {
+                Safe.Open(pw);
+                using (var locked = new FileStream(Path.Combine(fake, "Keep", "Safe", "new.txt"), FileMode.Open, FileAccess.Read, FileShare.Read))
+                    Check(Safe.Close("test") == 2 && There("Keep/Safe/new.txt"), "v0.11.1: a locked file keeps part of the open copy after a good close");
+                packed = File.ReadAllBytes(Safe.File_);
+                Check(!Safe.IsOpen && Safe.Close("test") == -1 && File.ReadAllBytes(Safe.File_).SequenceEqual(packed), "v0.11.1: leftovers of a finished close are not packed over the full safe");
+                // the same again, but the next call is Open: it replaces the leftovers with the real contents
+                Safe.Open(pw);
+                using (var locked2 = new FileStream(Path.Combine(fake, "Keep", "Safe", "new.txt"), FileMode.Open, FileAccess.Read, FileShare.Read))
+                    Safe.Close("test");
+                Make("Keep/Safe/leftover.txt");
+                Check(!Safe.IsOpen && Safe.Open(pw) == 2 && Safe.IsOpen && !There("Keep/Safe/leftover.txt") && There("Keep/Safe/new.txt"), "v0.11.1: opening again replaces the leftovers with the real contents");
+                Safe.Close("test");
+            }
+        }
         Safe.Delete("correct horse battery safe");
         Check(!Safe.Exists && !There(".amnesia/safe"), "a deleted safe is gone");
         Check(Safe.Count == 0 && Conf.Get("SAFE_FILES") == null, "v0.8.1: and its file count too");
+    }
+
+    Console.WriteLine("v0.11.1 W2 wildcard Keep lines protect matches at any depth:");
+    {
+        var savedKeep = File.Exists(Conf2) ? File.ReadAllText(Conf2) : null;
+        foreach (var f in new[] { "Documents/Old/Deep/vault.kdbx", "Documents/Old/Deep/other.txt", "Documents/Old/junk.txt", "Documents/top.kdbx",
+                     "Documents/Plain/x.txt", "AppData/Local/Microsoft/Windows/Foo/pw.kdbx", "AppData/Local/Microsoft/Windows/Foo/cache.bin" })
+            Make(f);
+        File.WriteAllLines(Conf2, new[] { "*.kdbx" });
+        var rw = Dry();
+        var dw = Del(rw);
+        Check(!dw.Contains("Documents\\Old") && !dw.Contains("Documents\\Old\\Deep") && !dw.Contains("Documents"), "a folder that holds a deep match is not wiped whole");
+        Check(dw.Contains("Documents\\Old\\Deep\\other.txt") && dw.Contains("Documents\\Old\\junk.txt"), "the rest inside it still goes");
+        Check(!dw.Contains("Documents\\Old\\Deep\\vault.kdbx") && rw.Kept.Contains("Documents\\Old\\Deep\\vault.kdbx"), "the deep match stays and the preview lists it as kept");
+        Check(!dw.Contains("Documents\\top.kdbx") && rw.Kept.Contains("Documents\\top.kdbx"), "a top-level match still stays");
+        Check(dw.Contains("Documents\\Plain"), "a folder without any match still goes whole");
+        Check(!new CleanEngine().ExtraOk(Path.Combine(fake, "AppData", "Local", "Microsoft", "Windows", "Foo")), "the Extra list also leaves a folder that holds a match");
+        Check(new CleanEngine().ExtraOk(Path.Combine(fake, "AppData", "Local", "Microsoft", "Windows", "Foo", "cache.bin")), "...but may take a file that does not match");
+        // trace folders (Recent, ...): a match in them, or a folder holding one, is not swept either
+        Make("AppData/Roaming/Microsoft/Windows/Recent/mine.kdbx"); Make("AppData/Roaming/Microsoft/Windows/Recent/folder/deep.kdbx"); Make("AppData/Roaming/Microsoft/Windows/Recent/other.lnk");
+        var dt = Del(Dry());
+        Check(!dt.Contains("AppData\\Roaming\\Microsoft\\Windows\\Recent\\mine.kdbx") && !dt.Contains("AppData\\Roaming\\Microsoft\\Windows\\Recent\\folder") && dt.Contains("AppData\\Roaming\\Microsoft\\Windows\\Recent\\other.lnk"), "trace folders leave a wildcard match (and a folder holding one) alone");
+        var rr2 = Real("now");
+        Check(There("Documents/Old/Deep/vault.kdbx") && There("Documents/top.kdbx") && !There("Documents/Old/junk.txt") && !There("Documents/Plain"), "a real run keeps the matches at any depth and wipes the rest");
+        // follow-ups
+        // 1. an absurdly deep folder is never walked to the end (no stack overflow): it stays
+        var deepRel = "Documents/Deep" + string.Concat(Enumerable.Repeat("/d", 170));
+        Make(deepRel + "/x.txt");
+        File.WriteAllLines(Conf2, new[] { "*.kdbx" });
+        var dDeep = Del(Dry());
+        Check(!dDeep.Any(d => d.StartsWith("Documents\\Deep")), "v0.11.1: a folder nested far deeper than any real one is left alone (and the run does not crash)");
+        Directory.Delete(Path.Combine(fake, "Documents", "Deep"), true);
+        // 2. browser folders: the wildcard line keeps its match, the rest of the browser data still goes
+        Make("AppData/Local/Microsoft/Edge/User Data/Default/Bookmarks"); Make("AppData/Local/Microsoft/Edge/User Data/Default/History");
+        File.WriteAllLines(Conf2, new[] { "*/Bookmarks" });
+        var rEdge = Dry(); var dEdge = Del(rEdge);
+        Check(!dEdge.Contains("AppData\\Local\\Microsoft\\Edge") && !dEdge.Any(d => d.EndsWith("\\Bookmarks")) && rEdge.Kept.Contains("AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\Bookmarks"), "v0.11.1: a browser folder is not wiped whole when a Keep line matches inside it");
+        Check(dEdge.Contains("AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\History"), "v0.11.1: ...and the rest of it (history) still goes");
+        Directory.Delete(Path.Combine(fake, "AppData", "Local", "Microsoft", "Edge"), true);
+        // 3. what a trace folder keeps is in the preview too
+        File.WriteAllLines(Conf2, new[] { "*.kdbx" });
+        Make("AppData/Roaming/Microsoft/Windows/Recent/mine.kdbx");
+        Check(Dry().Kept.Contains("AppData\\Roaming\\Microsoft\\Windows\\Recent\\mine.kdbx"), "v0.11.1: a match kept in a trace folder is listed as kept in the preview");
+        if (savedKeep != null) File.WriteAllText(Conf2, savedKeep); else File.Delete(Conf2);
+        foreach (var d in new[] { "Documents/Old", "Documents/top.kdbx", "AppData/Local/Microsoft/Windows/Foo", "AppData/Roaming/Microsoft/Windows/Recent/mine.kdbx", "AppData/Roaming/Microsoft/Windows/Recent/folder" })
+        { var p = Path.Combine(fake, d); if (Directory.Exists(p)) Directory.Delete(p, true); else if (File.Exists(p)) File.Delete(p); }
+    }
+
+    Console.WriteLine("v0.11.1 W3 keep.conf and settings.conf are written whole or not at all:");
+    {
+        var settingsF = Path.Combine(fake, ".amnesia", "settings.conf");
+        var lastW3 = Conf2 + ".last";
+        var savedKeep = File.Exists(Conf2) ? File.ReadAllText(Conf2) : null;
+        var savedSettings = File.ReadAllText(settingsF);
+        var savedLast = File.Exists(lastW3) ? File.ReadAllText(lastW3) : null;
+        File.WriteAllLines(Conf2, new[] { "# list", "Documents/A", "Documents/B" });
+        // a write that cannot finish leaves the old file exactly as it was (the temp name is taken by a folder here)
+        Directory.CreateDirectory(Conf2 + ".tmp"); Directory.CreateDirectory(settingsF + ".tmp");
+        try { KeepList.Remove("Documents/A"); } catch { }
+        Check(File.ReadAllLines(Conf2).Length == 3, "a failed Remove leaves keep.conf as it was");
+        try { KeepList.Add("Documents/C"); } catch { }
+        Check(File.ReadAllLines(Conf2).Length == 3, "a failed Add leaves keep.conf as it was");
+        try { Conf.Set("W3KEY", "1"); } catch { }
+        Check(File.ReadAllText(settingsF) == savedSettings, "a failed settings write leaves settings.conf as it was");
+        Directory.Delete(Conf2 + ".tmp"); Directory.Delete(settingsF + ".tmp");
+        Check(KeepList.Add("Documents/C") == "Documents/C" && KeepList.Paths().Count == 3 && !File.Exists(Conf2 + ".tmp"), "Add works and leaves no temp file");
+        Conf.Set("W3KEY", "1");
+        Check(Conf.Get("W3KEY") == "1" && !File.Exists(settingsF + ".tmp"), "settings write works and leaves no temp file");
+        Conf.Set("W3KEY", null);
+        // taking the last line off never leaves a zero byte file (that would read as "broken")
+        File.WriteAllLines(Conf2, new[] { "Documents/A" });
+        Check(KeepList.Remove("Documents/A") && new FileInfo(Conf2).Length > 0 && KeepList.Check(out _) == null && KeepList.Paths().Count == 0, "removing the last line leaves a readable list with no lines, not a zero byte file");
+        // a zero byte keep.conf where there was a list stops the cleanup, like a missing one
+        File.WriteAllLines(lastW3, new[] { "Documents/A" });
+        File.WriteAllBytes(Conf2, Array.Empty<byte>());
+        Check(KeepList.Check(out _) == "unreadable", "a zero byte keep.conf with a good last copy is not trusted");
+        Check(Dry().Skipped == "keeplist-unreadable", "...the dry run says so");
+        var stopW3 = Real("now");
+        Check(stopW3.Skipped == "keeplist-unreadable" && File.ReadAllText(Conf2) == File.ReadAllText(lastW3), "...the real run stops, deletes nothing and puts the last good copy back");
+        File.WriteAllBytes(Conf2, Array.Empty<byte>());
+        File.WriteAllLines(lastW3, new[] { "# nothing kept" });
+        Check(KeepList.Check(out _) == null, "a zero byte keep.conf is fine when the last copy kept nothing either");
+        File.Delete(lastW3);
+        Check(KeepList.Check(out _) == null, "...and on a new install (no last copy)");
+        if (savedKeep != null) File.WriteAllText(Conf2, savedKeep); else File.Delete(Conf2);
+        File.WriteAllText(settingsF, savedSettings);
+        if (savedLast != null) File.WriteAllText(lastW3, savedLast);
+    }
+
+    Console.WriteLine("v0.11.1 W4 Keep lines written as full paths or with ~, and a relative KEEP_DIR:");
+    {
+        var settingsF = Path.Combine(fake, ".amnesia", "settings.conf");
+        var savedKeep = File.Exists(Conf2) ? File.ReadAllText(Conf2) : null;
+        var savedSettings = File.ReadAllText(settingsF);
+        foreach (var f in new[] { "Documents/Tilde/a.txt", "Documents/Abs/a.txt", "Documents/Fwd/a.txt", "Documents/Plain/a.txt", "Documents/RelKeep/a.txt", "Documents/Other/a.txt", "Documents/Slash/a.txt", "Documents/EnvA/a.txt", "Documents/EnvB/a.txt" }) Make(f);
+        File.WriteAllLines(Conf2, new[] { "~/Documents/Tilde", fake + "\\Documents\\Abs", fake.Replace('\\', '/') + "/Documents/Fwd", "D:\\Elsewhere\\X", "../Outside", "~",
+            "//Documents/Slash", "%USERPROFILE%\\Documents\\EnvA", "$HOME/Documents/EnvB" });
+        var pw4 = KeepList.Paths();
+        Check(pw4.SequenceEqual(new[] { "Documents/Tilde", "Documents/Abs", "Documents/Fwd", "Documents/Slash", "Documents/EnvA", "Documents/EnvB" }), "v0.11.1: ~/X, %USERPROFILE%/X, $HOME/X and full paths inside the user folder become profile-relative lines; a doubled slash still protects as before; the others are not applied");
+        Check(KeepList.Ignored().Count == 3, "v0.11.1: lines that can never match (other drive, .., ~ alone) are reported");
+        var r4 = Dry(); var d4 = Del(r4);
+        Check(r4.Kept.Contains("Documents\\Tilde") && r4.Kept.Contains("Documents\\Abs") && r4.Kept.Contains("Documents\\Fwd") && r4.Kept.Contains("Documents\\Slash") && r4.Kept.Contains("Documents\\EnvA") && r4.Kept.Contains("Documents\\EnvB") && d4.Contains("Documents\\Plain"), "v0.11.1: such lines now protect what they name");
+        Check(KeepList.Add("Documents/X/..") == null && KeepList.Add("../x") == null && KeepList.Paths().Count == 6, "v0.11.1: a line with .. is not written to the list");
+        Check(Vault.AddFolder("~/../x") == null && Vault.AddFolder("../x") == null, "v0.11.1: the vault folder list refuses a path that climbs out too");
+        // KEEP_DIR written by hand without ~/ or a full path is a folder in the user folder
+        var sl = File.ReadAllLines(settingsF).Where(l => !l.StartsWith("KEEP_DIR=")).Append("KEEP_DIR=Documents\\RelKeep").ToArray();
+        File.WriteAllLines(settingsF, sl);
+        Check(Conf.KeepRel == "Documents/RelKeep" && Conf.KeepDir == Path.Combine(fake, "Documents", "RelKeep"), "v0.11.1: a hand-written relative KEEP_DIR means a folder in the user folder");
+        File.WriteAllLines(Conf2, new[] { "# nothing" });
+        var r4b = Dry();
+        Check(r4b.Kept.Contains("Documents\\RelKeep") && Del(r4b).Contains("Documents\\Other"), "v0.11.1: ...and it keeps its protection");
+        File.WriteAllLines(settingsF, sl.Where(l => !l.StartsWith("KEEP_DIR=")).Append("KEEP_DIR=..\\Elsewhere"));
+        Check(Conf.KeepRel == "Keep", "v0.11.1: a KEEP_DIR that climbs out of the user folder falls back to Keep");
+        foreach (var odd in new[] { "./AppData/Roaming", "./.amnesia", "Documents/./../AppData" })
+        {
+            File.WriteAllLines(settingsF, sl.Where(l => !l.StartsWith("KEEP_DIR=")).Append("KEEP_DIR=" + odd));
+            Check(Conf.KeepRel == "Keep", "v0.11.1: KEEP_DIR=" + odd + " does not slip past the AppData and .amnesia rules");
+        }
+        foreach (var d in new[] { "Tilde", "Abs", "Fwd", "Plain", "RelKeep", "Other", "Slash", "EnvA", "EnvB" }) Directory.Delete(Path.Combine(fake, "Documents", d), true);
+        File.WriteAllText(settingsF, savedSettings);
+        if (savedKeep != null) File.WriteAllText(Conf2, savedKeep); else File.Delete(Conf2);
     }
 
     Console.WriteLine("v0.8 Store app data (opt-in):");
@@ -612,6 +819,199 @@ try
     Check(trace81.Contains("new app folders moved to the trash for 3 days: 2") && !trace81.Contains("ZZTesApp"), "trace.log says so, without names");
     Real("login");
     Check(appTrash.All(Directory.Exists) && !Directory.GetDirectories(Path.Combine(fake, ".amnesia-trash")).Any(d => !d.EndsWith("-apps")), "the sign in check empties the normal trash and keeps these 3 days");
+
+    Console.WriteLine("v0.11.1 W5 a new app's folder that could not go to the 3-day trash is not deleted:");
+    {
+        var trashP = Path.Combine(fake, ".amnesia-trash");
+        if (Directory.Exists(trashP)) Directory.Delete(trashP, true);
+        File.WriteAllText(trashP, "blocked"); // a file where the trash folder should be: nothing can be moved into it
+        Make("AppData/Local/ZZTesApp2/app.exe"); Make("AppData/Local/ZZTesApp2/lib.dll");
+        var engW5 = new CleanEngine { Fast = true, NewAppFolders = () => new[] { F("AppData/Local/ZZTesApp2") } };
+        var rW5 = engW5.Run("logout", false);
+        Check(There("AppData/Local/ZZTesApp2/app.exe") && There("AppData/Local/ZZTesApp2/lib.dll"), "v0.11.1: the folder stays whole when the safety-net move failed");
+        Check(rW5.Failed >= 1, "v0.11.1: ...and counts as could not be deleted");
+        File.Delete(trashP);
+        if (Directory.Exists(Path.Combine(fake, "AppData", "Local", "ZZTesApp2"))) Directory.Delete(Path.Combine(fake, "AppData", "Local", "ZZTesApp2"), true);
+    }
+
+    Console.WriteLine("v0.11.1 W7 the trash is emptied on Turn Off and on uninstall:");
+    {
+        var trashP = Path.Combine(fake, ".amnesia-trash");
+        if (Directory.Exists(trashP)) Directory.Delete(trashP, true);
+        Directory.CreateDirectory(Path.Combine(trashP, "20260101-000000", "Documents"));
+        File.WriteAllText(Path.Combine(trashP, "20260101-000000", "Documents", "wiped.txt"), "x");
+        Directory.CreateDirectory(Path.Combine(trashP, "20260101-000001-apps", "AppData"));
+        File.WriteAllText(Path.Combine(trashP, "20260101-000001-apps", "AppData", "app.exe"), "x");
+        CleanEngine.PurgeTrash(false);
+        Check(!Directory.Exists(Path.Combine(trashP, "20260101-000000")) && Directory.Exists(Path.Combine(trashP, "20260101-000001-apps")), "Turn Off: wiped files are gone, a new app's folder keeps its 3 days");
+        CleanEngine.PurgeTrash(true);
+        Check(!Directory.Exists(trashP), "uninstall: everything in the trash is gone, and the trash folder too");
+        CleanEngine.PurgeTrash(true);
+        Check(!Directory.Exists(trashP), "...and an empty or missing trash is fine");
+    }
+
+    Console.WriteLine("v0.11.1 W8 an update is only installed when it is newer:");
+    Check(UpdateSig.IsNewer("0.12.0", "0.11.1") && UpdateSig.IsNewer("1.0", "0.99.9"), "a newer version counts");
+    Check(!UpdateSig.IsNewer("0.11.1", "0.11.1") && !UpdateSig.IsNewer("0.10.0", "0.11.1"), "the same or an older (replayed) release does not");
+    Check(!UpdateSig.IsNewer("not-a-version", "0.11.1") && !UpdateSig.IsNewer("0.12.0", "x"), "a version that cannot be read does not");
+
+    Console.WriteLine("v0.11.1 follow-up fixes:");
+    {
+        var settingsF = Path.Combine(fake, ".amnesia", "settings.conf");
+        var savedSettings = File.ReadAllText(settingsF);
+        var savedKeep = File.Exists(Conf2) ? File.ReadAllText(Conf2) : null;
+        var lastA = Conf2 + ".last";
+        var savedLast = File.Exists(lastA) ? File.ReadAllText(lastA) : null;
+        var sl = File.ReadAllLines(settingsF).Where(l => !l.StartsWith("KEEP_DIR=")).ToArray();
+        // 1. a KEEP_DIR with .. that still lands inside the user folder is that folder (v0.9 behaviour), never a fall back to Keep
+        Make("Stuff/a.txt"); Make("Documents/Gone/a.txt");
+        File.WriteAllLines(settingsF, sl.Append("KEEP_DIR=~/Documents/../Stuff"));
+        File.WriteAllLines(Conf2, new[] { "# nothing" });
+        Check(Conf.KeepRel == "Stuff" && Conf.KeepDir == Path.Combine(fake, "Stuff"), "follow-up 1: KEEP_DIR=~/Documents/../Stuff is the folder Stuff");
+        var rA1 = Dry();
+        Check(rA1.Kept.Contains("Stuff") && !Del(rA1).Contains("Stuff") && Del(rA1).Contains("Documents\\Gone"), "follow-up 1: ...and Stuff is protected, not wiped");
+        File.WriteAllLines(settingsF, sl.Append("KEEP_DIR=Documents/../../Outside"));
+        Check(Conf.KeepRel == "Keep", "follow-up 1: a path that climbs out of the user folder is still Keep");
+        File.WriteAllLines(settingsF, sl.Append("KEEP_DIR=Documents/./../AppData/X"));
+        Check(Conf.KeepRel == "Keep", "follow-up 1: ...and one that resolves into AppData too");
+        File.WriteAllText(settingsF, savedSettings);
+        Directory.Delete(Path.Combine(fake, "Stuff"), true); Directory.Delete(Path.Combine(fake, "Documents", "Gone"), true);
+
+        // 2. the "leftover" state: nothing is deleted before the password is right; a file saved there later is not lost; no unpacked copy stays
+        foreach (var old in Directory.GetDirectories(Path.Combine(fake, "Keep"), "Safe recovered*")) Directory.Delete(old, true); // left by an earlier test
+        var pw = "correct horse battery safe";
+        Safe.Create(pw);
+        Make("Keep/Safe/a.txt");
+        Safe.Close("test");
+        var markerF = Path.Combine(fake, ".amnesia", "safe", "open.marker");
+        Directory.CreateDirectory(Path.Combine(fake, "Keep", "Safe"));
+        Make("Keep/Safe/a.txt"); Make("Keep/Safe/new-after.txt");
+        Make("Keep/Safe/old-copied.txt"); // copied in with an old date: dates cannot tell it from the leftover copy
+        var aTxt = Path.Combine(fake, "Keep", "Safe", "a.txt");
+        File.SetLastWriteTimeUtc(aTxt, DateTime.UtcNow.AddMinutes(-20));
+        File.SetLastWriteTimeUtc(Path.Combine(fake, "Keep", "Safe", "old-copied.txt"), DateTime.UtcNow.AddMinutes(-30));
+        // the close wrote down what was left (path, size, date): only exactly that is the packed copy
+        File.WriteAllLines(markerF, new[] { "leftover", "a.txt|" + new FileInfo(aTxt).Length + "|" + new FileInfo(aTxt).LastWriteTimeUtc.Ticks });
+        try { Safe.Open("wrong wrong wrong"); Check(false, "follow-up 2: wrong password"); } catch (VaultError) { }
+        Check(There("Keep/Safe/a.txt") && There("Keep/Safe/new-after.txt"), "follow-up 2: a wrong password deletes nothing");
+        Check(Safe.Open(pw) == 1 && There("Keep/Safe/a.txt") && !There("Keep/Safe/new-after.txt"), "follow-up 2: the right password replaces the leftovers with the real contents");
+        var recovered = Directory.GetDirectories(Path.Combine(fake, "Keep"), "Safe recovered*");
+        Check(recovered.Length == 1 && File.Exists(Path.Combine(recovered[0], "new-after.txt")) && File.Exists(Path.Combine(recovered[0], "old-copied.txt")) && !File.Exists(Path.Combine(recovered[0], "a.txt")),
+            "follow-up 2: a file that is not exactly the packed copy (new, or copied in with an old date) is moved to 'Safe recovered', not deleted");
+        Safe.Close("test");
+        foreach (var d in recovered) Directory.Delete(d, true);
+        File.WriteAllText(Path.Combine(fake, "Keep", "Safe"), "in the way");
+        try { Safe.Open(pw); Check(false, "follow-up 2: Open with something in the way"); } catch (Exception) { }
+        Check(!Directory.Exists(Path.Combine(fake, "Keep", "Safe.opening")), "follow-up 2: a failed Open leaves no unpacked copy behind");
+        File.Delete(Path.Combine(fake, "Keep", "Safe"));
+
+        // 2b. the list of what is left is taken when each file is read (a file saved while the rest is being packed is not "the packed copy")
+        if (OperatingSystem.IsWindows())
+        {
+            foreach (var old in Directory.GetDirectories(Path.Combine(fake, "Keep"), "Safe recovered*")) Directory.Delete(old, true);
+            Safe.Open(pw);
+            Make("Keep/Safe/busy.txt");
+            var busyPath = Path.Combine(fake, "Keep", "Safe", "busy.txt");
+            FileStream? h = null;
+            try
+            {
+                // after the pack read the file, a program opens it, saves into it and keeps it open (so it cannot be deleted)
+                Safe.AfterPackTest = () => { h = new FileStream(busyPath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite); h.Seek(0, SeekOrigin.End); h.Write(System.Text.Encoding.UTF8.GetBytes(" saved while packing")); h.Flush(); };
+                Safe.Close("test");
+            }
+            finally { Safe.AfterPackTest = null; h?.Dispose(); }
+            Check(There("Keep/Safe/busy.txt") && !Safe.IsOpen, "follow-up 2b: a file in use keeps part of the open copy after a close (leftover)");
+            Check(Safe.Open(pw) >= 1, "follow-up 2b: Open replaces the leftovers");
+            var rec2 = Directory.GetDirectories(Path.Combine(fake, "Keep"), "Safe recovered*");
+            Check(rec2.Length == 1 && File.Exists(Path.Combine(rec2[0], "busy.txt")) && File.ReadAllText(Path.Combine(rec2[0], "busy.txt")).Contains("saved while packing"), "follow-up 2b: the version saved while packing is moved to 'Safe recovered', not deleted");
+            Safe.Close("test");
+            foreach (var d in rec2) Directory.Delete(d, true);
+        }
+
+        // 2c. a marker that cannot be read or has nothing readable in it never makes the folder "open" (a partial copy must not be packed over the safe)
+        {
+            Safe.Open(pw);
+            var before2c = File.ReadAllBytes(Safe.File_);
+            File.WriteAllText(markerF, "");
+            Check(!Safe.IsOpen && Safe.Close("test") == -1 && File.ReadAllBytes(Safe.File_).SequenceEqual(before2c), "follow-up 2c: an empty marker is not 'open': nothing is packed over the safe");
+            if (OperatingSystem.IsWindows())
+            {
+                using (new FileStream(markerF, FileMode.Open, FileAccess.Read, FileShare.None))
+                    Check(!Safe.IsOpen && Safe.Close("test") == -1 && File.ReadAllBytes(Safe.File_).SequenceEqual(before2c), "follow-up 2c: a marker that cannot be read is not 'open' either");
+            }
+            File.WriteAllText(markerF, "open");
+            // the marker cannot be rewritten: the close must leave the open copy whole (nothing deleted)
+            File.SetAttributes(markerF, FileAttributes.ReadOnly);
+            try { Safe.Close("test"); } catch (Exception) { }
+            File.SetAttributes(markerF, FileAttributes.Normal);
+            Check(There("Keep/Safe/a.txt") && Safe.IsOpen, "follow-up 2d: if the state cannot be written down, the open copy is not deleted");
+            Safe.Close("test");
+        }
+
+        // 2e. links or cloud placeholders in the open copy are never packed: the open copy stays instead of being deleted
+        if (OperatingSystem.IsWindows())
+        {
+            Safe.Open(pw);
+            Directory.CreateDirectory(Path.Combine(fake, "Documents", "LinkTarget")); Make("Documents/LinkTarget/t.txt");
+            var link = Path.Combine(fake, "Keep", "Safe", "lnk");
+            using (var mk = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", "/c mklink /J \"" + link + "\" \"" + Path.Combine(fake, "Documents", "LinkTarget") + "\"") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true })!) { mk.StandardOutput.ReadToEnd(); mk.WaitForExit(); }
+            if (Directory.Exists(link))
+            {
+                Safe.Close("test");
+                Check(Directory.Exists(Path.Combine(fake, "Keep", "Safe")) && Safe.IsOpen && File.Exists(Path.Combine(fake, "Documents", "LinkTarget", "t.txt")), "follow-up 2e: a link inside the open copy keeps the copy open (it was not packed), and its target is untouched");
+                Directory.Delete(link); // removes the junction only
+                Safe.Close("test");
+            }
+            Directory.Delete(Path.Combine(fake, "Documents", "LinkTarget"), true);
+        }
+
+        // 3. an open safe from before the marker that cannot be listed (locked Keep) still counts as open
+        if (OperatingSystem.IsWindows())
+        {
+            Safe.Open(pw);
+            File.Delete(markerF);
+            Make("Keep/Safe/legacy.txt");
+            var dirA = Path.Combine(fake, "Keep", "Safe");
+            void Icacls(string args) { using var pr = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("icacls", args) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true })!; pr.StandardOutput.ReadToEnd(); pr.WaitForExit(); }
+            Icacls("\"" + dirA + "\" /deny \"" + Environment.UserName + "\":(RD)");
+            var packedBefore = File.ReadAllBytes(Safe.File_);
+            try
+            {
+                Check(Safe.IsOpen, "follow-up 3: an open safe whose folder cannot be listed is still open (not mistaken for a stray folder)");
+                try { Safe.Close("test"); } catch (Exception) { }
+                Check(File.ReadAllBytes(Safe.File_).SequenceEqual(packedBefore) && Safe.Count != 0, "follow-up 3: closing a folder that cannot be listed never packs it empty over the safe");
+            }
+            finally { Icacls("\"" + dirA + "\" /remove:d \"" + Environment.UserName + "\""); }
+            Safe.Close("test");
+        }
+        Safe.Delete(pw);
+
+        // KEEP_DIR names Windows reads as another name: trailing dots and spaces are dropped, a name that only starts like AppData is its own
+        File.WriteAllLines(settingsF, sl.Append("KEEP_DIR=~/Stuff."));
+        Check(Conf.KeepRel == "Stuff", "follow-up: KEEP_DIR=~/Stuff. is the folder Stuff (Windows drops the trailing dot)");
+        File.WriteAllLines(settingsF, sl.Append("KEEP_DIR=~/Docs/..."));
+        Check(Conf.KeepRel == "Docs", "follow-up: a segment of only dots is not a folder name");
+        File.WriteAllLines(settingsF, sl.Append("KEEP_DIR=~/AppDataX"));
+        Check(Conf.KeepRel == "AppDataX", "follow-up: AppDataX is not AppData");
+        File.WriteAllLines(settingsF, sl.Append("KEEP_DIR=~/appdata/Roaming/Y"));
+        Check(Conf.KeepRel == "Keep", "follow-up: AppData (any case) still falls back to Keep");
+        File.WriteAllText(settingsF, savedSettings);
+
+        // 4. the app itself never writes a zero byte keep.conf; a zero byte one with a good last copy is put back
+        File.WriteAllLines(Conf2, new[] { "Documents/A", "Documents/B" });
+        File.WriteAllLines(lastA, new[] { "Documents/A", "Documents/B" });
+        var pv = Modes.Preview("custom", null, new[] { "Documents/A", "Documents/B" }, dryRun: false);
+        Check(pv.Problem == null && Modes.Commit(pv) && new FileInfo(Conf2).Length > 0 && KeepList.Check(out _) == null, "follow-up 4: taking every line off in a mode switch leaves a readable list, not a zero byte file");
+        File.WriteAllBytes(Conf2, Array.Empty<byte>());
+        File.WriteAllLines(lastA, new[] { "Documents/A", "Documents/B" });
+        Check(KeepList.Add("Documents/C") == "Documents/C" && KeepList.Paths().Contains("Documents/A") && KeepList.Paths().Contains("Documents/B"), "follow-up 5: adding a line to a zero byte keep.conf puts the last good copy back first");
+        File.WriteAllBytes(Conf2, Array.Empty<byte>());
+        var stopA = Real("now");
+        Check(stopA.Skipped == "keeplist-unreadable" && new FileInfo(Conf2).Length > 0 && KeepList.Paths().Contains("Documents/B"), "follow-up 5: a stopped run puts the last good copy back, so the next cleanup has its list");
+
+        if (savedKeep != null) File.WriteAllText(Conf2, savedKeep); else File.Delete(Conf2);
+        if (savedLast != null) File.WriteAllText(lastA, savedLast); else File.Delete(lastA);
+    }
 
     Console.WriteLine("v0.8.1 new apps list:");
     Check(NewApps.BaseName("Surfshark 6.20.0999") == "Surfshark" && NewApps.BaseName("Antigravity 2.24.0") == "Antigravity" && NewApps.BaseName("7-Zip 24.08 (x64)") == "7-Zip" && NewApps.BaseName("Notepad++") == "Notepad++", "the version is not part of the name");

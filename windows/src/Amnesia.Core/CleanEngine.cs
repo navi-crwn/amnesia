@@ -259,7 +259,7 @@ public sealed class CleanEngine
                 Home.History("stopped", $"{mode} {r.Skipped}");
                 T($"stop: keep list {ks}");
                 // a missing list comes back from its last good copy, so the next cleanup has it again
-                if (ks == "missing" && KeepList.RestoreLast()) T("keep list restored from the last good copy");
+                if (ks is "missing" or "unreadable" && KeepList.RestoreLast()) T("keep list restored from the last good copy");
             }
             r.Seconds = watch.Elapsed.TotalSeconds;
             return r;
@@ -296,8 +296,14 @@ public sealed class CleanEngine
             if (!Fast) bytes += SizeOf(full);
             // v0.8.1: a new app's program folder waits 3 days in the trash (see NewAppFolders).
             // v0.9: when that list could not be made, every folder in AppData waits 3 days too (could not tell = careful)
-            if ((appDirs.Count > 0 && IsAppDir(i.Path) || appsUnknown && i.Kind == "folder" && i.Path.StartsWith("AppData\\", StringComparison.OrdinalIgnoreCase))
-                && ToTrash(full)) { moved++; apps++; continue; }
+            // v0.11.1: when that move fails (a file in use) the folder stays where it is, whole, and counts as "could not be
+            // deleted"; it used to fall through to the normal delete, which took the files that were not in use
+            if (appDirs.Count > 0 && IsAppDir(i.Path) || appsUnknown && i.Kind == "folder" && i.Path.StartsWith("AppData\\", StringComparison.OrdinalIgnoreCase))
+            {
+                if (ToTrash(full)) { moved++; apps++; }
+                else { failed++; Busy(i.Path); }
+                continue;
+            }
             // move = instant (same disk). The folder structure is kept in the trash so names never collide.
             var dest = Path.Combine(batch, i.Path.Replace('\\', Sep));
             try
@@ -366,7 +372,7 @@ public sealed class CleanEngine
     /// <summary>Makes the list: what goes, what stays. Touches nothing.</summary>
     void Scan(string mode, Action<string> T)
     {
-        patterns.Clear(); items.Clear(); kept.Clear(); busyAreas.Clear();
+        patterns.Clear(); items.Clear(); kept.Clear(); busyAreas.Clear(); holdsWild.Clear();
         Patterns();
         Visit("");
         AddBrowsers();
@@ -535,7 +541,49 @@ public sealed class CleanEngine
             var ps = p.Split('/');
             if (ps.Length > rs.Length && Wild.Like(rel, string.Join('/', ps[..rs.Length]))) return true;
         }
-        return false;
+        return HoldsWildMatch(rel);
+    }
+
+    // v0.11.1 (W2): a Keep line with * ("*.kdbx", "Documents/Work/*.pdf") protects what it matches at any depth, as Wild.Like
+    // lets * stand for / too. So a folder that holds such a match somewhere inside is looked into, never wiped whole.
+    // Only the user's own lines count here (the built-in ones are fixed places), and a folder that the line's fixed start
+    // cannot reach is not searched. The answer is remembered per folder for one run.
+    readonly Dictionary<string, bool> holdsWild = new(StringComparer.OrdinalIgnoreCase);
+
+    bool HoldsWildMatch(string rel)
+    {
+        var wild = userKeep.Where(p => p.Contains('*') || p.Contains('?')).Where(p => CanReach(rel, p)).ToList();
+        if (wild.Count == 0) return false;
+        if (Depth(rel) > MaxDepth) return true; // far deeper than any real folder: not walked to the end, it stays
+        if (holdsWild.TryGetValue(rel, out var known)) return known;
+        holdsWild[rel] = false; // loops (a folder inside itself) end here
+        bool found = false;
+        try
+        {
+            foreach (var c in new DirectoryInfo(Home.Full(rel)).EnumerateFileSystemInfos())
+            {
+                if (c.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
+                var r = $"{rel}/{c.Name}";
+                if (wild.Any(p => Wild.Like(r, p)) || (c is DirectoryInfo && HoldsWildMatch(r))) { found = true; break; }
+            }
+        }
+        catch { found = true; } // could not look inside = it stays (and is looked at again next time)
+        holdsWild[rel] = found;
+        return found;
+    }
+
+    // v0.11.1: folders nested deeper than this are never walked (a loop of copies could be thousands deep and overflow the
+    // stack); they stay. Windows paths are 260 characters unless long paths are on, so real folders are far above this.
+    const int MaxDepth = 150;
+    static int Depth(string rel) => rel.Count(ch => ch == '/') + 1;
+
+    // can anything inside folder rel match this line? Its fixed start (up to the first * or ?) has to agree with rel
+    static bool CanReach(string rel, string pattern)
+    {
+        int w = pattern.IndexOfAny(new[] { '*', '?' });
+        var fixedStart = w < 0 ? pattern : pattern[..w];
+        var inside = rel + "/";
+        return fixedStart.StartsWith(inside, StringComparison.OrdinalIgnoreCase) || inside.StartsWith(fixedStart, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>v0.5: may the Extra cleaning list delete this (full path)? Only inside ExtraZones, never ExtraNever,
@@ -548,10 +596,14 @@ public sealed class CleanEngine
         if (!ExtraZones.Any(z => rel.StartsWith(z, StringComparison.OrdinalIgnoreCase))) return false;
         if (ExtraNever.Any(n => Wild.Like(rel, n) || Wild.Like(rel, n + "/*") || Wild.Like(n, rel + "/*"))) return false;
         if (UserKept(rel)) return false;
+        if (Directory.Exists(full) && HoldsWildMatch(rel)) return false; // v0.11.1: a folder that holds a wildcard match
         var keepRel = Conf.KeepRel;
         if (keepRel.Length > 0 && (Wild.Like(rel, keepRel + "/*") || rel.Equals(keepRel, StringComparison.OrdinalIgnoreCase))) return false;
         return true;
     }
+
+    // v0.11.1: a child of a trace folder stays when your Keep List names it, or a folder that holds a wildcard match
+    bool KeptChild(string rel, FileSystemInfo c) => UserKept(rel) || (c is DirectoryInfo && HoldsWildMatch(rel));
 
     bool UserKept(string rel) => userKeep.Any(p => Wild.Like(rel, p) || Wild.Like(rel, p + "/*") || Wild.Like(p, rel + "/*"));
 
@@ -572,8 +624,30 @@ public sealed class CleanEngine
             if (cloudUnknown && rel.Length == 0 && c is DirectoryInfo && !c.Name.StartsWith('.')
                 && !Containers.Contains(c.Name, StringComparer.OrdinalIgnoreCase)) { kept.Add(Win(r)); continue; }
             bool isDir = c is DirectoryInfo;
-            if (isDir && (Containers.Contains(r, StringComparer.OrdinalIgnoreCase) || HoldsKept(r) || HasVmInside(r, c))) { Visit(r); continue; }
+            if (isDir && (Containers.Contains(r, StringComparer.OrdinalIgnoreCase) || HoldsKept(r) || HasVmInside(r, c)))
+            {
+                if (Depth(r) > MaxDepth) { kept.Add(Win(r)); continue; } // v0.11.1: see MaxDepth
+                Visit(r); continue;
+            }
             items.Add(new CleanItem(Win(r), isDir ? "folder" : "file"));
+        }
+    }
+
+    // v0.11.1: like Visit, but for a browser folder: it sits inside AppData\Local\Microsoft (which stays as a whole), so only
+    // your own Keep lines decide here. What matches stays, a folder that holds a match is looked into, the rest goes.
+    void VisitBrowser(string rel)
+    {
+        IEnumerable<FileSystemInfo> list;
+        try { list = new DirectoryInfo(Home.Full(rel)).EnumerateFileSystemInfos().ToList(); } catch { kept.Add(Win(rel)); return; }
+        foreach (var c in list.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            if (c.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
+            var r = $"{rel}/{c.Name}";
+            bool isDir = c is DirectoryInfo;
+            if (UserKept(r)) kept.Add(Win(r));
+            else if (isDir && Depth(r) > MaxDepth) kept.Add(Win(r));
+            else if (isDir && HoldsWildMatch(r)) VisitBrowser(r);
+            else items.Add(new CleanItem(Win(r), isDir ? "folder" : "file"));
         }
     }
 
@@ -583,6 +657,8 @@ public sealed class CleanEngine
         {
             if (!Directory.Exists(Home.Full(d))) continue;
             if (UserKept(d)) { kept.Add(Win(d)); continue; }
+            // v0.11.1: a Keep line with * that matches inside the browser folder: look inside, so only the rest goes
+            if (HoldsWildMatch(d)) { VisitBrowser(d); continue; }
             items.Add(new CleanItem(Win(d), "folder"));
         }
     }
@@ -616,6 +692,7 @@ public sealed class CleanEngine
                 foreach (var c in list.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
                 {
                     if (c.Attributes.HasFlag(FileAttributes.ReparsePoint) || c.Name.Equals("desktop.ini", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (KeptChild($"{d}/{c.Name}", c)) { kept.Add(Win($"{d}/{c.Name}")); continue; } // v0.11.1: your Keep List also covers what is in a trace folder
                     items.Add(new CleanItem(Win($"{d}/{c.Name}"), "trace"));
                 }
             }
@@ -632,8 +709,11 @@ public sealed class CleanEngine
                     IEnumerable<FileSystemInfo> list;
                     try { list = new DirectoryInfo(Home.Full(d)).EnumerateFileSystemInfos().ToList(); } catch { continue; }
                     foreach (var c in list.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
-                        if (!c.Attributes.HasFlag(FileAttributes.ReparsePoint) && !UserKept($"{d}/{c.Name}"))
-                            items.Add(new CleanItem(Win($"{d}/{c.Name}"), "trace"));
+                        if (!c.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                        {
+                            if (KeptChild($"{d}/{c.Name}", c)) kept.Add(Win($"{d}/{c.Name}"));
+                            else items.Add(new CleanItem(Win($"{d}/{c.Name}"), "trace"));
+                        }
                 }
             }
         foreach (var f in TraceFiles)
@@ -804,14 +884,19 @@ public sealed class CleanEngine
 
     /// <summary>Empties .amnesia-trash. Anything Windows still holds open is tried again next time.
     /// v0.8: program folders ("…-apps") stay for 3 days first.</summary>
-    static void Purge()
+    static void Purge() => PurgeTrash(false);
+
+    /// <summary>v0.11.1: the same, from outside the sign in check: Turn Off (everything is emptied except a new app's folder
+    /// that has not had its 3 days yet) and the uninstaller (everything = true: nothing is left behind). The trash holds what
+    /// the last sign outs moved away, so it must not outlive the app.</summary>
+    public static void PurgeTrash(bool everything)
     {
         if (!Directory.Exists(Home.Trash)) return;
         // v0.9: a .amnesia-trash that is a link (or sits in one) is never emptied: it would empty another folder
         try { if ((File.GetAttributes(Home.Trash) & FileAttributes.ReparsePoint) != 0) return; } catch { return; }
         foreach (var c in new DirectoryInfo(Home.Trash).EnumerateFileSystemInfos().ToList())
         {
-            if (c.Name.EndsWith("-apps", StringComparison.OrdinalIgnoreCase) && DateTime.Now - c.CreationTime < AppsKeptFor) continue;
+            if (!everything && c.Name.EndsWith("-apps", StringComparison.OrdinalIgnoreCase) && DateTime.Now - c.CreationTime < AppsKeptFor) continue;
             if (Refuse(c.FullName) == null) Delete(c.FullName);
         }
         try { if (!Directory.EnumerateFileSystemEntries(Home.Trash).Any()) Directory.Delete(Home.Trash); } catch { }

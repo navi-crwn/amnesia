@@ -34,8 +34,21 @@ public static class Conf
             var lines = System.IO.File.Exists(File) ? System.IO.File.ReadAllLines(File).ToList() : new List<string>();
             lines.RemoveAll(l => l.StartsWith(key + "=", StringComparison.Ordinal));
             if (value != null) lines.Add($"{key}={value}");
-            System.IO.File.WriteAllLines(File, lines);
+            WriteAtomic(File, lines);
         }
+    }
+
+    /// <summary>v0.11.1: writes a whole text file or not at all: the new text goes to a temp file next to it, which then
+    /// replaces the old one in one step. A crash or a full disk in the middle leaves the old file as it was.</summary>
+    public static void WriteAtomic(string path, IEnumerable<string> lines)
+    {
+        var tmp = path + ".tmp";
+        try
+        {
+            System.IO.File.WriteAllLines(tmp, lines);
+            System.IO.File.Move(tmp, path, overwrite: true);
+        }
+        catch { try { if (System.IO.File.Exists(tmp)) System.IO.File.Delete(tmp); } catch { } throw; }
     }
 
     public static bool On(string key, bool fallback = false) => Get(key) switch { "1" => true, "0" => false, _ => fallback };
@@ -57,8 +70,23 @@ public static class Conf
             var home = Home.User.Replace('\\', '/');
             if (kd.StartsWith("~/")) rel = kd[2..].TrimEnd('/');
             else if (kd.StartsWith(home + "/", StringComparison.OrdinalIgnoreCase)) rel = kd[(home.Length + 1)..].TrimEnd('/');
-            else return "";
-            if (rel.Length == 0 || Wild.Like(rel, ".amnesia*") || Wild.Like(rel, "AppData*")) rel = "Keep";
+            else if (kd.StartsWith("/") || (kd.Length > 1 && kd[1] == ':')) return ""; // a full path outside the user folder
+            else rel = kd.TrimEnd('/'); // v0.11.1: written by hand without ~/: still a folder in the user folder
+            // v0.11.1: "./AppData" is "AppData" and "Documents/../Stuff" is "Stuff" (as before); one that climbs out of the
+            // user folder is not a folder in it, so it falls back to Keep. Then the AppData and .amnesia rules look at the real name.
+            var parts = new List<string>();
+            bool climbs = false;
+            foreach (var raw in rel.Split('/'))
+            {
+                // Windows drops trailing dots and spaces from a name ("Stuff." is the folder Stuff, "..." is nothing)
+                var seg = raw == ".." ? raw : raw.TrimEnd('.', ' ');
+                if (seg.Length == 0) continue;
+                if (seg == "..") { if (parts.Count == 0) { climbs = true; break; } parts.RemoveAt(parts.Count - 1); }
+                else parts.Add(seg);
+            }
+            rel = climbs ? "" : string.Join('/', parts);
+            var first = rel.Split('/')[0];
+            if (rel.Length == 0 || first.StartsWith(".amnesia", StringComparison.OrdinalIgnoreCase) || first.Equals("AppData", StringComparison.OrdinalIgnoreCase)) rel = "Keep";
             return rel;
         }
     }

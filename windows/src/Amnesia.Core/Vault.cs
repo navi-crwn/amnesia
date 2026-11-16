@@ -141,7 +141,7 @@ public static class Vault
         var p = path.Replace('\\', '/');
         if (p.StartsWith(home + "/", StringComparison.OrdinalIgnoreCase)) rel = KeepList.Norm(p[(home.Length + 1)..]);
         else if (p.Length > 1 && p[1] == ':') return null; // only folders inside your user folder
-        if (rel.Length == 0 || rel.StartsWith(".amnesia", StringComparison.OrdinalIgnoreCase)) return null;
+        if (rel.Length == 0 || rel.StartsWith(".amnesia", StringComparison.OrdinalIgnoreCase) || rel.Split('/').Contains("..")) return null;
         var list = (Conf.Get("VAULT_FOLDERS") ?? "").Split('|', StringSplitOptions.RemoveEmptyEntries).ToList();
         if (!list.Contains(rel, StringComparer.OrdinalIgnoreCase)) list.Add(rel);
         Conf.Set("VAULT_FOLDERS", string.Join('|', list));
@@ -471,6 +471,7 @@ public static class Vault
         Directory.CreateDirectory(stage); Directory.CreateDirectory(Tmp);
         var done = new List<string>();
         LastProblems = new Dictionary<string, string>();
+        var unpackFailed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         try
         {
             for (int i = 0; i < apps.Count; i++)
@@ -479,14 +480,24 @@ public static class Vault
                 progress?.Invoke(0.9 * i / apps.Count, a.Name);
                 // v0.8: the unpacked zip deletes itself when closed, even if Amnesia is stopped half way
                 var zipFile = Path.Combine(Tmp, Slug(a.Name) + ".zip");
-                using (var o = new FileStream(zipFile, FileMode.Create, FileAccess.ReadWrite, FileShare.Delete, 1 << 16, FileOptions.DeleteOnClose))
+                try
                 {
+                    using var o = new FileStream(zipFile, FileMode.Create, FileAccess.ReadWrite, FileShare.Delete, 1 << 16, FileOptions.DeleteOnClose);
                     Crypto.Open(Src(a.Name), rsa, o, null, cancel);
                     o.Position = 0;
                     using var z = new ZipArchive(o, ZipArchiveMode.Read, leaveOpen: true);
                     z.ExtractToDirectory(Path.Combine(stage, Slug(a.Name)), overwriteFiles: true);
                 }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception e)
+                {
+                    // v0.11.1: one damaged archive no longer stops the others; it is named in LastProblems, its snapshot stays
+                    LastProblems[a.Name] = "failed";
+                    unpackFailed.Add(a.Name);
+                    Home.Trace("vault", $"restore {a.Name}: the snapshot could not be unpacked ({e.GetType().Name}); the other apps go on");
+                }
             }
+            apps = apps.Where(a => !unpackFailed.Contains(a.Name)).ToList();
             progress?.Invoke(0.92, "");
             if (!Home.Test) QuitApps?.Invoke(apps.Where(a => a.Process != null).Select(a => a.Process!));
             CleanEngine.Delete(BeforeRestore);

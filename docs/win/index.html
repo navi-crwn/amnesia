@@ -129,7 +129,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);var p=null;try{p=local
   <div class="glow" style="width:420px;height:420px;background:var(--cyan);left:-160px;bottom:-80px;opacity:.18" aria-hidden="true"></div>
   <div class="wrap two">
     <div class="hero-copy">
-      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.11.0</span><svg><use href="#i-github"/></svg><span>Open source on GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
+      <a class="hbadge" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><span class="hb-ver">Windows v0.11.1</span><svg><use href="#i-github"/></svg><span>Open source on GitHub</span><svg class="hb-go"><use href="#i-chev-r"/></svg></a>
       <h1 id="hero-title">
         <span><span class="split">Your PC forgets</span> <em class="word">everything.</em><span class="after split">Except what you keep.</span></span>
       </h1>
@@ -158,7 +158,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);var p=null;try{p=local
     <a class="repo-card hero-repo" href="https://github.com/navi-crwn/amnesia">
       <span class="rc-top"><svg><use href="#i-github"/></svg><b>navi-crwn/amnesia</b><span class="rc-pub">Public</span></span>
       <span class="rc-desc"><span>Your PC forgets everything at sign out, except what you choose to keep.</span></span>
-      <span class="rc-meta"><span>MIT</span><span>Windows v0.11.0</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
+      <span class="rc-meta"><span>MIT</span><span>Windows v0.11.1</span><span><i style="--c:var(--indigo)"></i>C#</span></span>
     </a>
   </div>
 </section>
@@ -184,7 +184,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);var p=null;try{p=local
         <span class="rc-legend" data-gh="langs" hidden></span>
         <span class="rc-stats">
           <span><small><span>License</span></small><b>MIT</b></span>
-          <span><small>Windows</small><b>v0.11.0</b></span>
+          <span><small>Windows</small><b>v0.11.1</b></span>
           <span><small><span>Tests</span></small><b>294</b></span>
           <span><small>Commits</small><b data-gh="commits">–</b></span>
           <span><small><span>Contributors</span></small><b data-gh="contributors">–</b></span>
@@ -376,7 +376,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);var p=null;try{p=local
         <li class="dstep"><span class="node">01</span><h3>Sign in</h3><p><span>Your PC starts clean. Click the reminder, type your vault password, press Restore.</span></p></li>
         <li class="dstep"><span class="node">02</span><h3><span>Work</span></h3><p><span>Your logins are back. Files you need tomorrow go into your Keep folder.</span></p></li>
         <li class="dstep"><span class="node">03</span><h3><span>Close your apps</span></h3><p><span>Each vault app is saved by itself after you close it.</span></p></li>
-        <li class="dstep"><span class="node">04</span><h3><span>Sign out</span></h3><p><span>Everything else is wiped. No traces left.</span></p></li>
+        <li class="dstep"><span class="node">04</span><h3><span>Sign out</span></h3><p><span>Everything else is moved to the trash, which is emptied at your next sign in.</span></p></li>
       </ol>
     </div>
     <p class="pausenote"><b><span>Pause one session</span></b> <span><span>Skip the next sign out and sign in once, without turning Amnesia off.</span></span></p>
@@ -531,6 +531,9 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);var p=null;try{p=local
         <p class="cap"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg><span>What Amnesia can't do, in the app itself</span></p>
         <ul>
           <li><span>A wipe deletes files, it doesn't overwrite the disk. Turn on device encryption.</span></li>
+          <li><span>At sign out, files move to a trash folder that is emptied at your next sign in. Until then, anyone holding the disk of a switched-off PC can read them. BitLocker is what protects that.</span></li>
+          <li><span>OneDrive and other cloud folders are never wiped. With OneDrive's folder backup on, Desktop, Documents and Pictures stay.</span></li>
+          <li><span>The 3-wrong-passwords limit only stops someone typing at this PC. A copied vault can be guessed without limit.</span></li>
           <li><span>Windows keeps a few traces outside your user folder.</span></li>
           <li><span>The vault and backups are as strong as your password.</span></li>
           <li><span>No paid code signing certificate yet, so SmartScreen can warn.</span></li>
@@ -675,7 +678,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);var p=null;try{p=local
         <div class="aw-bar"><img src="../logo.png" alt="" width="14" height="14"><span>Amnesia</span><i class="wb-min"></i><i class="wb-max"></i><i class="wb-x"></i></div>
         <div class="aw-head">
           <img src="../logo.png" alt="" width="36" height="36">
-          <div><b>Amnesia <span class="ver">v0.11.0</span></b><small><span>Your PC forgets everything, except what you choose.</span></small></div>
+          <div><b>Amnesia <span class="ver">v0.11.1</span></b><small><span>Your PC forgets everything, except what you choose.</span></small></div>
           <span class="gear pc" data-p="settings"><svg><use href="#i-gear"/></svg><span>Settings</span></span>
         </div>
         <div class="aw-hero pc" data-p="home">
@@ -990,7 +993,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);var p=null;try{p=local
       <p class="label"><span class="n">15</span> · <span>Install</span></p>
       <h2><span>One Setup, <em>no admin.</em></span></h2>
       <div class="badges">
-        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.11.0</b></a>
+        <a class="bdg" href="https://github.com/navi-crwn/amnesia/releases?q=win-v&amp;expanded=true"><svg><use href="#i-tag"/></svg><span>Release</span><b>win-v0.11.1</b></a>
         <a class="bdg" href="https://github.com/navi-crwn/amnesia/blob/main/LICENSE"><svg><use href="#i-scale"/></svg><span>License</span><b>MIT</b></a>
         <span class="bdg"><svg><use href="#i-laptop"/></svg><span>Windows</span><b>10 · 11</b></span>
       </div>
@@ -1027,7 +1030,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);var p=null;try{p=local
         <div class="i-top"><span class="i-ico" style="--c:var(--green)"><svg><use href="#i-shield"/></svg></span><div><h3><span>Check the file</span></h3><p class="small"><span>Optional</span></p></div></div>
         <div class="shell">
           <div class="sh-bar"><i></i><i></i><i></i><span>PowerShell</span></div>
-          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.11.0-x64.exe</code><button class="copy" type="button">Copy</button></div>
+          <div class="term type"><code>Get-FileHash .\Amnesia-Setup-0.11.1-x64.exe</code><button class="copy" type="button">Copy</button></div>
           <pre class="sh-out"><span>Algorithm  Hash</span>
 <span>---------  ----</span>
 <span>SHA256     3F9A…C21E</span>
@@ -1039,7 +1042,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);var p=null;try{p=local
         <div class="i-top"><span class="i-ico" style="--c:var(--text)"><svg><use href="#i-github"/></svg></span><div><h3>navi-crwn/amnesia</h3><p class="small"><span>Open source on GitHub</span></p></div></div>
         <dl class="ghstats">
           <div><dt><span>License</span></dt><dd>MIT</dd></div>
-          <div><dt>Windows</dt><dd>v0.11.0</dd></div>
+          <div><dt>Windows</dt><dd>v0.11.1</dd></div>
           <div><dt><span>Tests</span></dt><dd>294</dd></div>
           <div><dt><span>Chips</span></dt><dd>x64 · arm64</dd></div>
         </dl>
@@ -1086,7 +1089,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);var p=null;try{p=local
                 <p class="wsm-h">Windows protected your PC</p>
                 <p class="wsm-t">Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p>
                 <p class="wsm-more" data-a="1" data-on=".wsm-app,.wsm-run">More info</p>
-                <p class="wsm-app">App: Amnesia-Setup-0.11.0-x64.exe</p>
+                <p class="wsm-app">App: Amnesia-Setup-0.11.1-x64.exe</p>
                 <div class="wsm-btns"><span class="wsm-run" data-a="2" data-on=".pop0">Run anyway</span><span>Don't run</span></div>
               </div>
               <div class="pop tw-pop pop0">
@@ -1339,7 +1342,7 @@ if(t==='light'||t==='dark')d.setAttribute('data-theme',t);var p=null;try{p=local
         <p class="ft-tag"><span>Your PC forgets everything at sign out, except what you choose to keep. Free, open source, and nothing ever leaves your PC.</span></p>
         <a class="ft-repo" href="https://github.com/navi-crwn/amnesia">
           <svg><use href="#i-github"/></svg>
-          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.11.0</small></span>
+          <span class="ft-repo-t"><b>navi-crwn/amnesia</b><small>MIT · Windows v0.11.1</small></span>
         </a>
       </div>
       <nav class="ft-cols" aria-label="Footer">

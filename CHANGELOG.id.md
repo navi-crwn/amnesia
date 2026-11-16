@@ -7,6 +7,31 @@ Sedikit cerita: tanggal 6 Oktober 2026 Amnesia masih berupa beberapa skrip. Dua 
 
 Nomor versi kamu ada di samping judul Amnesia dan di bagian bawah panel menu bar.
 
+## Windows v0.11.1 · Tidak ada yang gagal diam-diam (15 Nov 2026)
+
+Belum dirilis. **Turn Off** Amnesia dulu sebelum memasang, lalu nyalakan lagi. App Mac tidak berubah.
+
+### Diperbaiki
+- Brankas (Safe): folder `Keep\Safe` kosong yang muncul sendiri (Explorer, alat sinkronisasi) tidak lagi ditimpakan ke brankas terkunci saat ditutup. Penutupan yang tidak bisa menghapus semuanya tidak lagi mengemas ulang sisa file; apa pun yang kamu taruh di folder itu sesudahnya dipindah ke `Keep\Safe recovered ...`, tidak dihapus.
+- Baris Keep dengan `*` (misalnya `*.kdbx`) juga melindungi file di subfolder. Dulu file yang sama di lapisan lebih dalam ikut terhapus bersama foldernya. Pratinjau menampilkan yang disimpan, dan folder browser (Edge) ikut dicari.
+- `keep.conf` dan `settings.conf` ditulis utuh atau tidak sama sekali. Menghapus baris Keep terakhir tidak lagi menyisakan file kosong, dan `keep.conf` kosong padahal tadinya ada daftar akan menghentikan pembersihan, sama seperti kalau file hilang, lalu salinan terakhir yang baik dikembalikan. Pergantian mode juga tidak pernah menulis file kosong.
+- Baris Keep yang ditulis `~/Documents/X` atau `C:\Users\kamu\Documents\X` sekarang bekerja (dulu diterima tapi tidak pernah cocok). Baris yang tidak mungkin cocok ditampilkan di halaman Keep. `KEEP_DIR` yang ditulis tangan tanpa `~/` tetap terlindungi.
+- Folder app baru yang gagal dipindah ke sampah 3 hari (ada file terpakai) tetap di tempatnya. Dulu file yang tidak terpakai ikut dihapus.
+- Satu arsip vault yang rusak tidak lagi menghentikan pemulihan app lain. Namanya disebut di hasilnya.
+- Tombol panik (hotkey, kunci USB, idle) bekerja lagi setelah sign out yang tidak jadi terjadi.
+- Update dari dalam app hanya memasang rilis yang lebih baru dari versi kamu.
+- Setelah Uninstall dengan "hapus semuanya", folder `.amnesia` tidak dibuat lagi, dan tidak ada yang tersisa di `.amnesia-trash` atau `%LOCALAPPDATA%\Amnesia`. Sampah juga dikosongkan saat Turn Off. Uninstall senyap saat Keep terkunci sekarang berhenti, bukan meninggalkan Keep terkunci.
+- Password Keep dan PIN lab diketik di kotak yang disamarkan. Mesin halaman tidak lagi menawarkan menyimpan password atau mengisi formulir.
+- Ukuran di laporan AI selalu memakai titik (1.5 MB), apa pun region Windows.
+
+### Berubah
+- App, README dan situs sekarang menyebut bahwa file yang dihapus saat sign out menunggu di folder sampah sampai sign in berikutnya, bahwa backup folder OneDrive membuat Desktop, Documents dan Pictures tetap ada, bahwa "3 password salah" hanya menahan orang di depan layar, dan bahwa BitLocker yang melindungi data yang sudah dihapus.
+- GitHub Actions di workflow dikunci ke commit yang pasti.
+
+### Belum selesai
+- Sign out masih memindahkan file ke sampah, dan baru benar-benar dihapus saat sign in berikutnya (direncanakan v0.13.0).
+- Passcode yang tidak bisa dimatikan orang yang memakai akun kamu (direncanakan v0.12.0).
+
 ## v5.26.0 · Profile Vault yang bisa diikuti langkah demi langkah (2 Nov 2026)
 
 **Turn Off** Amnesia dulu sebelum memasang, lalu nyalakan lagi.

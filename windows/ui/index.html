@@ -333,6 +333,7 @@
       <p class="muted" data-t="klText"></p>
       <ul class="list rows" id="klList"></ul>
       <p class="muted" id="klEmpty" data-t="klEmpty" hidden></p>
+      <p class="muted" id="klIgnored" hidden></p>
       <div class="row">
         <button class="btn" id="klPick" data-t="klPick"></button>
         <input class="input" id="klPath" data-ph="klPathPh" autocomplete="off" spellcheck="false">
@@ -866,6 +867,7 @@
 <div class="overlay" id="confirm" hidden>
   <div class="card ask" role="dialog" aria-modal="true" aria-labelledby="cfText">
     <p id="cfText"></p>
+    <input type="password" id="cfSecret" autocomplete="off" spellcheck="false" hidden>
     <div class="row">
       <button class="btn ghost" id="cfNo"></button>
       <button class="btn" id="cfYes"></button>

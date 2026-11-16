@@ -12,6 +12,11 @@ public static class UpdateSig
 
     public static bool HasKey => !PublicKey.StartsWith("AMNESIA_");
 
+    /// <summary>v0.11.1: is candidate a higher version than current? The same, an older one (a replayed old release, even a
+    /// correctly signed one) or one that cannot be read is not: nothing is installed from it.</summary>
+    public static bool IsNewer(string candidate, string current) =>
+        Version.TryParse(candidate, out var v) && Version.TryParse(current, out var c) && v > c;
+
     /// <summary>Is sig (DER, as openssl writes it) a signature of data by this key? Any problem counts as "no".</summary>
     public static bool Verify(byte[] data, byte[] sig, string publicKey = PublicKey)
     {
