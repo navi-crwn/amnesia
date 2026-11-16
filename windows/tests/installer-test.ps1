@@ -109,6 +109,7 @@ try {
     Check (-not (Test-Path $app)) 'the install folder is gone'
     Check (-not (Test-Path $local)) '%LOCALAPPDATA%\Amnesia (WebView2 data, update) is gone'
     Check (-not (Test-Path $trash)) '.amnesia-trash is gone, including the new app folder'
+    if (Test-Path $trash) { Get-ChildItem $trash -Recurse -Force | ForEach-Object { Write-Output "         left in the trash: $($_.FullName)" } }
     Check (Test-Path (Join-Path $data 'settings.conf')) 'your settings stay (the default uninstall keeps .amnesia)'
     Check ((Get-Content (Join-Path $data 'settings.conf')) -contains 'ENABLED=0') 'Amnesia was turned off by the uninstaller'
 }

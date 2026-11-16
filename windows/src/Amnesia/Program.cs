@@ -68,14 +68,25 @@ static class Program
         {
             // v0.11.1: after "delete everything" there is no .amnesia folder any more: do not make a new one just to write
             // "off" into it (settings.conf, trace.log came back that way)
-            if (Directory.Exists(AppInfo.Home))
+            // Each step stands on its own, so one that fails (the shortcut and pin step does on a machine without a full
+            // shell) cannot skip the ones after it. A failure is written to trace.log only when .amnesia still exists.
+            void Step(string name, Action work)
             {
-                Setup.TurnOff(leaveStartup: false);
-                Settings.Set("KEEP_SHORTCUT", "0"); Settings.Set("KEEP_PIN", "0");
-                KeepLinks.SyncNow();
+                try { work(); }
+                catch (Exception e) { if (Directory.Exists(AppInfo.Home)) AppInfo.Trace($"--off: {name} failed ({e.GetType().Name})"); }
             }
-            else Setup.RemoveStartup();
-            try { Amnesia.Core.CleanEngine.PurgeTrash(true); } catch { } // the uninstaller leaves nothing in .amnesia-trash
+            bool hasData = Directory.Exists(AppInfo.Home);
+            if (hasData) Step("turn off", () => Setup.TurnOff(leaveStartup: false)); else Step("remove startup", Setup.RemoveStartup);
+            Step("empty the trash", () =>
+            {
+                Amnesia.Core.CleanEngine.PurgeTrash(true); // the uninstaller leaves nothing in .amnesia-trash
+                if (hasData && Directory.Exists(Amnesia.Core.Home.Trash)) AppInfo.Trace("--off: the trash still has entries after emptying it");
+            });
+            if (hasData)
+            {
+                Step("settings", () => { Settings.Set("KEEP_SHORTCUT", "0"); Settings.Set("KEEP_PIN", "0"); });
+                Step("shortcut and pin", KeepLinks.SyncNow);
+            }
         }
         if (args.Contains("--quit") || args.Contains("--off"))
         {
