@@ -32,24 +32,32 @@ $data = Join-Path $home_ '.amnesia'
 $trash = Join-Path $home_ '.amnesia-trash'
 $local = Join-Path $env:LOCALAPPDATA 'Amnesia'
 
+# Start-Process -Wait also waits for every program the started one launched. A silent install starts Amnesia in the tray,
+# which never ends, so that would hang. This waits for the one process only, and gives up after the time limit.
+function Run([string]$file, [string[]]$arguments, [int]$seconds = 300) {
+    $p = Start-Process $file -ArgumentList $arguments -PassThru
+    if (-not $p.WaitForExit($seconds * 1000)) { try { $p.Kill() } catch { }; Write-Host "  (gave up waiting for $file after $seconds s)"; return -999 }
+    return $p.ExitCode
+}
+
 function Stop-Amnesia {
-    if (Test-Path $exe) { Start-Process $exe -ArgumentList '--quit' -Wait -ErrorAction SilentlyContinue }
+    if (Test-Path $exe) { Run $exe @('--quit') 30 | Out-Null }
     Start-Sleep -Seconds 2
     Get-Process -Name Amnesia -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 }
 
 try {
     Write-Output "== Silent install: $($setup.Name)"
-    $p = Start-Process $setup.FullName -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait -PassThru
-    Check ($p.ExitCode -eq 0) "Setup.exe exits with 0 (got $($p.ExitCode))"
+    $code = Run $setup.FullName @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') 600
+    Check ($code -eq 0) "Setup.exe exits with 0 (got $code)"
     Check (Test-Path $exe) 'Amnesia.exe is installed'
     Check (Test-Path (Join-Path $app 'unins000.exe')) 'the uninstaller is installed'
     Check (Test-Path (Join-Path $app 'ui\index.html')) 'the page files are installed'
     Stop-Amnesia   # a silent install starts Amnesia in the tray; it has to be gone before the cleanup runs
 
     Write-Output '== --keep-locked with no Keep lock'
-    $p = Start-Process $exe -ArgumentList '--keep-locked' -Wait -PassThru
-    Check ($p.ExitCode -eq 0) "--keep-locked exits with 0 when Keep is not locked (got $($p.ExitCode))"
+    $code = Run $exe @('--keep-locked') 60
+    Check ($code -eq 0) "--keep-locked exits with 0 when Keep is not locked (got $code)"
 
     Write-Output '== Sample files and settings (what Turn On would have written)'
     Put 'Desktop\wipe-me.txt'; Put 'Documents\wipe-me.txt'; Put 'Downloads\wipe-me.txt'
@@ -83,7 +91,7 @@ try {
 
     Write-Output '== Silent uninstall with Keep locked must stop'
     Add-Content (Join-Path $data 'settings.conf') @('KEEP_LOCK=1', 'KEEP_LOCK_PW=not-a-real-hash')
-    Start-Process (Join-Path $app 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
+    Run (Join-Path $app 'unins000.exe') @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') 120 | Out-Null
     Start-Sleep -Seconds 8
     Check (Test-Path $exe) 'a silent uninstall with Keep locked leaves Amnesia installed'
     $lines = Get-Content (Join-Path $data 'settings.conf') | Where-Object { $_ -notmatch '^KEEP_LOCK' }
@@ -96,7 +104,7 @@ try {
     New-Item -ItemType Directory -Path (Join-Path $trash '20260101-000000\Documents') -Force | Out-Null
     Set-Content (Join-Path $trash '20260101-000000\Documents\f.txt') 'x'
     New-Item -ItemType Directory -Path (Join-Path $trash '29990101-000000-apps\AppData') -Force | Out-Null
-    Start-Process (Join-Path $app 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
+    Run (Join-Path $app 'unins000.exe') @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') 120 | Out-Null
     for ($i = 0; $i -lt 30 -and (Test-Path $app); $i++) { Start-Sleep -Seconds 2 }
     Check (-not (Test-Path $app)) 'the install folder is gone'
     Check (-not (Test-Path $local)) '%LOCALAPPDATA%\Amnesia (WebView2 data, update) is gone'
