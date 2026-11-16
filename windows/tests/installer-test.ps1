@@ -108,8 +108,14 @@ try {
     for ($i = 0; $i -lt 30 -and (Test-Path $app); $i++) { Start-Sleep -Seconds 2 }
     Check (-not (Test-Path $app)) 'the install folder is gone'
     Check (-not (Test-Path $local)) '%LOCALAPPDATA%\Amnesia (WebView2 data, update) is gone'
-    Check (-not (Test-Path $trash)) '.amnesia-trash is gone, including the new app folder'
-    if (Test-Path $trash) { Get-ChildItem $trash -Recurse -Force | ForEach-Object { Write-Output "         left in the trash: $($_.FullName)" } }
+    # The sign-in cleanup above also moved this machine's own Temp files into the trash, and programs here still hold some
+    # of them open. Those stay and are tried again later, so only the two batches made by this test are checked.
+    Check (-not (Test-Path (Join-Path $trash '20260101-000000'))) 'the old trash batch is gone'
+    Check (-not (Test-Path (Join-Path $trash '29990101-000000-apps'))) 'the new app folder (3-day hold) is gone too'
+    if (Test-Path $trash) {
+        $held = @(Get-ChildItem $trash -Recurse -File -Force -ErrorAction SilentlyContinue).Count
+        Write-Output "  info  $held file(s) that other programs hold open are still in the trash (they are retried later)"
+    }
     Check (Test-Path (Join-Path $data 'settings.conf')) 'your settings stay (the default uninstall keeps .amnesia)'
     Check ((Get-Content (Join-Path $data 'settings.conf')) -contains 'ENABLED=0') 'Amnesia was turned off by the uninstaller'
 }
